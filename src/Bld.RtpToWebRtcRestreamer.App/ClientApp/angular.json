@@ -132,5 +132,8 @@
       }
     }
   },
-  "defaultProject": "Bld.RtpToWebRtcRestreamer.App"
+  "defaultProject": "Bld.RtpToWebRtcRestreamer.App",
+  "cli": {
+    "analytics": false
+  }
 }
