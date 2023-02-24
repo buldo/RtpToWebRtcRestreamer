@@ -34,19 +34,18 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
-using SIPSorcery.net.RTP;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// Options for creating the SDP offer.
@@ -121,7 +120,7 @@ namespace SIPSorcery.Net
         private const int SCTP_ASSOCIATE_TIMEOUT_SECONDS = 2;
 
         private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
-        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
+        private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         private string LocalSdpSessionID { get; }
 
@@ -474,7 +473,7 @@ namespace SIPSorcery.Net
         /// </param>
         public Task setLocalDescription(RTCSessionDescriptionInit init)
         {
-            localDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            localDescription = new RTCSessionDescription { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
 
             if (init.type == RTCSdpType.offer)
             {
@@ -505,7 +504,7 @@ namespace SIPSorcery.Net
         /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
         /// <param name="sessionDescription">The SDP from the remote party.</param>
         /// <returns>The result of attempting to set the remote description.</returns>
-        protected override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
+        protected override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP.SDP sessionDescription)
         {
             RTCSessionDescriptionInit init = new RTCSessionDescriptionInit
             {
@@ -522,9 +521,9 @@ namespace SIPSorcery.Net
         /// <param name="init">The answer/offer SDP from the remote party.</param>
         public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
         {
-            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+            remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
 
-            SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+            SDP.SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
             SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
@@ -796,7 +795,7 @@ namespace SIPSorcery.Net
         ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
         ///   agent and the ICE processing MUST continue as usual."
         /// </remarks>
-        private SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false)
+        private SDP.SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false)
         {
             // Make sure the ICE gathering of local IP addresses is complete.
             // This task should complete very quickly (<1s) but it is deemed very useful to wait
@@ -806,7 +805,7 @@ namespace SIPSorcery.Net
             // delay of a few hundred milliseconds it was decided not to break the API.
             _iceGatheringTask.Wait();
 
-            SDP offerSdp = new SDP(IPAddress.Loopback);
+            SDP.SDP offerSdp = new SDP.SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
             string dtlsFingerprint = DtlsCertificateFingerprint.ToString();
@@ -833,7 +832,7 @@ namespace SIPSorcery.Net
 
                     if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
                     {
-                        announcement.AddExtra($"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
+                        announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
                     }
                 }
             };
@@ -867,7 +866,7 @@ namespace SIPSorcery.Net
                 }
                 mediaIndex++;
 
-                if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
+                if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
                     Logger.LogWarning($"Media announcement for {mediaStream.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
                 }
@@ -875,7 +874,7 @@ namespace SIPSorcery.Net
                 {
                     SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
                      mediaStream.LocalTrack.Kind,
-                     SDP.IGNORE_RTP_PORT_NUMBER,
+                     SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                      mediaStream.LocalTrack.Capabilities);
 
                     announcement.Transport = RTP_MEDIA_PROFILE;
@@ -916,7 +915,7 @@ namespace SIPSorcery.Net
             {
                 (int mindex, string midTag) = RemoteDescription == null ? (mediaIndex, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
 
-                if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
+                if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
                     Logger.LogWarning("Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
                 }
@@ -924,7 +923,7 @@ namespace SIPSorcery.Net
                 {
                     SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
                         SDPMediaTypesEnum.application,
-                        SDP.IGNORE_RTP_PORT_NUMBER,
+                        SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                         new List<SDPApplicationMediaFormat> { new SDPApplicationMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
                     dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
                     dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);

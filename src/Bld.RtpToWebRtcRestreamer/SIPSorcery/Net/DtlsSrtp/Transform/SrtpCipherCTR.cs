@@ -61,11 +61,9 @@
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
 
-using System;
-using System.IO;
 using Org.BouncyCastle.Crypto;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
     /**
      * SRTPCipherCTR implements SRTP Counter Mode AES Encryption (AES-CM).

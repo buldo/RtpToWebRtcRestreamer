@@ -1,8 +1,6 @@
 ﻿// from http://damieng.com/blog/2006/08/08/Calculating_CRC32_in_C_and_NET
 
-using System;
-
-namespace SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 {
     public static class Crc32
     {

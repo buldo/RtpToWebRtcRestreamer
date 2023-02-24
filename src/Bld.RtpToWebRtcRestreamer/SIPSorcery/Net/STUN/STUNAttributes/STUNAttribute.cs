@@ -36,12 +36,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
     public class STUNAttribute
     {

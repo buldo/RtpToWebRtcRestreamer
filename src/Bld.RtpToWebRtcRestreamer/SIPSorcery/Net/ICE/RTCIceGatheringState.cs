@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// The gathering states an ICE session transitions through.

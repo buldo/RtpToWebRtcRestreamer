@@ -17,12 +17,11 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Text;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// An endpoint sends this chunk to its peer endpoint to notify it of

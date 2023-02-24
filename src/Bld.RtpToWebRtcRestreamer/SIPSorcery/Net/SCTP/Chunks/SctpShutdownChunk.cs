@@ -17,9 +17,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// An endpoint in an association MUST use this chunk to initiate a

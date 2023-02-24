@@ -32,10 +32,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
     /// <summary>
     /// RTCP Header as defined in RFC3550.

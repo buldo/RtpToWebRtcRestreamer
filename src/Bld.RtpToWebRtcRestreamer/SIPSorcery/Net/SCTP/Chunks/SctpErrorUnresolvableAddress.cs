@@ -1,7 +1,6 @@
-﻿using System;
-using SIPSorcery.Sys;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// Indicates that the sender is not able to resolve the specified address parameter

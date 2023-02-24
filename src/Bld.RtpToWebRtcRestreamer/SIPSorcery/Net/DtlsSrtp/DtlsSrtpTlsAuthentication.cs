@@ -1,7 +1,7 @@
 ﻿using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Utilities;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     internal class DtlsSrtpTlsAuthentication
         : TlsAuthentication

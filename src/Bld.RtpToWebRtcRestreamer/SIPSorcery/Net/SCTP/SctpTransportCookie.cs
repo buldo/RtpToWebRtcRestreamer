@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
     /// <summary>
     /// The opaque cookie structure that will be sent in response to an SCTP INIT

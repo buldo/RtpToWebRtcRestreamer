@@ -18,11 +18,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// This structure captures all SCTP errors that don't have an additional 

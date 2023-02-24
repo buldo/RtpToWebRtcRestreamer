@@ -1,6 +1,6 @@
-﻿using SIPSorcery.Sys;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// Indicates the receipt of a valid State Cookie that has expired.

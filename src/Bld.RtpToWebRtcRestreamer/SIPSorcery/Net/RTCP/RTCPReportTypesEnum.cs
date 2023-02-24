@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
     /// <summary>
     /// The different types of RTCP packets as defined in RFC3550.

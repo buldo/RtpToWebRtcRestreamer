@@ -1,7 +1,6 @@
-﻿using System;
-using Org.BouncyCastle.Crypto.Tls;
+﻿using Org.BouncyCastle.Crypto.Tls;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     public interface IDtlsSrtpPeer
     {

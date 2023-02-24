@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// The ICE set up roles that a peer can be in. The role determines how the DTLS

@@ -3,7 +3,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Bld.RtpReceiver.Rtp;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 internal delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
 

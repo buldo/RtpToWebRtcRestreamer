@@ -13,11 +13,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Net;
-using SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
     /// <summary>
     /// This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 

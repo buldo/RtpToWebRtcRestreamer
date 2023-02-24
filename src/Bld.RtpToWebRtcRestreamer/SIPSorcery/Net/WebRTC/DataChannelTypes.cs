@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum DataChannelTypes : byte

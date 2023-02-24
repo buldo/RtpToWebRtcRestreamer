@@ -64,18 +64,20 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// An RTP ICE Channel carries out connectivity checks with a remote peer in an

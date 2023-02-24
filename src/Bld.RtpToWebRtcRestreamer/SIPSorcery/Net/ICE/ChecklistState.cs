@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// Represents the state of the ICE checks for a checklist.

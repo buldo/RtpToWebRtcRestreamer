@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 {
     /// <summary>
     /// The class is interpreted from the message type. It does not get explicitly

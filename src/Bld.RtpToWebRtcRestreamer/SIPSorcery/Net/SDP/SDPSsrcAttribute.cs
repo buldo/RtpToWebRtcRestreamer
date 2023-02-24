@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     /// <summary>
     /// An attribute used to defined additional properties about

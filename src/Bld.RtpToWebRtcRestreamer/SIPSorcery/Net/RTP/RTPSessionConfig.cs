@@ -16,7 +16,7 @@
 
 using System.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     public sealed class RtpSessionConfig
     {

@@ -1,5 +1,5 @@
 ﻿// ReSharper disable UnusedMember.Global
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     public enum RTCSdpType
     {

@@ -1,7 +1,6 @@
-﻿using System;
-using SIPSorcery.Sys;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// An INIT was received on an existing association.But the INIT added addresses to the

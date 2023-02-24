@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// The RTCIceCandidateType represents the type of the ICE candidate.

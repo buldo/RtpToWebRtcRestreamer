@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     /// <summary>
     /// The types of status that a media stream can have. Note that the stream status can

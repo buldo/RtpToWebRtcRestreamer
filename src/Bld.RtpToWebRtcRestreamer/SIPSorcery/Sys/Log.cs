@@ -17,8 +17,9 @@
 //----------------------------------------------------------------------------
 
 using Microsoft.Extensions.Logging;
+using SIPSorcery;
 
-namespace SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 {
     internal static class Log
     {

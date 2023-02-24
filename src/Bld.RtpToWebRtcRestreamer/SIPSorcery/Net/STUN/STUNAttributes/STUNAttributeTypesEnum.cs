@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum STUNAttributeTypesEnum : ushort

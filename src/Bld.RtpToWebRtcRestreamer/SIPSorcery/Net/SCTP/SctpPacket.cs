@@ -17,13 +17,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
+using SIPSorcery;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
     /// <summary>
     /// An SCTP packet is composed of a common header and chunks. A chunk

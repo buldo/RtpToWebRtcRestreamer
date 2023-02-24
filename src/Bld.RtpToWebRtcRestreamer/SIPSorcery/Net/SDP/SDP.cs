@@ -101,17 +101,15 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     public class SDP
     {

@@ -15,7 +15,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
     /// <summary>
     /// Representation of the VP8 RTP header as specified in RFC7741

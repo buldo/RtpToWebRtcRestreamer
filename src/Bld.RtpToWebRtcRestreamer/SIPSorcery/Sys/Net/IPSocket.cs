@@ -17,12 +17,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 
-namespace SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
 {
     public static class IPSocket
     {

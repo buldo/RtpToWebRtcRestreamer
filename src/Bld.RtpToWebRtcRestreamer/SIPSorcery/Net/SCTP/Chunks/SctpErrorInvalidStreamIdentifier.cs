@@ -1,6 +1,6 @@
-﻿using SIPSorcery.Sys;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <summary>
     /// Invalid Stream Identifier: Indicates endpoint received a DATA chunk

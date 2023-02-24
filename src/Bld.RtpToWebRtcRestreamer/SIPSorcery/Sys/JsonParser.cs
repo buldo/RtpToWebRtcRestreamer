@@ -14,15 +14,13 @@
 // MIT, see https://github.com/zanders3/json/blob/master/LICENSE.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace TinyJson
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 {
     // Really simple JSON parser in ~300 lines
     // - Attempts to parse JSON files with minimal GC allocation

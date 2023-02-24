@@ -40,10 +40,7 @@
 * 
 */
 
-using System;
-using System.IO;
-
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
     public class RawPacket
     {

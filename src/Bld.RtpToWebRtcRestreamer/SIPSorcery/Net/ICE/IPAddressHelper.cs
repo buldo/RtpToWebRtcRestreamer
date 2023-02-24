@@ -16,7 +16,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     public static class IPAddressHelper
     {

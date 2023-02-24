@@ -32,7 +32,7 @@
  * limitations under the License.
  */
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     /// <summary>
     /// SrtpPolicy holds the SRTP encryption / authentication policy of a SRTP

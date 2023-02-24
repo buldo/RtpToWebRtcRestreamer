@@ -7,12 +7,9 @@
 // Author(s):
 // rj2
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     /// <summary>
     /// (SDP) Security Descriptions for Media Streams implementation as basically defined in RFC 4568.

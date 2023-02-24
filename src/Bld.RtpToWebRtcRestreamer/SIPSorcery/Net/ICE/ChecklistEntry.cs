@@ -13,15 +13,15 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// A check list entry represents an ICE candidate pair (local candidate + remote candidate)

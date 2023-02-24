@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Bld.RtpReceiver.Rtp;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 /// <summary>
 /// Helper class to provide network services.

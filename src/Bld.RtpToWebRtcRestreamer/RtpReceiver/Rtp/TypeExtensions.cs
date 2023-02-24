@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-namespace Bld.RtpReceiver.Rtp;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 internal static class TypeExtensions
 {

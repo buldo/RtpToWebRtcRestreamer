@@ -14,17 +14,15 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
-using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     public class VideoStream : MediaStream
     {

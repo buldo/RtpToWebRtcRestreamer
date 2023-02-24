@@ -19,16 +19,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     /// <summary>
     /// The RTPSession class is the primary point for interacting with the Real-Time
@@ -158,7 +156,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
-        protected SDP RemoteDescription { get; set; }
+        protected SDP.SDP RemoteDescription { get; set; }
 
         /// <summary>
         /// If this session is using a secure context this flag MUST be set to indicate
@@ -391,7 +389,7 @@ namespace SIPSorcery.Net
         /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
         /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
         /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
-        protected virtual SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP sessionDescription)
+        protected virtual SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP.SDP sessionDescription)
         {
             if (sessionDescription == null)
             {
@@ -480,17 +478,17 @@ namespace SIPSorcery.Net
                     }
 
                     currentMediaStream.DestinationEndPoint =
-                        (remoteRtpEp != null && remoteRtpEp.Port != SDP.IGNORE_RTP_PORT_NUMBER)
+                        (remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
                             ? remoteRtpEp
                             : currentMediaStream.DestinationEndPoint;
                     currentMediaStream.ControlDestinationEndPoint =
-                        (remoteRtcpEp != null && remoteRtcpEp.Port != SDP.IGNORE_RTP_PORT_NUMBER)
+                        (remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
                             ? remoteRtcpEp
                             : currentMediaStream.ControlDestinationEndPoint;
 
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
-                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                        if (capabilities?.Where(x => x.Name().ToLower() != SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                         {
                             return SetDescriptionResultEnum.AudioIncompatible;
                         }
@@ -564,7 +562,7 @@ namespace SIPSorcery.Net
 
                     // Set the remote port number to "9" which means ignore and wait for it be set some other way
                     // such as when a remote RTP packet or arrives or ICE negotiation completes.
-                    rtpEndPoint = new IPEndPoint(remoteAddr, SDP.IGNORE_RTP_PORT_NUMBER);
+                    rtpEndPoint = new IPEndPoint(remoteAddr, SDP.SDP.IGNORE_RTP_PORT_NUMBER);
                 }
                 else
                 {
@@ -763,7 +761,7 @@ namespace SIPSorcery.Net
                         // if a special port number is used (defined as "9") which indicates that the media announcement is not 
                         // responsible for setting the remote end point for the audio stream. Instead it's most likely being set 
                         // using ICE.
-                        if (remoteRTPEndPoint.Port != SDP.IGNORE_RTP_PORT_NUMBER)
+                        if (remoteRTPEndPoint.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
                         {
                             localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
                         }

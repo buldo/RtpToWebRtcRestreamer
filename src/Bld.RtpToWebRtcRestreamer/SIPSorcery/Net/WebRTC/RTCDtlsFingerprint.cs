@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// Represents a fingerprint of a certificate used to authenticate WebRTC communications.

@@ -17,10 +17,9 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
-using System;
 using Org.BouncyCastle.Crypto.Tls;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     public struct SrtpParameters
     {

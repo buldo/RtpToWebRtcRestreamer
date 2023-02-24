@@ -13,7 +13,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace SIPSorcery.Net
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     public class SecureContext
     {

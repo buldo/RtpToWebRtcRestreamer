@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Bld.RtpReceiver.Rtp;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 internal sealed class RtpSessionConfig
 {

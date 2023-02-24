@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// Determines which ICE candidates can be used for a peer connection.

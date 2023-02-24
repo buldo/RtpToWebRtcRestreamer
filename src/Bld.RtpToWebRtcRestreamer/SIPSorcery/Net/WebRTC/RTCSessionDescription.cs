@@ -1,8 +1,8 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     public class RTCSessionDescription
     {
         public RTCSdpType type;
-        public SDP sdp;
+        public SDP.SDP sdp;
     }
 }

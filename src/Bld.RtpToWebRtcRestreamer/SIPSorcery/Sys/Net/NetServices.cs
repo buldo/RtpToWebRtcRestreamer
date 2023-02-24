@@ -15,17 +15,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 // ============================================================================
 
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 
-namespace SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
 {
     /// <summary>
     /// Helper class to provide network services.

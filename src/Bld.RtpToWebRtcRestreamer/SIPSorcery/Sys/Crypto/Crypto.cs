@@ -14,11 +14,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Security.Cryptography;
-using System.Threading;
 
-namespace SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
 {
     public static class Crypto
     {

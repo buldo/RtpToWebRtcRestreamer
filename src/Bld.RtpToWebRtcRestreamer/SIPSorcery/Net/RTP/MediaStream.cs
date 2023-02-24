@@ -14,15 +14,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.net.RTP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     public class MediaStream
     {
@@ -132,7 +131,7 @@ namespace SIPSorcery.net.RTP
                             SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
                                 SDPMediaTypesEnum.audio,
                                 RTPSession.DTMF_EVENT_PAYLOAD_ID,
-                                SDP.TELEPHONE_EVENT_ATTRIBUTE,
+                                SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE,
                                 RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
                                 SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
                                 "0-16");

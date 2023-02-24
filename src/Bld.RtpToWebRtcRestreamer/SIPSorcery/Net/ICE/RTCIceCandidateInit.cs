@@ -1,6 +1,6 @@
-﻿using TinyJson;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     /// <summary>
     /// Represents an ICE candidate and associated properties that link it to the SDP.

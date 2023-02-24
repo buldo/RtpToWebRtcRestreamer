@@ -5,11 +5,7 @@
 /// @author raf.csoares@kyubinteractive.com
 /// </summary>
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
     public class H264Depacketiser
     {

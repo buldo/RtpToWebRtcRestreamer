@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// The assignments for SCTP payload protocol IDs used with

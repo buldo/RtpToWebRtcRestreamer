@@ -1,6 +1,4 @@
-using System;
-
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
     public static class STUNAttributeTypes
     {

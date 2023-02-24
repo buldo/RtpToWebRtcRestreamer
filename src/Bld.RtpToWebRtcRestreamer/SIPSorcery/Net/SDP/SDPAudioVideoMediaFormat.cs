@@ -14,12 +14,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     /// <summary>
     /// Represents a single media format within a media announcement. Often the whole media format can

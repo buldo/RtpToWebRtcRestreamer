@@ -14,13 +14,10 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using SIPSorcery.Net;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using SIPSorceryMedia.Abstractions;
 
-namespace SIPSorcery.net.RTP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     public class AudioStream : MediaStream
     {
@@ -51,12 +48,12 @@ namespace SIPSorcery.net.RTP
         public void CheckAudioFormatsNegotiation()
         {
             if (LocalTrack != null &&
-                        LocalTrack.Capabilities.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() > 0)
+                        LocalTrack.Capabilities.Where(x => x.Name().ToLower() != SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() > 0)
             {
                 OnAudioFormatsNegotiatedByIndex?.Invoke(
                             Index,
                             LocalTrack.Capabilities
-                            .Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE)
+                            .Where(x => x.Name().ToLower() != SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE)
                             .Select(x => x.ToAudioFormat()).ToList());
             }
         }

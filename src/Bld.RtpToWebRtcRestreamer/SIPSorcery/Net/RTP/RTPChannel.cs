@@ -17,13 +17,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Net;
 using System.Net.Sockets;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     /// <summary>
     /// A communications channel for transmitting and receiving Real-time Protocol (RTP) and

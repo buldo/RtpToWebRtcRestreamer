@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery
 {
     /// <summary>
     /// The type of the SDP packet being set.

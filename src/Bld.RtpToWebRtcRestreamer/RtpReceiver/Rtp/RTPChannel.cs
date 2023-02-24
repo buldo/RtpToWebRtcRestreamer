@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpReceiver.Rtp;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 /// <summary>
 /// A communications channel for transmitting and receiving Real-time Protocol (RTP) and

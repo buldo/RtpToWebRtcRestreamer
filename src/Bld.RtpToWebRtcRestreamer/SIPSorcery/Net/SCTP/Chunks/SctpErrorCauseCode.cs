@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.Net
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
     /// <remarks>
     /// Defined in https://tools.ietf.org/html/rfc4960#section-3.3.10

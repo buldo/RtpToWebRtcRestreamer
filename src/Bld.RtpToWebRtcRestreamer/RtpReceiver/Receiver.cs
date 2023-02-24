@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using Bld.RtpReceiver.Rtp;
+using Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpReceiver;
+namespace Bld.RtpToWebRtcRestreamer.RtpReceiver;
 
 public class Receiver
 {

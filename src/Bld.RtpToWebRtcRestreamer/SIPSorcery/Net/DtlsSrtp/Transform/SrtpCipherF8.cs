@@ -61,13 +61,11 @@
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
 
-using System;
-using System.IO;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
     public static class SrtpCipherF8
     {

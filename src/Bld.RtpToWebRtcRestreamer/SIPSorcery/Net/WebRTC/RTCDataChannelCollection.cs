@@ -1,10 +1,7 @@
-using System;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     class RTCDataChannelCollection : IReadOnlyCollection<RTCDataChannel>
     {

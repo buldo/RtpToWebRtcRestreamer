@@ -1,6 +1,6 @@
-﻿using TinyJson;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
-namespace SIPSorcery.Net
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// Initialiser for the RTCSessionDescription instance.
