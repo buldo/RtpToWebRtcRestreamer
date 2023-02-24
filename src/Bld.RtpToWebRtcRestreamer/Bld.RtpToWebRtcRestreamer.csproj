@@ -9,7 +9,6 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
-      <PackageReference Include="Bld.RtpReceiver" Version="0.0.0-alpha.0.27" />
       <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
 
       <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
