@@ -1,9 +1,12 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// A list of the transport layer protocols that are supported by STUNand TURN (the network layers
     /// supported are IPv4 mad IPv6).
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum STUNProtocolsEnum
     {
         /// <summary>

@@ -580,15 +580,6 @@ namespace SIPSorcery.Net
 
         private bool m_isTcpClosed = true;
 
-
-        /// <summary>
-        /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
-        /// with ICE connectivity checks.
-        /// </summary>
-        public RtpIceChannel() :
-            this(null, RTCIceComponent.rtp)
-        { }
-
         /// <summary>
         /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
         /// with ICE connectivity checks.
@@ -2344,11 +2335,12 @@ namespace SIPSorcery.Net
         /// Sends a create permissions request to a TURN server for a peer end point.
         /// </summary>
         /// <param name="transactionID">The transaction ID to set on the request. This
-        /// gets used to match responses back to the sender.</param>
+        ///     gets used to match responses back to the sender.</param>
         /// <param name="iceServer">The ICE server to send the request to.</param>
         /// <param name="peerEndPoint">The peer end point to request the channel bind for.</param>
         /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
-        private SocketError SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer, IPEndPoint peerEndPoint)
+        private void SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer,
+            IPEndPoint peerEndPoint)
         {
             STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
             permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
@@ -2378,8 +2370,6 @@ namespace SIPSorcery.Net
             {
                 OnStunMessageSent?.Invoke(permissionsRequest, iceServer.ServerEndPoint, false);
             }
-
-            return sendResult;
         }
 
         protected virtual SocketError SendOverTCP(IPEndPoint dstEndPoint, byte[] buffer)

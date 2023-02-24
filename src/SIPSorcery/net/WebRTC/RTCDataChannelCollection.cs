@@ -19,10 +19,6 @@ namespace SIPSorcery.Net
 
         public RTCDataChannelCollection(Func<bool> useEvenIds)
             => this.useEvenIds = useEvenIds;
-
-        public void AddPendingChannel(RTCDataChannel channel)
-            => pendingChannels.Add(channel);
-
         public IEnumerable<RTCDataChannel> ActivatePendingChannels()
         {
             while (pendingChannels.TryTake(out var channel))

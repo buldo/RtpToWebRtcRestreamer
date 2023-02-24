@@ -1,5 +1,8 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum AlertTypesEnum : byte
     {
         close_notify = 0,

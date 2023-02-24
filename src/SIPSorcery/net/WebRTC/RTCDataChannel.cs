@@ -27,7 +27,7 @@ namespace SIPSorcery.Net
     /// that allows peers to exchange generic data in a peer
     /// to peer manner.
     /// </summary>
-    public class RTCDataChannel : IRTCDataChannel
+    public class RTCDataChannel
     {
         private static ILogger logger = Log.Logger;
 
@@ -51,10 +51,6 @@ namespace SIPSorcery.Net
 
         public ulong bufferedAmountLowThreshold { get; set; }
         public string binaryType { get; set; }
-
-        //public long MaxMessageSize { get; set; }
-
-        public string Error { get; private set; }
 
         public bool IsOpened { get; internal set; } = false;
 
@@ -89,15 +85,6 @@ namespace SIPSorcery.Net
             IsOpened = true;
             readyState = RTCDataChannelState.open;
             onopen?.Invoke();
-        }
-
-        /// <summary>
-        /// Sets the error message is there was a problem creating the data channel.
-        /// </summary>
-        internal void SetError(string error)
-        {
-            Error = error;
-            onerror?.Invoke(error);
         }
 
         public void close()

@@ -1,5 +1,8 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum SDPMediaTypesEnum
     {
         invalid = 0,

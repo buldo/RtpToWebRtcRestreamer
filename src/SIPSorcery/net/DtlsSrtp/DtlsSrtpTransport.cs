@@ -96,51 +96,9 @@ namespace SIPSorcery.Net
             connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }
 
-        public IPacketTransformer SrtpDecoder
-        {
-            get
-            {
-                return srtpDecoder;
-            }
-        }
-
-        public IPacketTransformer SrtpEncoder
-        {
-            get
-            {
-                return srtpEncoder;
-            }
-        }
-
-        public IPacketTransformer SrtcpDecoder
-        {
-            get
-            {
-                return srtcpDecoder;
-            }
-        }
-
-        public IPacketTransformer SrtcpEncoder
-        {
-            get
-            {
-                return srtcpEncoder;
-            }
-        }
-
         public bool IsHandshakeComplete()
         {
             return _handshakeComplete;
-        }
-
-        public bool IsHandshakeFailed()
-        {
-            return _handshakeFailed;
-        }
-
-        public bool IsHandshaking()
-        {
-            return _handshaking;
         }
 
         public bool DoHandshake(out string handshakeError)
@@ -586,14 +544,6 @@ namespace SIPSorcery.Net
             _isClosed = true;
             this._startTime = System.DateTime.MinValue;
             this._chunks?.Dispose();
-        }
-
-        /// <summary>
-        /// Close the transport if the instance is out of scope.
-        /// </summary>
-        protected void Dispose(bool disposing)
-        {
-            Close();
         }
 
         /// <summary>

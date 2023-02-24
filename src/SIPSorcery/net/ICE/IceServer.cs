@@ -78,13 +78,6 @@ namespace SIPSorcery.Net
         internal const int DNS_LOOKUP_TIMEOUT_SECONDS = 3;
 
         /// <summary>
-        /// The period at which to refresh a successful STUN binding. If the ICE
-        /// server did not get used as the nominated candidate the ICE server 
-        /// checks timer will be stopped.
-        /// </summary>
-        internal const int STUN_BINDING_REQUEST_REFRESH_SECONDS = 180;
-
-        /// <summary>
         /// The STUN error code response indicating an authenticated request is required.
         /// </summary>
         internal const int STUN_UNAUTHORISED_ERROR_CODE = 401;

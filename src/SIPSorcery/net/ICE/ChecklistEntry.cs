@@ -49,20 +49,6 @@ namespace SIPSorcery.Net
         public ChecklistEntryState State = ChecklistEntryState.Frozen;
 
         /// <summary>
-        /// The candidate pairs whose local and remote candidates are both the
-        /// default candidates for a particular component is called the "default
-        /// candidate pair" for that component.  This is the pair that would be
-        /// used to transmit data if both agents had not been ICE aware.
-        /// </summary>
-        public bool Default;
-
-        /// <summary>
-        /// Gets set to true when the connectivity checks for the candidate pair are
-        /// successful. Valid entries are eligible to be set as nominated.
-        /// </summary>
-        public bool Valid;
-
-        /// <summary>
         /// Gets set to true if this entry is selected as the single nominated entry to be
         /// used for the session communications. Setting a check list entry as nominated
         /// indicates the ICE checks have been successful and the application can begin

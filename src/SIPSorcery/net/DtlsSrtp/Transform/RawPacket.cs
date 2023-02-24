@@ -71,23 +71,6 @@ namespace SIPSorcery.Net
             this.buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
         }
 
-        /**
-         * Initializes a new <tt>RawPacket</tt> instance with a specific
-         * <tt>byte</tt> array buffer.
-         *
-         * @param buffer the <tt>byte</tt> array to be the buffer of the new
-         * instance 
-         * @param offset the offset in <tt>buffer</tt> at which the actual data to
-         * be represented by the new instance starts
-         * @param length the number of <tt>byte</tt>s in <tt>buffer</tt> which
-         * constitute the actual data to be represented by the new instance
-         */
-        public RawPacket(byte[] data, int offset, int length)
-        {
-            this.buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
-            Wrap(data, offset, length);
-        }
-
         public void Wrap(byte[] data, int offset, int length)
         {
             this.buffer.Position = 0;
@@ -211,33 +194,6 @@ namespace SIPSorcery.Net
         }
 
         /**
-         * Get RTP padding size from a RTP packet
-         *
-         * @return RTP padding size from source RTP packet
-         */
-        public int GetPaddingSize()
-        {
-            buffer.Position = 0;
-            if ((this.buffer.ReadByte() & 0x20) == 0)
-            {
-                return 0;
-            }
-            buffer.Position = this.buffer.Length - 1;
-            return this.buffer.ReadByte();
-        }
-
-        /**
-         * Get the RTP payload (bytes) of this RTP packet.
-         *
-         * @return an array of <tt>byte</tt>s which represents the RTP payload of
-         * this RTP packet
-         */
-        public byte[] GetPayload()
-        {
-            return ReadRegion(GetHeaderLength(), GetPayloadLength());
-        }
-
-        /**
          * Get RTP payload length from a RTP packet
          *
          * @return RTP payload length from source RTP packet
@@ -245,17 +201,6 @@ namespace SIPSorcery.Net
         public int GetPayloadLength()
         {
             return GetLength() - GetHeaderLength();
-        }
-
-        /**
-         * Get RTP payload type from a RTP packet
-         *
-         * @return RTP payload type of source RTP packet
-         */
-        public byte GetPayloadType()
-        {
-            buffer.Position = 1;
-            return (byte)(this.buffer.ReadByte() & (byte)0x7F);
         }
 
         /**
@@ -298,16 +243,6 @@ namespace SIPSorcery.Net
         public int GetSSRC()
         {
             return ReadInt(8);
-        }
-
-        /**
-         * Returns the timestamp for this RTP <tt>RawPacket</tt>.
-         *
-         * @return the timestamp for this RTP <tt>RawPacket</tt>.
-         */
-        public long GetTimestamp()
-        {
-            return ReadInt(4);
         }
 
         /**
@@ -361,26 +296,6 @@ namespace SIPSorcery.Net
         }
 
         /**
-         * Read a byte region from specified offset with specified length
-         *
-         * @param off start offset of the region to be read
-         * @param len length of the region to be read
-         * @return byte array of [offset, offset + length)
-         */
-        public byte[] ReadRegion(int off, int len)
-        {
-            this.buffer.Position = 0;
-            if (off < 0 || len <= 0 || off + len > this.buffer.Length)
-            {
-                return null;
-            }
-
-            byte[] region = new byte[len];
-            this.buffer.Read(region, off, len);
-            return region;
-        }
-
-        /**
          * Read a byte region from specified offset in the RTP packet and with
          * specified length into a given buffer
          * 
@@ -410,21 +325,6 @@ namespace SIPSorcery.Net
             int b2 = (0x000000FF & (this.buffer.ReadByte()));
             int val = b1 << 8 | b2;
             return val;
-        }
-
-        /**
-         * Read an unsigned integer as long at specified offset
-         *
-         * @param off start offset of this unsigned integer
-         * @return unsigned integer as long at offset
-         */
-        public long ReadUnsignedIntAsLong(int off)
-        {
-            buffer.Position = off;
-            return (((long)(buffer.ReadByte() & 0xff) << 24) |
-                    ((long)(buffer.ReadByte() & 0xff) << 16) |
-                    ((long)(buffer.ReadByte() & 0xff) << 8) |
-                    ((long)(buffer.ReadByte() & 0xff))) & 0xFFFFFFFFL;
         }
 
         /**

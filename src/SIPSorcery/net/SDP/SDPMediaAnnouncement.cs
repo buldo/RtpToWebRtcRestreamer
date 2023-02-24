@@ -150,16 +150,6 @@ namespace SIPSorcery.Net
         public SDPMediaAnnouncement()
         { }
 
-        public SDPMediaAnnouncement(int port)
-        {
-            Port = port;
-        }
-
-        public SDPMediaAnnouncement(SDPConnectionInformation connection)
-        {
-            Connection = connection;
-        }
-
         public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPAudioVideoMediaFormat> mediaFormats)
         {
             Media = mediaType;
@@ -193,15 +183,6 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-        }
-
-        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, SDPConnectionInformation connection, int port, SDPMessageMediaFormat messageMediaFormat)
-        {
-            Media = mediaType;
-            Port = port;
-            Connection = connection;
-
-            MessageMediaFormat =  messageMediaFormat;
         }
 
         public void ParseMediaFormats(string formatList)
@@ -470,61 +451,9 @@ namespace SIPSorcery.Net
             }
         }
 
-        public bool HasCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
-        {
-            if (this.SecurityDescriptions == null)
-            {
-                return false;
-            }
-            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
-            {
-                if (secdesc.CryptoSuite == cryptoSuite)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public SDPSecurityDescription GetCryptoLine(SDPSecurityDescription.CryptoSuites cryptoSuite)
-        {
-            if (this.SecurityDescriptions == null)
-            {
-                return null;
-            }
-            foreach (SDPSecurityDescription secdesc in this.SecurityDescriptions)
-            {
-                if (secdesc.CryptoSuite == cryptoSuite)
-                {
-                    return secdesc;
-                }
-            }
-
-            return null;
-        }
-
         public void AddCryptoLine(string crypto)
         {
             this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
-        }
-
-        /// <summary>
-        /// Attempts to locate a media format corresponding to telephone events. If available its 
-        /// format ID is returned.
-        /// </summary>
-        /// <returns>If found the format ID for telephone events or -1 if not.</returns>
-        public int GetTelephoneEventFormatID()
-        {
-            foreach (var mediaFormat in MediaFormats.Values)
-            {
-                if (mediaFormat.Name()?.StartsWith(SDP.TELEPHONE_EVENT_ATTRIBUTE) == true)
-                {
-                    return mediaFormat.ID;
-                }
-            }
-
-            return -1;
         }
     }
 }

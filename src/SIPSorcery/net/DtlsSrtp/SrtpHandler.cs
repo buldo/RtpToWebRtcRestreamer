@@ -16,15 +16,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
     public sealed class SrtpHandler
     {
-        private static readonly ILogger logger = Log.Logger;
-
         public List<SDPSecurityDescription> m_localSecurityDescriptions;
         public List<SDPSecurityDescription> m_remoteSecurityDescriptions;
 
@@ -40,41 +36,6 @@ namespace SIPSorcery.Net
         {
         }
 
-        public bool SetupLocal(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
-        {
-            m_localSecurityDescriptions = securityDescription;
-
-            if (sdpType == SdpType.offer)
-            {
-               IsNegotiationComplete = false;
-               return true;
-            }
-
-            if (m_remoteSecurityDescriptions.Count==0)
-            {
-               throw new ApplicationException("Setup local crypto failed. No cryto attribute in offer.");
-            }
-
-            if (m_localSecurityDescriptions.Count==0)
-            {
-                throw new ApplicationException("Setup local crypto failed. No crypto attribute in answer.");
-            }
-
-            var lsec = m_localSecurityDescriptions[0];
-            var rsec = m_remoteSecurityDescriptions.FirstOrDefault(x => x.CryptoSuite == lsec.CryptoSuite);
-
-            if (rsec != null && rsec.Tag == lsec.Tag)
-            {
-               IsNegotiationComplete = true;
-               SrtpEncoder = GenerateRtpEncoder(lsec);
-               SrtpDecoder = GenerateRtpDecoder(rsec);
-               SrtcpEncoder = GenerateRtcpEncoder(lsec);
-               SrtcpDecoder = GenerateRtcpDecoder(rsec);
-               return true;
-            }
-
-            return false;
-        }
 
         public bool SetupRemote(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
         {

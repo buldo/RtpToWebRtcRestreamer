@@ -25,13 +25,6 @@ namespace SIPSorcery.Net
     public class SctpDataChunk : SctpChunk
     {
         /// <summary>
-        /// An empty data chunk. The main use is to indicate a DATA chunk has
-        /// already been delivered to the Upper Layer Protocol (ULP) in 
-        /// <see cref="SctpDataReceiver"/>.
-        /// </summary>
-        public static SctpDataChunk EmptyDataChunk = new SctpDataChunk();
-
-        /// <summary>
         /// The length in bytes of the fixed parameters used by the DATA chunk.
         /// </summary>
         public const int FIXED_PARAMETERS_LENGTH = 12;
@@ -174,11 +167,6 @@ namespace SIPSorcery.Net
             }
 
             return GetChunkLength(true);
-        }
-
-        public bool IsEmpty()
-        {
-            return UserData == null;
         }
 
         /// <summary>

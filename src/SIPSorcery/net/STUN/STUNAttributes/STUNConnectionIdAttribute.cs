@@ -36,15 +36,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public STUNConnectionIdAttribute(uint connectionId)
-            : base(STUNAttributeTypesEnum.ConnectionId, 
-                  BitConverter.IsLittleEndian?
-                  BitConverter.GetBytes(NetConvert.DoReverseEndian(connectionId)) : 
-                  BitConverter.GetBytes(connectionId))
-        {
-            ConnectionId = connectionId;
-        }
-
         public override string ToString()
         {
             string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";

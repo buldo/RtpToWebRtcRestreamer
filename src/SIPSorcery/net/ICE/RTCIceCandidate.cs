@@ -19,15 +19,12 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class RTCIceCandidate : IRTCIceCandidate
+    public class RTCIceCandidate
     {
-        public const string m_CRLF = "\r\n";
         public const string TCP_TYPE_KEY = "tcpType";
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
@@ -134,19 +131,6 @@ namespace SIPSorcery.Net
                 relatedAddress = iceCandidate.relatedAddress;
                 relatedPort = iceCandidate.relatedPort;
             }
-        }
-
-        /// <summary>
-        /// Convenience constructor for cases when the application wants
-        /// to create an ICE candidate,
-        /// </summary>
-        public RTCIceCandidate(
-            RTCIceProtocol cProtocol,
-            IPAddress cAddress,
-            ushort cPort,
-            RTCIceCandidateType cType)
-        {
-            SetAddressProperties(cProtocol, cAddress, cPort, cType, null, 0);
         }
 
         public void SetAddressProperties(

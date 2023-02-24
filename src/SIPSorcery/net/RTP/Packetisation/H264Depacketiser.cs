@@ -15,7 +15,6 @@ namespace SIPSorcery.Net
     {
         const int SPS = 7;
         const int PPS = 8;
-        const int IDR_SLICE = 1;
         const int NON_IDR_SLICE = 5;
 
         //Payload Helper Fields

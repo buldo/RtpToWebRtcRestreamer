@@ -68,23 +68,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpServer() : this((Certificate)null, null)
-        {
-        }
-
-        public DtlsSrtpServer(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) : this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
-        {
-        }
-
-        public DtlsSrtpServer(string certificatePath, string keyPath) : this(new string[] { certificatePath }, keyPath)
-        {
-        }
-
-        public DtlsSrtpServer(string[] certificatesPath, string keyPath) :
-            this(DtlsUtils.LoadCertificateChain(certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
-        {
-        }
-
         public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey)
         {
             if (certificateChain == null && privateKey == null)
@@ -101,30 +84,6 @@ namespace SIPSorcery.Net
             var certificate = mCertificateChain.GetCertificateAt(0);
 
             this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
-        }
-
-        public RTCDtlsFingerprint Fingerprint
-        {
-            get
-            {
-                return mFingerPrint;
-            }
-        }
-
-        public AsymmetricKeyParameter PrivateKey
-        {
-            get
-            {
-                return mPrivateKey;
-            }
-        }
-
-        public Certificate CertificateChain
-        {
-            get
-            {
-                return mCertificateChain;
-            }
         }
 
         protected override ProtocolVersion MaximumVersion

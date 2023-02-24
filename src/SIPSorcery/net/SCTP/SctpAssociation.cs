@@ -16,7 +16,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -168,7 +167,7 @@ namespace SIPSorcery.Net
         /// <param name="localTransportPort">Optional. The local transport (e.g. UDP or DTLS) port being 
         /// used for the underlying SCTP transport. This be set on the SCTP association's ID to aid in 
         /// diagnostics.</param>
-        public SctpAssociation(
+        protected SctpAssociation(
             SctpTransport sctpTransport,
             IPEndPoint destination,
             ushort sctpSourcePort,
@@ -194,38 +193,6 @@ namespace SIPSorcery.Net
             _dataSender = new SctpDataSender(ID, this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
             State = SctpAssociationState.Closed;
-        }
-
-        /// <summary>
-        /// Create a new SCTP association instance from the cookie that was previously
-        /// sent to the remote party in an INIT ACK chunk.
-        /// </summary>
-        public SctpAssociation(
-            SctpTransport sctpTransport,
-            SctpTransportCookie cookie,
-            int localTransportPort)
-        {
-            _sctpTransport = sctpTransport;
-            ID = $"{cookie.SourcePort}:{cookie.DestinationPort}:{localTransportPort}";
-            State = SctpAssociationState.Closed;
-
-            GotCookie(cookie);
-        }
-
-        /// <summary>
-        /// Attempts to update the association's SCTP source port.
-        /// </summary>
-        /// <param name="port">The updated source port.</param>
-        public void UpdateSourcePort(ushort port)
-        {
-            if (State != SctpAssociationState.Closed)
-            {
-                logger.LogWarning($"SCTP source port cannot be updated when the association is in state {State}.");
-            }
-            else
-            {
-                _sctpSourcePort = port;
-            }
         }
 
         /// <summary>
@@ -535,22 +502,6 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-        }
-
-        /// <summary>
-        /// Sends a DATA chunk to the remote peer.
-        /// </summary>
-        /// <param name="streamID">The stream ID to sent the data on.</param>
-        /// <param name="ppid">The payload protocol ID for the data.</param>
-        /// <param name="message">The string data to send.</param>
-        public void SendData(ushort streamID, uint ppid, string message)
-        {
-            if (string.IsNullOrEmpty(message))
-            {
-                throw new ArgumentNullException("The message cannot be empty when sending a data chunk on an SCTP association.");
-            }
-
-            SendData(streamID, ppid, Encoding.UTF8.GetBytes(message));
         }
 
         /// <summary>

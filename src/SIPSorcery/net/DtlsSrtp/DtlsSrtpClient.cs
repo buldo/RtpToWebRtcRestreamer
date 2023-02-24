@@ -65,32 +65,12 @@ namespace SIPSorcery.Net
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpClient() :
-            this(null, null, null)
-        {
-        }
-
-        public DtlsSrtpClient(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate) :
-            this(DtlsUtils.LoadCertificateChain(certificate), DtlsUtils.LoadPrivateKeyResource(certificate))
-        {
-        }
-
-        public DtlsSrtpClient(string certificatePath, string keyPath) :
-            this(new string[] { certificatePath }, keyPath)
-        {
-        }
-
-        public DtlsSrtpClient(string[] certificatesPath, string keyPath) :
-            this(DtlsUtils.LoadCertificateChain(certificatesPath), DtlsUtils.LoadPrivateKeyResource(keyPath))
-        {
-        }
-
         public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey) :
             this(certificateChain, privateKey, null)
         {
         }
 
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
+        private DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
         {
             if (certificateChain == null && privateKey == null)
             {
@@ -117,9 +97,6 @@ namespace SIPSorcery.Net
             var certificate = mCertificateChain.GetCertificateAt(0);
             Fingerprint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
-
-        public DtlsSrtpClient(UseSrtpData clientSrtpData) : this(null, null, clientSrtpData)
-        { }
 
         public override IDictionary GetClientExtensions()
         {

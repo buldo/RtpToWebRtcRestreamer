@@ -66,18 +66,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
         /// </summary>
-        public static bool DnsUseTcpFallback
-        {
-            get => _dnsUseTcpFallback;
-            set
-            {
-                if (_dnsUseTcpFallback != value)
-                {
-                    _dnsUseTcpFallback = value;
-                    _lookupClient = CreateLookupClient();
-                }
-            }
-        }
+        public static bool DnsUseTcpFallback => _dnsUseTcpFallback;
 
         static STUNDns()
         {

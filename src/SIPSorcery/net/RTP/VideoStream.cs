@@ -79,46 +79,6 @@ namespace SIPSorcery.net.RTP
         #region SEND PACKET
 
         /// <summary>
-        /// Helper method to send a low quality JPEG image over RTP. This method supports a very abbreviated version of RFC 2435 "RTP Payload Format for JPEG-compressed Video".
-        /// It's intended as a quick convenient way to send something like a test pattern image over an RTSP connection. More than likely it won't be suitable when a high
-        /// quality image is required since the header used in this method does not support quantization tables.
-        /// </summary>
-        /// <param name="jpegBytes">The raw encoded bytes of the JPEG image to transmit.</param>
-        /// <param name="jpegQuality">The encoder quality of the JPEG image.</param>
-        /// <param name="jpegWidth">The width of the JPEG image.</param>
-        /// <param name="jpegHeight">The height of the JPEG image.</param>
-        /// <param name="framesPerSecond">The rate at which the JPEG frames are being transmitted at. used to calculate the timestamp.</param>
-        public void SendJpegFrame(uint duration, int payloadTypeID, byte[] jpegBytes, int jpegQuality, int jpegWidth, int jpegHeight)
-        {
-            if (CheckIfCanSendRtpRaw())
-            {
-                try
-                {
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length; index++)
-                    {
-                        uint offset = Convert.ToUInt32(index * RTPSession.RTP_MAX_PAYLOAD);
-                        int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? RTPSession.RTP_MAX_PAYLOAD : jpegBytes.Length - index * RTPSession.RTP_MAX_PAYLOAD;
-                        byte[] jpegHeader = RtpVideoFramer.CreateLowQualityRtpJpegHeader(offset, jpegQuality, jpegWidth, jpegHeight);
-
-                        List<byte> packetPayload = new List<byte>();
-                        packetPayload.AddRange(jpegHeader);
-                        packetPayload.AddRange(jpegBytes.Skip(index * RTPSession.RTP_MAX_PAYLOAD).Take(payloadLength));
-
-                        int markerBit = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < jpegBytes.Length) ? 0 : 1;
-
-                        SendRtpRaw(packetPayload.ToArray(), LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                    }
-
-                    LocalTrack.Timestamp += duration;
-                }
-                catch (SocketException sockExcp)
-                {
-                    logger.LogError("SocketException SendJpegFrame. " + sockExcp.Message);
-                }
-            }
-        }
-
-        /// <summary>
         /// Sends a H264 frame, represented by an Access Unit, to the remote party.
         /// </summary>
         /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>

@@ -80,7 +80,6 @@ namespace SIPSorcery.Net
     public class STUNHeader
     {
         public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
-        public const ushort STUN_MESSAGE_CLASS_MASK = 0x0110;
         public const int STUN_HEADER_LENGTH = 20;
         public const UInt32 MAGIC_COOKIE = 0x2112A442;
         public const int TRANSACTION_ID_LENGTH = 12;

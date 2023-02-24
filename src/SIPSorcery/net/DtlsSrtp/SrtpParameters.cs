@@ -57,11 +57,6 @@ namespace SIPSorcery.Net
             this.saltLength = newSaltLength;
         }
 
-        public int GetProfile()
-        {
-            return profile;
-        }
-
         public int GetCipherKeyLength()
         {
             return encKeyLength;

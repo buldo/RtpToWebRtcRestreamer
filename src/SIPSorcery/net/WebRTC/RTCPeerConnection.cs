@@ -98,7 +98,7 @@ namespace SIPSorcery.Net
     /// The Session Description offer/answer mechanisms are detailed in
     /// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
     /// </remarks>
-    public class RTCPeerConnection : RTPSession, IRTCPeerConnection
+    public class RTCPeerConnection : RTPSession
     {
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
@@ -112,7 +112,6 @@ namespace SIPSorcery.Net
         private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
         private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
-        private const string UNKNOWN_DATACHANNEL_ERROR = "unknown";
 
         /// <summary>
         /// The period to wait for the SCTP association to complete before giving up.
@@ -321,13 +320,6 @@ namespace SIPSorcery.Net
         /// Fires when a new data channel is created by the remote peer.
         /// </summary>
         public event Action<RTCDataChannel> ondatachannel;
-
-        /// <summary>
-        /// Constructor to create a new RTC peer connection instance.
-        /// </summary>
-        public RTCPeerConnection() :
-            this(null)
-        { }
 
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
@@ -886,42 +878,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Convenience overload to suit SIP/VoIP callers.
-        /// TODO: Consolidate with createAnswer.
-        /// </summary>
-        /// <param name="connectionAddress">Not used.</param>
-        /// <returns>An SDP payload to answer an offer from the remote party.</returns>
-        public override SDP CreateOffer(IPAddress connectionAddress)
-        {
-            var result = createOffer(null);
-
-            if (result?.sdp != null)
-            {
-                return SDP.ParseSDPDescription(result.sdp);
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Convenience overload to suit SIP/VoIP callers.
-        /// TODO: Consolidate with createAnswer.
-        /// </summary>
-        /// <param name="connectionAddress">Not used.</param>
-        /// <returns>An SDP payload to answer an offer from the remote party.</returns>
-        public override SDP CreateAnswer(IPAddress connectionAddress)
-        {
-            var result = createAnswer(null);
-
-            if (result?.sdp != null)
-            {
-                return SDP.ParseSDPDescription(result.sdp);
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Creates an answer to an SDP offer from a remote peer.
         /// </summary>
         /// <remarks>
@@ -971,18 +927,6 @@ namespace SIPSorcery.Net
 
                 return initDescription;
             }
-        }
-
-        /// <summary>
-        /// For standard use this method should not need to be called. The remote peer's ICE
-        /// user and password will be set when from the SDP. This method is provided for 
-        /// diagnostics purposes.
-        /// </summary>
-        /// <param name="remoteIceUser">The remote peer's ICE user value.</param>
-        /// <param name="remoteIcePassword">The remote peer's ICE password value.</param>
-        public void SetRemoteCredentials(string remoteIceUser, string remoteIcePassword)
-        {
-            _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
         }
 
         /// <summary>
@@ -1225,23 +1169,6 @@ namespace SIPSorcery.Net
                     logger.LogError($"Exception RTCPeerConnection.OnRTPDataReceived {excp.Message}");
                 }
             }
-        }
-
-        /// <summary>
-        /// Used to add a local ICE candidate. These are for candidates that the application may
-        /// want to provide in addition to the ones that will be automatically determined. An
-        /// example is when a machine is behind a 1:1 NAT and the application wants a host 
-        /// candidate with the public IP address to be included.
-        /// </summary>
-        /// <param name="candidateInit">The ICE candidate to add.</param>
-        /// <example>
-        /// var natCandidate = new RTCIceCandidate(RTCIceProtocol.udp, natAddress, natPort, RTCIceCandidateType.host);
-        /// pc.addLocalIceCandidate(natCandidate);
-        /// </example>
-        public void addLocalIceCandidate(RTCIceCandidate candidate)
-        {
-            candidate.usernameFragment = _rtpIceChannel.LocalIceUser;
-            _applicationIceCandidates.Add(candidate);
         }
 
         /// <summary>
@@ -1518,71 +1445,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Adds a new data channel to the peer connection.
-        /// </summary>
-        /// <remarks>
-        /// WebRTC API definition:
-        /// https://www.w3.org/TR/webrtc/#methods-11
-        /// </remarks>
-        /// <param name="label">The label used to identify the data channel.</param>
-        /// <returns>The data channel created.</returns>
-        public async Task<RTCDataChannel> createDataChannel(string label, RTCDataChannelInit init = null)
-        {
-            logger.LogDebug($"Data channel create request for label {label}.");
-
-            RTCDataChannel channel = new RTCDataChannel(sctp, init)
-            {
-                label = label,
-            };
-
-            if (connectionState == RTCPeerConnectionState.connected)
-            {
-                // If the peer connection is not in a connected state there's no point doing anything
-                // with the SCTP transport. If the peer connection does connect then a check will
-                // be made for any pending data channels and the SCTP operations will be done then.
-
-                if (sctp == null || sctp.state != RTCSctpTransportState.Connected)
-                {
-                    throw new ApplicationException("No SCTP transport is available.");
-                }
-                else
-                {
-                    if (sctp.RTCSctpAssociation == null ||
-                        sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
-                    {
-                        await InitialiseSctpAssociation().ConfigureAwait(false);
-                    }
-
-                    dataChannels.AddActiveChannel(channel);
-                    OpenDataChannel(channel);
-
-                    // Wait for the DCEP ACK from the remote peer.
-                    TaskCompletionSource<string> isopen = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    channel.onopen += () => isopen.TrySetResult(string.Empty);
-                    channel.onerror += (err) => isopen.TrySetResult(err);
-                    var error = await isopen.Task.ConfigureAwait(false);
-
-                    if (error != string.Empty)
-                    {
-                        throw new ApplicationException($"Data channel creation failed with: {error}");
-                    }
-                    else
-                    {
-                        return channel;
-                    }
-                }
-            }
-            else
-            {
-                // Data channels can be created prior to the SCTP transport being available.
-                // They will act as placeholders and then be opened once the SCTP transport 
-                // becomes available.
-                dataChannels.AddPendingChannel(channel);
-                return channel;
-            }
-        }
-
-        /// <summary>
         /// Sends the Data Channel Establishment Protocol (DCEP) OPEN message to configure the data
         /// channel on the remote peer.
         /// </summary>
@@ -1683,14 +1545,6 @@ namespace SIPSorcery.Net
                 string alertMsg = !string.IsNullOrEmpty(alertDescription) ? $": {alertDescription}" : ".";
                 logger.LogWarning($"DTLS unexpected {alertLevel} alert {alertType}{alertMsg}");
             }
-        }
-
-        /// <summary>
-        /// Close the session if the instance is out of scope.
-        /// </summary>
-        protected override void Dispose(bool disposing)
-        {
-            Close("disposed");
         }
 
         /// <summary>

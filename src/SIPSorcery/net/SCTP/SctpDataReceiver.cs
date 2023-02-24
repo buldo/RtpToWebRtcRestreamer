@@ -105,14 +105,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : (uint?)null;
 
-        /// <summary>
-        /// A count of the total entries in the receive dictionary. Note that if chunks
-        /// have been received out of order this count could include chunks that have
-        /// already been processed. They are kept in the dictionary as empty chunks to
-        /// track which TSN's have been received.
-        /// </summary>
-        public int ForwardTSNCount => _forwardTSN.Count;
-
         private uint _initialTSN;
         private uint _inOrderReceiveCount;
 
@@ -130,7 +122,7 @@ namespace SIPSorcery.Net
             _receiveWindow = receiveWindow != 0 ? receiveWindow : SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW;
             _initialTSN = initialTSN;
 
-            mtu = mtu != 0 ? mtu : SctpUdpTransport.DEFAULT_UDP_MTU;
+            mtu = mtu != 0 ? mtu : 1300;
             _windowSize = (ushort)(_receiveWindow / mtu);
             _windowSize = (_windowSize < WINDOW_SIZE_MINIMUM) ? WINDOW_SIZE_MINIMUM : _windowSize;
 

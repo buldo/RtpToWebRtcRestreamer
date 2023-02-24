@@ -86,12 +86,6 @@ namespace SIPSorcery.Net
         /// </remarks>
         public uint maxMessageSize => SCTP_DEFAULT_MAX_MESSAGE_SIZE;
 
-        /// <summary>
-        /// The maximum number of data channel's that can be used simultaneously (where each
-        /// data channel is a stream on the same SCTP association).
-        /// </summary>
-        public readonly ushort maxChannels;
-
         public RTCPeerSctpAssociation RTCSctpAssociation { get; private set; }
 
         /// <summary>
@@ -116,22 +110,6 @@ namespace SIPSorcery.Net
 
             RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort, dtlsPort);
             RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
-        }
-
-        /// <summary>
-        /// Attempts to update the SCTP source port the association managed by this transport will use.
-        /// </summary>
-        /// <param name="port">The updated source port.</param>
-        public void UpdateSourcePort(ushort port)
-        {
-            if (state != RTCSctpTransportState.Closed)
-            {
-                logger.LogWarning($"SCTP source port cannot be updated when the transport is in state {state}.");
-            }
-            else
-            {
-                RTCSctpAssociation.UpdateSourcePort(port);
-            }
         }
 
         /// <summary>

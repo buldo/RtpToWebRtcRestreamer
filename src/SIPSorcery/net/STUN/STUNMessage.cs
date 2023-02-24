@@ -30,8 +30,6 @@ namespace SIPSorcery.Net
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;
         private const int FINGERPRINT_ATTRIBUTE_CRC32_LENGTH = 4;
 
-        private static ILogger logger = Log.Logger;
-
         /// <summary>
         /// For parsed STUN messages this indicates whether a valid fingerprint
         /// as attached to the message.
@@ -46,14 +44,6 @@ namespace SIPSorcery.Net
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();
 
-        public ushort PaddedSize
-        {
-            get
-            {
-                return (ushort)(STUNHeader.STUN_HEADER_LENGTH + Header.MessageLength);
-            }
-        }
-
         public STUNMessage()
         { }
 
@@ -66,12 +56,6 @@ namespace SIPSorcery.Net
         {
             byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
             Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, usernameBytes));
-        }
-
-        public void AddNonceAttribute(string nonce)
-        {
-            byte[] nonceBytes = Encoding.UTF8.GetBytes(nonce);
-            Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonceBytes));
         }
 
         public void AddXORMappedAddressAttribute(IPAddress remoteAddress, int remotePort)
@@ -209,18 +193,6 @@ namespace SIPSorcery.Net
             }
 
             return buffer;
-        }
-
-        public new string ToString()
-        {
-            string messageDescr = "STUN Message: " + Header.MessageType.ToString() + ", length=" + Header.MessageLength;
-
-            foreach (STUNAttribute attribute in Attributes)
-            {
-                messageDescr += "\n " + attribute.ToString();
-            }
-
-            return messageDescr;
         }
 
         /// <summary>

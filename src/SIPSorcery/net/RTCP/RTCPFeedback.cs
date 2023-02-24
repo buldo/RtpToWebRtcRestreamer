@@ -37,52 +37,13 @@ namespace SIPSorcery.Net
         private static ILogger logger = Log.Logger;
 
         public int SENDER_PAYLOAD_SIZE = 20;
-        public int MIN_PACKET_SIZE = 0;
-
+        
         public RTCPHeader Header;
         public uint SenderSSRC; // Packet Sender
         public uint MediaSSRC;
         public ushort PID; // Packet ID (PID): 16 bits to specify a lost packet, the RTP sequence number of the lost packet.
         public ushort BLP; // bitmask of following lost packets (BLP): 16 bits
-        public uint FCI; // Feedback Control Information (FCI)  
-
-        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType, ushort sequenceNo, ushort bitMask)
-        {
-            Header = new RTCPHeader(feedbackMessageType);
-            SENDER_PAYLOAD_SIZE = 12;
-            MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE;
-            SenderSSRC = senderSsrc;
-            MediaSSRC = mediaSsrc;
-            PID = sequenceNo;
-            BLP = bitMask;
-        }
-
-        /// <summary>
-        /// Constructor for RTP feedback reports that do not require any additional feedback control
-        /// indication parameters (e.g. RTCP Rapid Resynchronisation Request).
-        /// </summary>
-        /// <param name="feedbackMessageType">The payload specific feedback type.</param>
-        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, RTCPFeedbackTypesEnum feedbackMessageType)
-        {
-            Header = new RTCPHeader(feedbackMessageType);
-            SenderSSRC = senderSsrc;
-            MediaSSRC = mediaSsrc;
-            SENDER_PAYLOAD_SIZE = 8;
-        }
-
-        /// <summary>
-        /// Constructor for payload feedback reports that do not require any additional feedback control
-        /// indication parameters (e.g. Picture Loss Indication reports).
-        /// </summary>
-        /// <param name="feedbackMessageType">The payload specific feedback type.</param>
-        public RTCPFeedback(uint senderSsrc, uint mediaSsrc, PSFBFeedbackTypesEnum feedbackMessageType)
-        {
-            Header = new RTCPHeader(feedbackMessageType);
-            SenderSSRC = senderSsrc;
-            MediaSSRC = mediaSsrc;
-            SENDER_PAYLOAD_SIZE = 8;
-        }
-
+        
         /// <summary>
         /// Create a new RTCP Report from a serialised byte array.
         /// </summary>

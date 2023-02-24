@@ -13,8 +13,6 @@ namespace SIPSorcery.Net
     {
         public List<RTCIceServer> iceServers;
         public RTCIceTransportPolicy iceTransportPolicy;
-        public RTCBundlePolicy bundlePolicy;
-        public RTCRtcpMuxPolicy rtcpMuxPolicy;
 #pragma warning disable CS0618 // Type or member is obsolete
         public List<RTCCertificate> certificates;
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -35,11 +33,6 @@ namespace SIPSorcery.Net
         /// in Section 6.1."
         /// </remarks>
         public bool X_DisableExtendedMasterSecretKey;
-
-        /// <summary>
-        /// Size of the pre-fetched ICE pool. Defaults to 0.
-        /// </summary>
-        public int iceCandidatePoolSize = 0;
 
         /// <summary>
         /// Optional. If specified this address will be used as the bind address for any RTP

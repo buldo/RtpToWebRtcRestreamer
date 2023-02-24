@@ -35,10 +35,5 @@ namespace SIPSorcery.Net
                 mClient.mCertificateChain,
                 mClient.mPrivateKey);
         }
-
-        public TlsCredentials GetClientCredentials(TlsContext context, CertificateRequest certificateRequest)
-        {
-            return GetClientCredentials(certificateRequest);
-        }
     };
 }

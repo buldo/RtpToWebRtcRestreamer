@@ -209,31 +209,6 @@ namespace SIPSorcery.Net
         private byte[] tempStore = new byte[100];
 
         /**
-         * Construct an empty SRTPCryptoContext using ssrc. The other parameters are
-         * set to default null value.
-         * 
-         * @param ssrcIn
-         *            SSRC of this SRTPCryptoContext
-         */
-        public SrtpCryptoContext(long ssrcIn)
-        {
-            ssrcCtx = ssrcIn;
-            mki = null;
-            roc = 0;
-            guessedROC = 0;
-            seqNum = 0;
-            keyDerivationRate = 0;
-            masterKey = null;
-            masterSalt = null;
-            encKey = null;
-            authKey = null;
-            saltKey = null;
-            seqNumSet = false;
-            policy = null;
-            tagStore = null;
-        }
-
-        /**
          * Construct a normal SRTPCryptoContext based on the given parameters.
          * 
          * @param ssrcIn
@@ -349,57 +324,6 @@ namespace SIPSorcery.Net
         {
             Arrays.Fill(masterKey, (byte)0);
             Arrays.Fill(masterSalt, (byte)0);
-        }
-
-        /**
-         * Get the authentication tag length of this SRTP cryptographic context
-         * 
-         * @return the authentication tag length of this SRTP cryptographic context
-         */
-        public int GetAuthTagLength()
-        {
-            return policy.AuthTagLength;
-        }
-
-        /**
-         * Get the MKI length of this SRTP cryptographic context
-         * 
-         * @return the MKI length of this SRTP cryptographic context
-         */
-        public int GetMKILength()
-        {
-            return this.mki == null ? 0 : this.mki.Length;
-        }
-
-        /**
-         * Get the SSRC of this SRTP cryptographic context
-         * 
-         * @return the SSRC of this SRTP cryptographic context
-         */
-        public long GetSSRC()
-        {
-            return ssrcCtx;
-        }
-
-        /**
-         * Get the Roll-Over-Counter of this SRTP cryptographic context
-         * 
-         * @return the Roll-Over-Counter of this SRTP cryptographic context
-         */
-        public int GetROC()
-        {
-            return roc;
-        }
-
-        /**
-         * Set the Roll-Over-Counter of this SRTP cryptographic context
-         * 
-         * @param rocIn
-         *            the Roll-Over-Counter of this SRTP cryptographic context
-         */
-        public void SetROC(int rocIn)
-        {
-            roc = rocIn;
         }
 
         /**

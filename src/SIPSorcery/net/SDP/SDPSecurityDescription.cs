@@ -234,17 +234,6 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            public KeyParameter() : this(Sys.Crypto.GetRandomString(128 / 8), Sys.Crypto.GetRandomString(112 / 8))
-            {
-
-            }
-
-            public KeyParameter(string key, string salt)
-            {
-                this.Key = Encoding.ASCII.GetBytes(key);
-                this.Salt = Encoding.ASCII.GetBytes(salt);
-            }
-
             public KeyParameter(byte[] key, byte[] salt)
             {
                 this.Key = key;
@@ -397,62 +386,6 @@ namespace SIPSorcery.Net
                 }
             }
 
-            public static bool TryParse(string keyParamString, out KeyParameter keyParam, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
-            {
-                keyParam = null;
-
-                if (!string.IsNullOrWhiteSpace(keyParamString))
-                {
-                    string p = keyParamString.Trim();
-                    try
-                    {
-                        if (p.StartsWith(KEY_METHOD))
-                        {
-                            string sKeyMethod = KEY_METHOD;
-                            int poscln = p.IndexOf(COLON);
-                            if (poscln == sKeyMethod.Length)
-                            {
-                                string sKeyInfo = p.Substring(poscln + 1);
-                                if (!sKeyInfo.Contains(";"))
-                                {
-                                    checkValidKeyInfoCharacters(keyParamString, sKeyInfo);
-                                    string sMkiVal, sMkiLen, sLifeTime, sBase64KeySalt;
-                                    parseKeyInfo(keyParamString, sKeyInfo, out sMkiVal, out sMkiLen, out sLifeTime, out sBase64KeySalt);
-                                    if (!string.IsNullOrWhiteSpace(sBase64KeySalt))
-                                    {
-                                        byte[] bKey, bSalt;
-                                        parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out bKey, out bSalt);
-
-                                        keyParam = new KeyParameter(bKey, bSalt);
-                                        if (!string.IsNullOrWhiteSpace(sMkiVal) && !string.IsNullOrWhiteSpace(sMkiLen))
-                                        {
-                                            keyParam.MkiValue = uint.Parse(sMkiVal);
-                                            keyParam.MkiLength = uint.Parse(sMkiLen);
-                                        }
-                                        if (!string.IsNullOrWhiteSpace(sLifeTime))
-                                        {
-                                            if (sLifeTime.Contains('^'))
-                                            {
-                                                keyParam.LifeTimeString = sLifeTime;
-                                            }
-                                            else
-                                            {
-                                                keyParam.LifeTime = uint.Parse(sLifeTime);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        //catch all errors and throw own FormatException
-                    }
-                }
-                return false;
-            }
-
             private static void parseKeyInfo(string keyParamString, string keyInfo, out string mkiValue, out string mkiLen, out string lifeTimeString, out string base64KeySalt)
             {
                 mkiValue = null;
@@ -502,73 +435,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            public static KeyParameter CreateNew(CryptoSuites cryptoSuite, string key = null, string salt = null)
-            {
-                switch (cryptoSuite)
-                {
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_128_HMAC_SHA1_80:
-                    case CryptoSuites.F8_128_HMAC_SHA1_80:
-                        if (string.IsNullOrWhiteSpace(key))
-                        {
-                            key = Sys.Crypto.GetRandomString(128 / 8);
-                        }
-                        if (string.IsNullOrWhiteSpace(salt))
-                        {
-                            salt = Sys.Crypto.GetRandomString(112 / 8);
-                        }
-                        return new KeyParameter(key, salt);
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_192_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_192_HMAC_SHA1_32:
-                        if (string.IsNullOrWhiteSpace(key))
-                        {
-                            key = Sys.Crypto.GetRandomString(192 / 8);
-                        }
-                        if (string.IsNullOrWhiteSpace(salt))
-                        {
-                            salt = Sys.Crypto.GetRandomString(112 / 8);
-                        }
-                        return new KeyParameter(key, salt);
-                    case CryptoSuites.AEAD_AES_128_GCM:
-                        if (string.IsNullOrWhiteSpace(key))
-                        {
-                            key = Sys.Crypto.GetRandomString(128 / 8);
-                        }
-                        if (string.IsNullOrWhiteSpace(salt))
-                        {
-                            salt = Sys.Crypto.GetRandomString(96 / 8);
-                        }
-                        return new KeyParameter(key, salt);
-                    case CryptoSuites.AEAD_AES_256_GCM:
-                        if (string.IsNullOrWhiteSpace(key))
-                        {
-                            key = Sys.Crypto.GetRandomString(256 / 8);
-                        }
-                        if (string.IsNullOrWhiteSpace(salt))
-                        {
-                            salt = Sys.Crypto.GetRandomString(96 / 8);
-                        }
-                        return new KeyParameter(key, salt);
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_80:
-                    case CryptoSuites.AES_256_CM_HMAC_SHA1_32:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_80:
-                    case CryptoSuites.AES_CM_256_HMAC_SHA1_32:
-                        if (string.IsNullOrWhiteSpace(key))
-                        {
-                            key = Sys.Crypto.GetRandomString(256 / 8);
-                        }
-                        if (string.IsNullOrWhiteSpace(salt))
-                        {
-                            salt = Sys.Crypto.GetRandomString(112 / 8);
-                        }
-                        return new KeyParameter(key, salt);
-
-                }
-                return null;
-            }
-        }
+       }
 
         public class SessionParameter
         {
@@ -669,10 +536,6 @@ namespace SIPSorcery.Net
                 set;
             }
 
-            public SessionParameter() : this(SrtpSessionParams.unknown)
-            {
-
-            }
             public SessionParameter(SrtpSessionParams paramType)
             {
                 this.SrtpSessionParam = paramType;
@@ -823,13 +686,6 @@ namespace SIPSorcery.Net
             this.KeyParams = new List<KeyParameter>();
         }
 
-        public static SDPSecurityDescription CreateNew(uint tag = 1, CryptoSuites cryptoSuite = CryptoSuites.AES_CM_128_HMAC_SHA1_80)
-        {
-            SDPSecurityDescription secdesc = new SDPSecurityDescription(tag, cryptoSuite);
-            secdesc.KeyParams.Add(KeyParameter.CreateNew(cryptoSuite));
-            return secdesc;
-        }
-
         public override string ToString()
         {
             if (this.Tag < 1 || this.CryptoSuite == CryptoSuites.unknown || this.KeyParams.Count < 1)
@@ -908,64 +764,6 @@ namespace SIPSorcery.Net
                 //catch all errors and throw own FormatException
             }
             throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-        }
-
-        public static bool TryParse(string cryptoLine, out SDPSecurityDescription securityDescription)
-        {
-            securityDescription = null;
-            if (string.IsNullOrWhiteSpace(cryptoLine))
-            {
-                return false;
-            }
-
-            if (!cryptoLine.StartsWith(CRYPTO_ATTRIBUE_PREFIX))
-            {
-                throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-            }
-
-            string sCryptoValue = cryptoLine.Substring(cryptoLine.IndexOf(COLON) + 1);
-
-            securityDescription = new SDPSecurityDescription();
-            string[] sCryptoParts = sCryptoValue.Split(securityDescription.WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
-            if (sCryptoValue.Length < 2)
-            {
-                throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
-            }
-
-            try
-            {
-                securityDescription.Tag = uint.Parse(sCryptoParts[0]);
-                securityDescription.CryptoSuite = (from e in Enum.GetNames(typeof(CryptoSuites)) where e.CompareTo(sCryptoParts[1]) == 0 select (CryptoSuites)Enum.Parse(typeof(CryptoSuites), e)).FirstOrDefault();
-
-                if (securityDescription.CryptoSuite == CryptoSuites.unknown)
-                {
-                    //this may not be a reason to return FALSE
-                    //there might be a new crypto key used
-                }
-
-                string[] sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
-                if (sKeyParams.Length < 1)
-                {
-                    securityDescription = null;
-                    return false;
-                }
-                foreach (string kp in sKeyParams)
-                {
-                    KeyParameter keyParam = KeyParameter.Parse(kp, securityDescription.CryptoSuite);
-                    securityDescription.KeyParams.Add(keyParam);
-                }
-                if (sCryptoParts.Length > 3)
-                {
-                    securityDescription.SessionParam = SessionParameter.Parse(sCryptoParts[3], securityDescription.CryptoSuite);
-                }
-
-                return true;
-            }
-            catch
-            {
-                //catch all errors and throw own FormatException
-            }
-            return false;
         }
     }
 }

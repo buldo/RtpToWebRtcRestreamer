@@ -18,11 +18,6 @@ namespace SIPSorcery.Net
         VideoIncompatible,
 
         /// <summary>
-        /// No media tracks are available on the local session.
-        /// </summary>
-        NoLocalMedia,
-
-        /// <summary>
         /// The remote description did not contain any media announcements.
         /// </summary>
         NoRemoteMedia,
@@ -42,11 +37,6 @@ namespace SIPSorcery.Net
         /// A required DTLS fingerprint was missing from the session description.
         /// </summary>
         DtlsFingerprintMissing,
-
-        /// <summary>
-        /// The DTLS fingerprint was present but the format was not recognised.
-        /// </summary>
-        DtlsFingerprintInvalid,
 
         /// <summary>
         /// The DTLS fingerprint was provided with an unsupported digest. It won't

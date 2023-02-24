@@ -33,7 +33,6 @@ namespace SIPSorcery.Net
         private ILogger logger = SIPSorcery.Sys.Log.Logger;
 
         private RTCPeerConnection _pc;
-        public RTCPeerConnection RTCPeerConnection => _pc;
 
         /// <summary>
         /// Optional property to allow the peer connection SDP offer options to be set.

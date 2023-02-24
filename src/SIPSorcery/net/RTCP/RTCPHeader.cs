@@ -43,7 +43,6 @@ namespace SIPSorcery.Net
     public class RTCPHeader
     {
         public const int HEADER_BYTES_LENGTH = 4;
-        public const int MAX_RECEPTIONREPORT_COUNT = 32;
         public const int RTCP_VERSION = 2;
 
         public int Version { get; private set; } = RTCP_VERSION;         // 2 bits.
@@ -63,18 +62,6 @@ namespace SIPSorcery.Net
         /// When used this field gets set in place of the Reception Report Counter field.
         /// </summary>
         public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; private set; } = PSFBFeedbackTypesEnum.unassigned;
-
-        public RTCPHeader(RTCPFeedbackTypesEnum feedbackType)
-        {
-            PacketType = RTCPReportTypesEnum.RTPFB;
-            FeedbackMessageType = feedbackType;
-        }
-
-        public RTCPHeader(PSFBFeedbackTypesEnum feedbackType)
-        {
-            PacketType = RTCPReportTypesEnum.PSFB;
-            PayloadFeedbackMessageType = feedbackType;
-        }
 
         public RTCPHeader(RTCPReportTypesEnum packetType, int reportCount)
         {
@@ -142,19 +129,6 @@ namespace SIPSorcery.Net
             {
                 ReceptionReportCount = Convert.ToInt32((firstWord >> 8) & 0x1f);
             }
-        }
-
-        public byte[] GetHeader(int receptionReportCount, UInt16 length)
-        {
-            if (receptionReportCount > MAX_RECEPTIONREPORT_COUNT)
-            {
-                throw new ApplicationException("The Reception Report Count value cannot be larger than " + MAX_RECEPTIONREPORT_COUNT + ".");
-            }
-
-            ReceptionReportCount = receptionReportCount;
-            Length = length;
-
-            return GetBytes();
         }
 
         /// <summary>

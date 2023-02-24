@@ -73,19 +73,7 @@ namespace SIPSorcery.Net
             Value = value;
         }
 
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, ushort value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
         public STUNAttribute(STUNAttributeTypesEnum attributeType, uint value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, ulong value)
         {
             AttributeType = attributeType;
             Value = NetConvert.GetBytes(value);
@@ -202,13 +190,6 @@ namespace SIPSorcery.Net
             }
 
             return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
-        }
-
-        public new virtual string ToString()
-        {
-            string attrDescrString = "STUN Attribute: " + AttributeType.ToString() + ", length=" + PaddedLength + ".";
-
-            return attrDescrString;
         }
     }
 }

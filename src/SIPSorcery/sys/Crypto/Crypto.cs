@@ -16,12 +16,8 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
-using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
@@ -30,8 +26,6 @@ namespace SIPSorcery.Sys
         private const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
 
         private const string CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-        private static ILogger logger = Log.Logger;
 
         static int seed = Environment.TickCount;
 
@@ -54,15 +48,6 @@ namespace SIPSorcery.Sys
                 buffer[i] = CHARS[Rand(CHARS.Length)];
             }
             return new string(buffer);
-        }
-
-        /// <summary>
-        /// Returns a 10 digit random number.
-        /// </summary>
-        /// <returns></returns>
-        public static int GetRandomInt()
-        {
-            return GetRandomInt(DEFAULT_RANDOM_LENGTH);
         }
 
         /// <summary>
@@ -149,64 +134,6 @@ namespace SIPSorcery.Sys
         public static void GetRandomBytes(byte[] buffer)
         {
             m_randomProvider.GetBytes(buffer);
-        }
-
-        private static byte[] GetSHAHash(params string[] values)
-        {
-            SHA1 sha = new SHA1Managed();
-            string plainText = null;
-            foreach (string value in values)
-            {
-                plainText += value;
-            }
-            return sha.ComputeHash(Encoding.UTF8.GetBytes(plainText));
-        }
-
-        public static string GetSHAHashAsString(params string[] values)
-        {
-            return Convert.ToBase64String(GetSHAHash(values));
-        }
-
-        /// <summary>
-        /// Returns the hash with each byte as an X2 string. This is useful for situations where
-        /// the hash needs to only contain safe ASCII characters.
-        /// </summary>
-        /// <param name="values">The list of string to concatenate and hash.</param>
-        /// <returns>A string with "safe" (0-9 and A-F) characters representing the hash.</returns>
-        public static string GetSHAHashAsHex(params string[] values)
-        {
-            byte[] hash = GetSHAHash(values);
-            string hashStr = null;
-            hash.ToList().ForEach(b => hashStr += b.ToString("x2"));
-            return hashStr;
-        }
-
-        /// <summary>
-        /// Attempts to load an X509 certificate from a Windows OS certificate store.
-        /// </summary>
-        /// <param name="storeLocation">The certificate store to load from, can be CurrentUser or LocalMachine.</param>
-        /// <param name="certificateSubject">The subject name of the certificate to attempt to load.</param>
-        /// <param name="checkValidity">Checks if the certificate is current and has a verifiable certificate issuer list. Should be
-        /// set to false for self issued certificates.</param>
-        /// <returns>A certificate object if the load is successful otherwise null.</returns>
-        public static X509Certificate2 LoadCertificate(StoreLocation storeLocation, string certificateSubject, bool checkValidity)
-        {
-            X509Store store = new X509Store(storeLocation);
-            logger.LogDebug("Certificate store " + store.Location + " opened");
-            store.Open(OpenFlags.OpenExistingOnly);
-            X509Certificate2Collection collection = store.Certificates.Find(X509FindType.FindBySubjectName, certificateSubject, checkValidity);
-            if (collection != null && collection.Count > 0)
-            {
-                X509Certificate2 serverCertificate = collection[0];
-                bool verifyCert = serverCertificate.Verify();
-                logger.LogDebug("X509 certificate loaded from current user store, subject=" + serverCertificate.Subject + ", valid=" + verifyCert + ".");
-                return serverCertificate;
-            }
-            else
-            {
-                logger.LogWarning("X509 certificate with subject name=" + certificateSubject + ", not found in " + store.Location + " store.");
-                return null;
-            }
         }
     }
 }

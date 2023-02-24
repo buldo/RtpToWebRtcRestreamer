@@ -23,11 +23,6 @@ namespace SIPSorcery.Net
         public RTPHeader Header;
         public byte[] Payload;
 
-        public RTPPacket()
-        {
-            Header = new RTPHeader();
-        }
-
         public RTPPacket(int payloadSize)
         {
             Header = new RTPHeader();
@@ -50,18 +45,6 @@ namespace SIPSorcery.Net
             Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
 
             return packet;
-        }
-
-        private byte[] GetNullPayload(int numBytes)
-        {
-            byte[] payload = new byte[numBytes];
-
-            for (int byteCount = 0; byteCount < numBytes; byteCount++)
-            {
-                payload[byteCount] = 0xff;
-            }
-
-            return payload;
         }
     }
 }

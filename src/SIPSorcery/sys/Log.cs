@@ -41,10 +41,6 @@ namespace SIPSorcery.Sys
 
                 return _logger;
             }
-            set
-            {
-                _logger = value;
-            }
         }
 
         /// <summary>

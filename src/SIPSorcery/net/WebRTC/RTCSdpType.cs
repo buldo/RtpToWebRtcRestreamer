@@ -1,4 +1,5 @@
-﻿namespace SIPSorcery.Net
+﻿// ReSharper disable UnusedMember.Global
+namespace SIPSorcery.Net
 {
     public enum RTCSdpType
     {

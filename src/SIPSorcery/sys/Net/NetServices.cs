@@ -45,13 +45,7 @@ namespace SIPSorcery.Sys
         /// No connection is established.
         /// </summary>
         private const string INTERNET_IPADDRESS = "8.8.8.8";
-
-        /// <summary>
-        /// IP address to use when getting default IPv6 address from OS.
-        /// No connection is established.
-        /// </summary>
-        private const string INTERNET_IPv6ADDRESS = "2001:4860:4860::8888";
-
+        
         /// <summary>
         /// Port to use when doing a Udp.Connect to determine local IP
         /// address (port 0 does not work on MacOS).
@@ -103,63 +97,6 @@ namespace SIPSorcery.Sys
         private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
             new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
 
-        /// <summary>
-        /// The list of IP addresses that this machine can use.
-        /// </summary>
-        public static List<IPAddress> LocalIPAddresses
-        {
-            get
-            {
-                // TODO: Reset if the local network interfaces change.
-                if (_localIPAddresses == null)
-                {
-                    _localIPAddresses = NetServices.GetAllLocalIPAddresses();
-                }
-
-                return _localIPAddresses;
-
-                // Using this call seems to be the recommended way to get the local IP addresses.
-                // https://docs.microsoft.com/en-us/dotnet/api/system.net.dns.gethostaddresses?view=netcore-3.1
-                // Unfortunately this does not work on WSL2 prior to .net5.0 see https://github.com/dotnet/runtime/issues/37785
-                //return Dns.GetHostAddresses(string.Empty).ToList();
-            }
-        }
-        private static List<IPAddress> _localIPAddresses = null;
-
-        /// <summary>
-        /// The local IP address this machine uses to communicate with the Internet.
-        /// </summary>
-        public static IPAddress InternetDefaultAddress
-        {
-            get
-            {
-                // TODO: Reset if the local network interfaces change.
-                if (_internetDefaultAddress == null)
-                {
-                    _internetDefaultAddress = GetLocalAddressForInternet();
-                }
-
-                return _internetDefaultAddress;
-            }
-        }
-        private static IPAddress _internetDefaultAddress = null;
-
-        /// <summary>
-        /// The local IPv6 address this machine uses to communicate with the Internet.
-        /// </summary>
-        public static IPAddress InternetDefaultIPv6Address
-        {
-            get
-            {
-                // TODO: Reset if the local network interfaces change.
-                if (_internetDefaultIPv6Address == null)
-                {
-                    _internetDefaultIPv6Address = GetLocalIPv6AddressForInternet();
-                }
-
-                return _internetDefaultIPv6Address;
-            }
-        }
         private static IPAddress _internetDefaultIPv6Address = null;
 
         /// <summary>
@@ -176,23 +113,6 @@ namespace SIPSorcery.Sys
             {
                 throw new ApplicationException("A UDP socket cannot be created on an IPv4 address due to lack of OS support.");
             }
-        }
-
-        /// <summary>
-        /// Attempts to create and bind a UDP socket. The socket is always created with the ExclusiveAddressUse socket option
-        /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
-        /// sockets, see https://github.com/dotnet/runtime/issues/36618.
-        /// </summary>
-        /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
-        /// <param name="bindAddress">Optional. If specified the UDP socket will attempt to bind using this specific address.
-        /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
-        /// <param name="requireEvenPort">If true the method will only return successfully if it is able to bind on an
-        /// even numbered port.</param>
-        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
-        /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
-        public static Socket CreateBoundUdpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
-        {
-            return CreateBoundSocket(port, bindAddress, ProtocolType.Udp, requireEvenPort, useDualMode);
         }
 
         /// <summary>
@@ -625,26 +545,6 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Gets the default local address for this machine for communicating with the Internet.
-        /// </summary>
-        /// <returns>The local address this machine should use for communicating with the Internet.</returns>
-        public static IPAddress GetLocalAddressForInternet()
-        {
-            var internetAddress = IPAddress.Parse(INTERNET_IPADDRESS);
-            return GetLocalAddressForRemote(internetAddress);
-        }
-
-        /// <summary>
-        /// Gets the default local IPv6 address for this machine for communicating with the Internet.
-        /// </summary>
-        /// <returns>The local address this machine should use for communicating with the Internet.</returns>
-        public static IPAddress GetLocalIPv6AddressForInternet()
-        {
-            var internetAddress = IPAddress.Parse(INTERNET_IPv6ADDRESS);
-            return GetLocalAddressForRemote(internetAddress);
-        }
-
-        /// <summary>
         /// Determines the local IP address to use to connection a remote address and
         /// returns all the local addresses (IPv4 and IPv6) that are bound to the same 
         /// interface. The main (and probably sole) use case for this method is 
@@ -664,15 +564,6 @@ namespace SIPSorcery.Sys
         /// <returns>A list of local IP addresses on the identified interface(s).</returns>
         public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
         {
-#if ANDROID
-            var ipAddresses = GetLocalAddressAndroid();
-            if (includeAllInterfaces)
-            {
-                return ipAddresses;
-            }
-
-            return new List<IPAddress>() { GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS)) };
-#else
             IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
             List<IPAddress> localAddresses = new List<IPAddress>();
 
@@ -698,68 +589,6 @@ namespace SIPSorcery.Sys
                 }
             }
             return localAddresses;
-#endif
         }
-
-        /// <summary>
-        /// Gets all the IP addresses for all active interfaces on the machine.
-        /// </summary>
-        /// <returns>A list of all local IP addresses.</returns>
-        private static List<IPAddress> GetAllLocalIPAddresses()
-        {
-#if ANDROID
-            return GetLocalAddressAndroid(); 
-#else
-            List<IPAddress> localAddresses = new List<IPAddress>();
-
-            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (NetworkInterface n in adapters)
-            {
-                // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
-                if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
-                {
-                    IPInterfaceProperties ipProps = n.GetIPProperties();
-                    foreach (var unicastAddr in ipProps.UnicastAddresses)
-                    {
-                        localAddresses.Add(unicastAddr.Address);
-                    }
-                }
-            }
-
-            return localAddresses;
-#endif
-        }
-
-#if ANDROID
-        public static List<IPAddress> GetLocalAddressAndroid()
-        {
-            var inetEnum = Java.Net.NetworkInterface.NetworkInterfaces;
-            if (inetEnum is null)
-            {
-                return new List<IPAddress>();
-            }
-
-            var ipAddresses = new List<IPAddress>();
-            foreach (var interfaces in Java.Util.Collections.List(inetEnum))
-            {
-                var addresses = (interfaces as Java.Net.NetworkInterface)?.InetAddresses;
-                if (addresses == null)
-                {
-                    continue;
-                }
-
-                foreach (Java.Net.InetAddress address in Java.Util.Collections.List(addresses))
-                {
-                    if (address.HostAddress == null || address.IsLoopbackAddress || !(address is Java.Net.Inet4Address))
-                    {
-                        continue;
-                    }
-                    ipAddresses.Add(IPAddress.Parse(address.HostAddress));
-                }
-            }
-
-            return ipAddresses;
-        }
-#endif
     }
 }

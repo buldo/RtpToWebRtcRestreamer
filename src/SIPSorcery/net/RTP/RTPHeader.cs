@@ -38,7 +38,6 @@ namespace SIPSorcery.Net
         public UInt16 SequenceNumber;                           // 16 bits.
         public uint Timestamp;                                  // 32 bits.
         public uint SyncSource;                                 // 32 bits.
-        public int[] CSRCList;                                  // 32 bits.
         public UInt16 ExtensionProfile;                         // 16 bits.
         public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
         public byte[] ExtensionPayload;
@@ -130,15 +129,6 @@ namespace SIPSorcery.Net
                     PayloadSize -= PaddingCount;
                 }
             }
-        }
-
-        public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
-        {
-            SequenceNumber = sequenceNumber;
-            Timestamp = timestamp;
-            SyncSource = syncSource;
-
-            return GetBytes();
         }
 
         public byte[] GetBytes()

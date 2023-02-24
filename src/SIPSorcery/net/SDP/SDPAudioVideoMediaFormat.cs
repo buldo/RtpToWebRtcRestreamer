@@ -181,23 +181,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Creates a new SDP media format from a Audio Format instance. The Audio Format contains the 
-        /// equivalent information to the SDP format object but has well defined audio properties separate
-        /// from the SDP serialisation.
-        /// </summary>
-        /// <param name="audioFormat">The Audio Format to map to an SDP format.</param>
-        public SDPAudioVideoMediaFormat(AudioFormat audioFormat)
-        {
-            Kind = SDPMediaTypesEnum.audio;
-            ID = audioFormat.FormatID;
-            Rtpmap = null;
-            Fmtp = audioFormat.Parameters;
-            _isEmpty = false;
-
-            Rtpmap = SetRtpmap(audioFormat.FormatName, audioFormat.RtpClockRate, audioFormat.ChannelCount);
-        }
-
-        /// <summary>
         /// Creates a new SDP media format from a Video Format instance. The Video Format contains the 
         /// equivalent information to the SDP format object but has well defined video properties separate
         /// from the SDP serialisation.
@@ -220,9 +203,6 @@ namespace SIPSorcery.Net
             (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
         public bool IsEmpty() => _isEmpty;
         public int ClockRate() => Kind == SDPMediaTypesEnum.video ? ToVideoFormat().ClockRate : ToAudioFormat().ClockRate;
-        public int Channels() =>
-             Kind == SDPMediaTypesEnum.video ? 0 :
-            TryParseRtpmap(Rtpmap, out _, out _, out var channels) ? channels : DEFAULT_AUDIO_CHANNEL_COUNT;
 
         public string Name()
         {
@@ -241,17 +221,6 @@ namespace SIPSorcery.Net
                 return null;
             }
         }
-
-        /// <summary>
-        /// Creates a new media format based on an existing format but with a different ID.
-        /// The typical case for this is during the SDP offer/answer exchange the dynamic format ID's for the
-        /// equivalent type need to be adjusted by one party.
-        /// </summary>
-        /// <param name="id">The ID to set on the new format.</param>
-        /// <param name="format">The existing format to copy all properties except the ID from.</param>
-        /// <returns>A new format.</returns>
-        public SDPAudioVideoMediaFormat WithUpdatedID(int id, SDPAudioVideoMediaFormat format) =>
-            new SDPAudioVideoMediaFormat(format.Kind, id, format.Rtpmap, format.Fmtp);
 
         public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
             new SDPAudioVideoMediaFormat(format.Kind, format.ID, rtpmap, format.Fmtp);

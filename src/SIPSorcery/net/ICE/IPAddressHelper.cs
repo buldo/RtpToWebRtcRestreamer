@@ -22,12 +22,9 @@ namespace SIPSorcery.Net
     public static class IPAddressHelper
     {
         // Prefixes used for categorizing IPv6 addresses.
-        static byte[] kV4MappedPrefix = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0 };
         static byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
-        static byte[] kTeredoPrefix = new byte[] { 0x20, 0x01, 0x00, 0x00 };
         static byte[] kV4CompatibilityPrefix = new byte[] { 0 };
         static byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
-        static byte[] kPrivateNetworkPrefix = new byte[] { 0xFD };
 
         public static uint IPAddressPrecedence(IPAddress ip)
         {
@@ -84,21 +81,6 @@ namespace SIPSorcery.Net
             catch { }
 
             return 0;
-        }
-
-        public static bool IPIsLinkLocalV4(IPAddress ip) 
-        {
-            try
-            {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                {
-                    long address = BitConverter.ToInt64(ip.GetAddressBytes(), 0);
-                    long ip_in_host_order = IPAddress.NetworkToHostOrder(address);
-                    return ((ip_in_host_order >> 16) == ((169 << 8) | 254));
-                }
-            }
-            catch { }
-            return false;
         }
 
         public static bool IPIs6Bone(IPAddress ip) {

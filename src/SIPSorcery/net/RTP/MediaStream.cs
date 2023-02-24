@@ -34,8 +34,6 @@ namespace SIPSorcery.net.RTP
             public byte[] buffer;
             public VideoStream videoStream;
 
-            public PendingPackages() { }
-
             public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream)
             {
                 this.hdr = hdr;
@@ -206,16 +204,6 @@ namespace SIPSorcery.net.RTP
         #endregion PROPERTIES
 
         #region REORDER BUFFER
-
-        public void AddBuffer(TimeSpan dropPacketTimeout)
-        {
-            RTPReorderBuffer = new RTPReorderBuffer(dropPacketTimeout);
-        }
-
-        public void RemoveBuffer(TimeSpan dropPacketTimeout)
-        {
-            RTPReorderBuffer = null;
-        }
 
         public Boolean UseBuffer()
         {
@@ -393,120 +381,6 @@ namespace SIPSorcery.net.RTP
             }
         }
 
-        /// <summary>
-        /// Allows additional control for sending raw RTP payloads. No framing or other processing is carried out.
-        /// </summary>
-        /// <param name="mediaType">The media type of the RTP packet being sent. Must be audio or video.</param>
-        /// <param name="payload">The RTP packet payload.</param>
-        /// <param name="timestamp">The timestamp to set on the RTP header.</param>
-        /// <param name="markerBit">The value to set on the RTP header marker bit, should be 0 or 1.</param>
-        /// <param name="payloadTypeID">The payload ID to set in the RTP header.</param>
-        public void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType)
-        {
-            SendRtpRaw(data, timestamp, markerBit, payloadType, false);
-        }
-
-        /// <summary>
-        /// Allows additional control for sending raw RTCP payloads
-        /// </summary>
-        /// <param name="rtcpBytes">Raw RTCP report data to send.</param>
-        public void SendRtcpRaw(byte[] rtcpBytes)
-        {
-            if (SendRtcpReport(rtcpBytes))
-            {
-                RTCPCompoundPacket rtcpCompoundPacket = null;
-                try
-                {
-                    rtcpCompoundPacket = new RTCPCompoundPacket(rtcpBytes);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogWarning($"Can't create RTCPCompoundPacket from the provided RTCP bytes. {excp.Message}");
-                }
-
-                if (rtcpCompoundPacket != null)
-                {
-                    OnSendReportByIndex?.Invoke(Index, MediaType, rtcpCompoundPacket);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Sends the RTCP report to the remote call party.
-        /// </summary>
-        /// <param name="reportBuffer">The serialised RTCP report to send.</param>
-        /// <returns>True if report was sent</returns>
-        private bool SendRtcpReport(byte[] reportBuffer)
-        {
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady())
-            {
-                logger.LogWarning("SendRtcpReport cannot be called on a secure session before calling SetSecurityContext.");
-                return false;
-            }
-            else if (ControlDestinationEndPoint != null)
-            {
-                //logger.LogDebug($"SendRtcpReport: {reportBytes.HexStr()}");
-
-                var sendOnSocket = RtpSessionConfig.IsRtcpMultiplexed ? RTPChannelSocketsEnum.RTP : RTPChannelSocketsEnum.Control;
-
-                var protectRtcpPacket = SecureContext?.ProtectRtcpPacket;
-
-                if (protectRtcpPacket == null)
-                {
-                    rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, reportBuffer);
-                }
-                else
-                {
-                    byte[] sendBuffer = new byte[reportBuffer.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH];
-                    Buffer.BlockCopy(reportBuffer, 0, sendBuffer, 0, reportBuffer.Length);
-
-                    int outBufLen = 0;
-                    int rtperr = protectRtcpPacket(sendBuffer, sendBuffer.Length - RTPSession.SRTP_MAX_PREFIX_LENGTH, out outBufLen);
-                    if (rtperr != 0)
-                    {
-                        logger.LogWarning("SRTP RTCP packet protection failed, result " + rtperr + ".");
-                    }
-                    else
-                    {
-                        rtpChannel.Send(sendOnSocket, ControlDestinationEndPoint, sendBuffer.Take(outBufLen).ToArray());
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Sends the RTCP report to the remote call party.
-        /// </summary>
-        /// <param name="report">RTCP report to send.</param>
-        public void SendRtcpReport(RTCPCompoundPacket report)
-        {
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecurityContextReady() && report.Bye != null)
-            {
-                // Do nothing. The RTCP BYE gets generated when an RTP session is closed.
-                // If that occurs before the connection was able to set up the secure context
-                // there's no point trying to send it.
-            }
-            else
-            {
-                var reportBytes = report.GetBytes();
-                SendRtcpReport(reportBytes);
-                OnSendReportByIndex?.Invoke(Index, MediaType, report);
-            }
-        }
-
-        /// <summary>
-        /// Allows sending of RTCP feedback reports.
-        /// </summary>
-        /// <param name="mediaType">The media type of the RTCP report  being sent. Must be audio or video.</param>
-        /// <param name="feedback">The feedback report to send.</param>
-        public void SendRtcpFeedback(RTCPFeedback feedback)
-        {
-            var reportBytes = feedback.GetBytes();
-            SendRtcpReport(reportBytes);
-        }
-
         #endregion SEND PACKET
 
         #region RECEIVE PACKET
@@ -626,7 +500,7 @@ namespace SIPSorcery.net.RTP
         #region PENDING PACKAGES LOGIC
 
         // Submit all previous cached packages to self
-        protected virtual void DispatchPendingPackages()
+        protected void DispatchPendingPackages()
         {
             PendingPackages[] pendingPackagesArray = null;
 
@@ -653,7 +527,7 @@ namespace SIPSorcery.net.RTP
         }
 
         // Clear previous buffer
-        protected virtual void ClearPendingPackages()
+        private void ClearPendingPackages()
         {
             lock (_pendingPackagesLock)
             {
@@ -663,7 +537,8 @@ namespace SIPSorcery.net.RTP
 
         // Cache pending packages to use it later to prevent missing frames
         // when DTLS was not completed yet as a Server but already completed as a client
-        protected virtual bool AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+        private void AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer,
+            VideoStream videoStream = null)
         {
             const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
 
@@ -678,14 +553,14 @@ namespace SIPSorcery.net.RTP
                     }
                     _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
                 }
-                return true;
+
+                return;
             }
-            return false;
         }
 
         #endregion
 
-        protected void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
+        private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
         {
             if (track.LastRemoteSeqNum != 0 &&
                 header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&
@@ -703,7 +578,7 @@ namespace SIPSorcery.net.RTP
         /// <param name="receivedOnEndPoint">The actual remote end point that the RTP packet came from.</param>
         /// <returns>True if remote end point for this media type was the expected one or it was adjusted. False if
         /// the remote end point was deemed to be invalid for this media type.</returns>
-        protected bool AdjustRemoteEndPoint(uint ssrc, IPEndPoint receivedOnEndPoint)
+        private bool AdjustRemoteEndPoint(uint ssrc, IPEndPoint receivedOnEndPoint)
         {
             bool isValidSource = false;
             IPEndPoint expectedEndPoint = DestinationEndPoint;
@@ -757,7 +632,7 @@ namespace SIPSorcery.net.RTP
         /// audio or video.</param>
         /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
         /// in order to commence sending RTCP reports.</returns>
-        public Boolean CreateRtcpSession()
+        public bool CreateRtcpSession()
         {
             if (RtcpSession == null)
             {

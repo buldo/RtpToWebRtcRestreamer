@@ -40,14 +40,6 @@ namespace SIPSorcery.Net
             ReasonPhrase = Encoding.UTF8.GetString(attributeValue, 4, attributeValue.Length - 4);
         }
 
-        public STUNErrorCodeAttribute(int errorCode, string reasonPhrase)
-            : base(STUNAttributeTypesEnum.ErrorCode, null)
-        {
-            ErrorClass = errorCode < 700 ? Convert.ToByte(ErrorCode / 100) : (byte)0x00;
-            ErrorNumber = Convert.ToByte(errorCode % 100);
-            ReasonPhrase = reasonPhrase;
-        }
-
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
             buffer[startIndex] = 0x00;

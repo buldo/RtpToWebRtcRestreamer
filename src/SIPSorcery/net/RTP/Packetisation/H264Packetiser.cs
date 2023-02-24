@@ -35,10 +35,8 @@ using System.Linq;
 
 namespace SIPSorcery.Net
 {
-    public class H264Packetiser
+    public static class H264Packetiser
     {
-        public const int H264_RTP_HEADER_LENGTH = 2;
-
         public struct H264Nal
         {
             public byte[] NAL { get; }

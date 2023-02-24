@@ -54,7 +54,6 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCPSession
     {
-        public const string NO_ACTIVITY_TIMEOUT_REASON = "No activity timeout.";
         private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
         private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
         private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
@@ -137,12 +136,6 @@ namespace SIPSorcery.Net
         /// Unique common name field for use in SDES packets.
         /// </summary>
         public string Cname { get; private set; }
-
-        /// <summary>
-        /// The reception report to keep track of the RTP statistics
-        /// from packets received from the remote call party.
-        /// </summary>
-        public ReceptionReport ReceptionReport { get; private set; }
 
         /// <summary>
         /// Indicates whether the RTCP session has been closed.

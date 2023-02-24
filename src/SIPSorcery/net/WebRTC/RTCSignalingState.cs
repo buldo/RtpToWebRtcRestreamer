@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// Signalling states for a WebRTC peer connection.
@@ -6,6 +8,7 @@
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcsignalingstate.
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum RTCSignalingState
     {
         stable,

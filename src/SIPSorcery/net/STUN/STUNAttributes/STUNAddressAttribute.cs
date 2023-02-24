@@ -32,21 +32,6 @@ namespace SIPSorcery.Net
             get { return ADDRESS_ATTRIBUTE_LENGTH; }
         }
 
-        public STUNAddressAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.MappedAddress, attributeValue)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
-
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
-        }
-
         public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
             : base(attributeType, attributeValue)
         {
@@ -60,16 +45,6 @@ namespace SIPSorcery.Net
             }
 
             Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
-        }
-
-        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
-            : base(attributeType, null)
-        {
-            Port = port;
-            Address = address;
-
-            base.AttributeType = attributeType;
-            //base.Length = ADDRESS_ATTRIBUTE_LENGTH;
         }
 
         public override int ToByteBuffer(byte[] buffer, int startIndex)

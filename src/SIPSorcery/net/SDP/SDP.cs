@@ -116,7 +116,6 @@ namespace SIPSorcery.Net
     public class SDP
     {
         public const string CRLF = "\r\n";
-        public const string SDP_MIME_CONTENTTYPE = "application/sdp";
         public const decimal SDP_PROTOCOL_VERSION = 0M;
         public const string GROUP_ATRIBUTE_PREFIX = "group";
         public const string DTLS_FINGERPRINT_ATTRIBUTE_PREFIX = "fingerprint";
@@ -130,8 +129,7 @@ namespace SIPSorcery.Net
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int MEDIA_INDEX_NOT_PRESENT = -1;
         public const string MEDIA_INDEX_TAG_NOT_PRESENT = "";
-        public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
-
+        
         // ICE attributes.
         public const string ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX = "ice-lite";
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
@@ -788,15 +786,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public string RawString()
-        {
-            if (string.IsNullOrWhiteSpace(this.m_rawSdp))
-            {
-                return this.ToString();
-            }
-            return this.m_rawSdp;
-        }
-
         public override string ToString()
         {
             string sdp =
@@ -860,59 +849,6 @@ namespace SIPSorcery.Net
             }
 
             return sdp;
-        }
-
-        /// <summary>
-        /// A convenience method to get the RTP end point for single audio offer SDP payloads.
-        /// </summary>
-        /// <returns>The RTP end point for the first media end point.</returns>
-        public IPEndPoint GetSDPRTPEndPoint()
-        {
-            // Find first media offer.
-            var sessionConnection = Connection;
-            var firstMediaOffer = Media.FirstOrDefault();
-
-            if (sessionConnection != null && firstMediaOffer != null)
-            {
-                return new IPEndPoint(IPAddress.Parse(sessionConnection.ConnectionAddress), firstMediaOffer.Port);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// A convenience method to get the RTP end point for single audio offer SDP payloads.
-        /// </summary>
-        /// <param name="sdpMessage">A string representing the SDP payload.</param>
-        /// <returns>The RTP end point for the first media end point.</returns>
-        public static IPEndPoint GetSDPRTPEndPoint(string sdpMessage)
-        {
-            return ParseSDPDescription(sdpMessage)
-                .GetSDPRTPEndPoint();
-        }
-
-        /// <summary>
-        /// Gets the media stream status for the specified media announcement.
-        /// </summary>
-        /// <param name="mediaType">The type of media (audio, video etc) to get the status for.</param>
-        /// <param name="announcementIndex">THe index of the announcement to get the status for.</param>
-        /// <returns>The media stream status set on the announcement or if there is none the session. If
-        /// there is also no status set on the session then the default value of sendrecv is returned.</returns>
-        public MediaStreamStatusEnum GetMediaStreamStatus(SDPMediaTypesEnum mediaType, int announcementIndex)
-        {
-            var announcements = Media.Where(x => x.Media == mediaType).ToList();
-
-            if (announcements == null || announcements.Count() < announcementIndex + 1)
-            {
-                return DEFAULT_STREAM_STATUS;
-            }
-            else
-            {
-                var announcement = announcements[announcementIndex];
-                return announcement.MediaStreamStatus.HasValue ? announcement.MediaStreamStatus.Value : DEFAULT_STREAM_STATUS;
-            }
         }
 
         /// <summary>

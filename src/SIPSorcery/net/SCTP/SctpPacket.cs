@@ -32,12 +32,6 @@ namespace SIPSorcery.Net
     public class SctpPacket
     {
         /// <summary>
-        /// The position in a serialised SCTP packet buffer that the verification
-        /// tag field starts.
-        /// </summary>
-        public const int VERIFICATIONTAG_BUFFER_POSITION = 4;
-
-        /// <summary>
         /// The position in a serialised SCTP packet buffer that the checksum 
         /// field starts.
         /// </summary>
@@ -208,34 +202,6 @@ namespace SIPSorcery.Net
             NetConvert.ToBuffer(origChecksum, buffer, posn + CHECKSUM_BUFFER_POSITION);
 
             return origChecksum == NetConvert.EndianFlip(calcChecksum);
-        }
-
-        /// <summary>
-        /// Gets the verification tag from a serialised SCTP packet. This allows
-        /// a pre-flight check to be carried out before de-serialising the whole buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
-        /// <returns>The verification tag for the serialised SCTP packet.</returns>
-        public static uint GetVerificationTag(byte[] buffer, int posn, int length)
-        {
-            return NetConvert.ParseUInt32(buffer, posn + VERIFICATIONTAG_BUFFER_POSITION);
-        }
-
-        /// <summary>
-        /// Performs verification checks on a serialised SCTP packet.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
-        /// <param name="requiredTag">The required verification tag for the serialised
-        /// packet. This should match the verification tag supplied by the remote party.</param>
-        /// <returns>True if the packet is valid, false if not.</returns>
-        public static bool IsValid(byte[] buffer, int posn, int length, uint requiredTag)
-        {
-            return GetVerificationTag(buffer, posn, length) == requiredTag &&
-                VerifyChecksum(buffer, posn, length);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// The assignments for SCTP payload protocol IDs used with
@@ -7,6 +9,7 @@
     /// <remarks>
     /// See https://tools.ietf.org/html/rfc8831#section-8
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum DataChannelPayloadProtocols : uint
     {
         WebRTC_DCEP = 50,           // Data Channel Establishment Protocol (DCEP).

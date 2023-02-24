@@ -83,19 +83,6 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Get a buffer representing the unsigned 16 bit integer in network
-        /// byte (big endian) order.
-        /// </summary>
-        /// <param name="val">The value to convert.</param>
-        /// <returns>A buffer representing the value in network order </returns>
-        public static byte[] GetBytes(ushort val)
-        {
-            var buffer = new byte[2];
-            ToBuffer(val, buffer, 0);
-            return buffer;
-        }
-
-        /// <summary>
         /// Writes a UInt32 value to a network buffer using network byte order.
         /// </summary>
         /// <param name="val">The value to write to the buffer.</param>

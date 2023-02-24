@@ -67,14 +67,7 @@ namespace SIPSorcery.Net
         private STUNUri()
         { }
 
-        public STUNUri(STUNSchemesEnum scheme, string host, int port = STUNConstants.DEFAULT_STUN_PORT)
-        {
-            Scheme = scheme;
-            Host = host;
-            Port = port;
-        }
-
-        public static STUNUri ParseSTUNUri(string uri)
+        private static STUNUri ParseSTUNUri(string uri)
         {
             STUNUri stunUri = new STUNUri();
 

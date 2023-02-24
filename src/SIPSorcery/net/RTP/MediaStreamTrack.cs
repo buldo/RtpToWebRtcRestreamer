@@ -28,8 +28,6 @@ namespace SIPSorcery.Net
 {
     public class MediaStreamTrack
     {
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
-
         /// <summary>
         /// The type of media stream represented by this track. Must be audio or video.
         /// </summary>
@@ -49,9 +47,6 @@ namespace SIPSorcery.Net
         /// The last seqnum received from the remote peer for this stream.
         /// </summary>
         public ushort LastRemoteSeqNum { get; internal set; }
-
-        // The value used in the RTP Sequence Number header field for media packets.
-        public ushort SeqNum { get { return (ushort)m_seqNum; } internal set { m_seqNum = value; } }
 
         /// <summary>
         /// The last abs-capture-time received from the remote peer for this stream.
@@ -108,31 +103,6 @@ namespace SIPSorcery.Net
         public Dictionary<uint, SDPSsrcAttribute> SdpSsrc { get; set; } = new Dictionary<uint, SDPSsrcAttribute>();
 
         private uint _maxBandwith = 0;
-
-        /// <summary>
-        /// If set to a non-zero value for local tracks then a Transport Independent Bandwidth (TIAS) attribute
-        /// will be included in any SDP for the track's media announcement. For remote tracks thi a non-zero
-        /// value indicates the a TIAS attribute was set in the remote SDP media announcement.
-        /// The bandwith is specified in bits per seconds (bps).
-        /// </summary>
-        /// <remarks>
-        /// See https://tools.ietf.org/html/rfc3890.
-        /// </remarks>
-        public uint MaximumBandwidth
-        {
-            get => _maxBandwith;
-            set
-            {
-                if (!IsRemote)
-                {
-                    _maxBandwith = value;
-                }
-                else
-                {
-                    logger.LogWarning("The maximum bandwith cannot be set for remote tracks.");
-                }
-            }
-        }
 
         // The value used in the RTP Sequence Number header field for media packets.
         // Although valid values are all in the range of ushort, the underlying field is of type int, because Interlocked.CompareExchange is used to increment in a fast and thread-safe manner and there is no overload for ushort.
@@ -191,30 +161,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Add a local audio track.
-        /// </summary>
-        /// <param name="format">The audio format that the local application supports.</param>
-        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
-        /// send and receive or only one of.</param>
-        public MediaStreamTrack(
-            AudioFormat format,
-            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.audio, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
-        { }
-
-        /// <summary>
-        /// Add a local audio track.
-        /// </summary>
-        /// <param name="audioFormats">The audio formats that the local application supports.</param>
-        /// <param name="streamStatus">Optional. The stream status for the audio track, e.g. whether
-        /// send and receive or only one of.</param>
-        public MediaStreamTrack(
-        List<AudioFormat> formats,
-        MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.audio, false, formats.Select(x => new SDPAudioVideoMediaFormat(x)).ToList(), streamStatus)
-        { }
-
-        /// <summary>
         /// Add a local video track.
         /// </summary>
         /// <param name="format">The video format that the local application supports.</param>
@@ -224,28 +170,6 @@ namespace SIPSorcery.Net
            VideoFormat format,
            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
             this(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
-        { }
-
-        /// <summary>
-        /// Add a local video track.
-        /// </summary>
-        /// <param name="videoFormats">The video formats that the local application supports.</param>
-        /// <param name="streamStatus">Optional. The stream status for the video track, e.g. whether
-        /// send and receive or only one of.</param>
-        public MediaStreamTrack(
-        List<VideoFormat> formats,
-        MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-             this(SDPMediaTypesEnum.video, false, formats.Select(x => new SDPAudioVideoMediaFormat(x)).ToList(), streamStatus)
-        { }
-
-        /// <summary>
-        /// Adds a local audio track based on one or more well known audio formats.
-        /// There is no equivalent for a local video track as there is no support in this library for any of
-        /// the well known video formats.
-        /// </summary>
-        /// <param name="wellKnownAudioFormats">One or more well known audio formats.</param>
-        public MediaStreamTrack(params SDPWellKnownMediaFormatsEnum[] wellKnownAudioFormats)
-            : this(wellKnownAudioFormats.Select(x => new AudioFormat(x)).ToList())
         { }
 
         /// <summary>
@@ -279,52 +203,6 @@ namespace SIPSorcery.Net
         {
             return Capabilities?.FirstOrDefault(x => x.ID == payloadID);
         }
-
-        /// <summary>
-        /// To restrict MediaStream Capabilties to one Audio/Video format. This Audio/Video format must already be present in the previous list or if the list is empty/null
-        /// 
-        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
-        /// </summary>
-        /// <param name="sdpAudioVideoMediaFormat">The Audio/Video Format to restrict</param>
-        /// <returns>True if the operation has been performed</returns>
-        public Boolean RestrictCapabilities(SDPAudioVideoMediaFormat sdpAudioVideoMediaFormat)
-        {
-            Boolean result = true;
-            if (Capabilities?.Count > 0)
-            {
-                result = (Capabilities.Exists(x => x.ID == sdpAudioVideoMediaFormat.ID));
-            }
-
-            if(result)
-            {
-                Capabilities = new List<SDPAudioVideoMediaFormat> { sdpAudioVideoMediaFormat };
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// To restrict MediaStream Capabilties to one Video format. This Video format must already be present in the previous list or if the list is empty/null
-        /// 
-        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
-        /// </summary>
-        /// <param name="videoFormat">The Video Format to restrict</param>
-        /// <returns>True if the operation has been performed</returns>
-        public Boolean RestrictCapabilities(VideoFormat videoFormat)
-        {
-            return RestrictCapabilities(new SDPAudioVideoMediaFormat(videoFormat) );
-        }
-
-        /// <summary>
-        /// To restrict MediaStream Capabilties to one Audio format. This Audio format must already be present in the previous list or if the list is empty/null
-        /// 
-        /// Usefull once you have successfully created a connection with a Peer to use the same format even even others negocitions are performed
-        /// </summary>
-        /// <param name="audioFormat">The Audio Format to restrict</param>
-        /// <returns>True if the operation has been performed</returns>
-        public Boolean RestrictCapabilities(AudioFormat audioFormat)
-        {
-            return RestrictCapabilities(new SDPAudioVideoMediaFormat(audioFormat));
-        }        
 
         /// <summary>
         /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets

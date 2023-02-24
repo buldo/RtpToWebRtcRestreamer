@@ -346,11 +346,6 @@ namespace SIPSorcery.Net
             OnControlDataReceived?.Invoke(localPort, remoteEndPoint, packet);
         }
 
-        protected virtual void Dispose(bool disposing)
-        {
-            Close(null);
-        }
-
         public void Dispose()
         {
             Close(null);

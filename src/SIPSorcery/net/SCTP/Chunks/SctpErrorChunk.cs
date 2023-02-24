@@ -57,23 +57,6 @@ namespace SIPSorcery.Net
         { }
 
         /// <summary>
-        /// Creates a new ERROR chunk.
-        /// </summary>
-        /// <param name="errorCauseCode">The initial error cause code to set on this chunk.</param>
-        public SctpErrorChunk(SctpErrorCauseCode errorCauseCode) :
-            this(new SctpCauseOnlyError(errorCauseCode))
-        { }
-
-        /// <summary>
-        /// Creates a new ERROR chunk.
-        /// </summary>
-        /// <param name="errorCause">The initial error cause to set on this chunk.</param>
-        public SctpErrorChunk(ISctpErrorCause errorCause) : base(SctpChunkType.ERROR)
-        {
-            ErrorCauses.Add(errorCause);
-        }
-
-        /// <summary>
         /// Adds an additional error cause parameter to the chunk.
         /// </summary>
         /// <param name="errorCause">The additional error cause to add to the chunk.</param>

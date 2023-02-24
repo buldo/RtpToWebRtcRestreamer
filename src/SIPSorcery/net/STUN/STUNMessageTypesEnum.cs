@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SIPSorcery.Net
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum STUNMessageTypesEnum : ushort
     {
         BindingRequest = 0x0001,
