@@ -23,7 +23,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
         {
-            byte[] certificateTypes = certificateRequest.CertificateTypes;
+            var certificateTypes = certificateRequest.CertificateTypes;
             if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
             {
                 return null;

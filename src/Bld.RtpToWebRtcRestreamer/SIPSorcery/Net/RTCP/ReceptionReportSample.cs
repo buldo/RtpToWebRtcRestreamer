@@ -106,7 +106,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <returns>A byte array.</returns>
         public byte[] GetBytes()
         {
-            byte[] payload = new byte[24];
+            var payload = new byte[24];
 
             if (BitConverter.IsLittleEndian)
             {

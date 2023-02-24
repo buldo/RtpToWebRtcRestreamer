@@ -115,7 +115,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 if (!m_isClosed)
                 {
                     EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                    int bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
+                    var bytesRead = m_socket.EndReceiveFrom(ar, ref remoteEP);
 
                     if (bytesRead > 0)
                     {
@@ -127,7 +127,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
                         //}
 
-                        byte[] packetBuffer = new byte[bytesRead];
+                        var packetBuffer = new byte[bytesRead];
                         // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                         Buffer.BlockCopy(m_recvBuffer, 0, packetBuffer, 0, bytesRead);
                         CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
@@ -144,11 +144,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     while (!m_isClosed && m_socket.Available > 0)
                     {
                         EndPoint remoteEP = m_addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                        int bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                        var bytesReadSync = m_socket.ReceiveFrom(m_recvBuffer, 0, m_recvBuffer.Length, SocketFlags.None, ref remoteEP);
 
                         if (bytesReadSync > 0)
                         {
-                            byte[] packetBufferSync = new byte[bytesReadSync];
+                            var packetBufferSync = new byte[bytesReadSync];
                             // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                             Buffer.BlockCopy(m_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
                             CallOnPacketReceivedCallback(m_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);

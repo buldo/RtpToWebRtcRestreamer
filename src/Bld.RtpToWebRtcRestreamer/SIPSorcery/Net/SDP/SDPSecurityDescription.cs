@@ -122,10 +122,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             {
                 get
                 {
-                    byte[] b = new byte[Key.Length + Salt.Length];
+                    var b = new byte[Key.Length + Salt.Length];
                     Array.Copy(Key, 0, b, 0, Key.Length);
                     Array.Copy(Salt, 0, b, Key.Length, Salt.Length);
-                    string s64 = Convert.ToBase64String(b);
+                    var s64 = Convert.ToBase64String(b);
                     //removal of Padding-Characters "=" happens when decoding of Base64-String
                     //https://tools.ietf.org/html/rfc4568 page 13
                     //s64 = s64.TrimEnd('=');
@@ -146,8 +146,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                         throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2");
                     }
 
-                    ulong ul = value;
-                    int i = 0;
+                    var ul = value;
+                    var i = 0;
                     for (; i < 64; i++)
                     {
                         if ((ul & 0x1) == 0x1)
@@ -235,7 +235,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             public override string ToString()
             {
-                string s = KEY_METHOD + COLON + KeySaltBase64;
+                var s = KEY_METHOD + COLON + KeySaltBase64;
                 if (!string.IsNullOrWhiteSpace(LifeTimeString))
                 {
                     s += PIPE + LifeTimeString;
@@ -257,16 +257,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             {
                 if (!string.IsNullOrWhiteSpace(keyParamString))
                 {
-                    string p = keyParamString.Trim();
+                    var p = keyParamString.Trim();
                     try
                     {
                         if (p.StartsWith(KEY_METHOD))
                         {
-                            string sKeyMethod = KEY_METHOD;
-                            int poscln = p.IndexOf(COLON);
+                            var sKeyMethod = KEY_METHOD;
+                            var poscln = p.IndexOf(COLON);
                             if (poscln == sKeyMethod.Length)
                             {
-                                string sKeyInfo = p.Substring(poscln + 1);
+                                var sKeyInfo = p.Substring(poscln + 1);
                                 if (!sKeyInfo.Contains(";"))
                                 {
                                     string sMkiVal, sMkiLen, sLifeTime, sBase64KeySalt;
@@ -277,7 +277,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                         byte[] bKey, bSalt;
                                         parseKeySaltBase64(cryptoSuite, sBase64KeySalt, out bKey, out bSalt);
 
-                                        KeyParameter kp = new KeyParameter(bKey, bSalt);
+                                        var kp = new KeyParameter(bKey, bSalt);
                                         if (!string.IsNullOrWhiteSpace(sMkiVal) && !string.IsNullOrWhiteSpace(sMkiLen))
                                         {
                                             kp.MkiValue = uint.Parse(sMkiVal);
@@ -310,7 +310,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             private static void parseKeySaltBase64(CryptoSuites cryptoSuite, string base64KeySalt, out byte[] key, out byte[] salt)
             {
-                byte[] keysalt = Convert.FromBase64String(base64KeySalt);
+                var keysalt = Convert.FromBase64String(base64KeySalt);
                 key = null;
                 switch (cryptoSuite)
                 {
@@ -370,7 +370,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             private static void checkValidKeyInfoCharacters(string keyParameter, string keyInfo)
             {
-                foreach (char c in keyInfo)
+                foreach (var c in keyInfo)
                 {
                     if (c < 0x21 || c > 0x7e)
                     {
@@ -387,15 +387,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 base64KeySalt = null;
                 //KeyInfo must only contain visible printing characters
                 //and 40 char long, as its is the base64representation of concatenated Key and Salt
-                int pospipe1 = keyInfo.IndexOf(PIPE);
+                var pospipe1 = keyInfo.IndexOf(PIPE);
                 if (pospipe1 > 0)
                 {
                     base64KeySalt = keyInfo.Substring(0, pospipe1);
                     //find lifetime and mki
                     //both may be omitted, but mki is recognized by a colon
                     //usually lifetime comes before mki, if specified
-                    int posclnmki = keyInfo.IndexOf(COLON, pospipe1 + 1);
-                    int pospipe2 = keyInfo.IndexOf(PIPE, pospipe1 + 1);
+                    var posclnmki = keyInfo.IndexOf(COLON, pospipe1 + 1);
+                    var pospipe2 = keyInfo.IndexOf(PIPE, pospipe1 + 1);
                     if (posclnmki > 0 && pospipe2 < 0)
                     {
                         mkiValue = keyInfo.Substring(pospipe1 + 1, posclnmki - pospipe1 - 1);
@@ -566,12 +566,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     return null;
                 }
 
-                string p = sessionParam.Trim();
+                var p = sessionParam.Trim();
                 try
                 {
                     if (p.StartsWith(KDR_PREFIX))
                     {
-                        string sKdr = p.Substring(KDR_PREFIX.Length);
+                        var sKdr = p.Substring(KDR_PREFIX.Length);
                         uint kdr = 0;
                         if (uint.TryParse(sKdr, out kdr))
                         {
@@ -580,7 +580,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     }
                     else if (p.StartsWith(WSH_PREFIX))
                     {
-                        string sWsh = p.Substring(WSH_PREFIX.Length);
+                        var sWsh = p.Substring(WSH_PREFIX.Length);
                         if (uint.TryParse(sWsh, out var wsh))
                         {
                             return new SessionParameter(SrtpSessionParams.wsh) { Wsh = wsh };
@@ -588,14 +588,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     }
                     else if (p.StartsWith(FEC_KEY_PREFIX))
                     {
-                        string sFecKey = p.Substring(FEC_KEY_PREFIX.Length);
-                        KeyParameter fecKey = KeyParameter.Parse(sFecKey, cryptoSuite);
+                        var sFecKey = p.Substring(FEC_KEY_PREFIX.Length);
+                        var fecKey = KeyParameter.Parse(sFecKey, cryptoSuite);
                         return new SessionParameter(SrtpSessionParams.fec_key) { FecKey = fecKey };
                     }
                     else if (p.StartsWith(FEC_ORDER_PREFIX))
                     {
-                        string sFecOrder = p.Substring(FEC_ORDER_PREFIX.Length);
-                        FecTypes fecOrder = (from e in Enum.GetNames(typeof(FecTypes)) where e.CompareTo(sFecOrder) == 0 select (FecTypes)Enum.Parse(typeof(FecTypes), e)).FirstOrDefault();
+                        var sFecOrder = p.Substring(FEC_ORDER_PREFIX.Length);
+                        var fecOrder = (from e in Enum.GetNames(typeof(FecTypes)) where e.CompareTo(sFecOrder) == 0 select (FecTypes)Enum.Parse(typeof(FecTypes), e)).FirstOrDefault();
                         if (fecOrder == FecTypes.unknown)
                         {
                             throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
@@ -685,8 +685,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 return null;
             }
 
-            string s = CRYPTO_ATTRIBUE_PREFIX + Tag + WHITE_SPACE + CryptoSuite + WHITE_SPACE;
-            for (int i = 0; i < KeyParams.Count; i++)
+            var s = CRYPTO_ATTRIBUE_PREFIX + Tag + WHITE_SPACE + CryptoSuite + WHITE_SPACE;
+            for (var i = 0; i < KeyParams.Count; i++)
             {
                 if (i > 0)
                 {
@@ -714,10 +714,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
             }
 
-            string sCryptoValue = cryptoLine.Substring(cryptoLine.IndexOf(COLON) + 1);
+            var sCryptoValue = cryptoLine.Substring(cryptoLine.IndexOf(COLON) + 1);
 
-            SDPSecurityDescription sdpCryptoAttribute = new SDPSecurityDescription();
-            string[] sCryptoParts = sCryptoValue.Split(sdpCryptoAttribute.WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
+            var sdpCryptoAttribute = new SDPSecurityDescription();
+            var sCryptoParts = sCryptoValue.Split(sdpCryptoAttribute.WHITE_SPACES, StringSplitOptions.RemoveEmptyEntries);
             if (sCryptoValue.Length < 2)
             {
                 throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
@@ -733,15 +733,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
                 }
 
-                string[] sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
+                var sKeyParams = sCryptoParts[2].Split(SEMI_COLON);
                 if (sKeyParams.Length < 1)
                 {
                     throw new FormatException($"cryptoLine '{cryptoLine}' is not recognized as a valid SDP Security Description ");
                 }
 
-                foreach (string kp in sKeyParams)
+                foreach (var kp in sKeyParams)
                 {
-                    KeyParameter keyParam = KeyParameter.Parse(kp, sdpCryptoAttribute.CryptoSuite);
+                    var keyParam = KeyParameter.Parse(kp, sdpCryptoAttribute.CryptoSuite);
                     sdpCryptoAttribute.KeyParams.Add(keyParam);
                 }
                 if (sCryptoParts.Length > 3)

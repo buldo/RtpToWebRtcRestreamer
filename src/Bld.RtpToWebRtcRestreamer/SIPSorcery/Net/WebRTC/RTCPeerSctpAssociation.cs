@@ -93,7 +93,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                             logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
                                 $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
 
-                            DataChannelTypes channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
+                            var channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
                             if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
                             {
                                 channelType = (DataChannelTypes)dcepOpen.ChannelType;

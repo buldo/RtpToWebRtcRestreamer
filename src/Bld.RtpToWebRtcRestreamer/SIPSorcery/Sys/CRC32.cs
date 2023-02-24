@@ -22,11 +22,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 return _defaultTable;
             }
 
-            UInt32[] createTable = new UInt32[256];
-            for (int i = 0; i < 256; i++)
+            var createTable = new UInt32[256];
+            for (var i = 0; i < 256; i++)
             {
-                UInt32 entry = (UInt32)i;
-                for (int j = 0; j < 8; j++)
+                var entry = (UInt32)i;
+                for (var j = 0; j < 8; j++)
                 {
                     if ((entry & 1) == 1)
                     {
@@ -50,8 +50,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
         private static UInt32 CalculateHash(UInt32[] table, UInt32 seed, byte[] buffer, int start, int size)
         {
-            UInt32 crc = seed;
-            for (int i = start; i < size; i++)
+            var crc = seed;
+            for (var i = start; i < size; i++)
             {
                 unchecked
                 {

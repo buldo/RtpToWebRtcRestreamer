@@ -37,7 +37,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
             }
 
-            string[] values = endpointstring.Split(new[] { ':' });
+            var values = endpointstring.Split(new[] { ':' });
             IPAddress ipaddr;
             int port;
 
@@ -72,7 +72,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 //could [a:b:c]:d
                 if (values[0].StartsWith("[") && values[values.Length - 2].EndsWith("]"))
                 {
-                    string ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
+                    var ipaddressstring = string.Join(":", values.Take(values.Length - 1).ToArray());
                     ipaddr = IPAddress.Parse(ipaddressstring);
                     port = getPort(values[values.Length - 1]);
                 }

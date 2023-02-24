@@ -237,13 +237,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// </summary>
         private void DoReceive(object state)
         {
-            byte[] recvBuffer = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
+            var recvBuffer = new byte[SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW];
 
             while (!_isClosed)
             {
                 try
                 {
-                    int bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
+                    var bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 
                     if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
                     {

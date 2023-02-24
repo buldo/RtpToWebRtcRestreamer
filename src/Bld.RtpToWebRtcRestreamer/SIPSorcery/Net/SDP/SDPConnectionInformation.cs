@@ -51,8 +51,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
         {
-            SDPConnectionInformation connectionInfo = new SDPConnectionInformation();
-            string[] connectionFields = connectionLine.Substring(2).Trim().Split(' ');
+            var connectionInfo = new SDPConnectionInformation();
+            var connectionFields = connectionLine.Substring(2).Trim().Split(' ');
             connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
             connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
             connectionInfo.ConnectionAddress = connectionFields[2].Trim();

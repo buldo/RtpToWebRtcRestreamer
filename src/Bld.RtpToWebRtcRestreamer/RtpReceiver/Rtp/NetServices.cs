@@ -89,14 +89,14 @@ internal class NetServices
             bindAddress = (Socket.OSSupportsIPv6 && SupportsDualModeIPv4PacketInfo) ? IPAddress.IPv6Any : IPAddress.Any;
         }
 
-        IPEndPoint logEp = new IPEndPoint(bindAddress, port);
+        var logEp = new IPEndPoint(bindAddress, port);
         logger.LogDebug($"CreateBoundSocket attempting to create and bind socket(s) on {logEp} using protocol {protocolType}.");
 
         CheckBindAddressAndThrow(bindAddress);
 
-        int bindAttempts = 0;
-        AddressFamily addressFamily = bindAddress.AddressFamily;
-        bool success = false;
+        var bindAttempts = 0;
+        var addressFamily = bindAddress.AddressFamily;
+        var success = false;
         Socket socket = null;
 
         while (bindAttempts < MAXIMUM_UDP_PORT_BIND_ATTEMPTS)
@@ -105,7 +105,7 @@ internal class NetServices
             {
                 socket = CreateSocket(addressFamily, protocolType, useDualMode);
                 BindSocket(socket, bindAddress, port);
-                int boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
+                var boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
 
                 if (requireEvenPort && boundPort % 2 != 0 && boundPort == IPEndPoint.MaxPort)
                 {
@@ -213,7 +213,7 @@ internal class NetServices
             {
                 logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{port}.");
 
-                using (Socket testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+                using (var testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                 {
                     testSocket.Bind(new IPEndPoint(IPAddress.Any, port));
                     testSocket.Close();
@@ -285,12 +285,12 @@ internal class NetServices
     {
         CheckBindAddressAndThrow(bindAddress);
 
-        IPEndPoint bindEP = new IPEndPoint(bindAddress, bindPort);
+        var bindEP = new IPEndPoint(bindAddress, bindPort);
         logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {bindEP}.");
 
         rtpSocket = null;
         controlSocket = null;
-        int bindAttempts = 0;
+        var bindAttempts = 0;
 
         while (bindAttempts < MAXIMUM_UDP_PORT_BIND_ATTEMPTS)
         {
@@ -304,8 +304,8 @@ internal class NetServices
                 {
                     // For legacy VoIP the RTP and Control sockets need to be consecutive with the RTP port being
                     // an even number.
-                    int rtpPort = (rtpSocket.LocalEndPoint as IPEndPoint).Port;
-                    int controlPort = rtpPort + 1;
+                    var rtpPort = (rtpSocket.LocalEndPoint as IPEndPoint).Port;
+                    var controlPort = rtpPort + 1;
 
                     // Hopefully the next OS port allocation will be back in range.
                     if (controlPort <= IPEndPoint.MaxPort)
@@ -376,7 +376,7 @@ internal class NetServices
     /// which are required to get the remote end point. False if not</returns>
     private static bool DoCheckSupportsDualModeIPv4PacketInfo()
     {
-        bool hasDualModeReceiveSupport = true;
+        var hasDualModeReceiveSupport = true;
 
         if (!Socket.OSSupportsIPv6)
         {
@@ -391,7 +391,7 @@ internal class NetServices
             {
                 testSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
                 testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
-                byte[] buf = new byte[1];
+                var buf = new byte[1];
                 EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
 
                 testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);

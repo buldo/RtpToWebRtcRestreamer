@@ -155,9 +155,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
             candidateLine = candidateLine.Replace("candidate:", "");
 
-            RTCIceCandidate candidate = new RTCIceCandidate();
+            var candidate = new RTCIceCandidate();
 
-            string[] candidateFields = candidateLine.Trim().Split(' ');
+            var candidateFields = candidateLine.Trim().Split(' ');
 
             candidate.foundation = candidateFields[0];
 
@@ -250,7 +250,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             }
             else
             {
-                string relAddr = relatedAddress;
+                var relAddr = relatedAddress;
 
                 if (string.IsNullOrWhiteSpace(relAddr))
                 {
@@ -302,7 +302,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             var serverProtocol = "udp";
             var builder = new StringBuilder();
             builder = builder.Append(type).Append(address).Append(protocol).Append(serverProtocol);
-            byte[] bytes = Encoding.ASCII.GetBytes(builder.ToString());
+            var bytes = Encoding.ASCII.GetBytes(builder.ToString());
             return UpdateCrc32(0, bytes).ToString();
 
             /*int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
@@ -319,13 +319,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             //Calculate our LocalPreference Priority
             if (IPAddress.TryParse(address, out addr))
             {
-                uint addrPref = IPAddressHelper.IPAddressPrecedence(addr);
+                var addrPref = IPAddressHelper.IPAddressPrecedence(addr);
 
                 // relay_preference in original code was sorted with params:
                 // UDP == 2
                 // TCP == 1
                 // TLS == 0
-                uint relayPreference = protocol == RTCIceProtocol.udp ? 2u : 1u;
+                var relayPreference = protocol == RTCIceProtocol.udp ? 2u : 1u;
 
                 // TODO: Original implementation consider network adapter preference as strength of wifi
                 // We will ignore it as its seems to not be a trivial implementation for use in net-standard 2.0
@@ -392,10 +392,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <returns>A short string describing the key properties of the candidate.</returns>
         public string ToShortString()
         {
-            string epDescription = $"{address}:{port}";
+            var epDescription = $"{address}:{port}";
             if (IPAddress.TryParse(address, out var ipAddress))
             {
-                IPEndPoint ep = new IPEndPoint(ipAddress, port);
+                var ep = new IPEndPoint(ipAddress, port);
                 epDescription = ep.ToString();
             }
 
@@ -406,11 +406,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         const uint kCrc32Polynomial = 0xEDB88320;
         private static uint[] LoadCrc32Table()
         {
-            uint[] kCrc32Table = new uint[256];
+            var kCrc32Table = new uint[256];
             for (uint i = 0; i < kCrc32Table.Length; ++i)
             {
-                uint c = i;
-                for (int j = 0; j < 8; ++j)
+                var c = i;
+                for (var j = 0; j < 8; ++j)
                 {
                     if ((c & 1) != 0)
                     {
@@ -431,8 +431,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             var kCrc32Table = LoadCrc32Table();
 
             long c = (int)(start ^ 0xFFFFFFFF);
-            byte[] u = buf;
-            for (int i = 0; i < buf.Length; ++i)
+            var u = buf;
+            for (var i = 0; i < buf.Length; ++i)
             {
                 c = kCrc32Table[(c ^ u[i]) & 0xFF] ^ (c >> 8);
             }

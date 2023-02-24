@@ -187,7 +187,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
         internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)
         {
-            bool retry = false;
+            var retry = false;
             var msgType = stunResponse.Header.MessageClass;
             if (msgType == STUNClassTypesEnum.ErrorResponse)
             {

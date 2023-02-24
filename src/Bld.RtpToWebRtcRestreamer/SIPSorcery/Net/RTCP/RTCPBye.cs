@@ -107,13 +107,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <returns>A byte array.</returns>
         public byte[] GetBytes()
         {
-            byte[] reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
-            int reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
+            var reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
+            var reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
+            var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             if (BitConverter.IsLittleEndian)
             {
@@ -148,7 +148,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 reasonLength += 1;
             }
 
-            int nonPaddedSize = reasonLength + SSRC_SIZE;
+            var nonPaddedSize = reasonLength + SSRC_SIZE;
 
             if (nonPaddedSize % 4 == 0)
             {

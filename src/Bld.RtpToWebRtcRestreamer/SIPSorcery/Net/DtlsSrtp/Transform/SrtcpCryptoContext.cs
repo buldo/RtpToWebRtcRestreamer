@@ -239,7 +239,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public void TransformPacket(RawPacket pkt)
         {
-            bool encrypt = false;
+            var encrypt = false;
             // Encrypt the packet using Counter Mode encryption
             if (policy.EncType == SrtpPolicy.AESCM_ENCRYPTION || policy.EncType == SrtpPolicy.TWOFISH_ENCRYPTION)
             {
@@ -254,7 +254,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 encrypt = true;
             }
 
-            int index = 0;
+            var index = 0;
             if (encrypt)
             {
                 index = (int)(sentIndex | 0x80000000);
@@ -293,16 +293,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public bool ReverseTransformPacket(RawPacket pkt)
         {
-            bool decrypt = false;
-            int tagLength = policy.AuthTagLength;
-            int indexEflag = pkt.GetSRTCPIndex(tagLength);
+            var decrypt = false;
+            var tagLength = policy.AuthTagLength;
+            var indexEflag = pkt.GetSRTCPIndex(tagLength);
 
             if ((indexEflag & 0x80000000) == 0x80000000)
             {
                 decrypt = true;
             }
 
-            int index = (int)(indexEflag & ~0x80000000);
+            var index = (int)(indexEflag & ~0x80000000);
 
             /* Replay control */
             if (!CheckReplay(index))
@@ -323,7 +323,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 // compute, then save authentication in tagStore
                 AuthenticatePacket(pkt, indexEflag);
 
-                for (int i = 0; i < tagLength; i++)
+                for (var i = 0; i < tagLength; i++)
                 {
                     if ((tempStore[i] & 0xff) == (tagStore[i] & 0xff))
                     {
@@ -391,8 +391,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             ivStore[14] = ivStore[15] = 0;
 
             // Encrypted part excludes fixed header (8 bytes)  
-            int payloadOffset = 8;
-            int payloadLength = pkt.GetLength() - payloadOffset;
+            var payloadOffset = 8;
+            var payloadLength = pkt.GetLength() - payloadOffset;
             cipherCtr.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore);
         }
 
@@ -422,18 +422,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             ivStore[7] = (byte)index;
 
             // The fixed header follows and fills the rest of the IV
-            MemoryStream buf = pkt.GetBuffer();
+            var buf = pkt.GetBuffer();
             buf.Position = 0;
             buf.Read(ivStore, 8, 8);
 
             // Encrypted part excludes fixed header (8 bytes), index (4 bytes), and
             // authentication tag (variable according to policy)  
-            int payloadOffset = 8;
-            int payloadLength = pkt.GetLength() - (4 + policy.AuthTagLength);
+            var payloadOffset = 8;
+            var payloadLength = pkt.GetLength() - (4 + policy.AuthTagLength);
             SrtpCipherF8.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore, cipherF8);
         }
 
-        readonly byte[] tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
+        readonly byte[] tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
 
         /**
          * Authenticate a packet.
@@ -444,9 +444,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private void AuthenticatePacket(RawPacket pkt, int index)
         {
-            MemoryStream buf = pkt.GetBuffer();
+            var buf = pkt.GetBuffer();
             buf.Position = 0;
-            int len = pkt.GetLength();
+            var len = pkt.GetLength();
             buf.Read(tempBuffer, 0, len);
 
             mac.BlockUpdate(tempBuffer, 0, len);
@@ -507,7 +507,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private void ComputeIv(byte label)
         {
-            for (int i = 0; i < 14; i++)
+            for (var i = 0; i < 14; i++)
             {
                 ivStore[i] = masterSalt[i];
             }
@@ -525,7 +525,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             byte label = 3;
             ComputeIv(label);
 
-            KeyParameter encryptionKey = new KeyParameter(masterKey);
+            var encryptionKey = new KeyParameter(masterKey);
             cipher.Init(true, encryptionKey);
             Arrays.Fill(masterKey, 0);
 
@@ -540,7 +540,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 switch ((policy.AuthType))
                 {
                     case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-                        KeyParameter key = new KeyParameter(authKey);
+                        var key = new KeyParameter(authKey);
                         mac.Init(key);
                         break;
                 }
@@ -573,7 +573,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private void Update(int index)
         {
-            int delta = receivedIndex - index;
+            var delta = receivedIndex - index;
 
             /* update the replay bit mask */
             if (delta > 0)

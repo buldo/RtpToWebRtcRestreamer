@@ -46,7 +46,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
             buffer[startIndex + 2] = ErrorClass;
             buffer[startIndex + 3] = ErrorNumber;
 
-            byte[] reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
+            var reasonPhraseBytes = Encoding.UTF8.GetBytes(ReasonPhrase);
             Buffer.BlockCopy(reasonPhraseBytes, 0, buffer, startIndex + 4, reasonPhraseBytes.Length);
 
             return STUNATTRIBUTE_HEADER_LENGTH + 4 + reasonPhraseBytes.Length;
@@ -54,7 +54,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
+            var attrDescrStr = "STUN ERROR_CODE_ADDRESS Attribute: error code=" + ErrorCode + ", reason phrase=" + ReasonPhrase + ".";
 
             return attrDescrStr;
         }

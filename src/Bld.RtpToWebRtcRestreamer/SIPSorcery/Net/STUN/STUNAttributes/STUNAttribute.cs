@@ -74,16 +74,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
         {
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)
             {
-                List<STUNAttribute> attributes = new List<STUNAttribute>();
-                int startAttIndex = startIndex;
+                var attributes = new List<STUNAttribute>();
+                var startAttIndex = startIndex;
 
                 while (startAttIndex < endIndex)
                 {
-                    UInt16 stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
-                    UInt16 stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
+                    var stunAttributeType = NetConvert.ParseUInt16(buffer, startAttIndex);
+                    var stunAttributeLength = NetConvert.ParseUInt16(buffer, startAttIndex + 2);
                     byte[] stunAttributeValue = null;
 
-                    STUNAttributeTypesEnum attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
+                    var attributeType = STUNAttributeTypes.GetSTUNAttributeTypeForId(stunAttributeType);
 
                     if (stunAttributeLength > 0)
                     {
@@ -131,7 +131,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
                     attributes.Add(attribute);
 
                     // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
-                    int padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
+                    var padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
 
                     startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
                 }

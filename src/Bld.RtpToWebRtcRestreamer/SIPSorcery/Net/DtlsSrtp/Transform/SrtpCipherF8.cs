@@ -91,15 +91,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
              * Get memory for the special key. This is the key to compute the
              * derived IV (IV').
              */
-            byte[] saltMask = new byte[key.Length];
-            byte[] maskedKey = new byte[key.Length];
+            var saltMask = new byte[key.Length];
+            var maskedKey = new byte[key.Length];
 
             /*
              * First copy the salt into the mask field, then fill with 0x55 to get a
              * full key.
              */
             Array.Copy(salt, 0, saltMask, 0, salt.Length);
-            for (int i = salt.Length; i < saltMask.Length; ++i)
+            for (var i = salt.Length; i < saltMask.Length; ++i)
             {
                 saltMask[i] = 0x55;
             }
@@ -108,7 +108,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
              * XOR the original key with the above created mask to get the special
              * key.
              */
-            for (int i = 0; i < key.Length; i++)
+            for (var i = 0; i < key.Length; i++)
             {
                 maskedKey[i] = (byte)(key[i] ^ saltMask[i]);
             }
@@ -116,14 +116,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             /*
              * Prepare the f8Cipher with the special key to compute IV'
              */
-            KeyParameter encryptionKey = new KeyParameter(maskedKey);
+            var encryptionKey = new KeyParameter(maskedKey);
             f8Cipher.Init(true, encryptionKey);
         }
 
         public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,
                 byte[] iv, IBlockCipher f8Cipher)
         {
-            F8Context f8ctx = new F8Context();
+            var f8ctx = new F8Context();
 
             /*
              * Get memory for the derived IV (IV')
@@ -140,7 +140,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
             Arrays.Fill(f8ctx.S, 0);
 
-            int inLen = len;
+            var inLen = len;
 
             while (inLen >= BLKLEN)
             {
@@ -179,7 +179,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
              * XOR the previous key stream with IV'
              * ( S(-1) xor IV' )
              */
-            for (int i = 0; i < BLKLEN; i++)
+            for (var i = 0; i < BLKLEN; i++)
             {
                 f8ctx.S[i] ^= f8ctx.ivAccent[i];
             }
@@ -203,7 +203,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
              * As the last step XOR the plain text with the key stream to produce
              * the cipher text.
              */
-            for (int i = 0; i < len; i++)
+            for (var i = 0; i < len; i++)
             {
                 _in.Position = inOff + i;
                 var inByte = _in.ReadByte();

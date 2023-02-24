@@ -125,8 +125,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 _waitMillis = RetransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsClientProtocol clientProtocol = new DtlsClientProtocol(secureRandom);
+                var secureRandom = new SecureRandom();
+                var clientProtocol = new DtlsClientProtocol(secureRandom);
                 try
                 {
                     var client = (DtlsSrtpClient)connection;
@@ -190,8 +190,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 _waitMillis = RetransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
-                SecureRandom secureRandom = new SecureRandom();
-                DtlsServerProtocol serverProtocol = new DtlsServerProtocol(secureRandom);
+                var secureRandom = new SecureRandom();
+                var serverProtocol = new DtlsServerProtocol(secureRandom);
                 try
                 {
                     var server = (DtlsSrtpServer)connection;
@@ -468,7 +468,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             {
                 // The timeout for the handshake applies from when it started rather than
                 // for each individual receive..
-                int millisecondsRemaining = GetMillisecondsRemaining();
+                var millisecondsRemaining = GetMillisecondsRemaining();
 
                 //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                 //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7

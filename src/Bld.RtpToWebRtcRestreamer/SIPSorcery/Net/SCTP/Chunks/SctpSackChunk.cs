@@ -98,14 +98,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         {
             WriteChunkHeader(buffer, posn);
 
-            ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
+            var startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
 
             NetConvert.ToBuffer(CumulativeTsnAck, buffer, startPosn);
             NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
             NetConvert.ToBuffer((ushort)GapAckBlocks.Count, buffer, startPosn + 8);
             NetConvert.ToBuffer((ushort)DuplicateTSN.Count, buffer, startPosn + 10);
 
-            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            var reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
             foreach (var gapBlock in GapAckBlocks)
             {
@@ -133,24 +133,24 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             var sackChunk = new SctpSackChunk();
             sackChunk.ParseFirstWord(buffer, posn);
 
-            ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
+            var startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
 
             sackChunk.CumulativeTsnAck = NetConvert.ParseUInt32(buffer, startPosn);
             sackChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
-            ushort numGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
-            ushort numDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
+            var numGapAckBlocks = NetConvert.ParseUInt16(buffer, startPosn + 8);
+            var numDuplicateTSNs = NetConvert.ParseUInt16(buffer, startPosn + 10);
 
-            int reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            var reportPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
-            for (int i=0; i < numGapAckBlocks; i++)
+            for (var i=0; i < numGapAckBlocks; i++)
             {
-                ushort start = NetConvert.ParseUInt16(buffer, reportPosn);
-                ushort end = NetConvert.ParseUInt16(buffer, reportPosn + 2);
+                var start = NetConvert.ParseUInt16(buffer, reportPosn);
+                var end = NetConvert.ParseUInt16(buffer, reportPosn + 2);
                 sackChunk.GapAckBlocks.Add(new SctpTsnGapBlock { Start = start, End = end });
                 reportPosn += GAP_REPORT_LENGTH;
             }
 
-            for(int j=0; j < numDuplicateTSNs; j++)
+            for(var j=0; j < numDuplicateTSNs; j++)
             {
                 sackChunk.DuplicateTSN.Add(NetConvert.ParseUInt32(buffer, reportPosn));
                 reportPosn += DUPLICATE_TSN_LENGTH;

@@ -21,13 +21,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 
         public MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
         {
-            List<byte[]> nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit);
+            var nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit);
 
             if (nal_units != null)
             {
                 //Calculate total buffer size
                 long totalBufferSize = 0;
-                for (int i = 0; i < nal_units.Count; i++)
+                for (var i = 0; i < nal_units.Count; i++)
                 {
                     var nal = nal_units[i];
                     long remaining = nal.Length;
@@ -44,7 +44,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                 }
 
                 //Merge nals in same buffer using Annex-B separator (0001)
-                MemoryStream data = new MemoryStream(new byte[totalBufferSize]);
+                var data = new MemoryStream(new byte[totalBufferSize]);
                 foreach (var nal in nal_units)
                 {
                     data.WriteByte(0);
@@ -60,7 +60,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 
         private List<byte[]> ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
         {
-            List<byte[]> nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit);
+            var nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit);
 
             return nal_units;
         }
@@ -88,7 +88,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                 }
 
                 // End Marker is set. Process the list of RTP Packets (forming 1 RTP frame) and save the NALs to a file
-                List<byte[]> nal_units = ProcessH264PayloadFrame(temporary_rtp_payloads);
+                var nal_units = ProcessH264PayloadFrame(temporary_rtp_payloads);
                 temporary_rtp_payloads.Clear();
                 previous_timestamp = 0;
                 fragmented_nal.SetLength(0);
@@ -105,14 +105,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
         private List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads)
         {
             bool? isKeyFrameNullable = null;
-            List<byte[]> nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
+            var nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
 
-            for (int payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
+            for (var payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
             {
                 // Examine the first rtp_payload and the first byte (the NAL header)
-                int nal_header_f_bit = (rtp_payloads[payload_index].Value[0] >> 7) & 0x01;
-                int nal_header_nri = (rtp_payloads[payload_index].Value[0] >> 5) & 0x03;
-                int nal_header_type = (rtp_payloads[payload_index].Value[0] >> 0) & 0x1F;
+                var nal_header_f_bit = (rtp_payloads[payload_index].Value[0] >> 7) & 0x01;
+                var nal_header_nri = (rtp_payloads[payload_index].Value[0] >> 5) & 0x03;
+                var nal_header_type = (rtp_payloads[payload_index].Value[0] >> 0) & 0x1F;
 
                 // If the Nal Header Type is in the range 1..23 this is a normal NAL (not fragmented)
                 // So write the NAL to the file
@@ -134,16 +134,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                     //   Read NAL
                     try
                     {
-                        int ptr = 1; // start after the nal_header_type which was '24'
+                        var ptr = 1; // start after the nal_header_type which was '24'
                         // if we have at least 2 more bytes (the 16 bit size) then consume more data
                         while (ptr + 2 < (rtp_payloads[payload_index].Value.Length - 1))
                         {
-                            int size = (rtp_payloads[payload_index].Value[ptr] << 8) + (rtp_payloads[payload_index].Value[ptr + 1] << 0);
+                            var size = (rtp_payloads[payload_index].Value[ptr] << 8) + (rtp_payloads[payload_index].Value[ptr + 1] << 0);
                             ptr = ptr + 2;
-                            byte[] nal = new byte[size];
+                            var nal = new byte[size];
                             Buffer.BlockCopy(rtp_payloads[payload_index].Value, ptr, nal, 0, size); // copy the NAL
 
-                            byte reconstructed_nal_type = (byte)((nal[0] >> 0) & 0x1F);
+                            var reconstructed_nal_type = (byte)((nal[0] >> 0) & 0x1F);
                             //Check if is Key Frame
                             CheckKeyFrame(reconstructed_nal_type, ref isKeyFrameNullable);
 
@@ -172,9 +172,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                     fu_a++;
 
                     // Parse Fragmentation Unit Header
-                    int fu_header_s = (rtp_payloads[payload_index].Value[1] >> 7) & 0x01;  // start marker
-                    int fu_header_e = (rtp_payloads[payload_index].Value[1] >> 6) & 0x01;  // end marker
-                    int fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
+                    var fu_header_s = (rtp_payloads[payload_index].Value[1] >> 7) & 0x01;  // start marker
+                    var fu_header_e = (rtp_payloads[payload_index].Value[1] >> 6) & 0x01;  // end marker
+                    var fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
 
                     // Check Start and End flags
                     if (fu_header_s == 1 && fu_header_e == 0)
@@ -182,7 +182,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                         // Start of Fragment.
                         // Initialise the fragmented_nal byte array
                         // Build the NAL header with the original F and NRI flags but use the the Type field from the fu_header_type
-                        byte reconstructed_nal_type = (byte)((nal_header_f_bit << 7) + (nal_header_nri << 5) + fu_header_type);
+                        var reconstructed_nal_type = (byte)((nal_header_f_bit << 7) + (nal_header_nri << 5) + fu_header_type);
 
                         // Empty the stream
                         fragmented_nal.SetLength(0);
@@ -210,7 +210,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                         fragmented_nal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
 
                         var fragmeted_nal_array = fragmented_nal.ToArray();
-                        byte reconstructed_nal_type = (byte)((fragmeted_nal_array[0] >> 0) & 0x1F);
+                        var reconstructed_nal_type = (byte)((fragmeted_nal_array[0] >> 0) & 0x1F);
 
                         //Check if is Key Frame
                         CheckKeyFrame(reconstructed_nal_type, ref isKeyFrameNullable);

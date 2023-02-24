@@ -376,7 +376,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
                     try
                     {
-                        bool handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
+                        var handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
                         connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
                         onconnectionstatechange?.Invoke(connectionState);
@@ -506,7 +506,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <returns>The result of attempting to set the remote description.</returns>
         protected override SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP.SDP sessionDescription)
         {
-            RTCSessionDescriptionInit init = new RTCSessionDescriptionInit
+            var init = new RTCSessionDescriptionInit
             {
                 sdp = sessionDescription.ToString(),
                 type = (sdpType == SdpType.answer) ? RTCSdpType.answer : RTCSdpType.offer
@@ -523,9 +523,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
 
-            SDP.SDP remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+            var remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
-            SdpType sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
+            var sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
 
             switch (signalingState)
             {
@@ -538,10 +538,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             if (setResult == SetDescriptionResultEnum.OK)
             {
-                string remoteIceUser = remoteSdp.IceUfrag;
-                string remoteIcePassword = remoteSdp.IcePwd;
-                string dtlsFingerprint = remoteSdp.DtlsFingerprint;
-                IceRolesEnum? remoteIceRole = remoteSdp.IceRole;
+                var remoteIceUser = remoteSdp.IceUfrag;
+                var remoteIcePassword = remoteSdp.IcePwd;
+                var dtlsFingerprint = remoteSdp.DtlsFingerprint;
+                var remoteIceRole = remoteSdp.IceRole;
 
                 foreach (var ann in remoteSdp.Media)
                 {
@@ -708,7 +708,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// controls over the generated offer SDP.</param>
         public RTCSessionDescriptionInit createOffer()
         {
-            List<MediaStream> mediaStreamList = GetMediaStreams();
+            var mediaStreamList = GetMediaStreams();
             //Revert to DefaultStreamStatus
             foreach (var mediaStream in mediaStreamList)
             {
@@ -725,7 +725,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 ann.IceRole = IceRole;
             }
 
-            RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
+            var initDescription = new RTCSessionDescriptionInit
             {
                 type = RTCSdpType.offer,
                 sdp = offerSdp.ToString()
@@ -750,7 +750,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 throw new ApplicationException("The remote SDP must be set before an SDP answer can be created.");
             }
 
-            List<MediaStream> mediaStreamList = GetMediaStreams();
+            var mediaStreamList = GetMediaStreams();
             //Revert to DefaultStreamStatus
             foreach (var mediaStream in mediaStreamList)
             {
@@ -762,7 +762,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             var answerSdp = createBaseSdp(mediaStreamList);
 
-            RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
+            var initDescription = new RTCSessionDescriptionInit
             {
                 type = RTCSdpType.answer,
                 sdp = answerSdp.ToString()
@@ -805,11 +805,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             // delay of a few hundred milliseconds it was decided not to break the API.
             _iceGatheringTask.Wait();
 
-            SDP.SDP offerSdp = new SDP.SDP(IPAddress.Loopback);
+            var offerSdp = new SDP.SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
-            string dtlsFingerprint = DtlsCertificateFingerprint.ToString();
-            bool iceCandidatesAdded = false;
+            var dtlsFingerprint = DtlsCertificateFingerprint.ToString();
+            var iceCandidatesAdded = false;
             
 
             // Local function to add ICE candidates to one of the media announcements.
@@ -838,13 +838,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             };
 
             // Media announcements must be in the same order in the offer and answer.
-            int mediaIndex = 0;
-            int audioMediaIndex = 0;
-            int videoMediaIndex = 0;
+            var mediaIndex = 0;
+            var audioMediaIndex = 0;
+            var videoMediaIndex = 0;
             foreach (var mediaStream in mediaStreamList)
             {
-                int mindex = 0;
-                string midTag = "0";
+                var mindex = 0;
+                var midTag = "0";
 
                 if (RemoteDescription == null)
                 {
@@ -872,7 +872,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 }
                 else
                 {
-                    SDPMediaAnnouncement announcement = new SDPMediaAnnouncement(
+                    var announcement = new SDPMediaAnnouncement(
                      mediaStream.LocalTrack.Kind,
                      SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                      mediaStream.LocalTrack.Capabilities);
@@ -899,7 +899,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
                     if (mediaStream.LocalTrack.Ssrc != 0)
                     {
-                        string trackCname = mediaStream.RtcpSession?.Cname;
+                        var trackCname = mediaStream.RtcpSession?.Cname;
 
                         if (trackCname != null)
                         {
@@ -921,7 +921,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 }
                 else
                 {
-                    SDPMediaAnnouncement dataChannelAnnouncement = new SDPMediaAnnouncement(
+                    var dataChannelAnnouncement = new SDPMediaAnnouncement(
                         SDPMediaTypesEnum.application,
                         SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                         new List<SDPApplicationMediaFormat> { new SDPApplicationMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
@@ -1018,7 +1018,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <param name="candidateInit">The remote ICE candidate to add.</param>
         public void addIceCandidate(RTCIceCandidateInit candidateInit)
         {
-            RTCIceCandidate candidate = new RTCIceCandidate(candidateInit);
+            var candidate = new RTCIceCandidate(candidateInit);
 
             if (_rtpIceChannel.Component == candidate.component)
             {
@@ -1046,7 +1046,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             // If a data channel was requested by the application then create the SCTP association.
             var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-            ushort destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
+            var destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
 
             if (destinationPort != SCTP_DEFAULT_PORT)
             {
@@ -1151,7 +1151,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             dataChannels.TryGetChannel(streamID, out var dc);
 
-            string label = dc != null ? dc.label : "<none>";
+            var label = dc != null ? dc.label : "<none>";
             Logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
 
             if (dc != null)
@@ -1196,7 +1196,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             if (sctp.state != RTCSctpTransportState.Connected)
             {
-                TaskCompletionSource<bool> onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 sctp.OnStateChanged += state =>
                 {
                     Logger.LogDebug($"SCTP transport for create data channel request changed to state {state}.");
@@ -1207,7 +1207,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                     }
                 };
 
-                DateTime startTime = DateTime.Now;
+                var startTime = DateTime.Now;
 
                 var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
 
@@ -1319,7 +1319,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             }
             else
             {
-                string alertMsg = !string.IsNullOrEmpty(alertDescription) ? $": {alertDescription}" : ".";
+                var alertMsg = !string.IsNullOrEmpty(alertDescription) ? $": {alertDescription}" : ".";
                 Logger.LogWarning($"DTLS unexpected {alertLevel} alert {alertType}{alertMsg}");
             }
         }

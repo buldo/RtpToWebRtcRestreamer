@@ -83,13 +83,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public SrtpPolicy GetSrtpPolicy()
         {
-            SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, authTagLength, saltLength);
+            var sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, authTagLength, saltLength);
             return sp;
         }
 
         public SrtpPolicy GetSrtcpPolicy()
         {
-            SrtpPolicy sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, rtcpAuthTagLength, saltLength);
+            var sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, rtcpAuthTagLength, saltLength);
             return sp;
         }
 

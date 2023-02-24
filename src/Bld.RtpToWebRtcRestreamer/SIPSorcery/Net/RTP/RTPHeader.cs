@@ -64,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
+            var firstWord = BitConverter.ToUInt16(packet, 0);
 
             if (BitConverter.IsLittleEndian)
             {
@@ -89,8 +89,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             MarkerBit = (firstWord >> 7) & 0x1;
             PayloadType = firstWord & 0x7f;
 
-            int headerExtensionLength = 0;
-            int headerAndCSRCLength = 12 + 4 * CSRCCount;
+            var headerExtensionLength = 0;
+            var headerAndCSRCLength = 12 + 4 * CSRCCount;
 
             if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
             {
@@ -129,9 +129,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         public byte[] GetBytes()
         {
-            byte[] header = new byte[Length];
+            var header = new byte[Length];
 
-            UInt16 firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
+            var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
             if (BitConverter.IsLittleEndian)
             {

@@ -73,7 +73,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 throw new ApplicationException("The buffer did not contain the minimum number of bytes for an SCTP header.");
             }
 
-            SctpHeader header = new SctpHeader();
+            var header = new SctpHeader();
 
             header.SourcePort = NetConvert.ParseUInt16(buffer, posn);
             header.DestinationPort = NetConvert.ParseUInt16(buffer, posn + 2);

@@ -490,8 +490,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <returns>A list of "host" ICE candidates for the local machine.</returns>
         private List<RTCIceCandidate> GetHostCandidates()
         {
-            List<RTCIceCandidate> hostCandidates = new List<RTCIceCandidate>();
-            RTCIceCandidateInit init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
+            var hostCandidates = new List<RTCIceCandidate>();
+            var init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
 
             // RFC8445 states that loopback addresses should not be included in
             // host candidates. If the provided bind address is a loopback
@@ -623,7 +623,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     if (remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetwork && supportsIPv4 ||
                         remoteCandidateIPAddr.AddressFamily == AddressFamily.InterNetworkV6 && supportsIPv6)
                     {
-                        ChecklistEntry entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController);
+                        var entry = new ChecklistEntry(localCandidate, remoteCandidate, IsController);
 
                         // Because only ONE checklist is currently supported each candidate pair can be set to
                         // a "waiting" state. If an additional checklist is ever added then only one candidate
@@ -872,7 +872,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             if (NominatedEntry == null)
             {
                 _connectedAt = DateTime.Now;
-                int duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
+                var duration = (int)_connectedAt.Subtract(_startedGatheringAt).TotalMilliseconds;
 
                 logger.LogInformation($"ICE RTP channel connected after {duration:0.##}ms {entry.LocalCandidate.ToShortString()}->{entry.RemoteCandidate.ToShortString()}.");
 
@@ -927,7 +927,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             candidatePair.LastCheckSentAt = DateTime.Now;
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
-            bool isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
+            var isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
             //bool isTcpProtocol = candidatePair.LocalCandidate.IceServerConsts?.Protocol == ProtocolType.Tcp;
 
             if (isRelayCheck && candidatePair.TurnPermissionsResponseAt == DateTime.MinValue)
@@ -952,7 +952,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                 }
                 else
                 {
-                    IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
+                    var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
                     logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
                 }
                 SendSTUNBindingRequest(candidatePair, setUseCandidate);
@@ -967,7 +967,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <param name="setUseCandidate">Set to true to add a "UseCandidate" attribute to the STUN request.</param>
         private void SendSTUNBindingRequest(ChecklistEntry candidatePair, bool setUseCandidate)
         {
-            STUNMessage stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
+            var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
             stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionID);
             stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority, BitConverter.GetBytes(candidatePair.LocalPriority)));
@@ -986,14 +986,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                 stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.UseCandidate, null));
             }
 
-            byte[] stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+            var stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
 
             if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
             {
             }
             else
             {
-                IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
+                var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
                 var sendResult = Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
 
                 if (sendResult != SocketError.Success)
@@ -1019,7 +1019,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                 if (DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds > FAILED_TIMEOUT_PERIOD &&
                     DateTime.Now.Subtract(candidatePair.LastBindingRequestReceivedAt).TotalSeconds > FAILED_TIMEOUT_PERIOD)
                 {
-                    int duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
+                    var duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
                     logger.LogWarning($"ICE RTP channel failed after {duration:0.##}s {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()}.");
 
                     IceConnectionState = RTCIceConnectionState.failed;
@@ -1034,7 +1034,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     {
                         if (IceConnectionState == RTCIceConnectionState.connected)
                         {
-                            int duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
+                            var duration = (int)DateTime.Now.Subtract(candidatePair.LastConnectedResponseAt).TotalSeconds;
                             logger.LogWarning($"ICE RTP channel disconnected after {duration:0.##}s {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()}.");
 
                             IceConnectionState = RTCIceConnectionState.disconnected;
@@ -1237,19 +1237,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                 // If the policy is "relay only" then direct binding requests are not accepted.
                 logger.LogWarning($"ICE RTP channel rejecting non-relayed STUN binding request from {remoteEndPoint}.");
 
-                STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                 stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                 Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
             }
             else
             {
-                bool result = bindingRequest.CheckIntegrity(Encoding.UTF8.GetBytes(LocalIcePassword));
+                var result = bindingRequest.CheckIntegrity(Encoding.UTF8.GetBytes(LocalIcePassword));
 
                 if (!result)
                 {
                     // Send STUN error response.
                     logger.LogWarning($"ICE RTP channel STUN binding request from {remoteEndPoint} failed an integrity check, rejecting.");
-                    STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                    var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                     stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                     Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                 }
@@ -1274,14 +1274,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     {
                         // This STUN request has come from a socket not in the remote ICE candidates list. 
                         // Add a new remote peer reflexive candidate. 
-                        RTCIceCandidate peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
+                        var peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                         peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                         peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
                         logger.LogDebug($"Adding peer reflex ICE candidate for {remoteEndPoint}.");
                         _remoteCandidates.Add(peerRflxCandidate);
 
                         // Add a new entry to the check list for the new peer reflexive candidate.
-                        ChecklistEntry entry = new ChecklistEntry(wasRelayed ? null : _localChecklistCandidate,
+                        var entry = new ChecklistEntry(wasRelayed ? null : _localChecklistCandidate,
                             peerRflxCandidate, IsController);
                         entry.State = ChecklistEntryState.Waiting;
 
@@ -1300,7 +1300,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     if (matchingChecklistEntry == null)
                     {
                         logger.LogWarning("ICE RTP channel STUN request matched a remote candidate but NOT a checklist entry.");
-                        STUNMessage stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
+                        var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                         stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                         Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                     }
@@ -1328,10 +1328,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
                         matchingChecklistEntry.LastBindingRequestReceivedAt = DateTime.Now;
 
-                        STUNMessage stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
+                        var stunResponse = new STUNMessage(STUNMessageTypesEnum.BindingSuccessResponse);
                         stunResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
                         stunResponse.AddXORMappedAddressAttribute(remoteEndPoint.Address, remoteEndPoint.Port);
-                        byte[] stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
+                        var stunRespBytes = stunResponse.ToByteBufferStringKey(LocalIcePassword, true);
 
                         if (wasRelayed)
                         {
@@ -1352,7 +1352,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <returns>A checklist entry or null if there was no match.</returns>
         private ChecklistEntry GetChecklistEntryForStunResponse(byte[] transactionID)
         {
-            string txID = Encoding.ASCII.GetString(transactionID);
+            var txID = Encoding.ASCII.GetString(transactionID);
             ChecklistEntry matchingChecklistEntry = null;
 
             lock (_checklist)
@@ -1375,7 +1375,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         {
             if (packet?.Length > 0)
             {
-                bool wasRelayed = false;
+                var wasRelayed = false;
 
                 if (packet[0] == 0x00 && packet[1] == 0x17)
                 {

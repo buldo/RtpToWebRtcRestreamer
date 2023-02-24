@@ -86,19 +86,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>The byte array containing the serialised SCTP packet.</returns>
         public byte[] GetBytes()
         {
-            int chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
-            byte[] buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
+            var chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
+            var buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
 
             Header.WriteToBuffer(buffer, 0);
 
-            int writePosn = SctpHeader.SCTP_HEADER_LENGTH;
+            var writePosn = SctpHeader.SCTP_HEADER_LENGTH;
             foreach (var chunk in Chunks)
             {
                 writePosn += chunk.WriteTo(buffer, writePosn);
             }
 
             NetConvert.ToBuffer(0U, buffer, CHECKSUM_BUFFER_POSITION);
-            uint checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
+            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
             NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
 
             return buffer;
@@ -137,16 +137,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>The lsit of parsed chunks and a list of unrecognised chunks that were not de-serialised.</returns>
         private static (List<SctpChunk> chunks, List<byte[]> unrecognisedChunks) ParseChunks(byte[] buffer, int offset, int length)
         {
-            List<SctpChunk> chunks = new List<SctpChunk>();
-            List<byte[]> unrecognisedChunks = new List<byte[]>();
+            var chunks = new List<SctpChunk>();
+            var unrecognisedChunks = new List<byte[]>();
 
-            int posn = offset + SctpHeader.SCTP_HEADER_LENGTH;
+            var posn = offset + SctpHeader.SCTP_HEADER_LENGTH;
 
-            bool stop = false;
+            var stop = false;
 
             while (posn < length)
             {
-                byte chunkType = buffer[posn];
+                var chunkType = buffer[posn];
 
                 if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
                 {
@@ -193,9 +193,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>True if the checksum was valid, false if not.</returns>
         public static bool VerifyChecksum(byte[] buffer, int posn, int length)
         {
-            uint origChecksum = NetConvert.ParseUInt32(buffer, posn + CHECKSUM_BUFFER_POSITION);
+            var origChecksum = NetConvert.ParseUInt32(buffer, posn + CHECKSUM_BUFFER_POSITION);
             NetConvert.ToBuffer(0U, buffer, posn + CHECKSUM_BUFFER_POSITION);
-            uint calcChecksum = CRC32C.Calculate(buffer, posn, length);
+            var calcChecksum = CRC32C.Calculate(buffer, posn, length);
 
             // Put the original checksum back.
             NetConvert.ToBuffer(origChecksum, buffer, posn + CHECKSUM_BUFFER_POSITION);

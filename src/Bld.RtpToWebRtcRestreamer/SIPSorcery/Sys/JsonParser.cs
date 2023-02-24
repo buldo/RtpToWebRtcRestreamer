@@ -56,9 +56,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
             //Remove all whitespace not within strings to make parsing simpler
             stringBuilder.Length = 0;
-            for (int i = 0; i < json.Length; i++)
+            for (var i = 0; i < json.Length; i++)
             {
-                char c = json[i];
+                var c = json[i];
                 if (c == '"')
                 {
                     i = AppendUntilStringEnd(true, i, json);
@@ -77,7 +77,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
         static int AppendUntilStringEnd(bool appendEscapeCharacter, int startIdx, string json)
         {
             stringBuilder.Append(json[startIdx]);
-            for (int i = startIdx + 1; i < json.Length; i++)
+            for (var i = startIdx + 1; i < json.Length; i++)
             {
                 if (json[i] == '\\')
                 {
@@ -100,13 +100,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
         //Splits { <value>:<value>, <value>:<value> } and [ <value>, <value> ] into a list of <value> strings
         static List<string> Split(string json)
         {
-            List<string> splitArray = splitArrayPool.Count > 0 ? splitArrayPool.Pop() : new List<string>();
+            var splitArray = splitArrayPool.Count > 0 ? splitArrayPool.Pop() : new List<string>();
             splitArray.Clear();
             if (json.Length == 2)
                 return splitArray;
-            int parseDepth = 0;
+            var parseDepth = 0;
             stringBuilder.Length = 0;
-            for (int i = 1; i < json.Length - 1; i++)
+            for (var i = 1; i < json.Length - 1; i++)
             {
                 switch (json[i])
                 {
@@ -146,12 +146,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             {
                 if (json.Length <= 2)
                     return string.Empty;
-                StringBuilder parseStringBuilder = new StringBuilder(json.Length);
-                for (int i = 1; i < json.Length - 1; ++i)
+                var parseStringBuilder = new StringBuilder(json.Length);
+                for (var i = 1; i < json.Length - 1; ++i)
                 {
                     if (json[i] == '\\' && i + 1 < json.Length - 1)
                     {
-                        int j = "\"\\nrtbf/".IndexOf(json[i + 1]);
+                        var j = "\"\\nrtbf/".IndexOf(json[i + 1]);
                         if (j >= 0)
                         {
                             parseStringBuilder.Append("\"\\\n\r\t\b\f/"[j]);
@@ -203,26 +203,26 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             }
             if (type.IsArray)
             {
-                Type arrayType = type.GetElementType();
+                var arrayType = type.GetElementType();
                 if (json[0] != '[' || json[json.Length - 1] != ']')
                     return null;
 
-                List<string> elems = Split(json);
-                Array newArray = Array.CreateInstance(arrayType, elems.Count);
-                for (int i = 0; i < elems.Count; i++)
+                var elems = Split(json);
+                var newArray = Array.CreateInstance(arrayType, elems.Count);
+                for (var i = 0; i < elems.Count; i++)
                     newArray.SetValue(ParseValue(arrayType, elems[i]), i);
                 splitArrayPool.Push(elems);
                 return newArray;
             }
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
             {
-                Type listType = type.GetGenericArguments()[0];
+                var listType = type.GetGenericArguments()[0];
                 if (json[0] != '[' || json[json.Length - 1] != ']')
                     return null;
 
-                List<string> elems = Split(json);
+                var elems = Split(json);
                 var list = (IList)type.GetConstructor(new[] { typeof(int) }).Invoke(new object[] { elems.Count });
-                for (int i = 0; i < elems.Count; i++)
+                for (var i = 0; i < elems.Count; i++)
                     list.Add(ParseValue(listType, elems[i]));
                 splitArrayPool.Push(elems);
                 return list;
@@ -231,7 +231,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             {
                 Type keyType, valueType;
                 {
-                    Type[] args = type.GetGenericArguments();
+                    var args = type.GetGenericArguments();
                     keyType = args[0];
                     valueType = args[1];
                 }
@@ -243,17 +243,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 if (json[0] != '{' || json[json.Length - 1] != '}')
                     return null;
                 //The list is split into key/value pairs only, this means the split must be divisible by 2 to be valid JSON
-                List<string> elems = Split(json);
+                var elems = Split(json);
                 if (elems.Count % 2 != 0)
                     return null;
 
                 var dictionary = (IDictionary)type.GetConstructor(new[] { typeof(int) }).Invoke(new object[] { elems.Count / 2 });
-                for (int i = 0; i < elems.Count; i += 2)
+                for (var i = 0; i < elems.Count; i += 2)
                 {
                     if (elems[i].Length <= 2)
                         continue;
-                    string keyValue = elems[i].Substring(1, elems[i].Length - 2);
-                    object val = ParseValue(valueType, elems[i + 1]);
+                    var keyValue = elems[i].Substring(1, elems[i].Length - 2);
+                    var val = ParseValue(valueType, elems[i + 1]);
                     dictionary[keyValue] = val;
                 }
                 return dictionary;
@@ -276,25 +276,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 return null;
             if (json[0] == '{' && json[json.Length - 1] == '}')
             {
-                List<string> elems = Split(json);
+                var elems = Split(json);
                 if (elems.Count % 2 != 0)
                     return null;
                 var dict = new Dictionary<string, object>(elems.Count / 2);
-                for (int i = 0; i < elems.Count; i += 2)
+                for (var i = 0; i < elems.Count; i += 2)
                     dict[elems[i].Substring(1, elems[i].Length - 2)] = ParseAnonymousValue(elems[i + 1]);
                 return dict;
             }
             if (json[0] == '[' && json[json.Length - 1] == ']')
             {
-                List<string> items = Split(json);
+                var items = Split(json);
                 var finalList = new List<object>(items.Count);
-                for (int i = 0; i < items.Count; i++)
+                for (var i = 0; i < items.Count; i++)
                     finalList.Add(ParseAnonymousValue(items[i]));
                 return finalList;
             }
             if (json[0] == '"' && json[json.Length - 1] == '"')
             {
-                string str = json.Substring(1, json.Length - 2);
+                var str = json.Substring(1, json.Length - 2);
                 return str.Replace("\\", string.Empty);
             }
             if (char.IsDigit(json[0]) || json[0] == '-')
@@ -322,17 +322,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
         static Dictionary<string, T> CreateMemberNameDictionary<T>(T[] members) where T : MemberInfo
         {
-            Dictionary<string, T> nameToMember = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < members.Length; i++)
+            var nameToMember = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < members.Length; i++)
             {
-                T member = members[i];
+                var member = members[i];
                 if (member.IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     continue;
 
-                string name = member.Name;
+                var name = member.Name;
                 if (member.IsDefined(typeof(DataMemberAttribute), true))
                 {
-                    DataMemberAttribute dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
+                    var dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
                     if (!string.IsNullOrEmpty(dataMemberAttribute.Name))
                         name = dataMemberAttribute.Name;
                 }
@@ -345,10 +345,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
         static object ParseObject(Type type, string json)
         {
-            object instance = FormatterServices.GetUninitializedObject(type);
+            var instance = FormatterServices.GetUninitializedObject(type);
 
             //The list is split into key/value pairs only, this means the split must be divisible by 2 to be valid JSON
-            List<string> elems = Split(json);
+            var elems = Split(json);
             if (elems.Count % 2 != 0)
                 return instance;
 
@@ -365,12 +365,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 propertyInfoCache.Add(type, nameToProperty);
             }
 
-            for (int i = 0; i < elems.Count; i += 2)
+            for (var i = 0; i < elems.Count; i += 2)
             {
                 if (elems[i].Length <= 2)
                     continue;
-                string key = elems[i].Substring(1, elems[i].Length - 2);
-                string value = elems[i + 1];
+                var key = elems[i].Substring(1, elems[i].Length - 2);
+                var value = elems[i + 1];
 
                 FieldInfo fieldInfo;
                 PropertyInfo propertyInfo;

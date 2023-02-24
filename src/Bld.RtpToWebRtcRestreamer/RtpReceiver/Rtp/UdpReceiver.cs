@@ -139,7 +139,7 @@ internal class UdpReceiver
             if (!_isClosed)
             {
                 EndPoint remoteEP = _addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                int bytesRead = _socket.EndReceiveFrom(ar, ref remoteEP);
+                var bytesRead = _socket.EndReceiveFrom(ar, ref remoteEP);
 
                 if (bytesRead > 0)
                 {
@@ -151,7 +151,7 @@ internal class UdpReceiver
                     //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
                     //}
 
-                    byte[] packetBuffer = new byte[bytesRead];
+                    var packetBuffer = new byte[bytesRead];
                     // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                     Buffer.BlockCopy(_recvBuffer, 0, packetBuffer, 0, bytesRead);
                     CallOnPacketReceivedCallback(_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
@@ -168,11 +168,11 @@ internal class UdpReceiver
                 while (!_isClosed && _socket.Available > 0)
                 {
                     EndPoint remoteEP = _addressFamily == AddressFamily.InterNetwork ? new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
-                    int bytesReadSync = _socket.ReceiveFrom(_recvBuffer, 0, _recvBuffer.Length, SocketFlags.None, ref remoteEP);
+                    var bytesReadSync = _socket.ReceiveFrom(_recvBuffer, 0, _recvBuffer.Length, SocketFlags.None, ref remoteEP);
 
                     if (bytesReadSync > 0)
                     {
-                        byte[] packetBufferSync = new byte[bytesReadSync];
+                        var packetBufferSync = new byte[bytesReadSync];
                         // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
                         Buffer.BlockCopy(_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
                         CallOnPacketReceivedCallback(_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);

@@ -167,7 +167,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             {
                 try
                 {
-                    string closeReason = reason ?? "normal";
+                    var closeReason = reason ?? "normal";
 
                     if (m_controlReceiver == null)
                     {
@@ -224,7 +224,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             try
             {
-                Socket sendSocket = RtpSocket;
+                var sendSocket = RtpSocket;
                 if (sendOn == RTPChannelSocketsEnum.Control)
                 {
                     sendSocket = m_controlSocket ?? throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
@@ -268,7 +268,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         {
             try
             {
-                Socket sendSocket = (Socket)ar.AsyncState;
+                var sendSocket = (Socket)ar.AsyncState;
                 sendSocket.EndSendTo(ar);
             }
             catch (SocketException sockExcp)

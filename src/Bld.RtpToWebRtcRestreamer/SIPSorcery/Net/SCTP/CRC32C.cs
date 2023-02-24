@@ -8,11 +8,11 @@
 
         static CRC32C()
         {
-            uint poly = INITIAL_POLYNOMIAL;
+            var poly = INITIAL_POLYNOMIAL;
             for (uint i = 0; i < 256; i++)
             {
-                uint res = i;
-                for (int k = 0; k < 8; k++)
+                var res = i;
+                for (var k = 0; k < 8; k++)
                 {
                     res = (res & 1) == 1 ? poly ^ (res >> 1) : (res >> 1);
                 }
@@ -22,7 +22,7 @@
 
         public static uint Calculate(byte[] buffer, int offset, int length)
         {
-            uint crc = ~0u;
+            var crc = ~0u;
             while (--length >= 0)
             {
                 crc = _table[(crc ^ buffer[offset++]) & 0xff] ^ crc >> 8;

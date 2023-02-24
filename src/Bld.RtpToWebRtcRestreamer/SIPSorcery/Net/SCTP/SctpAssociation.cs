@@ -333,7 +333,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     switch (chunkType)
                     {
                         case SctpChunkType.ABORT:
-                            string abortReason = (chunk as SctpAbortChunk).GetAbortReason();
+                            var abortReason = (chunk as SctpAbortChunk).GetAbortReason();
                             logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
                             _wasAborted = true;
                             OnAbortReceived?.Invoke(abortReason);
@@ -535,7 +535,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>A single control chunk SCTP packet.</returns>
         public SctpPacket GetControlPacket(SctpChunk chunk)
         {
-            SctpPacket pkt = new SctpPacket(
+            var pkt = new SctpPacket(
            _sctpSourcePort,
            _sctpDestinationPort,
            _remoteVerificationTag);
@@ -566,7 +566,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 SetState(SctpAssociationState.ShutdownSent);
 
-                SctpShutdownChunk shutdownChunk = new SctpShutdownChunk(ackTSN);
+                var shutdownChunk = new SctpShutdownChunk(ackTSN);
                 SendChunk(shutdownChunk);
 
                 _dataSender.Close();
@@ -583,7 +583,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             if (!_wasAborted)
             {
                 _wasAborted = true;
-                bool tBit = _remoteVerificationTag != 0;
+                var tBit = _remoteVerificationTag != 0;
                 var abortChunk = new SctpAbortChunk(tBit);
                 abortChunk.AddErrorCause(errorCause);
 
@@ -615,9 +615,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             if (!_wasAborted)
             {
                 // A packet containing an INIT chunk MUST have a zero Verification Tag (RFC4960 Pg 15).
-                SctpPacket init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
+                var init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
 
-                SctpInitChunk initChunk = new SctpInitChunk(
+                var initChunk = new SctpInitChunk(
                     SctpChunkType.INIT,
                     VerificationTag,
                     TSN,
@@ -628,7 +628,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 SetState(SctpAssociationState.CookieWait);
 
-                byte[] buffer = init.GetBytes();
+                var buffer = init.GetBytes();
                 _sctpTransport.Send(buffer, 0, buffer.Length);
 
                 _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
@@ -643,14 +643,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         {
             if (!_wasAborted)
             {
-                SctpPacket pkt = new SctpPacket(
+                var pkt = new SctpPacket(
                 _sctpSourcePort,
                 _sctpDestinationPort,
                 _remoteVerificationTag);
 
                 pkt.AddChunk(chunk);
 
-                byte[] buffer = pkt.GetBytes();
+                var buffer = pkt.GetBytes();
 
                 _sctpTransport.Send(buffer, 0, buffer.Length);
             }
@@ -664,7 +664,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         {
             if (!_wasAborted)
             {
-                byte[] buffer = pkt.GetBytes();
+                var buffer = pkt.GetBytes();
                 _sctpTransport.Send(buffer, 0, buffer.Length);
             }
         }

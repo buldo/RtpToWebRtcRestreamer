@@ -178,8 +178,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
             }
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
-            uint transit = arrivalTimestamp - rtpTimestamp;
-            int d = (int)(transit - m_transit);
+            var transit = arrivalTimestamp - rtpTimestamp;
+            var d = (int)(transit - m_transit);
             m_transit = transit;
             if (d < 0)
             {
@@ -197,22 +197,22 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         public ReceptionReportSample GetSample(uint ntpTimestampNow)
         {
             // Determining the number of packets expected and lost in RFC3550 Appendix A.3.
-            ulong extended_max = m_cycles + m_max_seq;
-            ulong expected = extended_max - m_base_seq + 1;
+            var extended_max = m_cycles + m_max_seq;
+            var expected = extended_max - m_base_seq + 1;
             //int lost = (m_received == 0) ? 0 : (int)(expected - m_received);
 
-            ulong expected_interval = expected - m_expected_prior;
+            var expected_interval = expected - m_expected_prior;
             m_expected_prior = expected;
-            uint received_interval = m_received - m_received_prior;
+            var received_interval = m_received - m_received_prior;
             m_received_prior = m_received;
-            ulong lost_interval = (m_received == 0) ? 0 : expected_interval - received_interval;
-            byte fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
+            var lost_interval = (m_received == 0) ? 0 : expected_interval - received_interval;
+            var fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
 
             // In this case, the estimate is sampled for the reception report as:
-            uint jitter = m_jitter >> 4;
+            var jitter = m_jitter >> 4;
 
             var receivedLSRTimestamp = m_receivedLSRTimestamp;
-            uint delay = receivedLSRTimestamp == null || receivedLSRTimestamp.ReceivedAt == DateTime.MinValue ?
+            var delay = receivedLSRTimestamp == null || receivedLSRTimestamp.ReceivedAt == DateTime.MinValue ?
                 0 : ntpTimestampNow - RTCPSession.DateTimeToNtpTimestamp32(receivedLSRTimestamp.ReceivedAt);
 
             return new ReceptionReportSample(SSRC, fraction, (int)lost_interval, m_max_seq, jitter, receivedLSRTimestamp?.NTP ?? 0, delay);

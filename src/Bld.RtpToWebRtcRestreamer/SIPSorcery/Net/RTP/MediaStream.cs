@@ -128,7 +128,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         if (_mLocalTrack.Capabilities != null && !_mLocalTrack.NoDtmfSupport &&
                             !_mLocalTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
                         {
-                            SDPAudioVideoMediaFormat rtpEventFormat = new SDPAudioVideoMediaFormat(
+                            var rtpEventFormat = new SDPAudioVideoMediaFormat(
                                 SDPMediaTypesEnum.audio,
                                 RTPSession.DTMF_EVENT_PAYLOAD_ID,
                                 SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE,
@@ -187,7 +187,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         {
             if (_secureContext != null)
             {
-                int res = _secureContext.UnprotectRtpPacket(buffer, buffer.Length, out int outBufLen);
+                var res = _secureContext.UnprotectRtpPacket(buffer, buffer.Length, out var outBufLen);
 
                 if (res == 0)
                 {
@@ -275,10 +275,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         {
             if (checkDone || CheckIfCanSendRtpRaw())
             {
-                ProtectRtpPacket protectRtpPacket = _secureContext?.ProtectRtpPacket;
-                int srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
+                var protectRtpPacket = _secureContext?.ProtectRtpPacket;
+                var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
-                RTPPacket rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
+                var rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
                 rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
                 rtpPacket.Header.Timestamp = timestamp;
@@ -295,7 +295,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 }
                 else
                 {
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
+                    var rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");

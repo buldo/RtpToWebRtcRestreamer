@@ -212,7 +212,7 @@ internal class VideoStream
         // Set the remote track SSRC so that RTCP reports can match the media type.
         if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
         {
-            bool isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
+            var isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
 
             if (isValidSource)
             {
@@ -330,8 +330,8 @@ internal class VideoStream
     /// the remote end point was deemed to be invalid for this media type.</returns>
     private bool AdjustRemoteEndPoint(uint ssrc, IPEndPoint receivedOnEndPoint)
     {
-        bool isValidSource = false;
-        IPEndPoint expectedEndPoint = DestinationEndPoint;
+        var isValidSource = false;
+        var expectedEndPoint = DestinationEndPoint;
 
         if (expectedEndPoint.Address.Equals(receivedOnEndPoint.Address) && expectedEndPoint.Port == receivedOnEndPoint.Port)
         {

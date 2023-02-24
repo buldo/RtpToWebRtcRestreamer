@@ -36,7 +36,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
+            var attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
 
             return attrDescrStr;
         }

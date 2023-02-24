@@ -95,7 +95,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
             }
 
-            UInt16 firstWord = BitConverter.ToUInt16(packet, 0);
+            var firstWord = BitConverter.ToUInt16(packet, 0);
 
             if (BitConverter.IsLittleEndian)
             {
@@ -139,9 +139,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
         public byte[] GetBytes()
         {
-            byte[] header = new byte[4];
+            var header = new byte[4];
 
-            UInt32 firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
+            var firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
 
             if (IsFeedbackReport())
             {

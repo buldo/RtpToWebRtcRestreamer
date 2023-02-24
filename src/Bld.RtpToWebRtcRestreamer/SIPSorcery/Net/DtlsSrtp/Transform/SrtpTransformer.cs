@@ -97,7 +97,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
                 // Transform RTP packet into SRTP
                 context.TransformPacket(rawPacket);
-                byte[] result = rawPacket.GetData();
+                var result = rawPacket.GetData();
 
                 return result;
             }
@@ -143,7 +143,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 }
 
                 byte[] result = null;
-                bool reversed = context.ReverseTransformPacket(rawPacket);
+                var reversed = context.ReverseTransformPacket(rawPacket);
                 if (reversed)
                 {
                     result = rawPacket.GetData();

@@ -137,14 +137,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 bindAddress = (Socket.OSSupportsIPv6 && SupportsDualModeIPv4PacketInfo) ? IPAddress.IPv6Any : IPAddress.Any;
             }
 
-            IPEndPoint logEp = new IPEndPoint(bindAddress, port);
+            var logEp = new IPEndPoint(bindAddress, port);
             logger.LogDebug($"CreateBoundSocket attempting to create and bind socket(s) on {logEp} using protocol {protocolType}.");
 
             CheckBindAddressAndThrow(bindAddress);
 
-            int bindAttempts = 0;
-            AddressFamily addressFamily = bindAddress.AddressFamily;
-            bool success = false;
+            var bindAttempts = 0;
+            var addressFamily = bindAddress.AddressFamily;
+            var success = false;
             Socket socket = null;
 
             while (bindAttempts < MAXIMUM_UDP_PORT_BIND_ATTEMPTS)
@@ -153,7 +153,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 {
                     socket = CreateSocket(addressFamily, protocolType, useDualMode);
                     BindSocket(socket, bindAddress, port);
-                    int boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
+                    var boundPort = (socket.LocalEndPoint as IPEndPoint).Port;
 
                     if (requireEvenPort && boundPort % 2 != 0 && boundPort == IPEndPoint.MaxPort)
                     {
@@ -257,7 +257,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 {
                     logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{port}.");
 
-                    using (Socket testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+                    using (var testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
                     {
                         testSocket.Bind(new IPEndPoint(IPAddress.Any, port));
                         testSocket.Close();
@@ -334,12 +334,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
 
             CheckBindAddressAndThrow(bindAddress);
 
-            IPEndPoint bindEP = new IPEndPoint(bindAddress, bindPort);
+            var bindEP = new IPEndPoint(bindAddress, bindPort);
             logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {bindEP}.");
 
             rtpSocket = null;
             controlSocket = null;
-            int bindAttempts = 0;
+            var bindAttempts = 0;
 
             while (bindAttempts < MAXIMUM_UDP_PORT_BIND_ATTEMPTS)
             {
@@ -353,8 +353,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                     {
                         // For legacy VoIP the RTP and Control sockets need to be consecutive with the RTP port being
                         // an even number.
-                        int rtpPort = (rtpSocket.LocalEndPoint as IPEndPoint).Port;
-                        int controlPort = rtpPort + 1;
+                        var rtpPort = (rtpSocket.LocalEndPoint as IPEndPoint).Port;
+                        var controlPort = rtpPort + 1;
 
                         // Hopefully the next OS port allocation will be back in range.
                         if (controlPort <= IPEndPoint.MaxPort)
@@ -438,7 +438,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
                 {
                     testSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
                     testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
-                    byte[] buf = new byte[1];
+                    var buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
 
                     testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, ar => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
@@ -491,7 +491,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
 
             if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
             {
-                using (UdpClient udpClient = new UdpClient())
+                using (var udpClient = new UdpClient())
                 {
                     try
                     {
@@ -506,7 +506,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
             }
             else
             {
-                using (UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6))
+                using (var udpClient = new UdpClient(AddressFamily.InterNetworkV6))
                 {
                     try
                     {
@@ -549,16 +549,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net
         /// <returns>A list of local IP addresses on the identified interface(s).</returns>
         public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
         {
-            IPAddress localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
-            List<IPAddress> localAddresses = new List<IPAddress>();
+            var localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
+            var localAddresses = new List<IPAddress>();
 
-            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-            foreach (NetworkInterface n in adapters)
+            var adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (var n in adapters)
             {
                 // AC 5 Jun 2020: Network interface status is reported as Unknown on WSL.
                 if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
                 {
-                    IPInterfaceProperties ipProps = n.GetIPProperties();
+                    var ipProps = n.GetIPProperties();
 
                     if (includeAllInterfaces)
                     {

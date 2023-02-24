@@ -103,7 +103,7 @@ internal class RTPChannel : IDisposable
         {
             try
             {
-                string closeReason = reason ?? "normal";
+                var closeReason = reason ?? "normal";
 
                 if (_controlReceiver == null)
                 {

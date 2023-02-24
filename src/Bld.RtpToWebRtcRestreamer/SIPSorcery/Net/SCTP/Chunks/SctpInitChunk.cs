@@ -142,7 +142,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>The length of the optional and variable length parameters.</returns>
         private ushort GetVariableParametersLength(bool padded)
         {
-            int len = 0;
+            var len = 0;
 
             len += Addresses.Count(x => x.AddressFamily == AddressFamily.InterNetwork) *
                 (SctpTlvChunkParameter.SCTP_PARAMETER_HEADER_LENGTH + PARAMVAL_LENGTH_IPV4);
@@ -190,12 +190,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>A TLV parameter list holding the optional and variable length parameters.</returns>
         private List<SctpTlvChunkParameter> GetVariableParameters()
         {
-            List<SctpTlvChunkParameter> varParams = new List<SctpTlvChunkParameter>();
+            var varParams = new List<SctpTlvChunkParameter>();
 
             // Add the optional and variable length parameters as Type-Length-Value (TLV) formatted.
             foreach (var address in Addresses)
             {
-                ushort addrParamType = (ushort)(address.AddressFamily == AddressFamily.InterNetwork ?
+                var addrParamType = (ushort)(address.AddressFamily == AddressFamily.InterNetwork ?
                     SctpInitChunkParameterType.IPv4Address : SctpInitChunkParameterType.IPv6Address);
                 var addrParam = new SctpTlvChunkParameter(addrParamType, address.GetAddressBytes());
                 varParams.Add(addrParam);
@@ -219,8 +219,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 
             if (SupportedAddressTypes.Count > 0)
             {
-                byte[] paramVal = new byte[SupportedAddressTypes.Count * 2];
-                int paramValPosn = 0;
+                var paramVal = new byte[SupportedAddressTypes.Count * 2];
+                var paramValPosn = 0;
                 foreach (var supAddr in SupportedAddressTypes)
                 {
                     NetConvert.ToBuffer((ushort)supAddr, paramVal, paramValPosn);
@@ -271,7 +271,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             WriteChunkHeader(buffer, posn);
 
             // Write fixed parameters.
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            var startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
 
             NetConvert.ToBuffer(InitiateTag, buffer, startPosn);
             NetConvert.ToBuffer(ARwnd, buffer, startPosn + 4);
@@ -284,7 +284,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             // Write optional parameters.
             if (varParameters.Count > 0)
             {
-                int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+                var paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
                 foreach (var optParam in varParameters)
                 {
                     paramPosn += optParam.WriteTo(buffer, paramPosn);
@@ -302,9 +302,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public static SctpInitChunk ParseChunk(byte[] buffer, int posn)
         {
             var initChunk = new SctpInitChunk();
-            ushort chunkLen = initChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = initChunk.ParseFirstWord(buffer, posn);
 
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            var startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
 
             initChunk.InitiateTag = NetConvert.ParseUInt32(buffer, startPosn);
             initChunk.ARwnd = NetConvert.ParseUInt32(buffer, startPosn + 4);
@@ -312,8 +312,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             initChunk.NumberInboundStreams = NetConvert.ParseUInt16(buffer, startPosn + 10);
             initChunk.InitialTSN = NetConvert.ParseUInt32(buffer, startPosn + 12);
 
-            int paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
+            var paramPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            var paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
             if (paramPosn < paramsBufferLength)
             {
@@ -336,7 +336,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                             break;
 
                         case (ushort)SctpInitChunkParameterType.SupportedAddressTypes:
-                            for (int valPosn = 0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
+                            for (var valPosn = 0; valPosn < varParam.ParameterValue.Length; valPosn += 2)
                             {
                                 switch (NetConvert.ParseUInt16(varParam.ParameterValue, valPosn))
                                 {

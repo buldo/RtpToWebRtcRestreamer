@@ -284,7 +284,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         private RTCPCompoundPacket GetRtcpReport()
         {
             var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-            ReceptionReportSample rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;
+            var rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;
             var sdesReport = new RTCPSDesReport(Ssrc, Cname);
 
             if (PacketsSentCount > m_previousPacketsSentCount)
@@ -341,9 +341,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// </notes>
         private static ulong DateTimeToNtpTimestamp(DateTime value)
         {
-            DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
+            var baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 
-            TimeSpan elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
+            var elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
 
             var seconds = elapsedTime.TotalSeconds;
             return ((ulong)seconds << 32) | (ulong)((seconds - (ulong)seconds) * ((ulong)1 << 32));

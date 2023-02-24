@@ -95,7 +95,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             {
                 // Can't use the helper because the prefix is 10 bits.
                 ip = ip.AddressFamily == AddressFamily.InterNetworkV6 ? ip : ip.MapToIPv6();
-                byte[] addr = ip.GetAddressBytes();
+                var addr = ip.GetAddressBytes();
                 return addr[0] == 0xFE && (addr[1] & 0xC0) == 0xC0;
             }
             catch { }
@@ -116,13 +116,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             {
                 // Helper method for checking IP prefix matches (but only on whole byte
                 // lengths). Length is in bits.
-                byte[] addr = ip.GetAddressBytes();
+                var addr = ip.GetAddressBytes();
                 var bytesToCompare = (lengthInBits >> 3);
 
                 if (addr.Length < bytesToCompare || tomatch == null || tomatch.Length < bytesToCompare)
                     return false;
 
-                for (int i = 0; i < bytesToCompare; i++)
+                for (var i = 0; i < bytesToCompare; i++)
                 {
                     if (addr[i] != tomatch[i])
                         return false;

@@ -15,7 +15,7 @@ internal static class TypeExtensions
             }
             else if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
             {
-                byte[] addrBytes = ipAddress.GetAddressBytes();
+                var addrBytes = ipAddress.GetAddressBytes();
                 if ((addrBytes[0] == 10) ||
                     (addrBytes[0] == 172 && (addrBytes[1] >= 16 && addrBytes[1] <= 31)) ||
                     (addrBytes[0] == 192 && addrBytes[1] == 168))

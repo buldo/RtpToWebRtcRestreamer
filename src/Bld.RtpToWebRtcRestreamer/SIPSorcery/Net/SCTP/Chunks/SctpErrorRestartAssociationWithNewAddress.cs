@@ -23,7 +23,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 
         public ushort GetErrorCauseLength(bool padded)
         {
-            ushort len = (ushort)(4 + ((NewAddressTLVs != null) ? NewAddressTLVs.Length : 0));
+            var len = (ushort)(4 + ((NewAddressTLVs != null) ? NewAddressTLVs.Length : 0));
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 

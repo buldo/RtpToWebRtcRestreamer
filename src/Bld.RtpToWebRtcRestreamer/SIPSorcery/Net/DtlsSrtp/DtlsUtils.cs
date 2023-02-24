@@ -72,9 +72,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 throw new ApplicationException($"Hash algorithm {hashAlgorithm} is not supported for DTLS fingerprints.");
             }
 
-            IDigest digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm);
-            byte[] der = c.GetEncoded();
-            byte[] hash = DigestOf(digestAlgorithm, der);
+            var digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm);
+            var der = c.GetEncoded();
+            var hash = DigestOf(digestAlgorithm, der);
 
             return new RTCDtlsFingerprint
             {
@@ -91,9 +91,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public static RTCDtlsFingerprint Fingerprint(X509CertificateStructure c)
         {
-            IDigest sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
-            byte[] der = c.GetEncoded();
-            byte[] sha256Hash = DigestOf(sha256, der);
+            var sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
+            var der = c.GetEncoded();
+            var sha256Hash = DigestOf(sha256, der);
 
             return new RTCDtlsFingerprint
             {
@@ -105,7 +105,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         public static byte[] DigestOf(IDigest dAlg, byte[] input)
         {
             dAlg.BlockUpdate(input, 0, input.Length);
-            byte[] result = new byte[dAlg.GetDigestSize()];
+            var result = new byte[dAlg.GetDigestSize()];
             dAlg.DoFinal(result, 0);
             return result;
         }

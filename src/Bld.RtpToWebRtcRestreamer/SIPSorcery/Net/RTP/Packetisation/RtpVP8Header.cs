@@ -35,7 +35,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
         
         public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
         {
-            RtpVP8Header vp8Header = new RtpVP8Header();
+            var vp8Header = new RtpVP8Header();
 
             // First byte of payload descriptor.
             vp8Header.ExtendedControlBitsPresent = ((rtpPayload[0] >> 7) & 0x01) == 1;

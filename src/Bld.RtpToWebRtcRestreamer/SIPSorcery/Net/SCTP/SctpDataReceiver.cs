@@ -174,7 +174,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 logger.LogTrace($"SCTP receiver got data chunk with TSN {dataChunk.TSN}, " +
                     $"last in order TSN {_lastInOrderTSN}, in order receive count {_inOrderReceiveCount}.");
 
-                bool processFrame = true;
+                var processFrame = true;
 
                 // Relying on unsigned integer wrapping.
                 unchecked
@@ -276,7 +276,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             // Can't create a SACK until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
             {
-                SctpSackChunk sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
+                var sack = new SctpSackChunk(_lastInOrderTSN, _receiveWindow);
                 sack.GapAckBlocks = GetForwardTSNGaps();
                 sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
                 return sack;
@@ -293,12 +293,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
         internal List<SctpTsnGapBlock> GetForwardTSNGaps()
         {
-            List<SctpTsnGapBlock> gaps = new List<SctpTsnGapBlock>();
+            var gaps = new List<SctpTsnGapBlock>();
 
             // Can't create gap reports until the initial DATA chunk has been received.
             if (_inOrderReceiveCount > 0)
             {
-                uint tsnAck = _lastInOrderTSN;
+                var tsnAck = _lastInOrderTSN;
 
                 if (_forwardTSN.Count > 0)
                 {
@@ -314,7 +314,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                         }
                         else if (tsn != prev + 1)
                         {
-                            ushort end = (ushort)(prev - tsnAck);
+                            var end = (ushort)(prev - tsnAck);
                             gaps.Add(new SctpTsnGapBlock { Start = start.Value, End = end });
                             start = (ushort)(tsn - tsnAck);
                             prev = tsn;
@@ -365,7 +365,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     {
                         var outOfOrder = _streamOutOfOrderFrames[frame.StreamID];
 
-                        ushort nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
+                        var nextSeqnum = (ushort)(_streamLatestSeqNums[frame.StreamID] + 1);
                         while (outOfOrder.ContainsKey(nextSeqnum) &&
                             outOfOrder.TryGetValue(nextSeqnum, out var nextFrame))
                         {
@@ -406,7 +406,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 uint? beginTSN = fragments[tsn].Begining ? tsn : null;
                 uint? endTSN = fragments[tsn].Ending ? tsn : null;
 
-                uint revTSN = tsn - 1;
+                var revTSN = tsn - 1;
                 while (beginTSN == null && fragments.ContainsKey(revTSN))
                 {
                     if (fragments[revTSN].Begining)
@@ -421,7 +421,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 if (beginTSN != null)
                 {
-                    uint fwdTSN = tsn + 1;
+                    var fwdTSN = tsn + 1;
                     while (endTSN == null && fragments.ContainsKey(fwdTSN))
                     {
                         if (fragments[fwdTSN].Ending)
@@ -449,13 +449,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         {
             unchecked
             {
-                byte[] full = new byte[MAX_FRAME_SIZE];
-                int posn = 0;
+                var full = new byte[MAX_FRAME_SIZE];
+                var posn = 0;
                 var beginChunk = fragments[beginTSN];
                 var frame = new SctpDataFrame(beginChunk.Unordered, beginChunk.StreamID, beginChunk.StreamSeqNum, beginChunk.PPID, full);
 
-                uint afterEndTSN = endTSN + 1;
-                uint tsn = beginTSN;
+                var afterEndTSN = endTSN + 1;
+                var tsn = beginTSN;
 
                 while (tsn != afterEndTSN)
                 {
@@ -510,8 +510,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>The shortest distance between the two unsigned integers.</returns>
         public static uint GetDistance(uint start, uint end)
         {
-            uint fwdDistance = end - start;
-            uint backDistance = start - end;
+            var fwdDistance = end - start;
+            var backDistance = start - end;
 
             return (fwdDistance < backDistance) ? fwdDistance : backDistance;
         }

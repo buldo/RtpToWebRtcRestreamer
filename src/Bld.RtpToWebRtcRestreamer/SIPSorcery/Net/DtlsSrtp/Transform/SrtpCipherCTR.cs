@@ -120,7 +120,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             }
 
             GetCipherStream(cipher, cipherStream, len, iv);
-            for (int i = 0; i < len; i++)
+            for (var i = 0; i < len; i++)
             {
                 data.Position = i + off;
                 var byteToWrite = data.ReadByte();

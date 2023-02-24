@@ -51,7 +51,7 @@ internal class RtpVideoFramer
             // as per https://tools.ietf.org/html/rfc7741#section-4.4.
             if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
             {
-                RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
+                var vp8Header = RtpVP8Header.GetVP8Header(payload);
 
                 Buffer.BlockCopy(payload, vp8Header.Length, _currentVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
                 _currVideoFramePosn += payload.Length - vp8Header.Length;
@@ -76,7 +76,7 @@ internal class RtpVideoFramer
             //logger.LogDebug($"rtp H264 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
 
             //var hdr = rtpPacket.Header;
-            var frameStream = _h264Depacketiser!.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out bool isKeyFrame);
+            var frameStream = _h264Depacketiser!.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out var isKeyFrame);
 
             if (frameStream != null)
             {

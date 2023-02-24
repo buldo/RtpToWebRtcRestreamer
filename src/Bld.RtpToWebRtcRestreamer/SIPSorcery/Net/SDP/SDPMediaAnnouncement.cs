@@ -188,8 +188,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         {
             if (!String.IsNullOrWhiteSpace(formatList))
             {
-                string[] formatIDs = Regex.Split(formatList, @"\s");
-                foreach (string formatID in formatIDs)
+                var formatIDs = Regex.Split(formatList, @"\s");
+                foreach (var formatID in formatIDs)
                 {
                     if (Media == SDPMediaTypesEnum.application)
                     {
@@ -201,7 +201,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     }
                     else
                     {
-                        if (Int32.TryParse(formatID, out int id)
+                        if (Int32.TryParse(formatID, out var id)
                             && !MediaFormats.ContainsKey(id)
                             && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                         {
@@ -222,7 +222,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public override string ToString()
         {
-            string announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
+            var announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
 
             announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
 
@@ -233,7 +233,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
             }
 
-            foreach (string bandwidthAttribute in BandwidthAttributes)
+            foreach (var bandwidthAttribute in BandwidthAttributes)
             {
                 announcement += "b=" + bandwidthAttribute + m_CRLF;
             }
@@ -266,12 +266,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             announcement += GetFormatListAttributesToString();
 
             announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
-            foreach (string extra in ExtraMediaAttributes)
+            foreach (var extra in ExtraMediaAttributes)
             {
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
             }
 
-            foreach (SDPSecurityDescription desc in SecurityDescriptions)
+            foreach (var desc in SecurityDescriptions)
             {
                 announcement += desc + m_CRLF;
             }
@@ -333,7 +333,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         {
             if (Media == SDPMediaTypesEnum.application)
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
                 foreach (var appFormat in ApplicationMediaFormats)
                 {
                     sb.Append(appFormat.Key);
@@ -363,7 +363,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             {
                 if (ApplicationMediaFormats.Count > 0)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    var sb = new StringBuilder();
                     foreach (var appFormat in ApplicationMediaFormats)
                     {
                         if (appFormat.Value.Rtpmap != null)
@@ -385,7 +385,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             if (Media == SDPMediaTypesEnum.message)
             {
-                StringBuilder sb = new StringBuilder();
+                var sb = new StringBuilder();
 
                 var mediaFormat = MessageMediaFormat;
                 var acceptTypes = mediaFormat.AcceptTypes;

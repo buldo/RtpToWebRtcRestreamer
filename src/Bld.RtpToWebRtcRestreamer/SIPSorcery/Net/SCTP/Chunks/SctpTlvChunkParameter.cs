@@ -108,8 +108,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// that each have their own fields that determine the length.</returns>
         public ushort GetParameterLength(bool padded)
         {
-            ushort len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
-                + (ParameterValue == null ? 0 : ParameterValue.Length));
+            var len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
+                               + (ParameterValue == null ? 0 : ParameterValue.Length));
 
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
@@ -153,7 +153,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>The byte array containing the serialised chunk parameter.</returns>
         public byte[] GetBytes()
         {
-            byte[] buffer = new byte[GetParameterLength(true)];
+            var buffer = new byte[GetParameterLength(true)];
             WriteTo(buffer, 0);
             return buffer;
         }
@@ -167,13 +167,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public ushort ParseFirstWord(byte[] buffer, int posn)
         {
             ParameterType = NetConvert.ParseUInt16(buffer, posn);
-            ushort paramLen = NetConvert.ParseUInt16(buffer, posn + 2);
+            var paramLen = NetConvert.ParseUInt16(buffer, posn + 2);
 
             if (paramLen > 0 && buffer.Length < posn + paramLen)
             {
                 // The buffer was not big enough to supply the specified chunk parameter.
                 int bytesRequired = paramLen;
-                int bytesAvailable = buffer.Length - posn;
+                var bytesAvailable = buffer.Length - posn;
                 throw new ApplicationException("The SCTP chunk parameter buffer was too short. " +
                     $"Required {bytesRequired} bytes but only {bytesAvailable} available.");
             }
@@ -195,7 +195,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             }
 
             var tlvParam = new SctpTlvChunkParameter();
-            ushort paramLen = tlvParam.ParseFirstWord(buffer, posn);
+            var paramLen = tlvParam.ParseFirstWord(buffer, posn);
             if (paramLen > SCTP_PARAMETER_HEADER_LENGTH)
             {
                 tlvParam.ParameterValue = new byte[paramLen - SCTP_PARAMETER_HEADER_LENGTH];

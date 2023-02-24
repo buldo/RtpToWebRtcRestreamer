@@ -133,12 +133,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <returns>A byte array containing the serialised SDES item.</returns>
         public byte[] GetBytes()
         {
-            byte[] cnameBytes = Encoding.UTF8.GetBytes(CNAME);
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
+            var cnameBytes = Encoding.UTF8.GetBytes(CNAME);
+            var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             if (BitConverter.IsLittleEndian)
             {
@@ -166,7 +166,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         private int GetPaddedLength(int cnameLength)
         {
             // Plus one is for the 0x00 items termination byte.
-            int nonPaddedSize = cnameLength + PACKET_SIZE_WITHOUT_CNAME + 1;
+            var nonPaddedSize = cnameLength + PACKET_SIZE_WITHOUT_CNAME + 1;
 
             if (nonPaddedSize % 4 == 0)
             {

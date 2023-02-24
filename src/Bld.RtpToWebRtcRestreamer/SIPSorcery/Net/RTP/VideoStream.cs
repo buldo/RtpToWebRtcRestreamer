@@ -103,13 +103,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
             //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
 
-            byte nal0 = nal[0];
+            var nal0 = nal[0];
 
             if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
             {
                 // Send as Single-Time Aggregation Packet (STAP-A).
-                byte[] payload = new byte[nal.Length];
-                int markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
+                var payload = new byte[nal.Length];
+                var markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
                 SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
@@ -121,18 +121,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 nal = nal.Skip(1).ToArray();
 
                 // Send as Fragmentation Unit A (FU-A):
-                for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
+                for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
                 {
-                    int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                    int payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
+                    var offset = index * RTPSession.RTP_MAX_PAYLOAD;
+                    var payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
 
-                    bool isFirstPacket = index == 0;
-                    bool isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
-                    int markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
+                    var isFirstPacket = index == 0;
+                    var isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
+                    var markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
 
-                    byte[] h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
+                    var h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
 
-                    byte[] payload = new byte[payloadLength + h264RtpHdr.Length];
+                    var payload = new byte[payloadLength + h264RtpHdr.Length];
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
                     Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
 
@@ -160,17 +160,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             {
                 try
                 {
-                    for (int index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
+                    for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
                     {
-                        int offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                        int payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
+                        var offset = index * RTPSession.RTP_MAX_PAYLOAD;
+                        var payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
 
-                        byte[] vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-                        byte[] payload = new byte[payloadLength + vp8HeaderBytes.Length];
+                        var vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
+                        var payload = new byte[payloadLength + vp8HeaderBytes.Length];
                         Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
                         Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
 
-                        int markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
+                        var markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
 
                         SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
                         //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
@@ -194,7 +194,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             var videoSendingFormat = GetSendingFormat();
-            int payloadID = Convert.ToInt32(videoSendingFormat.ID);
+            var payloadID = Convert.ToInt32(videoSendingFormat.ID);
 
             switch (videoSendingFormat.Name())
             {

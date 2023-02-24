@@ -92,7 +92,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             WriteChunkHeader(buffer, posn);
             if (ErrorCauses != null && ErrorCauses.Count > 0)
             {
-                int causePosn = posn + 4;
+                var causePosn = posn + 4;
                 foreach (var cause in ErrorCauses)
                 {
                     causePosn += cause.WriteTo(buffer, causePosn);
@@ -109,30 +109,30 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public static SctpErrorChunk ParseChunk(byte[] buffer, int posn, bool isAbort)
         {
             var errorChunk = (isAbort) ? new SctpAbortChunk(false) : new SctpErrorChunk();
-            ushort chunkLen = errorChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = errorChunk.ParseFirstWord(buffer, posn);
 
-            int paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
-            int paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH;
+            var paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            var paramsBufferLength = chunkLen - SCTP_CHUNK_HEADER_LENGTH;
 
             if (paramPosn < paramsBufferLength)
             {
-                bool stopProcessing = false;
+                var stopProcessing = false;
 
                 foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
                 {
                     switch (varParam.ParameterType)
                     {
                         case (ushort)SctpErrorCauseCode.InvalidStreamIdentifier:
-                            ushort streamID = (ushort)((varParam.ParameterValue != null) ?
+                            var streamID = (ushort)((varParam.ParameterValue != null) ?
                                 NetConvert.ParseUInt16(varParam.ParameterValue, 0) : 0);
                             var invalidStreamID = new SctpErrorInvalidStreamIdentifier { StreamID = streamID };
                             errorChunk.AddErrorCause(invalidStreamID);
                             break;
                         case (ushort)SctpErrorCauseCode.MissingMandatoryParameter:
-                            List<ushort> missingIDs = new List<ushort>();
+                            var missingIDs = new List<ushort>();
                             if (varParam.ParameterValue != null)
                             {
-                                for (int i = 0; i < varParam.ParameterValue.Length; i += 2)
+                                for (var i = 0; i < varParam.ParameterValue.Length; i += 2)
                                 {
                                     missingIDs.Add(NetConvert.ParseUInt16(varParam.ParameterValue, i));
                                 }
@@ -141,7 +141,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                             errorChunk.AddErrorCause(missingMandatory);
                             break;
                         case (ushort)SctpErrorCauseCode.StaleCookieError:
-                            uint staleness = (varParam.ParameterValue != null) ?
+                            var staleness = (varParam.ParameterValue != null) ?
                                 NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                             var staleCookie = new SctpErrorStaleCookieError { MeasureOfStaleness = staleness };
                             errorChunk.AddErrorCause(staleCookie);
@@ -165,7 +165,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                             errorChunk.AddErrorCause(unrecognisedParams);
                             break;
                         case (ushort)SctpErrorCauseCode.NoUserData:
-                            uint tsn = (varParam.ParameterValue != null) ?
+                            var tsn = (varParam.ParameterValue != null) ?
                                 NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                             var noData = new SctpErrorNoUserData { TSN = tsn };
                             errorChunk.AddErrorCause(noData);
@@ -179,13 +179,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                             errorChunk.AddErrorCause(restartAddress);
                             break;
                         case (ushort)SctpErrorCauseCode.UserInitiatedAbort:
-                            string reason = (varParam.ParameterValue != null) ?
+                            var reason = (varParam.ParameterValue != null) ?
                                 Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                             var userAbort = new SctpErrorUserInitiatedAbort { AbortReason = reason };
                             errorChunk.AddErrorCause(userAbort);
                             break;
                         case (ushort)SctpErrorCauseCode.ProtocolViolation:
-                            string info = (varParam.ParameterValue != null) ?
+                            var info = (varParam.ParameterValue != null) ?
                                 Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                             var protocolViolation = new SctpErrorProtocolViolation { AdditionalInformation = info };
                             errorChunk.AddErrorCause(protocolViolation);

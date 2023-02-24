@@ -51,7 +51,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             {
                 logger.LogDebug("Got remote ICE candidate.");
 
-                bool useCandidate = true;
+                var useCandidate = true;
                 if (FilterRemoteICECandidates != null && !string.IsNullOrWhiteSpace(iceCandidateInit.candidate))
                 {
                     useCandidate = FilterRemoteICECandidates(iceCandidateInit);

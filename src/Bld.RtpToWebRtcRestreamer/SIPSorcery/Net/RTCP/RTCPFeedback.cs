@@ -52,7 +52,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         {
             Header = new RTCPHeader(packet);
 
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
             if (BitConverter.IsLittleEndian)
             {
                 SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
@@ -106,11 +106,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
        //:                                                               :
         public byte[] GetBytes()
         {
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
+            var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             // All feedback packets require the Sender and Media SSRC's to be set.
             if (BitConverter.IsLittleEndian)

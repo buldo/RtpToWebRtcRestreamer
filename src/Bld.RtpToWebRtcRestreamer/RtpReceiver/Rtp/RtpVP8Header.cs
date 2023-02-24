@@ -37,8 +37,8 @@ internal class RtpVP8Header
 
     public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
     {
-        RtpVP8Header vp8Header = new RtpVP8Header();
-        int payloadHeaderStartIndex = 1;
+        var vp8Header = new RtpVP8Header();
+        var payloadHeaderStartIndex = 1;
 
         // First byte of payload descriptor.
         vp8Header.ExtendedControlBitsPresent = ((rtpPayload[0] >> 7) & 0x01) == 1;

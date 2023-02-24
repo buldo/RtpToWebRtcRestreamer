@@ -36,8 +36,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         public byte[] GetBytes()
         {
-            byte[] header = Header.GetBytes();
-            byte[] packet = new byte[header.Length + Payload.Length];
+            var header = Header.GetBytes();
+            var packet = new byte[header.Length + Payload.Length];
 
             Array.Copy(header, packet, header.Length);
             Array.Copy(Payload, 0, packet, header.Length, Payload.Length);

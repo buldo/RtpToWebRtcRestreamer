@@ -39,14 +39,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 return false;
             }
 
-            int spaceIndex = str.IndexOf(' ');
+            var spaceIndex = str.IndexOf(' ');
             if (spaceIndex == -1)
             {
                 return false;
             }
 
-            string algStr = str.Substring(0, spaceIndex);
-            string val = str.Substring(spaceIndex + 1);
+            var algStr = str.Substring(0, spaceIndex);
+            var val = str.Substring(spaceIndex + 1);
 
             if (!DtlsUtils.IsHashSupported(algStr))
             {

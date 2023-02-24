@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
     {
         public static string ToJson(this object item)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             AppendValue(stringBuilder, item);
             return stringBuilder.ToString();
         }
@@ -43,17 +43,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 return;
             }
 
-            Type type = item.GetType();
+            var type = item.GetType();
             if (type == typeof(string) || type == typeof(char))
             {
                 stringBuilder.Append('"');
-                string str = item.ToString();
-                for (int i = 0; i < str.Length; ++i)
+                var str = item.ToString();
+                for (var i = 0; i < str.Length; ++i)
                 {
                     if (str[i] < ' ' || str[i] == '"' || str[i] == '\\')
                     {
                         stringBuilder.Append('\\');
-                        int j = "\"\\\n\r\t\b\f".IndexOf(str[i]);
+                        var j = "\"\\\n\r\t\b\f".IndexOf(str[i]);
                         if (j >= 0)
                         {
                             stringBuilder.Append("\"\\nrtbf"[j]);
@@ -111,9 +111,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             else if (item is IList)
             {
                 stringBuilder.Append('[');
-                bool isFirst = true;
-                IList list = item as IList;
-                for (int i = 0; i < list.Count; i++)
+                var isFirst = true;
+                var list = item as IList;
+                for (var i = 0; i < list.Count; i++)
                 {
                     if (isFirst)
                     {
@@ -129,7 +129,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             }
             else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
-                Type keyType = type.GetGenericArguments()[0];
+                var keyType = type.GetGenericArguments()[0];
 
                 //Refuse to output dictionary keys that aren't of type string
                 if (keyType != typeof(string))
@@ -139,9 +139,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                 }
 
                 stringBuilder.Append('{');
-                IDictionary dict = item as IDictionary;
-                bool isFirst = true;
-                foreach (object key in dict.Keys)
+                var dict = item as IDictionary;
+                var isFirst = true;
+                foreach (var key in dict.Keys)
                 {
                     if (isFirst)
                     {
@@ -162,16 +162,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             {
                 stringBuilder.Append('{');
 
-                bool isFirst = true;
-                FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                for (int i = 0; i < fieldInfos.Length; i++)
+                var isFirst = true;
+                var fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                for (var i = 0; i < fieldInfos.Length; i++)
                 {
                     if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     {
                         continue;
                     }
 
-                    object value = fieldInfos[i].GetValue(item);
+                    var value = fieldInfos[i].GetValue(item);
                     if (value != null)
                     {
                         if (isFirst)
@@ -188,15 +188,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
                         AppendValue(stringBuilder, value);
                     }
                 }
-                PropertyInfo[] propertyInfo = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                for (int i = 0; i < propertyInfo.Length; i++)
+                var propertyInfo = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                for (var i = 0; i < propertyInfo.Length; i++)
                 {
                     if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     {
                         continue;
                     }
 
-                    object value = propertyInfo[i].GetValue(item, null);
+                    var value = propertyInfo[i].GetValue(item, null);
                     if (value != null)
                     {
                         if (isFirst)
@@ -222,7 +222,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
         {
             if (member.IsDefined(typeof(DataMemberAttribute), true))
             {
-                DataMemberAttribute dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
+                var dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true);
                 if (!string.IsNullOrEmpty(dataMemberAttribute.Name))
                 {
                     return dataMemberAttribute.Name;

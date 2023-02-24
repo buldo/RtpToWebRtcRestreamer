@@ -204,21 +204,21 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             {
                 if (sdpDescription != null && sdpDescription.Trim().Length > 0)
                 {
-                    SDP sdp = new SDP();
+                    var sdp = new SDP();
                     sdp.m_rawSdp = sdpDescription;
-                    int mLineIndex = 0;
+                    var mLineIndex = 0;
                     SDPMediaAnnouncement activeAnnouncement = null;
 
                     // If a media announcement fmtp atribute is found before the rtpmap it will be stored
                     // in this dictionary. A dynamic media format type cannot be created without an rtpmap.
-                    Dictionary<int, string> _pendingFmtp = new Dictionary<int, string>();
+                    var _pendingFmtp = new Dictionary<int, string>();
 
                     //string[] sdpLines = Regex.Split(sdpDescription, CRLF);
-                    string[] sdpLines = sdpDescription.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    var sdpLines = sdpDescription.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
-                    foreach (string sdpLine in sdpLines)
+                    foreach (var sdpLine in sdpLines)
                     {
-                        string sdpLineTrimmed = sdpLine.Trim();
+                        var sdpLineTrimmed = sdpLine.Trim();
 
                         switch (sdpLineTrimmed)
                         {
@@ -230,7 +230,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                 break;
 
                             case var l when l.StartsWith("o="):
-                                string[] ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
+                                var ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
                                 sdp.Username = ownerFields[0];
                                 sdp.SessionId = ownerFields[1];
                                 Int32.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
@@ -277,7 +277,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                 {
                                     if (l.StartsWith(SDPMediaAnnouncement.TIAS_BANDWIDTH_ATTRIBUE_PREFIX))
                                     {
-                                        if (uint.TryParse(l.Substring(l.IndexOf(':') + 1), out uint tias))
+                                        if (uint.TryParse(l.Substring(l.IndexOf(':') + 1), out var tias))
                                         {
                                             activeAnnouncement.TIASBandwidth = tias;
                                         }
@@ -298,10 +298,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                 break;
 
                             case var l when l.StartsWith("m="):
-                                Match mediaMatch = Regex.Match(sdpLineTrimmed.Substring(2), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)(\s*)(?<formats>.*)$");
+                                var mediaMatch = Regex.Match(sdpLineTrimmed.Substring(2), @"(?<type>\w+)\s+(?<port>\d+)\s+(?<transport>\S+)(\s*)(?<formats>.*)$");
                                 if (mediaMatch.Success)
                                 {
-                                    SDPMediaAnnouncement announcement = new SDPMediaAnnouncement();
+                                    var announcement = new SDPMediaAnnouncement();
                                     announcement.MLineIndex = mLineIndex;
                                     announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
                                     Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
@@ -353,10 +353,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                 break;
 
                             case var x when x.StartsWith($"a={ICE_SETUP_ATTRIBUTE_PREFIX}"):
-                                int colonIndex = sdpLineTrimmed.IndexOf(':');
+                                var colonIndex = sdpLineTrimmed.IndexOf(':');
                                 if (colonIndex != -1 && sdpLineTrimmed.Length > colonIndex)
                                 {
-                                    string iceRoleStr = sdpLineTrimmed.Substring(colonIndex + 1).Trim();
+                                    var iceRoleStr = sdpLineTrimmed.Substring(colonIndex + 1).Trim();
                                     if (Enum.TryParse<IceRolesEnum>(iceRoleStr, true, out var iceRole))
                                     {
                                         if (activeAnnouncement != null)
@@ -436,13 +436,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
                                     {
                                         // Parse the rtpmap attribute for audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string rtpmap = formatAttributeMatch.Result("${attribute}");
+                                            var formatID = formatAttributeMatch.Result("${id}");
+                                            var rtpmap = formatAttributeMatch.Result("${attribute}");
 
-                                            if (Int32.TryParse(formatID, out int id))
+                                            if (Int32.TryParse(formatID, out var id))
                                             {
                                                 if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                                 {
@@ -450,7 +450,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                                 }
                                                 else
                                                 {
-                                                    string fmtp = _pendingFmtp.ContainsKey(id) ? _pendingFmtp[id] : null;
+                                                    var fmtp = _pendingFmtp.ContainsKey(id) ? _pendingFmtp[id] : null;
                                                     activeAnnouncement.MediaFormats.Add(id, new SDPAudioVideoMediaFormat(activeAnnouncement.Media, id, rtpmap, fmtp));
                                                 }
                                             }
@@ -467,11 +467,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     else
                                     {
                                         // Parse the rtpmap attribute for NON audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string rtpmap = formatAttributeMatch.Result("${attribute}");
+                                            var formatID = formatAttributeMatch.Result("${id}");
+                                            var rtpmap = formatAttributeMatch.Result("${attribute}");
 
                                             if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
                                             {
@@ -500,13 +500,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     if (activeAnnouncement.Media == SDPMediaTypesEnum.audio || activeAnnouncement.Media == SDPMediaTypesEnum.video)
                                     {
                                         // Parse the fmtp attribute for audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\d+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
-                                            string avFormatID = formatAttributeMatch.Result("${id}");
-                                            string fmtp = formatAttributeMatch.Result("${attribute}");
+                                            var avFormatID = formatAttributeMatch.Result("${id}");
+                                            var fmtp = formatAttributeMatch.Result("${attribute}");
 
-                                            if (Int32.TryParse(avFormatID, out int id))
+                                            if (Int32.TryParse(avFormatID, out var id))
                                             {
                                                 if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                                 {
@@ -535,11 +535,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     else
                                     {
                                         // Parse the fmtp attribute for NON audio/video announcements.
-                                        Match formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
+                                        var formatAttributeMatch = Regex.Match(sdpLineTrimmed, SDPMediaAnnouncement.MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + @"(?<id>\S+)\s+(?<attribute>.*)$");
                                         if (formatAttributeMatch.Success)
                                         {
-                                            string formatID = formatAttributeMatch.Result("${id}");
-                                            string fmtp = formatAttributeMatch.Result("${attribute}");
+                                            var formatID = formatAttributeMatch.Result("${id}");
+                                            var fmtp = formatAttributeMatch.Result("${attribute}");
 
                                             if (activeAnnouncement.ApplicationMediaFormats.ContainsKey(formatID))
                                             {
@@ -591,7 +591,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string[] fields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
+                                    var fields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
 
                                     // Set the ID.
                                     if (fields.Length > 0)
@@ -600,7 +600,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     }
 
                                     // Add attributes for each of the SSRC values.
-                                    for (int i = 1; i < fields.Length; i++)
+                                    for (var i = 1; i < fields.Length; i++)
                                     {
                                         if (uint.TryParse(fields[i], out var ssrc))
                                         {
@@ -617,7 +617,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string[] ssrcFields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
+                                    var ssrcFields = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1).Split(' ');
 
                                     if (ssrcFields.Length > 0 && uint.TryParse(ssrcFields[0], out var ssrc))
                                     {
@@ -684,7 +684,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string sctpPortStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    var sctpPortStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
 
                                     if (ushort.TryParse(sctpPortStr, out var sctpPort))
                                     {
@@ -704,7 +704,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string maxMessageSizeStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    var maxMessageSizeStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                     if (!long.TryParse(maxMessageSizeStr, out activeAnnouncement.MaxMessageSize))
                                     {
                                         logger.LogWarning($"A max-message-size value of {maxMessageSizeStr} was not recognised as a valid long.");
@@ -719,7 +719,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string acceptTypesStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    var acceptTypesStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                     var acceptTypesList = acceptTypesStr.Trim().Split(' ').ToList();
                                     activeAnnouncement.MessageMediaFormat.AcceptTypes = acceptTypesList;
                                 }
@@ -732,8 +732,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                             case var l when l.StartsWith(SDPMediaAnnouncement.MEDIA_FORMAT_PATH_MSRP_PREFIX):
                                 if (activeAnnouncement != null)
                                 {
-                                    string pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
-                                    string pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
+                                    var pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
+                                    var pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
                                     activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
                                     
                                     pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
@@ -784,12 +784,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public override string ToString()
         {
-            string sdp =
+            var sdp =
                 "v=" + SDP_PROTOCOL_VERSION + CRLF +
                 "o=" + Owner + CRLF +
                 "s=" + SessionName + CRLF +
                 ((Connection != null) ? Connection.ToString() : null);
-            foreach (string bandwidth in BandwidthAttributes)
+            foreach (var bandwidth in BandwidthAttributes)
             {
                 sdp += "b=" + bandwidth + CRLF;
             }
@@ -812,7 +812,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
             {
-                foreach (string originatorAddress in OriginatorEmailAddresses)
+                foreach (var originatorAddress in OriginatorEmailAddresses)
                 {
                     sdp += string.IsNullOrWhiteSpace(originatorAddress) ? null : "e=" + originatorAddress + CRLF;
                 }
@@ -820,7 +820,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             if (OriginatorPhoneNumbers != null && OriginatorPhoneNumbers.Length > 0)
             {
-                foreach (string originatorNumber in OriginatorPhoneNumbers)
+                foreach (var originatorNumber in OriginatorPhoneNumbers)
                 {
                     sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
                 }
@@ -828,7 +828,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
             sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
 
-            foreach (string extra in ExtraSessionAttributes)
+            foreach (var extra in ExtraSessionAttributes)
             {
                 sdp += string.IsNullOrWhiteSpace(extra) ? null : extra + CRLF;
             }
@@ -839,7 +839,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             }
 
             //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
-            foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            foreach (var media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
                 sdp += (media == null) ? null : media.ToString();
             }
@@ -856,8 +856,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// <returns></returns>
         public (int, string) GetIndexForMediaType(SDPMediaTypesEnum mediaType, int mediaIndex)
         {
-            int fullIndex = 0;
-            int mIndex = 0;
+            var fullIndex = 0;
+            var mIndex = 0;
             foreach (var ann in Media)
             {
                 if (ann.Media == mediaType)

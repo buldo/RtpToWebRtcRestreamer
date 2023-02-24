@@ -107,12 +107,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
              * must be negotiated only if the server can successfully complete the handshake while using the curves and point
              * formats supported by the client [...].
              */
-            bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(mNamedCurves, mClientECPointFormats);
+            var eccCipherSuitesEnabled = SupportsClientEccCapabilities(mNamedCurves, mClientECPointFormats);
 
-            int[] cipherSuites = GetCipherSuites();
-            for (int i = 0; i < cipherSuites.Length; ++i)
+            var cipherSuites = GetCipherSuites();
+            for (var i = 0; i < cipherSuites.Length; ++i)
             {
-                int cipherSuite = cipherSuites[i];
+                var cipherSuite = cipherSuites[i];
 
                 if (Arrays.Contains(mOfferedCipherSuites, cipherSuite)
                         && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
@@ -126,7 +126,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public override CertificateRequest GetCertificateRequest()
         {
-            List<SignatureAndHashAlgorithm> serverSigAlgs = new List<SignatureAndHashAlgorithm>();
+            var serverSigAlgs = new List<SignatureAndHashAlgorithm>();
 
             if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
             {
@@ -134,9 +134,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 byte[] signatureAlgorithms = { SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
 
                 serverSigAlgs = new List<SignatureAndHashAlgorithm>();
-                for (int i = 0; i < hashAlgorithms.Length; ++i)
+                for (var i = 0; i < hashAlgorithms.Length; ++i)
                 {
-                    for (int j = 0; j < signatureAlgorithms.Length; ++j)
+                    for (var j = 0; j < signatureAlgorithms.Length; ++j)
                     {
                         serverSigAlgs.Add(new SignatureAndHashAlgorithm(hashAlgorithms[i], signatureAlgorithms[j]));
                     }
@@ -152,7 +152,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public override IDictionary GetServerExtensions()
         {
-            Hashtable serverExtensions = (Hashtable)base.GetServerExtensions();
+            var serverExtensions = (Hashtable)base.GetServerExtensions();
             if (TlsSRTPUtils.GetUseSrtpExtension(serverExtensions) == null)
             {
                 if (serverExtensions == null)
@@ -169,10 +169,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             base.ProcessClientExtensions(clientExtensions);
 
             // set to some reasonable default value
-            int chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
-            UseSrtpData clientSrtpData = TlsSRTPUtils.GetUseSrtpExtension(clientExtensions);
+            var chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
+            var clientSrtpData = TlsSRTPUtils.GetUseSrtpExtension(clientExtensions);
 
-            foreach (int profile in clientSrtpData.ProtectionProfiles)
+            foreach (var profile in clientSrtpData.ProtectionProfiles)
             {
                 switch (profile)
                 {
@@ -255,12 +255,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
              * algorithms if it wasn't sent.
              */
             SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-            IList sigAlgs = mSupportedSignatureAlgorithms;
+            var sigAlgs = mSupportedSignatureAlgorithms;
             if (sigAlgs != null)
             {
                 foreach (var sigAlgUncasted in sigAlgs)
                 {
-                    SignatureAndHashAlgorithm sigAlg = sigAlgUncasted as SignatureAndHashAlgorithm;
+                    var sigAlg = sigAlgUncasted as SignatureAndHashAlgorithm;
                     if (sigAlg != null && sigAlg.Signature == SignatureAlgorithm.rsa)
                     {
                         signatureAndHashAlgorithm = sigAlg;
@@ -281,9 +281,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.masterSecret = masterSecret;
 
-            SrtpParameters srtpParams = SrtpParameters.GetSrtpParametersForProfile(serverSrtpData.ProtectionProfiles[0]);
-            int keyLen = srtpParams.GetCipherKeyLength();
-            int saltLen = srtpParams.GetCipherSaltLength();
+            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(serverSrtpData.ProtectionProfiles[0]);
+            var keyLen = srtpParams.GetCipherKeyLength();
+            var saltLen = srtpParams.GetCipherSaltLength();
 
             srtpPolicy = srtpParams.GetSrtpPolicy();
             srtcpPolicy = srtpParams.GetSrtcpPolicy();
@@ -295,7 +295,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
-            byte[] sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
+            var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
             /*
              * 
@@ -342,7 +342,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
             }
 
-            SecurityParameters sp = mContext.SecurityParameters;
+            var sp = mContext.SecurityParameters;
             if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
             {
                 /*
@@ -356,14 +356,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
 
-            int seedLength = cr.Length + sr.Length;
+            var seedLength = cr.Length + sr.Length;
             if (context_value != null)
             {
                 seedLength += (2 + context_value.Length);
             }
 
-            byte[] seed = new byte[seedLength];
-            int seedPos = 0;
+            var seed = new byte[seedLength];
+            var seedPos = 0;
 
             Array.Copy(cr, 0, seed, seedPos, cr.Length);
             seedPos += cr.Length;
@@ -392,8 +392,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         protected override int[] GetCipherSuites()
         {
-            int[] cipherSuites = new int[this.cipherSuites.Length];
-            for (int i = 0; i < this.cipherSuites.Length; i++)
+            var cipherSuites = new int[this.cipherSuites.Length];
+            for (var i = 0; i < this.cipherSuites.Length; i++)
             {
                 cipherSuites[i] = this.cipherSuites[i];
             }
@@ -417,7 +417,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 description += cause;
             }
 
-            string alertMsg = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
+            var alertMsg = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
             alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
 
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
@@ -432,10 +432,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
         {
-            string description = AlertDescription.GetText(alertDescription);
+            var description = AlertDescription.GetText(alertDescription);
 
-            AlertLevelsEnum level = AlertLevelsEnum.Warning;
-            AlertTypesEnum alertType = AlertTypesEnum.unknown;
+            var level = AlertLevelsEnum.Warning;
+            var alertType = AlertTypesEnum.unknown;
 
             if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
             {
@@ -447,7 +447,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 alertType = (AlertTypesEnum)alertDescription;
             }
 
-            string alertMsg = $"{AlertLevel.GetText(alertLevel)}";
+            var alertMsg = $"{AlertLevel.GetText(alertLevel)}";
             alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
 
             if (alertType == AlertTypesEnum.close_notify)

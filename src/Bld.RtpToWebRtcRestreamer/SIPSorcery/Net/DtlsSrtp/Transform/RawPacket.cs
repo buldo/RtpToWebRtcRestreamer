@@ -37,7 +37,7 @@
 * @author Damian Minkov
 * @author Boris Grozev
 * @author Lyubomir Marinov
-* 
+*
 */
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
@@ -45,43 +45,43 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
     public class RawPacket
     {
 
-        public const int RTP_PACKET_MAX_SIZE = 8192;
+        public const int RTPPacketMaxSize = 8192;
         /**
          * The size of the extension header as defined by RFC 3550.
          */
-        private const int EXT_HEADER_SIZE = 4;
+        private const int ExtHeaderSize = 4;
 
         /**
          * The size of the fixed part of the RTP header as defined by RFC 3550.
          */
-        private const int FIXED_HEADER_SIZE = 12;
+        private const int FixedHeaderSize = 12;
 
         /**
          * Byte array storing the content of this Packet
          */
-        private MemoryStream buffer;
+        private MemoryStream _buffer;
 
         /// <summary>
         /// Invoked
         /// </summary>
         public RawPacket()
         {
-            buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
+            _buffer = new MemoryStream(RTPPacketMaxSize);
         }
 
         public void Wrap(byte[] data, int offset, int length)
         {
-            buffer.Position = 0;
-            buffer.Write(data, offset, length);
-            buffer.SetLength(length - offset);
-            buffer.Position = 0;
+            _buffer.Position = 0;
+            _buffer.Write(data, offset, length);
+            _buffer.SetLength(length - offset);
+            _buffer.Position = 0;
         }
 
         public byte[] GetData()
         {
-            buffer.Position = 0;
-            byte[] data = new byte[buffer.Length];
-            buffer.Read(data, 0, data.Length);
+            _buffer.Position = 0;
+            var data = new byte[_buffer.Length];
+            _buffer.Read(data, 0, data.Length);
             return data;
         }
 
@@ -99,15 +99,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 throw new Exception("Invalid combination of parameters data and length to append()");
             }
 
-            long oldLimit = buffer.Length;
+            var oldLimit = _buffer.Length;
             // grow buffer if necessary
             Grow(len);
             // set positing to begin writing immediately after the last byte of the current buffer
-            buffer.Position = oldLimit;
+            _buffer.Position = oldLimit;
             // set the buffer limit to exactly the old size plus the new appendix length
-            buffer.SetLength(oldLimit + len);
+            _buffer.SetLength(oldLimit + len);
             // append data
-            buffer.Write(data, 0, len);
+            _buffer.Write(data, 0, len);
         }
 
         /**
@@ -117,7 +117,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public MemoryStream GetBuffer()
         {
-            return buffer;
+            return _buffer;
         }
 
         /**
@@ -129,8 +129,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private bool GetExtensionBit()
         {
-            buffer.Position = 0;
-            return (buffer.ReadByte() & 0x10) == 0x10;
+            _buffer.Position = 0;
+            return (_buffer.ReadByte() & 0x10) == 0x10;
         }
 
         /**
@@ -140,15 +140,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private int GetExtensionLength()
         {
-            int length = 0;
+            var length = 0;
             if (GetExtensionBit())
             {
                 // the extension length comes after the RTP header, the CSRC list,
                 // and after two bytes in the extension header called "defined by profile"
-                int extLenIndex = FIXED_HEADER_SIZE + GetCsrcCount() * 4 + 2;
-                buffer.Position = extLenIndex;
-                int byteLength = (buffer.ReadByte() << 8);
-                int byteLength2 = buffer.ReadByte();
+                var extLenIndex = FixedHeaderSize + GetCsrcCount() * 4 + 2;
+                _buffer.Position = extLenIndex;
+                var byteLength = (_buffer.ReadByte() << 8);
+                var byteLength2 = _buffer.ReadByte();
 
                 length = (byteLength | byteLength2 * 4);
             }
@@ -162,8 +162,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private int GetCsrcCount()
         {
-            buffer.Position = 0;
-            return (buffer.ReadByte() & 0x0f);
+            _buffer.Position = 0;
+            return (_buffer.ReadByte() & 0x0f);
         }
 
         /**
@@ -173,10 +173,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public int GetHeaderLength()
         {
-            int length = FIXED_HEADER_SIZE + 4 * GetCsrcCount();
+            var length = FixedHeaderSize + 4 * GetCsrcCount();
             if (GetExtensionBit())
             {
-                length += EXT_HEADER_SIZE + GetExtensionLength();
+                length += ExtHeaderSize + GetExtensionLength();
             }
             return length;
         }
@@ -188,7 +188,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public int GetLength()
         {
-            return (int)buffer.Length;
+            return (int)_buffer.Length;
         }
 
         /**
@@ -229,7 +229,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public int GetSRTCPIndex(int authTagLen)
         {
-            int offset = GetLength() - (4 + authTagLen);
+            var offset = GetLength() - (4 + authTagLen);
             return ReadInt(offset);
         }
 
@@ -259,21 +259,21 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 return;
             }
 
-            long newLen = buffer.Length + delta;
-            if (newLen <= buffer.Capacity)
+            var newLen = _buffer.Length + delta;
+            if (newLen <= _buffer.Capacity)
             {
                 // there is more room in the underlying reserved buffer memory
-                buffer.SetLength(newLen);
+                _buffer.SetLength(newLen);
                 return;
             }
 
             // create a new bigger buffer
-            MemoryStream newBuffer = new MemoryStream();
-            buffer.Position = 0;
-            newBuffer.Write(buffer.GetBuffer(), 0, (int)buffer.Length);
+            var newBuffer = new MemoryStream();
+            _buffer.Position = 0;
+            newBuffer.Write(_buffer.GetBuffer(), 0, (int)_buffer.Length);
             newBuffer.SetLength(newLen);
             // switch to new buffer
-            buffer = newBuffer;
+            _buffer = newBuffer;
         }
 
         /**
@@ -284,17 +284,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private int ReadInt(int off)
         {
-            buffer.Position = off;
-            return ((buffer.ReadByte() & 0xff) << 24) |
-                    ((buffer.ReadByte() & 0xff) << 16) |
-                    ((buffer.ReadByte() & 0xff) << 8) |
-                    ((buffer.ReadByte() & 0xff));
+            _buffer.Position = off;
+            return ((_buffer.ReadByte() & 0xff) << 24) |
+                    ((_buffer.ReadByte() & 0xff) << 16) |
+                    ((_buffer.ReadByte() & 0xff) << 8) |
+                    ((_buffer.ReadByte() & 0xff));
         }
 
         /**
          * Read a byte region from specified offset in the RTP packet and with
          * specified length into a given buffer
-         * 
+         *
          * @param off
          *            start offset in the RTP packet of the region to be read
          * @param len
@@ -304,8 +304,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public void ReadRegionToBuff(int off, int len, byte[] outBuff)
         {
-            buffer.Position = off;
-            buffer.Read(outBuff, 0, len);
+            _buffer.Position = off;
+            _buffer.Read(outBuff, 0, len);
         }
 
         /**
@@ -316,10 +316,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private int ReadUnsignedShortAsInt(int off)
         {
-            buffer.Position = off;
-            int b1 = (0x000000FF & (buffer.ReadByte()));
-            int b2 = (0x000000FF & (buffer.ReadByte()));
-            int val = b1 << 8 | b2;
+            _buffer.Position = off;
+            var b1 = (0x000000FF & (_buffer.ReadByte()));
+            var b2 = (0x000000FF & (_buffer.ReadByte()));
+            var val = b1 << 8 | b2;
             return val;
         }
 
@@ -335,12 +335,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 return;
             }
 
-            long newLimit = buffer.Length - delta;
+            var newLimit = _buffer.Length - delta;
             if (newLimit <= 0)
             {
                 newLimit = 0;
             }
-            buffer.SetLength(newLimit);
+            _buffer.SetLength(newLimit);
         }
     }
 }

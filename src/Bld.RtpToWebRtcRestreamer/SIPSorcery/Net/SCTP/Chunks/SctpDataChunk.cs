@@ -151,14 +151,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             WriteChunkHeader(buffer, posn);
 
             // Write fixed parameters.
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            var startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
 
             NetConvert.ToBuffer(TSN, buffer, startPosn);
             NetConvert.ToBuffer(StreamID, buffer, startPosn + 4);
             NetConvert.ToBuffer(StreamSeqNum, buffer, startPosn + 6);
             NetConvert.ToBuffer(PPID, buffer, startPosn + 8);
 
-            int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            var userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
 
             if (UserData != null)
             {
@@ -176,7 +176,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public static SctpDataChunk ParseChunk(byte[] buffer, int posn)
         {
             var dataChunk = new SctpDataChunk();
-            ushort chunkLen = dataChunk.ParseFirstWord(buffer, posn);
+            var chunkLen = dataChunk.ParseFirstWord(buffer, posn);
 
             if (chunkLen < FIXED_PARAMETERS_LENGTH)
             {
@@ -187,15 +187,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             dataChunk.Begining = (dataChunk.ChunkFlags & 0x02) > 0;
             dataChunk.Ending = (dataChunk.ChunkFlags & 0x01) > 0;
 
-            int startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
+            var startPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
 
             dataChunk.TSN = NetConvert.ParseUInt32(buffer, startPosn);
             dataChunk.StreamID = NetConvert.ParseUInt16(buffer, startPosn + 4);
             dataChunk.StreamSeqNum = NetConvert.ParseUInt16(buffer, startPosn + 6);
             dataChunk.PPID = NetConvert.ParseUInt32(buffer, startPosn + 8);
 
-            int userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
-            int userDataLen = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
+            var userDataPosn = startPosn + FIXED_PARAMETERS_LENGTH;
+            var userDataLen = chunkLen - SCTP_CHUNK_HEADER_LENGTH - FIXED_PARAMETERS_LENGTH;
 
             if (userDataLen > 0)
             {

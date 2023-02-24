@@ -77,9 +77,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             if (clientSrtpData == null)
             {
-                SecureRandom random = new SecureRandom();
+                var random = new SecureRandom();
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                byte[] mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
+                var mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
                 random.NextBytes(mki); // Reusing our secure random for generating the key.
                 this.clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
@@ -171,7 +171,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
             }
 
-            SecurityParameters sp = mContext.SecurityParameters;
+            var sp = mContext.SecurityParameters;
             if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
             {
                 /*
@@ -185,14 +185,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
 
-            int seedLength = cr.Length + sr.Length;
+            var seedLength = cr.Length + sr.Length;
             if (context_value != null)
             {
                 seedLength += (2 + context_value.Length);
             }
 
-            byte[] seed = new byte[seedLength];
-            int seedPos = 0;
+            var seed = new byte[seedLength];
+            var seedPos = 0;
 
             Array.Copy(cr, 0, seed, seedPos, cr.Length);
             seedPos += cr.Length;
@@ -224,9 +224,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;
 
-            SrtpParameters srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
-            int keyLen = srtpParams.GetCipherKeyLength();
-            int saltLen = srtpParams.GetCipherSaltLength();
+            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
+            var keyLen = srtpParams.GetCipherKeyLength();
+            var saltLen = srtpParams.GetCipherSaltLength();
 
             srtpPolicy = srtpParams.GetSrtpPolicy();
             srtcpPolicy = srtpParams.GetSrtcpPolicy();
@@ -238,7 +238,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
-            byte[] sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
+            var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
             /*
              * 
@@ -300,7 +300,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 description += cause;
             }
 
-            string alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
+            var alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
             alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
             if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())

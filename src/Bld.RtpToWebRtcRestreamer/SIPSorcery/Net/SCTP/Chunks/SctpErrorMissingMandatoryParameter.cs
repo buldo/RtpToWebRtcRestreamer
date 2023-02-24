@@ -17,7 +17,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 
         public ushort GetErrorCauseLength(bool padded)
         {
-            ushort len = (ushort)(4 + ((MissingParameters != null) ? MissingParameters.Count * 2 : 0));
+            var len = (ushort)(4 + ((MissingParameters != null) ? MissingParameters.Count * 2 : 0));
             return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
             NetConvert.ToBuffer(len, buffer, posn + 2);
             if (MissingParameters != null)
             {
-                int valPosn = posn + 4;
+                var valPosn = posn + 4;
                 foreach (var missing in MissingParameters)
                 {
                     NetConvert.ToBuffer(missing, buffer, valPosn);

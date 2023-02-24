@@ -48,12 +48,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 
         public static IEnumerable<H264Nal> ParseNals(byte[] accessUnit)
         {
-            int zeroes = 0;
+            var zeroes = 0;
 
             // Parse NALs from H264 access unit, encoded as an Annex B bitstream.
             // NALs are delimited by 0x000001 or 0x00000001.
-            int currPosn = 0;
-            for (int i = 0; i < accessUnit.Length; i++)
+            var currPosn = 0;
+            for (var i = 0; i < accessUnit.Length; i++)
             {
                 if (accessUnit[i] == 0x00)
                 {
@@ -62,12 +62,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                 else if (accessUnit[i] == 0x01 && zeroes >= 2)
                 {
                     // This is a NAL start sequence.
-                    int nalStart = i + 1;
+                    var nalStart = i + 1;
                     if (nalStart - currPosn > 4)
                     {
-                        int endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
-                        int nalSize = endPosn - currPosn;
-                        bool isLast = currPosn + nalSize == accessUnit.Length;
+                        var endPosn = nalStart - ((zeroes == 2) ? 3 : 4);
+                        var nalSize = endPosn - currPosn;
+                        var isLast = currPosn + nalSize == accessUnit.Length;
 
                         yield return new H264Nal(accessUnit.Skip(currPosn).Take(nalSize).ToArray(), isLast);
                     }
@@ -159,13 +159,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
         /// </remarks>
         public static byte[] GetH264RtpHeader(byte nal0, bool isFirstPacket, bool isFinalPacket)
         {
-            byte nalType = (byte)(nal0 & 0x1F);
+            var nalType = (byte)(nal0 & 0x1F);
             //byte nalNri = (byte)((nal0 >> 5) & 0x03);
 
-            byte firstHdrByte = (byte)(nal0 & 0xE0); // Has either 24 (STAP-A) or 28 (FU-A) added to it.
+            var firstHdrByte = (byte)(nal0 & 0xE0); // Has either 24 (STAP-A) or 28 (FU-A) added to it.
 
-            byte fuIndicator = (byte)(firstHdrByte + 28);
-            byte fuHeader = nalType;
+            var fuIndicator = (byte)(firstHdrByte + 28);
+            var fuHeader = nalType;
             if (isFirstPacket)
             {
                 fuHeader += 0x80;

@@ -233,9 +233,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         public AudioFormat ToAudioFormat()
         {
             // Rtpmap takes priority over well known media type as ID's can be changed.
-            if (Rtpmap != null && TryParseRtpmap(Rtpmap, out var name, out int rtpClockRate, out int channels))
+            if (Rtpmap != null && TryParseRtpmap(Rtpmap, out var name, out var rtpClockRate, out var channels))
             {
-                int clockRate = rtpClockRate;
+                var clockRate = rtpClockRate;
 
                 // G722 is a special case. It's the only audio format that uses the wrong RTP clock rate.
                 // It sets 8000 in the SDP but then expects samples to be sent as 16KHz.
@@ -266,7 +266,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         {
             // Rtpmap taks priority over well known media type as ID's can be changed.
             // But we don't currently support any of the well known video types any way.
-            if (TryParseRtpmap(Rtpmap, out var name, out int clockRate, out _))
+            if (TryParseRtpmap(Rtpmap, out var name, out var clockRate, out _))
             {
                 return new VideoFormat(ID, name, clockRate, Fmtp);
             }
@@ -319,7 +319,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 return false;
             }
 
-            string[] fields = rtpmap.Trim().Split('/');
+            var fields = rtpmap.Trim().Split('/');
 
             if (fields.Length >= 2)
             {

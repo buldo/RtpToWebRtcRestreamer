@@ -52,7 +52,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
         public void AddUsernameAttribute(string username)
         {
-            byte[] usernameBytes = Encoding.UTF8.GetBytes(username);
+            var usernameBytes = Encoding.UTF8.GetBytes(username);
             Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Username, usernameBytes));
         }
 
@@ -63,7 +63,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
         private void AddXORAddressAttribute(STUNAttributeTypesEnum addressType, IPAddress remoteAddress, int remotePort)
         {
-            STUNXORAddressAttribute xorAddressAttribute = new STUNXORAddressAttribute(addressType, remotePort, remoteAddress);
+            var xorAddressAttribute = new STUNXORAddressAttribute(addressType, remotePort, remoteAddress);
             Attributes.Add(xorAddressAttribute);
         }
 
@@ -71,7 +71,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
         {
             if (buffer != null && buffer.Length > 0 && buffer.Length >= bufferLength)
             {
-                STUNMessage stunMessage = new STUNMessage();
+                var stunMessage = new STUNMessage();
                 stunMessage._receivedBuffer = buffer.Take(bufferLength).ToArray();
                 stunMessage.Header = STUNHeader.ParseSTUNHeader(buffer);
 
@@ -87,8 +87,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
                     var input = buffer.Take(buffer.Length - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
 
-                    uint crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
-                    byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+                    var crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
+                    var fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
 
                     //logger.LogDebug($"STUNMessage supplied fingerprint attribute: {fingerprintAttribute.Value.HexStr()}.");
                     //logger.LogDebug($"STUNMessage calculated fingerprint attribute: {fingerPrint.HexStr()}.");
@@ -113,7 +113,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
         public byte[] ToByteBuffer(byte[] messageIntegrityKey, bool addFingerprint)
         {
             UInt16 attributesLength = 0;
-            foreach (STUNAttribute attribute in Attributes)
+            foreach (var attribute in Attributes)
             {
                 attributesLength += Convert.ToUInt16(STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + attribute.PaddedLength);
             }
@@ -123,9 +123,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
                 attributesLength += STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH;
             }
 
-            int messageLength = STUNHeader.STUN_HEADER_LENGTH + attributesLength;
+            var messageLength = STUNHeader.STUN_HEADER_LENGTH + attributesLength;
 
-            byte[] buffer = new byte[messageLength];
+            var buffer = new byte[messageLength];
 
             if (BitConverter.IsLittleEndian)
             {
@@ -142,8 +142,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
             Buffer.BlockCopy(Header.TransactionId, 0, buffer, 8, STUNHeader.TRANSACTION_ID_LENGTH);
 
-            int attributeIndex = 20;
-            foreach (STUNAttribute attr in Attributes)
+            var attributeIndex = 20;
+            foreach (var attr in Attributes)
             {
                 attributeIndex += attr.ToByteBuffer(buffer, attributeIndex);
             }
@@ -154,8 +154,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
             {
                 var integrityAttibtue = new STUNAttribute(STUNAttributeTypesEnum.MessageIntegrity, new byte[MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH]);
 
-                HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
-                byte[] hmac = hmacSHA.ComputeHash(buffer, 0, attributeIndex);
+                var hmacSHA = new HMACSHA1(messageIntegrityKey);
+                var hmac = hmacSHA.ComputeHash(buffer, 0, attributeIndex);
 
                 integrityAttibtue.Value = hmac;
                 attributeIndex += integrityAttibtue.ToByteBuffer(buffer, attributeIndex);
@@ -177,8 +177,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
                 }
 
                 var fingerprintAttribute = new STUNAttribute(STUNAttributeTypesEnum.FingerPrint, new byte[FINGERPRINT_ATTRIBUTE_CRC32_LENGTH]);
-                uint crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
-                byte[] fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+                var crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
+                var fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
                 fingerprintAttribute.Value = fingerPrint;
 
                 Array.Resize(ref buffer, messageLength);
@@ -196,7 +196,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
         /// <returns>True if the fingerprint and HMAC of the STUN message are valid. False if not.</returns>
         public bool CheckIntegrity(byte[] messageIntegrityKey)
         {
-            bool isHmacValid = false;
+            var isHmacValid = false;
 
             if (isFingerprintValid)
             {
@@ -204,13 +204,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
                 {
                     var messageIntegrityAttribute = Attributes[Attributes.Count - 2];
 
-                    int preImageLength = _receivedBuffer.Length
-                        - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH * 2
-                        - MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH
-                        - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH;
+                    var preImageLength = _receivedBuffer.Length
+                                         - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH * 2
+                                         - MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH
+                                         - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH;
 
                     // Need to adjust the STUN message length field for to remove the fingerprint.
-                    ushort length = (ushort)(Header.MessageLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH);
+                    var length = (ushort)(Header.MessageLength - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH);
                     if (BitConverter.IsLittleEndian)
                     {
                         Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(length)), 0, _receivedBuffer, 2, 2);
@@ -220,8 +220,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
                         Buffer.BlockCopy(BitConverter.GetBytes(length), 0, _receivedBuffer, 2, 2);
                     }
 
-                    HMACSHA1 hmacSHA = new HMACSHA1(messageIntegrityKey);
-                    byte[] calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);
+                    var hmacSHA = new HMACSHA1(messageIntegrityKey);
+                    var calculatedHmac = hmacSHA.ComputeHash(_receivedBuffer, 0, preImageLength);
 
                     //logger.LogDebug($"Received Message integrity HMAC  : {messageIntegrityAttribute.Value.HexStr()}.");
                     //logger.LogDebug($"Calculated Message integrity HMAC: {calculatedHmac.HexStr()}.");

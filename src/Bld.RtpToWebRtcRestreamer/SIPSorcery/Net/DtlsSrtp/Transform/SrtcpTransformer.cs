@@ -75,7 +75,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
                 // Secure packet into SRTCP format
                 context.TransformPacket(packet);
-                byte[] result = packet.GetData();
+                var result = packet.GetData();
 
                 return result;
             }
@@ -110,7 +110,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
                 // Decode packet to RTCP format
                 byte[] result = null;
-                bool reversed = context.ReverseTransformPacket(packet);
+                var reversed = context.ReverseTransformPacket(packet);
                 if (reversed)
                 {
                     result = packet.GetData();

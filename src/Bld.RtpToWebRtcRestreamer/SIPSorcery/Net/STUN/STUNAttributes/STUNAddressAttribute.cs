@@ -76,7 +76,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
+            var attrDescrStr = "STUN Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
 
             return attrDescrStr;
         }

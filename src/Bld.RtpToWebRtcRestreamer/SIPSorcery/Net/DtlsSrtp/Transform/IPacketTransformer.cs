@@ -25,7 +25,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
     {
         /**
          * Transforms a specific non-secure packet.
-         * 
+         *
          * @param pkt
          *            The packet to be secured
          * @param offset
@@ -40,7 +40,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         /**
          * Reverse-transforms a specific packet (i.e. transforms a transformed
          * packet back).
-         * 
+         *
          * @param pkt
          *            the packet to be restored
          * @param offset

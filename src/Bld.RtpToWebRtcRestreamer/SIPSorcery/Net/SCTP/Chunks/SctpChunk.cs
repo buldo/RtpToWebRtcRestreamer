@@ -111,13 +111,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         {
             ChunkType = buffer[posn];
             ChunkFlags = buffer[posn + 1];
-            ushort chunkLength = NetConvert.ParseUInt16(buffer, posn + 2);
+            var chunkLength = NetConvert.ParseUInt16(buffer, posn + 2);
 
             if (chunkLength > 0 && buffer.Length < posn + chunkLength)
             {
                 // The buffer was not big enough to supply the specified chunk length.
                 int bytesRequired = chunkLength;
-                int bytesAvailable = buffer.Length - posn;
+                var bytesAvailable = buffer.Length - posn;
                 throw new ApplicationException($"The SCTP chunk buffer was too short. Required {bytesRequired} bytes but only {bytesAvailable} available.");
             }
 
@@ -195,7 +195,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public static SctpChunk ParseBaseChunk(byte[] buffer, int posn)
         {
             var chunk = new SctpChunk();
-            ushort chunkLength = chunk.ParseFirstWord(buffer, posn);
+            var chunkLength = chunk.ParseFirstWord(buffer, posn);
             if (chunkLength > SCTP_CHUNK_HEADER_LENGTH)
             {
                 chunk.ChunkValue = new byte[chunkLength - SCTP_CHUNK_HEADER_LENGTH];
@@ -216,7 +216,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>A list of chunk parameters. Can be empty.</returns>
         public static IEnumerable<SctpTlvChunkParameter> GetParameters(byte[] buffer, int posn, int length)
         {
-            int paramPosn = posn;
+            var paramPosn = posn;
 
             while (paramPosn < posn + length)
             {
@@ -241,7 +241,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                 throw new ApplicationException("Buffer did not contain the minimum of bytes for an SCTP chunk.");
             }
 
-            byte chunkType = buffer[posn];
+            var chunkType = buffer[posn];
 
             if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
             {
@@ -287,7 +287,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>The padded length of the serialised chunk.</returns>
         public static uint GetChunkLengthFromHeader(byte[] buffer, int posn, bool padded)
         {
-            ushort len = NetConvert.ParseUInt16(buffer, posn + 2);
+            var len = NetConvert.ParseUInt16(buffer, posn + 2);
             return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
         }
 
@@ -307,7 +307,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <returns>A new buffer containing a copy of the chunk.</returns>
         public static byte[] CopyUnrecognisedChunk(byte[] buffer, int posn)
         {
-            byte[] unrecognised = new byte[GetChunkLengthFromHeader(buffer, posn, true)];
+            var unrecognised = new byte[GetChunkLengthFromHeader(buffer, posn, true)];
             Buffer.BlockCopy(buffer, posn, unrecognised, 0, unrecognised.Length);
             return unrecognised;
         }

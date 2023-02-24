@@ -69,7 +69,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                 // as per https://tools.ietf.org/html/rfc7741#section-4.4.
                 if (_currVideoFramePosn > 0 || (payload[0] & 0x10) > 0)
                 {
-                    RtpVP8Header vp8Header = RtpVP8Header.GetVP8Header(payload);
+                    var vp8Header = RtpVP8Header.GetVP8Header(payload);
 
                     Buffer.BlockCopy(payload, vp8Header.Length, _currVideoFrame, _currVideoFramePosn, payload.Length - vp8Header.Length);
                     _currVideoFramePosn += payload.Length - vp8Header.Length;

@@ -88,7 +88,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
         {
             get
             {
-                int @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
+                var @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
                 return (STUNClassTypesEnum)@class;
             }
         }
@@ -120,10 +120,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
             if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
             {
-                STUNHeader stunHeader = new STUNHeader();
+                var stunHeader = new STUNHeader();
 
-                UInt16 stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
-                UInt16 stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
+                var stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
+                var stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
 
                 if (BitConverter.IsLittleEndian)
                 {

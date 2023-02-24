@@ -38,9 +38,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
 
         public static string GetRandomString(int length)
         {
-            char[] buffer = new char[length];
+            var buffer = new char[length];
 
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 buffer[i] = CHARS[Rand(CHARS.Length)];
             }
@@ -52,8 +52,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
         /// </summary>
         public static int GetRandomInt(int length)
         {
-            int randomStart = 1000000000;
-            int randomEnd = Int32.MaxValue;
+            var randomStart = 1000000000;
+            var randomEnd = Int32.MaxValue;
 
             if (length > 0 && length < DEFAULT_RANDOM_LENGTH)
             {
@@ -78,15 +78,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
             }
 
             Int64 diff = maxValue - minValue + 1;
-            int attempts = 0;
+            var attempts = 0;
             while (attempts < 10)
             {
-                byte[] uint32Buffer = new byte[4];
+                var uint32Buffer = new byte[4];
                 MRandomProvider.GetBytes(uint32Buffer);
-                UInt32 rand = BitConverter.ToUInt32(uint32Buffer, 0);
+                var rand = BitConverter.ToUInt32(uint32Buffer, 0);
 
-                Int64 max = (1 + (Int64)UInt32.MaxValue);
-                Int64 remainder = max % diff;
+                var max = (1 + (Int64)UInt32.MaxValue);
+                var remainder = max % diff;
                 if (rand <= max - remainder)
                 {
                     return (Int32)(minValue + (rand % diff));
@@ -98,14 +98,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
 
         public static UInt16 GetRandomUInt16()
         {
-            byte[] uint16Buffer = new byte[2];
+            var uint16Buffer = new byte[2];
             MRandomProvider.GetBytes(uint16Buffer);
             return BitConverter.ToUInt16(uint16Buffer, 0);
         }
 
         public static UInt32 GetRandomUInt(bool noZero = false)
         {
-            byte[] uint32Buffer = new byte[4];
+            var uint32Buffer = new byte[4];
             MRandomProvider.GetBytes(uint32Buffer);
             var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
 
@@ -120,7 +120,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
 
         public static UInt64 GetRandomULong()
         {
-            byte[] uint64Buffer = new byte[8];
+            var uint64Buffer = new byte[8];
             MRandomProvider.GetBytes(uint64Buffer);
             return BitConverter.ToUInt64(uint64Buffer, 0);
         }

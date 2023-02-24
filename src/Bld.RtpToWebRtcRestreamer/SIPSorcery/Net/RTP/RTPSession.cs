@@ -301,7 +301,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         protected void LogRemoteSDPSsrcAttributes()
         {
-            string str = "Audio:[ ";
+            var str = "Audio:[ ";
             foreach (var audioRemoteSdpSsrcAttribute in _audioRemoteSdpSsrcAttributes)
             {
                 foreach (var attr in audioRemoteSdpSsrcAttribute)
@@ -359,7 +359,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             if (index == AudioStreamList.Count)
             {
-                AudioStream audioStream = new AudioStream(RtpSessionConfig, index);
+                var audioStream = new AudioStream(RtpSessionConfig, index);
                 AudioStreamList.Add(audioStream);
                 return audioStream;
             }
@@ -376,7 +376,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             if (index == VideoStreamList.Count)
             {
-                VideoStream videoStream = new VideoStream(RtpSessionConfig, index);
+                var videoStream = new VideoStream(RtpSessionConfig, index);
                 VideoStreamList.Add(videoStream);
                 return videoStream;
             }
@@ -424,8 +424,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
                 
-                int currentAudioStreamCount = 0;
-                int currentVideoStreamCount = 0;
+                var currentAudioStreamCount = 0;
+                var currentVideoStreamCount = 0;
 
                 foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
                 {
@@ -458,7 +458,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                     {
                         // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
-                        SDPAudioVideoMediaFormat commonEventFormat =
+                        var commonEventFormat =
                             SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(),
                                 currentMediaStream.LocalTrack.Capabilities);
                         if (!commonEventFormat.IsEmpty())
@@ -467,7 +467,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         }
                     }
 
-                    IPEndPoint remoteRtpEp = GetAnnouncementRTPDestination(announcement, connectionAddress);
+                    var remoteRtpEp = GetAnnouncementRTPDestination(announcement, connectionAddress);
                     SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteRtpEp);
                     IPEndPoint remoteRtcpEp = null;
                     if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -549,7 +549,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <returns>An IP end point for an SDP media announcement from the remote peer.</returns>
         private IPEndPoint GetAnnouncementRTPDestination(SDPMediaAnnouncement announcement, IPAddress connectionAddress)
         {
-            SDPMediaTypesEnum kind = announcement.Media;
+            var kind = announcement.Media;
             IPEndPoint rtpEndPoint = null;
 
             var remoteAddr = (announcement.Connection != null) ? IPAddress.Parse(announcement.Connection.ConnectionAddress) : connectionAddress;
@@ -694,7 +694,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         private AudioStream GetNextAudioStreamByLocalTrack()
         {
-            int index = AudioStreamList.Count;
+            var index = AudioStreamList.Count;
             if (index > 0)
             {
                 foreach (var audioStream in AudioStreamList)
@@ -721,7 +721,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         private VideoStream GetNextVideoStreamByLocalTrack()
         {
-            int index = VideoStreamList.Count;
+            var index = VideoStreamList.Count;
             if (index > 0)
             {
                 foreach (var videoStream in VideoStreamList)
@@ -791,7 +791,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
 
             // If RTCP is multiplexed we don't need a control socket.
-            int bindPort = (RtpSessionConfig.BindPort == 0) ? 0 : RtpSessionConfig.BindPort + MRtpChannelsCount * 2;
+            var bindPort = (RtpSessionConfig.BindPort == 0) ? 0 : RtpSessionConfig.BindPort + MRtpChannelsCount * 2;
             var rtpChannel = new RTPChannel(!RtpSessionConfig.IsRtcpMultiplexed, RtpSessionConfig.BindAddress, bindPort);
 
 
@@ -821,7 +821,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         protected List<MediaStream> GetMediaStreams()
         {
 
-            List<MediaStream> mediaStream = new List<MediaStream>();
+            var mediaStream = new List<MediaStream>();
 
             foreach (var audioStream in AudioStreamList)
             {
@@ -991,13 +991,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 ssrc = BitConverter.ToUInt32(buffer, 4);
             }
 
-            MediaStream mediaStream = GetMediaStream(ssrc);
+            var mediaStream = GetMediaStream(ssrc);
             if (mediaStream != null)
             {
                 var secureContext = mediaStream.GetSecurityContext();
                 if (secureContext != null)
                 {
-                    int res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out int outBufLen);
+                    var res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out var outBufLen);
                     if (res != 0)
                     {
                         Logger.LogWarning($"SRTCP unprotect failed for {mediaStream.MediaType} track, result {res}.");
@@ -1105,7 +1105,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 return null;
             }
 
-            bool found = false;
+            var found = false;
             int index;
 
             // Loop au audioRemoteSDPSsrcAttributes 

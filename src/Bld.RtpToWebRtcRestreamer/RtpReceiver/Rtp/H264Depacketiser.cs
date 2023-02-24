@@ -14,13 +14,13 @@ internal class H264Depacketiser
 
     public virtual MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
     {
-        List<byte[]> nalUnits = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
+        var nalUnits = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
 
         if (nalUnits != null)
         {
             //Calculate total buffer size
             long totalBufferSize = 0;
-            for (int i = 0; i < nalUnits.Count; i++)
+            for (var i = 0; i < nalUnits.Count; i++)
             {
                 var nal = nalUnits[i];
                 long remaining = nal.Length;
@@ -37,7 +37,7 @@ internal class H264Depacketiser
             }
 
             //Merge nals in same buffer using Annex-B separator (0001)
-            MemoryStream data = new MemoryStream(new byte[totalBufferSize]);
+            var data = new MemoryStream(new byte[totalBufferSize]);
             foreach (var nal in nalUnits)
             {
                 data.WriteByte(0);
@@ -53,7 +53,7 @@ internal class H264Depacketiser
 
     private List<byte[]>? ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
     {
-        List<byte[]> nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
+        var nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
 
         return nal_units;
     }
@@ -81,7 +81,7 @@ internal class H264Depacketiser
             }
 
             // End Marker is set. Process the list of RTP Packets (forming 1 RTP frame) and save the NALs to a file
-            List<byte[]> nal_units = ProcessH264PayloadFrame(_temporaryRtpPayloads, out isKeyFrame);
+            var nal_units = ProcessH264PayloadFrame(_temporaryRtpPayloads, out isKeyFrame);
             _temporaryRtpPayloads.Clear();
             _previousTimestamp = 0;
             _fragmentedNal.SetLength(0);
@@ -101,14 +101,14 @@ internal class H264Depacketiser
     protected virtual List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
     {
         bool? isKeyFrameNullable = null;
-        List<byte[]> nalUnits = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
+        var nalUnits = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
 
-        for (int payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
+        for (var payload_index = 0; payload_index < rtp_payloads.Count; payload_index++)
         {
             // Examine the first rtp_payload and the first byte (the NAL header)
-            int nal_header_f_bit = (rtp_payloads[payload_index].Value[0] >> 7) & 0x01;
-            int nal_header_nri = (rtp_payloads[payload_index].Value[0] >> 5) & 0x03;
-            int nal_header_type = (rtp_payloads[payload_index].Value[0] >> 0) & 0x1F;
+            var nal_header_f_bit = (rtp_payloads[payload_index].Value[0] >> 7) & 0x01;
+            var nal_header_nri = (rtp_payloads[payload_index].Value[0] >> 5) & 0x03;
+            var nal_header_type = (rtp_payloads[payload_index].Value[0] >> 0) & 0x1F;
 
             // If the Nal Header Type is in the range 1..23 this is a normal NAL (not fragmented)
             // So write the NAL to the file
@@ -130,16 +130,16 @@ internal class H264Depacketiser
                 //   Read NAL
                 try
                 {
-                    int ptr = 1; // start after the nal_header_type which was '24'
+                    var ptr = 1; // start after the nal_header_type which was '24'
                     // if we have at least 2 more bytes (the 16 bit size) then consume more data
                     while (ptr + 2 < (rtp_payloads[payload_index].Value.Length - 1))
                     {
-                        int size = (rtp_payloads[payload_index].Value[ptr] << 8) + (rtp_payloads[payload_index].Value[ptr + 1] << 0);
+                        var size = (rtp_payloads[payload_index].Value[ptr] << 8) + (rtp_payloads[payload_index].Value[ptr + 1] << 0);
                         ptr = ptr + 2;
-                        byte[] nal = new byte[size];
+                        var nal = new byte[size];
                         Buffer.BlockCopy(rtp_payloads[payload_index].Value, ptr, nal, 0, size); // copy the NAL
 
-                        byte reconstructed_nal_type = (byte)((nal[0] >> 0) & 0x1F);
+                        var reconstructed_nal_type = (byte)((nal[0] >> 0) & 0x1F);
                         //Check if is Key Frame
                         CheckKeyFrame(reconstructed_nal_type, ref isKeyFrameNullable);
 
@@ -169,10 +169,10 @@ internal class H264Depacketiser
 
                 // Parse Fragmentation Unit Header
                 int fu_indicator = rtp_payloads[payload_index].Value[0];
-                int fu_header_s = (rtp_payloads[payload_index].Value[1] >> 7) & 0x01;  // start marker
-                int fu_header_e = (rtp_payloads[payload_index].Value[1] >> 6) & 0x01;  // end marker
-                int fu_header_r = (rtp_payloads[payload_index].Value[1] >> 5) & 0x01;  // reserved. should be 0
-                int fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
+                var fu_header_s = (rtp_payloads[payload_index].Value[1] >> 7) & 0x01;  // start marker
+                var fu_header_e = (rtp_payloads[payload_index].Value[1] >> 6) & 0x01;  // end marker
+                var fu_header_r = (rtp_payloads[payload_index].Value[1] >> 5) & 0x01;  // reserved. should be 0
+                var fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
 
                 // Check Start and End flags
                 if (fu_header_s == 1 && fu_header_e == 0)
@@ -180,7 +180,7 @@ internal class H264Depacketiser
                     // Start of Fragment.
                     // Initialise the _fragmentedNal byte array
                     // Build the NAL header with the original F and NRI flags but use the the Type field from the fu_header_type
-                    byte reconstructed_nal_type = (byte)((nal_header_f_bit << 7) + (nal_header_nri << 5) + fu_header_type);
+                    var reconstructed_nal_type = (byte)((nal_header_f_bit << 7) + (nal_header_nri << 5) + fu_header_type);
 
                     // Empty the stream
                     _fragmentedNal.SetLength(0);
@@ -208,7 +208,7 @@ internal class H264Depacketiser
                     _fragmentedNal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
 
                     var fragmeted_nal_array = _fragmentedNal.ToArray();
-                    byte reconstructed_nal_type = (byte)((fragmeted_nal_array[0] >> 0) & 0x1F);
+                    var reconstructed_nal_type = (byte)((fragmeted_nal_array[0] >> 0) & 0x1F);
 
                     //Check if is Key Frame
                     CheckKeyFrame(reconstructed_nal_type, ref isKeyFrameNullable);

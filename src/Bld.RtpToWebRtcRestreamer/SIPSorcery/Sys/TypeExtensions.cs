@@ -58,9 +58,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
         private static string HexStr(this byte[] buffer, int length, char? separator = null)
         {
-            string rv = string.Empty;
+            var rv = string.Empty;
 
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 var val = buffer[i];
                 rv += hexmap[val >> 4];

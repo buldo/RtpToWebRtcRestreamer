@@ -92,8 +92,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 SSRC = BitConverter.ToUInt32(packet, 4);
             }
 
-            int rrIndex = 8;
-            for (int i = 0; i < Header.ReceptionReportCount; i++)
+            var rrIndex = 8;
+            for (var i = 0; i < Header.ReceptionReportCount; i++)
             {
                 var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
                 ReceptionReports.Add(rr);
@@ -106,12 +106,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <returns>A byte array.</returns>
         public byte[] GetBytes()
         {
-            int rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
-            byte[] buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
+            var rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
+            var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
             Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
             Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-            int payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+            var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
 
             if (BitConverter.IsLittleEndian)
             {
@@ -122,8 +122,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
             }
 
-            int bufferIndex = payloadIndex + 4;
-            for (int i = 0; i < rrCount; i++)
+            var bufferIndex = payloadIndex + 4;
+            for (var i = 0; i < rrCount; i++)
             {
                 var receptionReportBytes = ReceptionReports[i].GetBytes();
                 Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReportSample.PAYLOAD_SIZE);

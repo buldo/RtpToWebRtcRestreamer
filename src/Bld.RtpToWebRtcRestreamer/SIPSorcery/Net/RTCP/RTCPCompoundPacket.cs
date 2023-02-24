@@ -55,7 +55,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <param name="packet">The serialised RTCP compound packet to parse.</param>
         public RTCPCompoundPacket(byte[] packet)
         {
-            int offset = 0;
+            var offset = 0;
             while (offset < packet.Length)
             {
                 if (packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
@@ -67,33 +67,33 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 var buffer = packet.Skip(offset).ToArray();
 
                 // The payload type field is the second byte in the RTCP header.
-                byte packetTypeID = buffer[1];
+                var packetTypeID = buffer[1];
                 switch (packetTypeID)
                 {
                     case (byte)RTCPReportTypesEnum.SR:
                         SenderReport = new RTCPSenderReport(buffer);
-                        int srLength = (SenderReport != null) ? SenderReport.GetBytes().Length : Int32.MaxValue;
+                        var srLength = (SenderReport != null) ? SenderReport.GetBytes().Length : Int32.MaxValue;
                         offset += srLength;
                         break;
                     case (byte)RTCPReportTypesEnum.RR:
                         ReceiverReport = new RTCPReceiverReport(buffer);
-                        int rrLength = (ReceiverReport != null) ? ReceiverReport.GetBytes().Length : Int32.MaxValue;
+                        var rrLength = (ReceiverReport != null) ? ReceiverReport.GetBytes().Length : Int32.MaxValue;
                         offset += rrLength;
                         break;
                     case (byte)RTCPReportTypesEnum.SDES:
                         SDesReport = new RTCPSDesReport(buffer);
-                        int sdesLength = (SDesReport != null) ? SDesReport.GetBytes().Length : Int32.MaxValue;
+                        var sdesLength = (SDesReport != null) ? SDesReport.GetBytes().Length : Int32.MaxValue;
                         offset += sdesLength;
                         break;
                     case (byte)RTCPReportTypesEnum.BYE:
                         Bye = new RTCPBye(buffer);
-                        int byeLength = (Bye != null) ? Bye.GetBytes().Length : Int32.MaxValue;
+                        var byeLength = (Bye != null) ? Bye.GetBytes().Length : Int32.MaxValue;
                         offset += byeLength;
                         break;
                     case (byte)RTCPReportTypesEnum.RTPFB:
                         // TODO: Interpret Generic RTP feedback reports.
                         Feedback = new RTCPFeedback(buffer);
-                        int rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
+                        var rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                         offset += rtpfbFeedbackLength;
                         //var rtpfbHeader = new RTCPHeader(buffer);
                         //offset += rtpfbHeader.Length * 4 + 4;
@@ -101,7 +101,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                     case (byte)RTCPReportTypesEnum.PSFB:
                         // TODO: Interpret Payload specific feedback reports.
                         Feedback = new RTCPFeedback(buffer);
-                        int psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
+                        var psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                         offset += psfbFeedbackLength;
                         //var psfbHeader = new RTCPHeader(buffer);
                         //offset += psfbHeader.Length * 4 + 4;
@@ -117,7 +117,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
         public string GetDebugSummary()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             if (Bye != null)
             {

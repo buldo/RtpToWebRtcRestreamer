@@ -98,8 +98,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             dcepOpen.Priority = NetConvert.ParseUInt16(buffer, posn + 2);
             dcepOpen.Reliability = NetConvert.ParseUInt32(buffer, posn + 4);
 
-            ushort labelLength = NetConvert.ParseUInt16(buffer, posn + 8);
-            ushort protocolLength = NetConvert.ParseUInt16(buffer, posn + 10);
+            var labelLength = NetConvert.ParseUInt16(buffer, posn + 8);
+            var protocolLength = NetConvert.ParseUInt16(buffer, posn + 10);
 
             if (labelLength > 0)
             {
@@ -120,8 +120,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <returns>The serialised length of this DECEP OPEN message.</returns>
         private int GetLength()
         {
-            ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
-            ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
+            var labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
+            var protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
 
             return DCEP_OPEN_FIXED_PARAMETERS_LENGTH + labelLength + protocolLength;
         }
@@ -141,8 +141,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             NetConvert.ToBuffer(Priority, buffer, posn + 2);
             NetConvert.ToBuffer(Reliability, buffer, posn + 4);
 
-            ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
-            ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
+            var labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
+            var protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
 
             NetConvert.ToBuffer(labelLength, buffer, posn + 8);
             NetConvert.ToBuffer(protocolLength, buffer, posn + 10);

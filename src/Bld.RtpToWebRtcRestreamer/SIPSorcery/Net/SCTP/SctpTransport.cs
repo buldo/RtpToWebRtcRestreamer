@@ -75,7 +75,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             // INIT packets have specific processing rules in order to prevent resource exhaustion.
             // See Section 5 of RFC 4960 https://tools.ietf.org/html/rfc4960#section-5 "Association Initialization".
 
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
 
             if (initChunk.InitiateTag == 0 ||
                 initChunk.NumberInboundStreams == 0 ||
@@ -152,9 +152,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
         protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
         {
-            SctpInitChunk initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
+            var initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
 
-            SctpPacket initAckPacket = new SctpPacket(
+            var initAckPacket = new SctpPacket(
                 initPacket.Header.DestinationPort,
                 initPacket.Header.SourcePort,
                 initChunk.InitiateTag);
@@ -171,7 +171,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             var json = cookie.ToJson();
             var jsonBuffer = Encoding.UTF8.GetBytes(json);
 
-            using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
+            using (var hmac = new HMACSHA256(_hmacKey))
             {
                 var result = hmac.ComputeHash(jsonBuffer);
                 cookie.HMAC = result.HexStr();
@@ -180,7 +180,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             var jsonWithHMAC = cookie.ToJson();
             var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
 
-            SctpInitChunk initAckChunk = new SctpInitChunk(
+            var initAckChunk = new SctpInitChunk(
                 SctpChunkType.INIT_ACK,
                 cookie.Tag,
                 cookie.TSN,
@@ -211,7 +211,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
             logger.LogDebug($"Cookie: {cookie.ToJson()}");
 
-            string calculatedHMAC = GetCookieHMAC(cookieBuffer);
+            var calculatedHMAC = GetCookieHMAC(cookieBuffer);
             if (calculatedHMAC != cookie.HMAC)
             {
                 logger.LogWarning($"SCTP COOKIE ECHO chunk had an invalid HMAC, calculated {calculatedHMAC}, cookie {cookie.HMAC}.");
@@ -252,9 +252,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             string hmacCalculated;
             cookie.HMAC = string.Empty;
 
-            byte[] cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());
+            var cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());
 
-            using (HMACSHA256 hmac = new HMACSHA256(_hmacKey))
+            using (var hmac = new HMACSHA256(_hmacKey))
             {
                 var result = hmac.ComputeHash(cookiePreImage);
                 hmacCalculated = result.HexStr();
@@ -278,12 +278,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             uint initiateTag,
             ISctpErrorCause error)
         {
-            SctpPacket errorPacket = new SctpPacket(
+            var errorPacket = new SctpPacket(
                 destinationPort,
                 sourcePort,
                 initiateTag);
 
-            SctpErrorChunk errorChunk = isAbort ? new SctpAbortChunk(true) : new SctpErrorChunk();
+            var errorChunk = isAbort ? new SctpAbortChunk(true) : new SctpErrorChunk();
             errorChunk.AddErrorCause(error);
             errorPacket.AddChunk(errorChunk);
 

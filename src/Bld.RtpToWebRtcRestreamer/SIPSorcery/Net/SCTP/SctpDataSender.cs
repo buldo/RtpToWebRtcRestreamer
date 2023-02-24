@@ -200,8 +200,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 unchecked
                 {
-                    uint maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
-                    bool processGapReports = true;
+                    var maxTSNDistance = SctpDataReceiver.GetDistance(_cumulativeAckTSN, TSN);
+                    var processGapReports = true;
 
                     if (_unconfirmedChunks.TryGetValue(sack.CumulativeTsnAck, out var result))
                     {
@@ -257,7 +257,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                         // The remote is reporting that we have sent a duplicate TSN. 
                         // This is probably because a SACK chunk was dropped. 
                         // Ensure that we stop sending the duplicate.
-                        foreach (uint duplicateTSN in sack.DuplicateTSN)
+                        foreach (var duplicateTSN in sack.DuplicateTSN)
                         {
                             _unconfirmedChunks.TryRemove(duplicateTSN, out _);
                             _missingChunks.TryRemove(duplicateTSN, out _);
@@ -305,19 +305,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     _streamSeqnums.Add(streamID, 0);
                 }
 
-                for (int index = 0; index * _defaultMTU < data.Length; index++)
+                for (var index = 0; index * _defaultMTU < data.Length; index++)
                 {
-                    int offset = (index == 0) ? 0 : (index * _defaultMTU);
-                    int payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
+                    var offset = (index == 0) ? 0 : (index * _defaultMTU);
+                    var payloadLength = (offset + _defaultMTU < data.Length) ? _defaultMTU : data.Length - offset;
 
                     // Future TODO: Replace with slice when System.Memory is introduced as a dependency.
-                    byte[] payload = new byte[payloadLength];
+                    var payload = new byte[payloadLength];
                     Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
 
-                    bool isBegining = index == 0;
-                    bool isEnd = ((offset + payloadLength) >= data.Length);
+                    var isBegining = index == 0;
+                    var isEnd = ((offset + payloadLength) >= data.Length);
 
-                    SctpDataChunk dataChunk = new SctpDataChunk(
+                    var dataChunk = new SctpDataChunk(
                         false,
                         isBegining,
                         isEnd,
@@ -369,11 +369,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// miscalculated.</param>
         private void ProcessGapReports(List<SctpTsnGapBlock> sackGapBlocks, uint maxTSNDistance)
         {
-            uint lastAckTSN = _cumulativeAckTSN;
+            var lastAckTSN = _cumulativeAckTSN;
 
             foreach (var gapBlock in sackGapBlocks)
             {
-                uint goodTSNStart = _cumulativeAckTSN + gapBlock.Start;
+                var goodTSNStart = _cumulativeAckTSN + gapBlock.Start;
 
                 if (SctpDataReceiver.GetDistance(lastAckTSN, goodTSNStart) > maxTSNDistance)
                 {
@@ -387,7 +387,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     break;
                 }
 
-                uint missingTSN = lastAckTSN + 1;
+                var missingTSN = lastAckTSN + 1;
 
                 logger.LogTrace($"SCTP SACK gap report start TSN {goodTSNStart} gap report end TSN {_cumulativeAckTSN + gapBlock.End} " +
                                 $"first missing TSN {missingTSN}.");
@@ -433,7 +433,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             }
             else
             {
-                int safety = _unconfirmedChunks.Count();
+                var safety = _unconfirmedChunks.Count();
 
                 do
                 {
@@ -464,10 +464,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
             {
                 // DateTime.Now calls have been a tiny bit expensive in the past so get a small saving by only
                 // calling once per loop.
-                DateTime now = DateTime.Now;
+                var now = DateTime.Now;
 
-                int burstSize = (_inRetransmitMode || _congestionWindow < _outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
-                int chunksSent = 0;
+                var burstSize = (_inRetransmitMode || _congestionWindow < _outstandingBytes || _receiverWindow == 0) ? 1 : MAX_BURST;
+                var chunksSent = 0;
 
                 //logger.LogTrace($"SCTP sender burst size {burstSize}, in retransmit mode {_inRetransmitMode}, cwnd {_congestionWindow}, arwnd {_receiverWindow}.");
 
@@ -475,7 +475,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 if (_missingChunks.Count > 0)
                 {
                     var misses = _missingChunks.GetEnumerator();
-                    bool haveMissing = misses.MoveNext();
+                    var haveMissing = misses.MoveNext();
 
                     while (chunksSent < burstSize && haveMissing)
                     {
@@ -549,7 +549,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 _senderMre.Reset();
 
-                int wait = GetSendWaitMilliseconds();
+                var wait = GetSendWaitMilliseconds();
                 //logger.LogTrace($"SCTP sender wait period {wait}ms, arwnd {_receiverWindow}, cwnd {_congestionWindow} " +
                 //    $"outstanding bytes {_outstandingBytes}, send queue {_sendQueue.Count}, missing {_missingChunks.Count} "
                 //    + $"unconfirmed {_unconfirmedChunks.Count}.");
@@ -651,7 +651,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     // When cwnd is less than or equal to ssthresh, an SCTP endpoint MUST
                     // use the slow - start algorithm to increase cwnd only if the current
                     // congestion window is being fully utilized.
-                    uint increasedCwnd = (uint)(_congestionWindow + Math.Min(lastAckDataChunkSize, _defaultMTU));
+                    var increasedCwnd = (uint)(_congestionWindow + Math.Min(lastAckDataChunkSize, _defaultMTU));
 
                     logger.LogTrace($"SCTP sender congestion window in slow-start increased from {_congestionWindow} to {increasedCwnd}.");
 

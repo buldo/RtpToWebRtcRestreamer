@@ -14,8 +14,8 @@ internal class RTPPacket
 
     public byte[] GetBytes()
     {
-        byte[] header = Header.GetBytes();
-        byte[] packet = new byte[header.Length + Payload.Length];
+        var header = Header.GetBytes();
+        var packet = new byte[header.Length + Payload.Length];
 
         Array.Copy(header, packet, header.Length);
         Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
@@ -25,9 +25,9 @@ internal class RTPPacket
 
     private byte[] GetNullPayload(int numBytes)
     {
-        byte[] payload = new byte[numBytes];
+        var payload = new byte[numBytes];
 
-        for (int byteCount = 0; byteCount < numBytes; byteCount++)
+        for (var byteCount = 0; byteCount < numBytes; byteCount++)
         {
             payload[byteCount] = 0xff;
         }
