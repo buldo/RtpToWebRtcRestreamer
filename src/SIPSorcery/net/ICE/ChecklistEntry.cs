@@ -209,25 +209,13 @@ namespace SIPSorcery.Net
                     if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
                         errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
                     {
-                        LocalCandidate.IceServer.SetAuthenticationFields(stunResponse);
-                        LocalCandidate.IceServer.GenerateNewTransactionID();
                         retry = true;
                     }
                 }
 
             }
 
-            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshSuccessResponse)
-            {
-                var lifetime = stunResponse.Attributes.FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Lifetime);
-
-                if (lifetime != null)
-                {
-                    LocalCandidate.IceServer.TurnTimeToExpiry = DateTime.Now +
-                                                               TimeSpan.FromSeconds(BitConverter.ToUInt32(lifetime.Value.Reverse().ToArray(), 0));
-                }
-            }
-            else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
+            if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
             {
                 logger.LogError("Cannot refresh TURN allocation");
             }
