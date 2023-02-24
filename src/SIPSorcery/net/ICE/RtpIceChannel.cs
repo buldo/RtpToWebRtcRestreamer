@@ -261,15 +261,13 @@ namespace SIPSorcery.Net
         /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
         /// </param>
         public RtpIceChannel(
-            IPAddress bindAddress,
-            RTCIceComponent component,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
             int bindPort = 0) :
-            base(false, bindAddress, bindPort)
+            base(false, null, bindPort)
         {
-            _bindAddress = bindAddress;
-            Component = component;
+            _bindAddress = null;
+            Component = RTCIceComponent.rtp;
             _policy = policy;
             _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
             _iceTiebreaker = Crypto.GetRandomULong();

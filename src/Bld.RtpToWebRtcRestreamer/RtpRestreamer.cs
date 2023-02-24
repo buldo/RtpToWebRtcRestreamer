@@ -67,8 +67,7 @@ namespace Bld.RtpToWebRtcRestreamer
 
         private async Task<RTCPeerConnection> CreatePeerConnection()
         {
-            RTCConfiguration config = new RTCConfiguration();
-            var pc = new RTCPeerConnection(config);
+            var pc = new RTCPeerConnection();
             _streamMultiplexer.RegisterPeer(pc);
 
             var videoTrack = new MediaStreamTrack(

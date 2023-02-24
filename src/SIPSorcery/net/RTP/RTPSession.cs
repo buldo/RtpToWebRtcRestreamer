@@ -260,13 +260,13 @@ namespace SIPSorcery.Net
         /// <param name="bindPort">Optional. If specified a single attempt will be made to bind the RTP socket
         /// on this port. It's recommended to leave this parameter as the default of 0 to let the Operating
         /// System select the port number.</param>
-        protected RTPSession(bool isMediaMultiplexed, bool isRtcpMultiplexed, bool isSecure, IPAddress bindAddress = null, int bindPort = 0)
+        protected RTPSession(bool isMediaMultiplexed, bool isRtcpMultiplexed, bool isSecure, int bindPort = 0)
             : this(new RtpSessionConfig
             {
                 IsMediaMultiplexed = isMediaMultiplexed,
                 IsRtcpMultiplexed = isRtcpMultiplexed,
                 RtpSecureMediaOption = isSecure ? RtpSecureMediaOptionEnum.DtlsSrtp : RtpSecureMediaOptionEnum.None,
-                BindAddress = bindAddress,
+                BindAddress = null,
                 BindPort = bindPort
             })
         {

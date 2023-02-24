@@ -40,7 +40,7 @@ namespace SIPSorcery.Net
     /// </remarks>
     public struct DataChannelOpenMessage
     {
-        public const int DCEP_OPEN_FIXED_PARAMETERS_LENGTH = 12;
+        private const int DCEP_OPEN_FIXED_PARAMETERS_LENGTH = 12;
 
         /// <summary>
         ///  This field holds the IANA-defined message type for the
@@ -119,7 +119,7 @@ namespace SIPSorcery.Net
         /// Gets the length of the serialised DCEP OPEN message.
         /// </summary>
         /// <returns>The serialised length of this DECEP OPEN message.</returns>
-        public int GetLength()
+        private int GetLength()
         {
             ushort labelLength = (ushort)(Label != null ? Encoding.UTF8.GetByteCount(Label) : 0);
             ushort protocolLength = (ushort)(Protocol != null ? Encoding.UTF8.GetByteCount(Protocol) : 0);
@@ -135,7 +135,7 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public ushort WriteTo(byte[] buffer, int posn)
+        private ushort WriteTo(byte[] buffer, int posn)
         {
             buffer[posn] = MessageType;
             buffer[posn + 1] = ChannelType;

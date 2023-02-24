@@ -192,8 +192,6 @@ namespace SIPSorcery.Net
 
         public bool canTrickleIceCandidates { get => true; }
 
-        private RTCConfiguration _configuration;
-
         /// <summary>
         /// The certificate being used to negotiate the DTLS handshake with the 
         /// remote peer.
@@ -288,33 +286,10 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="configuration">Optional.</param>
         /// <param name="videoAsPrimary"></param>
-        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0) :
-            base(true, true, true, configuration?.X_BindAddress, bindPort)
+        public RTCPeerConnection(int bindPort = 0) :
+            base(true, true, true, bindPort)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
-            
-            if (_configuration != null &&
-               _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay)
-            {
-                throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
-            }
-
-            if (configuration != null)
-            {
-                _configuration = configuration;
-
-                Logger.LogWarning("No DTLS certificate is provided in the configuration");
-                
-                if (_configuration.X_UseRtpFeedbackProfile)
-                {
-                    RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
-                }
-            }
-            else
-            {
-                _configuration = new RTCConfiguration();
-            }
-
             
             // No certificate was provided so create a new self signed one.
             (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
@@ -392,13 +367,12 @@ namespace SIPSorcery.Net
                     SetGlobalDestination(connectedEP, connectedEP);
                     Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
-                    bool disableDtlsExtendedMasterSecret = _configuration != null && _configuration.X_DisableExtendedMasterSecretKey;
                     _dtlsHandle = new DtlsSrtpTransport(
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
+                                { ForceUseExtendedMasterSecret = true } :
                                 new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
-                                    { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                    { ForceUseExtendedMasterSecret = true }
                                 );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
@@ -474,10 +448,8 @@ namespace SIPSorcery.Net
             }
 
             var rtpIceChannel = new RtpIceChannel(
-            _configuration?.X_BindAddress,
-            RTCIceComponent.rtp,
-            _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
-            _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
+            RTCIceTransportPolicy.all,
+            false,
             RtpSessionConfig.BindPort == 0 ? 0 : RtpSessionConfig.BindPort + MRtpChannelsCount * 2 + 2);
 
             if (RtpSessionConfig.IsMediaMultiplexed)
@@ -1072,26 +1044,7 @@ namespace SIPSorcery.Net
         {
             _rtpIceChannel.Restart();
         }
-
-        /// <summary>
-        /// Gets the initial optional configuration settings this peer connection was created
-        /// with.
-        /// </summary>
-        /// <returns>If available the initial configuration options.</returns>
-        public RTCConfiguration getConfiguration()
-        {
-            return _configuration;
-        }
-
-        /// <summary>
-        /// Not implemented. Configuration options cannot currently be changed once the peer
-        /// connection has been initialised.
-        /// </summary>
-        public void setConfiguration(RTCConfiguration configuration = null)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         /// <summary>
         /// Once the SDP exchange has been made the SCTP transport ports are known. If the destination
         /// port is not using the default value attempt to update it on teh SCTP transprot.
