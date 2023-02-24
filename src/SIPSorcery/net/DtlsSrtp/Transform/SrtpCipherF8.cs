@@ -79,7 +79,7 @@ namespace SIPSorcery.Net
          * F8 mode encryption context, see RFC3711 section 4.1.2 for detailed
          * description.
          */
-        public class F8Context
+        private class F8Context
         {
             public byte[] S;
             public byte[] ivAccent;
@@ -175,7 +175,7 @@ namespace SIPSorcery.Net
          * @param len
          *            length of the input data
          */
-        public static void ProcessBlock(IBlockCipher cipher, F8Context f8ctx,
+        private static void ProcessBlock(IBlockCipher cipher, F8Context f8ctx,
                 MemoryStream _in, int inOff, MemoryStream _out, int outOff, int len)
         {
             /*

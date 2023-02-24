@@ -2,7 +2,7 @@
 
 namespace SIPSorcery.net.RTP
 {
-    public class RTPHeaderExtensionUri
+    public static class RTPHeaderExtensionUri
     {
         public enum Type{
             Unknown,

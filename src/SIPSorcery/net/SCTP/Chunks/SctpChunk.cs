@@ -168,20 +168,16 @@ namespace SIPSorcery.Net
         /// Handler for processing an unrecognised chunk parameter.
         /// </summary>
         /// <param name="chunkParameter">The Type-Length-Value (TLV) formatted chunk that was
-        /// not recognised.</param>
+        ///     not recognised.</param>
         /// <returns>True if further parameter parsing for this chunk should be stopped. 
         /// False to continue.</returns>
-        public bool GotUnrecognisedParameter(SctpTlvChunkParameter chunkParameter)
+        public void GotUnrecognisedParameter(SctpTlvChunkParameter chunkParameter)
         {
-            bool stop = false;
-
             switch (chunkParameter.UnrecognisedAction)
             {
                 case SctpUnrecognisedParameterActions.Stop:
-                    stop = true;
                     break;
                 case SctpUnrecognisedParameterActions.StopAndReport:
-                    stop = true;
                     UnrecognizedPeerParameters.Add(chunkParameter);
                     break;
                 case SctpUnrecognisedParameterActions.Skip:
@@ -190,8 +186,6 @@ namespace SIPSorcery.Net
                     UnrecognizedPeerParameters.Add(chunkParameter);
                     break;
             }
-
-            return stop;
         }
 
         /// <summary>

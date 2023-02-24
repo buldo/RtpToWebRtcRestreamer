@@ -58,12 +58,12 @@ namespace SIPSorcery.Net
         private int authTagLength;
         private int saltKeyLength;
 
-        public int AuthKeyLength { get => authKeyLength; set => authKeyLength = value; }
-        public int AuthTagLength { get => authTagLength; set => authTagLength = value; }
-        public int AuthType { get => authType; set => authType = value; }
-        public int EncKeyLength { get => encKeyLength; set => encKeyLength = value; }
-        public int EncType { get => encType; set => encType = value; }
-        public int SaltKeyLength { get => saltKeyLength; set => saltKeyLength = value; }
+        public int AuthKeyLength => authKeyLength;
+        public int AuthTagLength => authTagLength;
+        public int AuthType => authType;
+        public int EncKeyLength => encKeyLength;
+        public int EncType => encType;
+        public int SaltKeyLength => saltKeyLength;
 
         /**
          * Construct a SRTPPolicy object based on given parameters.

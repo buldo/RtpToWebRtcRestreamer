@@ -1,6 +1,6 @@
 ﻿namespace SIPSorcery.Net
 {
-    public class CRC32C
+    public static class CRC32C
     {
         private const uint INITIAL_POLYNOMIAL = 0x82f63b78;
 

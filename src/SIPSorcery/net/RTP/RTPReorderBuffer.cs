@@ -14,12 +14,6 @@ namespace SIPSorcery.net.RTP
 
         private static ILogger logger = Log.Logger;
 
-        public RTPReorderBuffer(TimeSpan maxDropOutTime, IDateTime datetimeProvider = null)
-        {
-            _maxDropOutTime = maxDropOutTime;
-            _datetimeProvider = datetimeProvider ?? new DefaultTimeProvider();
-        }
-
         private RTPPacket First => _data.First?.Value;
         private RTPPacket Last => _data.Last?.Value;
 

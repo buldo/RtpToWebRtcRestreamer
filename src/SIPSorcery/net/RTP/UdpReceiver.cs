@@ -35,37 +35,9 @@ namespace SIPSorcery.Net
         protected IPEndPoint m_localEndPoint;
         protected AddressFamily m_addressFamily;
 
-        public virtual bool IsClosed
-        {
-            get
-            {
-                return m_isClosed;
-            }
-            protected set
-            {
-                if (m_isClosed == value)
-                {
-                    return;
-                }
-                m_isClosed = value;
-            }
-        }
+        public bool IsClosed => m_isClosed;
 
-        public virtual bool IsRunningReceive
-        {
-            get
-            {
-                return m_isRunningReceive;
-            }
-            protected set
-            {
-                if (m_isRunningReceive == value)
-                {
-                    return;
-                }
-                m_isRunningReceive = value;
-            }
-        }
+        public bool IsRunningReceive => m_isRunningReceive;
 
         /// <summary>
         /// Fires when a new packet has been received on the UDP socket.
@@ -237,7 +209,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected virtual void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        protected void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
         {
             OnPacketReceived?.Invoke(this, localPort, remoteEndPoint, packet);
         }

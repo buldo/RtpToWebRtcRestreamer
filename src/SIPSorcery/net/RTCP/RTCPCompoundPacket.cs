@@ -120,33 +120,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        /// <summary>
-        /// Serialises a compound RTCP packet to a byte array ready for transmission.
-        /// </summary>
-        /// <returns>A byte array representing a serialised compound RTCP packet.</returns>
-        public byte[] GetBytes()
-        {
-            if (SenderReport == null && ReceiverReport == null)
-            {
-                throw new ApplicationException("An RTCP compound packet must have either a Sender or Receiver report set.");
-            }
-            else if (SDesReport == null)
-            {
-                throw new ApplicationException("An RTCP compound packet must have an SDES report set.");
-            }
-
-            List<byte> compoundBuffer = new List<byte>();
-            compoundBuffer.AddRange((SenderReport != null) ? SenderReport.GetBytes() : ReceiverReport.GetBytes());
-            compoundBuffer.AddRange(SDesReport.GetBytes());
-
-            if (Bye != null)
-            {
-                compoundBuffer.AddRange(Bye.GetBytes());
-            }
-
-            return compoundBuffer.ToArray();
-        }
-
         public string GetDebugSummary()
         {
             StringBuilder sb = new StringBuilder();
