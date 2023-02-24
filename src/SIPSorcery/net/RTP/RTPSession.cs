@@ -909,7 +909,7 @@ namespace SIPSorcery.Net
         /// we're receiving).
         /// </summary>
         /// <param name="track">The media track to add to the session.</param>
-        public virtual void addTrack(MediaStreamTrack track)
+        public void addTrack(MediaStreamTrack track)
         {
             if (track == null)
             {
@@ -1038,7 +1038,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected virtual AudioStream GetNextAudioStreamByLocalTrack()
+        protected AudioStream GetNextAudioStreamByLocalTrack()
         {
             int index = AudioStreamList.Count;
             if (index > 0)
@@ -1092,7 +1092,7 @@ namespace SIPSorcery.Net
             return newAudioStream;
         }
 
-        protected virtual VideoStream GetNextVideoStreamByLocalTrack()
+        protected VideoStream GetNextVideoStreamByLocalTrack()
         {
             int index = VideoStreamList.Count;
             if (index > 0)
@@ -1257,7 +1257,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Starts the RTCP session(s) that monitor this RTP session.
         /// </summary>
-        public virtual Task Start()
+        protected Task Start()
         {
             if (!IsStarted)
             {

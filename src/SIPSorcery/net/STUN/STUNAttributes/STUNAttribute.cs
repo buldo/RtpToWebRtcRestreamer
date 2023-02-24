@@ -73,12 +73,6 @@ namespace SIPSorcery.Net
             Value = value;
         }
 
-        public STUNAttribute(STUNAttributeTypesEnum attributeType, uint value)
-        {
-            AttributeType = attributeType;
-            Value = NetConvert.GetBytes(value);
-        }
-
         public static List<STUNAttribute> ParseMessageAttributes(byte[] buffer, int startIndex, int endIndex)
         {
             if (buffer != null && buffer.Length > startIndex && buffer.Length >= endIndex)

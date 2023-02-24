@@ -92,12 +92,7 @@ namespace SIPSorcery.Net
                 }
             }
         }
-
-        public bool IsClosed
-        {
-            get { return m_isClosed; }
-        }
-
+        
         public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
         public event Action<int, IPEndPoint, byte[]> OnControlDataReceived;
         public event Action<string> OnClosed;
@@ -217,7 +212,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public virtual SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (m_isClosed)
             {

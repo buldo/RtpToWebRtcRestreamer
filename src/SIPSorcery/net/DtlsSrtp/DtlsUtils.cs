@@ -160,40 +160,6 @@ namespace SIPSorcery.Net
             return LoadSignerCredentials(context, certificate, privateKey, signatureAndHashAlgorithm);
         }
 
-        private static Certificate LoadCertificateChain(X509Certificate2[] certificates)
-        {
-            var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[certificates.Length];
-            for (int i = 0; i < certificates.Length; i++)
-            {
-                chain[i] = LoadCertificateResource(certificates[i]);
-            }
-
-            return new Certificate(chain);
-        }
-
-        public static Certificate LoadCertificateChain(X509Certificate2 certificate)
-        {
-            return LoadCertificateChain(new X509Certificate2[] { certificate });
-        }
-
-        private static X509CertificateStructure LoadCertificateResource(X509Certificate2 certificate)
-        {
-            if (certificate != null)
-            {
-                var bouncyCertificate = DotNetUtilities.FromX509Certificate(certificate);
-                return X509CertificateStructure.GetInstance(bouncyCertificate.GetEncoded());
-            }
-            throw new Exception("'resource' doesn't specify a valid certificate");
-        }
-
-        public static AsymmetricKeyParameter LoadPrivateKeyResource(X509Certificate2 certificate)
-        {
-            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
-#pragma warning disable SYSLIB0028
-            return DotNetUtilities.GetKeyPair(certificate.PrivateKey).Private;
-#pragma warning restore SYSLIB0028
-        }
-
         #region Self Signed Utils
 
         public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)

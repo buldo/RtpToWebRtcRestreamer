@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
     /// The class is interpreted from the message type. It does not get explicitly
     /// set in the STUN header.
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum STUNClassTypesEnum
     {
         Request = 0,

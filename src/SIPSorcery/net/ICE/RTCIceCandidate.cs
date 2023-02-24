@@ -309,7 +309,7 @@ namespace SIPSorcery.Net
 
             /*int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
             int svrVal = (type == RTCIceCandidateType.relay || type == RTCIceCandidateType.srflx) ?
-                Crypto.GetSHAHash(IceServer != null ? IceServer._uri.ToString() : "").Sum(x => (byte)x) : 0;
+                Crypto.GetSHAHash(IceServerConsts != null ? IceServerConsts._uri.ToString() : "").Sum(x => (byte)x) : 0;
             return (type.GetHashCode() + addressVal + svrVal + protocol.GetHashCode()).ToString();*/
         }
 

@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// The RTCIceTcpCandidateType represents the type of the ICE TCP candidate.
@@ -6,6 +8,7 @@
     /// <remarks>
     /// As defined in https://www.w3.org/TR/webrtc/#rtcicetcpcandidatetype-enum.
     /// </remarks>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum RTCIceTcpCandidateType
     {
         /// <summary>

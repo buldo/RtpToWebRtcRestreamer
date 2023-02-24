@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SIPSorcery.Net
 {
     /// <summary>
     /// The different types of RTCP packets as defined in RFC3550.
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum RTCPReportTypesEnum : byte
     {
         SR = 200,     // Send Report.

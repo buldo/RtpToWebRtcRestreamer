@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace SIPSorcery.Net
 {
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum STUNAttributeTypesEnum : ushort
     {
         Unknown = 0,

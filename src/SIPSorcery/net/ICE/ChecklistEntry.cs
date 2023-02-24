@@ -206,8 +206,8 @@ namespace SIPSorcery.Net
                     var errCodeAttribute =
                         stunResponse.Attributes.First(x => x.AttributeType == STUNAttributeTypesEnum.ErrorCode) as
                             STUNErrorCodeAttribute;
-                    if (errCodeAttribute.ErrorCode == IceServer.STUN_UNAUTHORISED_ERROR_CODE ||
-                        errCodeAttribute.ErrorCode == IceServer.STUN_STALE_NONCE_ERROR_CODE)
+                    if (errCodeAttribute.ErrorCode == IceServerConsts.STUN_UNAUTHORISED_ERROR_CODE ||
+                        errCodeAttribute.ErrorCode == IceServerConsts.STUN_STALE_NONCE_ERROR_CODE)
                     {
                         retry = true;
                     }

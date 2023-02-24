@@ -58,7 +58,7 @@
 // History:
 // 15 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 23 Jun 2020  Aaron Clauson   Renamed from IceSession to RtpIceChannel.
-// 03 Oct 2022  Rafal Soares	Add support to TCP IceServer
+// 03 Oct 2022  Rafal Soares	Add support to TCP IceServerConsts
 //
 // License: 
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
@@ -413,16 +413,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public static int FAILED_TIMEOUT_PERIOD = 16;
 
-        /// <summary>
-        /// The period in seconds after which a CreatePermission will be sent.
-        /// </summary>
-        public static int REFRESH_PERMISSION_PERIOD = 240;
-
-        /// <summary>
-        /// The lifetime value used in refresh request.
-        /// </summary>
-        public static uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
-
         private IPAddress _bindAddress;
         private RTCIceTransportPolicy _policy;
 
@@ -536,8 +526,6 @@ namespace SIPSorcery.Net
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
         public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
         public event Action<RTCIceCandidate, string> OnIceCandidateError;
-
-        public static List<DnsClient.NameServer> DefaultNameServers { get; set; }
 
         /// <summary>
         /// This event gets fired when a STUN message is received by this channel.
@@ -1339,11 +1327,11 @@ namespace SIPSorcery.Net
             candidatePair.RequestTransactionID = Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
 
             bool isRelayCheck = candidatePair.LocalCandidate.type == RTCIceCandidateType.relay;
-            //bool isTcpProtocol = candidatePair.LocalCandidate.IceServer?.Protocol == ProtocolType.Tcp;
+            //bool isTcpProtocol = candidatePair.LocalCandidate.IceServerConsts?.Protocol == ProtocolType.Tcp;
 
             if (isRelayCheck && candidatePair.TurnPermissionsResponseAt == DateTime.MinValue)
             {
-                if (candidatePair.TurnPermissionsRequestSent >= IceServer.MAX_REQUESTS)
+                if (candidatePair.TurnPermissionsRequestSent >= IceServerConsts.MAX_REQUESTS)
                 {
                     logger.LogWarning($"ICE RTP channel failed to get a Create Permissions response from after {candidatePair.TurnPermissionsRequestSent} attempts.");
                     candidatePair.State = ChecklistEntryState.Failed;
@@ -1352,9 +1340,6 @@ namespace SIPSorcery.Net
                 {
                     // Send Create Permissions request to TURN server for remote candidate.
                     candidatePair.TurnPermissionsRequestSent++;
-
-                    logger.LogDebug($"ICE RTP channel sending TURN permissions request {candidatePair.TurnPermissionsRequestSent} to server for peer {candidatePair.RemoteCandidate.DestinationEndPoint} (TxID: {candidatePair.RequestTransactionID}).");
-                    SendTurnCreatePermissionsRequest(candidatePair.RequestTransactionID, null, candidatePair.RemoteCandidate.DestinationEndPoint);
                 }
             }
             else
@@ -1792,167 +1777,6 @@ namespace SIPSorcery.Net
             return matchingChecklistEntry;
         }
         
-        /// <summary>
-        /// Sends a create permissions request to a TURN server for a peer end point.
-        /// </summary>
-        /// <param name="transactionID">The transaction ID to set on the request. This
-        ///     gets used to match responses back to the sender.</param>
-        /// <param name="iceServer">The ICE server to send the request to.</param>
-        /// <param name="peerEndPoint">The peer end point to request the channel bind for.</param>
-        /// <returns>The result from the socket send (not the response code from the TURN server).</returns>
-        private void SendTurnCreatePermissionsRequest(string transactionID, IceServer iceServer,
-            IPEndPoint peerEndPoint)
-        {
-            STUNMessage permissionsRequest = new STUNMessage(STUNMessageTypesEnum.CreatePermission);
-            permissionsRequest.Header.TransactionId = Encoding.ASCII.GetBytes(transactionID);
-            permissionsRequest.Attributes.Add(new STUNXORAddressAttribute(STUNAttributeTypesEnum.XORPeerAddress, peerEndPoint.Port, peerEndPoint.Address));
-
-            byte[] createPermissionReqBytes = null;
-
-            if (iceServer.Nonce != null && iceServer.Realm != null && iceServer._username != null && iceServer._password != null)
-            {
-                createPermissionReqBytes = GetAuthenticatedStunRequest(permissionsRequest, iceServer._username, iceServer.Realm, iceServer._password, iceServer.Nonce);
-            }
-            else
-            {
-                createPermissionReqBytes = permissionsRequest.ToByteBuffer(null, false);
-            }
-
-            var sendResult = iceServer.Protocol == ProtocolType.Tcp ?
-                                SendOverTCP(iceServer.ServerEndPoint, createPermissionReqBytes) : 
-                                base.Send(RTPChannelSocketsEnum.RTP, iceServer.ServerEndPoint, createPermissionReqBytes);
-
-            if (sendResult != SocketError.Success)
-            {
-                logger.LogWarning($"Error sending TURN Create Permissions request {iceServer.OutstandingRequestsSent} for " +
-                    $"{iceServer._uri} to {iceServer.ServerEndPoint}. {sendResult}.");
-            }
-            else
-            {
-                OnStunMessageSent?.Invoke(permissionsRequest, iceServer.ServerEndPoint, false);
-            }
-        }
-
-        protected virtual SocketError SendOverTCP(IPEndPoint dstEndPoint, byte[] buffer)
-        {
-            if (IsClosed)
-            {
-                return SocketError.Disconnecting;
-            }
-            else if (dstEndPoint == null)
-            {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
-            }
-            else if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
-            }
-            else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-            {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-                return SocketError.DestinationAddressRequired;
-            }
-            else
-            {
-                try
-                {
-                    //Connect to destination
-                    Socket sendSocket = RtpTcpSocket;
-                    //LastRtpDestination = dstEndPoint;
-
-                    //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                    if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-                    {
-                        dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-                    }
-
-                    Func<IPEndPoint, IPEndPoint, bool> equals = (IPEndPoint e1, IPEndPoint e2) =>
-                    {
-                        return e1.Port == e2.Port && e1.Address.Equals(e2.Address);
-                    };
-
-                    if (!sendSocket.Connected || !(sendSocket.RemoteEndPoint is IPEndPoint) || !equals(sendSocket.RemoteEndPoint as IPEndPoint, dstEndPoint))
-                    {
-                        if (sendSocket.Connected)
-                        {
-                            logger.LogDebug($"SendOverTCP request disconnect.");
-                            sendSocket.Disconnect(true);
-                        }
-                        sendSocket.Connect(dstEndPoint);
-
-                        logger.LogDebug($"SendOverTCP status: {sendSocket.Connected} endpoint: {dstEndPoint}");
-                    }
-
-                    //Fix ReceiveFrom logic if any previous exception happens
-                    if (!m_rtpTcpReceiver.IsRunningReceive && !m_rtpTcpReceiver.IsClosed)
-                    {
-                        m_rtpTcpReceiver.BeginReceiveFrom();
-                    }
-
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendToTCP, sendSocket);
-                    return SocketError.Success;
-                }
-                catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-                {
-                    return SocketError.Disconnecting;
-                }
-                catch (SocketException sockExcp)
-                {
-                    return sockExcp.SocketErrorCode;
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError($"Exception RTPIceChannel.SendOverTCP. {excp}");
-                    return SocketError.Fault;
-                }
-            }
-        }
-
-        protected virtual void EndSendToTCP(IAsyncResult ar)
-        {
-            try
-            {
-                Socket sendSocket = (Socket)ar.AsyncState;
-                int bytesSent = sendSocket.EndSendTo(ar);
-            }
-            catch (SocketException sockExcp)
-            {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                logger.LogWarning(sockExcp, $"SocketException RTPIceChannel EndSendToTCP ({sockExcp.ErrorCode}). {sockExcp.Message}");
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPIceChannel EndSendToTCP. {excp.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Adds the authentication fields to a STUN request.
-        /// </summary>
-        /// <returns>The serialised STUN request.</returns>
-        private byte[] GetAuthenticatedStunRequest(STUNMessage stunRequest, string username, byte[] realm, string password, byte[] nonce)
-        {
-            stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Nonce, nonce));
-            stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Realm, realm));
-            stunRequest.AddUsernameAttribute(username);
-
-            // See https://tools.ietf.org/html/rfc5389#section-15.4
-            string key = $"{username}:{Encoding.UTF8.GetString(realm)}:{password}";
-            // TODO: When .NET Standard and Framework support are deprecated this pragma can be removed.
-#pragma warning disable SYSLIB0021
-            MD5 md5 = new MD5CryptoServiceProvider();
-            byte[] md5Hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
-#pragma warning restore SYSLIB0021
-
-            return stunRequest.ToByteBuffer(md5Hash, true);
-        }
-
         /// <summary>
         /// Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
         /// and extract STUN messages to deal with ICE connectivity checks and TURN relays.

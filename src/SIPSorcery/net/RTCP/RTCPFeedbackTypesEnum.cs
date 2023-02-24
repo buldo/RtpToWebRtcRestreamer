@@ -1,9 +1,12 @@
-﻿namespace SIPSorcery.Net
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// The different types of Feedback Message Types. (RFC4585)
     /// https://tools.ietf.org/html/rfc4585#page-35
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public enum RTCPFeedbackTypesEnum : int
     {
         unassigned = 0,     // Unassigned
