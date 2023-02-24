@@ -56,8 +56,7 @@ namespace SIPSorcery.net.RTP
         {
             get
             {
-                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive
-                  && RemoteTrack != null && RemoteTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
+                return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
             }
         }
 

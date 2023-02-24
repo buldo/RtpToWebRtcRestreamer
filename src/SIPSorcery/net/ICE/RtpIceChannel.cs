@@ -1390,7 +1390,6 @@ namespace SIPSorcery.Net
                     remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
                 }
 
-                LastRtpDestination = remoteEndPoint;
 
                 if (packet[0] == 0x00 || packet[0] == 0x01)
                 {

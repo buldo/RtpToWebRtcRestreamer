@@ -74,7 +74,7 @@ namespace Bld.RtpToWebRtcRestreamer
             var videoTrack = new MediaStreamTrack(
                 new VideoFormat(VideoCodecsEnum.H264, 96),
                 MediaStreamStatusEnum.SendRecv);
-            pc.addTrack(videoTrack);
+            pc.AddTrack(videoTrack);
 
             pc.onconnectionstatechange += (state) =>
             {
@@ -99,10 +99,6 @@ namespace Bld.RtpToWebRtcRestreamer
             pc.OnReceiveReport += (re, media, rr) =>
             {
                 _logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
-            };
-            pc.OnSendReport += (media, sr) =>
-            {
-                _logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             };
             
             return pc;

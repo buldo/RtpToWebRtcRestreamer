@@ -205,21 +205,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// Removes the reception report when the remote party indicates no more RTP packets
-        /// for that SSRC will be received by sending an RTCP BYE.
-        /// </summary>
-        /// <param name="ssrc">The SSRC of the reception report being closed. Typically this
-        /// should be the SSRC received in the RTCP BYE.</param>
-        public void RemoveReceptionReport(uint ssrc)
-        {
-            if (m_receptionReport != null && m_receptionReport.SSRC == ssrc)
-            {
-                logger.LogDebug($"RTCP session removing reception report for remote ssrc {ssrc}.");
-                m_receptionReport = null;
-            }
-        }
-
-        /// <summary>
         /// Event handler for an RTP packet being sent by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>

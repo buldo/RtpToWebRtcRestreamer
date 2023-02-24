@@ -26,40 +26,6 @@ namespace SIPSorcery.Sys
 {
     public static class IPSocket
     {
-        /// <summary>
-        /// Checks the Contact SIP URI host and if it is recognised as a private address it is replaced with the socket
-        /// the SIP message was received on.
-        /// 
-        /// Private address space blocks RFC 1597.
-        ///		10.0.0.0        -   10.255.255.255
-        ///		172.16.0.0      -   172.31.255.255
-        ///		192.168.0.0     -   192.168.255.255
-        ///
-        /// </summary>
-        public static bool IsPrivateAddress(string host)
-        {
-            if (IPAddress.TryParse(host, out var ipAddress))
-            {
-                if (IPAddress.IsLoopback(ipAddress) || ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
-                {
-                    return true;
-                }
-
-                if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    byte[] addrBytes = ipAddress.GetAddressBytes();
-                    if ((addrBytes[0] == 10) ||
-                        (addrBytes[0] == 172 && (addrBytes[1] >= 16 && addrBytes[1] <= 31)) ||
-                        (addrBytes[0] == 192 && addrBytes[1] == 168))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
         public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
         {
             if (endpointstring.IsNullOrBlank())

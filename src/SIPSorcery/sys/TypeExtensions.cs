@@ -78,11 +78,6 @@ namespace SIPSorcery.Sys
             return rv.ToUpper();
         }
 
-        public static bool IsPrivate(this IPAddress address)
-        {
-            return IPSocket.IsPrivateAddress(address.ToString());
-        }
-
         /// <summary>
         /// Purpose of this extension is to allow deconstruction of a list into a fixed size tuple.
         /// </summary>

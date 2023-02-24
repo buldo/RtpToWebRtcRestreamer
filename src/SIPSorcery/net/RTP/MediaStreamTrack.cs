@@ -43,20 +43,10 @@ namespace SIPSorcery.Net
         public uint Ssrc { get; set; }
 
         /// <summary>
-        /// The last seqnum received from the remote peer for this stream.
-        /// </summary>
-        public ushort LastRemoteSeqNum { get; internal set; }
-        
-        /// <summary>
         /// The value used in the RTP Timestamp header field for media packets
         /// sent using this media stream.
         /// </summary>
         public uint Timestamp { get; internal set; }
-
-        /// <summary>
-        /// Indicates whether this track was sourced by a remote connection.
-        /// </summary>
-        public bool IsRemote { get; set; }
 
         /// <summary>
         /// By default audio channels will support DTMF via telephone events. To opt
@@ -121,24 +111,20 @@ namespace SIPSorcery.Net
         /// for this track.</param>
         public MediaStreamTrack(
             SDPMediaTypesEnum kind,
-            bool isRemote,
             List<SDPAudioVideoMediaFormat> capabilities,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv,
             List<SDPSsrcAttribute> ssrcAttributes = null, Dictionary<int, RTPHeaderExtension> headerExtensions = null)
         {
             Kind = kind;
-            IsRemote = isRemote;
             Capabilities = capabilities;
             StreamStatus = streamStatus;
             DefaultStreamStatus = streamStatus;
             HeaderExtensions = headerExtensions ?? new Dictionary<int, RTPHeaderExtension>();
-            if (!isRemote)
-            {
-                Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-                m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
-            }
-
-            // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
+            
+            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
+            m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            
+                // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
             // RTP and RTCP packets received from the remote party.
             if (ssrcAttributes?.Count > 0)
             {
@@ -161,19 +147,8 @@ namespace SIPSorcery.Net
         public MediaStreamTrack(
            VideoFormat format,
            MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv) :
-            this(SDPMediaTypesEnum.video, false, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
+            this(SDPMediaTypesEnum.video, new List<SDPAudioVideoMediaFormat> { new SDPAudioVideoMediaFormat(format) }, streamStatus)
         { }
-
-        /// <summary>
-        /// Checks whether the payload ID in an RTP packet received from the remote call party
-        /// is in this track's list.
-        /// </summary>
-        /// <param name="payloadID">The payload ID to check against.</param>
-        /// <returns>True if the payload ID matches one of the codecs for this stream. False if not.</returns>
-        public bool IsPayloadIDMatch(int payloadID)
-        {
-            return Capabilities?.Any(x => x.ID == payloadID) == true;
-        }
 
         /// <summary>
         /// Checks whether a SSRC value from an RTP header or RTCP report matches

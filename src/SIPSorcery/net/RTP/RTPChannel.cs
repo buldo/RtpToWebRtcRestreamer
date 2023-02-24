@@ -33,26 +33,14 @@ namespace SIPSorcery.Net
     public class RTPChannel : IDisposable
     {
         private static ILogger logger = Log.Logger;
-        protected UdpReceiver m_rtpReceiver;
+        private UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
-        protected UdpReceiver m_controlReceiver;
+        private UdpReceiver m_controlReceiver;
         private bool m_rtpReceiverStarted;
         private bool m_controlReceiverStarted;
         private bool m_isClosed;
 
-        public Socket RtpSocket { get; private set; }
-
-        /// <summary>
-        /// The last remote end point an RTP packet was sent to or received from. Used for 
-        /// reporting purposes only.
-        /// </summary>
-        protected IPEndPoint LastRtpDestination { get; set; }
-
-        /// <summary>
-        /// The last remote end point an RTCP packet was sent to or received from. Used for
-        /// reporting purposes only.
-        /// </summary>
-        internal IPEndPoint LastControlDestination { get; private set; }
+        protected Socket RtpSocket { get; private set; }
 
         /// <summary>
         /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
@@ -62,23 +50,23 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The local end point the RTP socket is listening on.
         /// </summary>
-        public IPEndPoint RTPLocalEndPoint { get; private set; }
+        protected IPEndPoint RTPLocalEndPoint { get; private set; }
 
         /// <summary>
         /// The local port we are listening for RTCP packets on.
         /// </summary>
-        public int ControlPort { get; private set; }
+        private int ControlPort { get; set; }
 
         /// <summary>
         /// The local end point the control socket is listening on.
         /// </summary>
-        public IPEndPoint ControlLocalEndPoint { get; private set; }
+        private IPEndPoint ControlLocalEndPoint { get; set; }
 
         /// <summary>
         /// Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
         /// socket exists it will be the same.
         /// </summary>
-        public bool IsDualMode
+        protected bool IsDualMode
         {
             get
             {
@@ -138,7 +126,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Starts the UDP receiver that listens for RTP packets.
         /// </summary>
-        public void StartRtpReceiver()
+        private void StartRtpReceiver()
         {
             if(!m_rtpReceiverStarted)
             {
@@ -157,7 +145,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Starts the UDP receiver that listens for RTCP (control) packets.
         /// </summary>
-        public void StartControlReceiver()
+        private void StartControlReceiver()
         {
             if(!m_controlReceiverStarted && m_controlSocket != null)
             {
@@ -239,17 +227,7 @@ namespace SIPSorcery.Net
                 Socket sendSocket = RtpSocket;
                 if (sendOn == RTPChannelSocketsEnum.Control)
                 {
-                    LastControlDestination = dstEndPoint;
-                    if (m_controlSocket == null)
-                    {
-                        throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
-                    }
-
-                    sendSocket = m_controlSocket;
-                }
-                else
-                {
-                    LastRtpDestination = dstEndPoint;
+                    sendSocket = m_controlSocket ?? throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
                 }
 
                 //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
@@ -321,7 +299,6 @@ namespace SIPSorcery.Net
         {
             if (packet?.Length > 0)
             {
-                LastRtpDestination = remoteEndPoint;
                 OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
             }
         }
@@ -335,7 +312,6 @@ namespace SIPSorcery.Net
         /// <param name="packet">The raw packet received which should always be an RTCP packet.</param>
         private void OnControlPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
         {
-            LastControlDestination = remoteEndPoint;
             OnControlDataReceived?.Invoke(localPort, remoteEndPoint, packet);
         }
 

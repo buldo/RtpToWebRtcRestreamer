@@ -278,66 +278,6 @@ namespace SIPSorcery.Net
         }
 
         /// <summary>
-        /// For two formats to be a match only the codec and rtpmap parameters need to match. The
-        /// fmtp parameter does not matter.
-        /// </summary>
-        public static bool AreMatch(SDPAudioVideoMediaFormat format1, SDPAudioVideoMediaFormat format2)
-        {
-            // rtpmap takes priority as well known format ID's can be overruled.
-            if (format1.Rtpmap != null
-                && format2.Rtpmap != null &&
-                string.Equals(format1.Rtpmap.Trim(), format2.Rtpmap.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (format1.ID < DYNAMIC_ID_MIN
-                && format1.ID == format2.ID
-                && string.Equals(format1.Name(), format2.Name(), StringComparison.OrdinalIgnoreCase))
-            {
-                // Well known format type.
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Attempts to get the compatible formats between two lists. Formats for
-        /// "RTP Events" are not included.
-        /// </summary>
-        /// <param name="a">The first list to match the media formats for.</param>
-        /// <param name="b">The second list to match the media formats for.</param>
-        /// <returns>A list of media formats that are compatible for BOTH lists.</returns>
-        public static List<SDPAudioVideoMediaFormat> GetCompatibleFormats(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
-        {
-            List<SDPAudioVideoMediaFormat> compatible = new List<SDPAudioVideoMediaFormat>();
-
-            if (a == null || a.Count == 0)
-            {
-                // Preferable to return an empty list.
-                //throw new ArgumentNullException("a", "The first media format list supplied was empty.");
-            }
-            else if (b == null || b.Count == 0)
-            {
-                // Preferable to return an empty list.
-                //throw new ArgumentNullException("b", "The second media format list supplied was empty.");
-            }
-            else
-            {
-                foreach (var format in a)
-                {
-                    if (b.Any(x => AreMatch(format, x)))
-                    {
-                        compatible.Add(format);
-                    }
-                }
-            }
-
-            return compatible;
-        }
-
-        /// <summary>
         /// Sort capabilities array based on another capability array
         /// </summary>
         /// <param name="capabilities"></param>

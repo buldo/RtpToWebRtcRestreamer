@@ -9,7 +9,5 @@
         }
         public int Id { get; }
         public string Uri { get; }
-
-        public RTPHeaderExtensionUri.Type? Type => RTPHeaderExtensionUri.GetType(Uri);
     }
 }
