@@ -22,8 +22,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void STUNMessageReceived(IPEndPoint receivedEndPoint, IPEndPoint receivedOnEndPoint, byte[] buffer, int bufferLength);
-
     public class STUNListener
     {
         private const string STUN_LISTENER_THREAD_NAME = "stunlistener-";

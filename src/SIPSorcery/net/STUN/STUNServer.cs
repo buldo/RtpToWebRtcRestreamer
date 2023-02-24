@@ -21,10 +21,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void STUNSendMessageDelegate(IPEndPoint dst, byte[] buffer);  // Used so the STUN server can operate in a multiplexed fashion with things like a SIP server.
-
-    public delegate void STUNServerRequestInTraceDelegate(IPEndPoint localEndPoint, IPEndPoint fromEndPoint, STUNMessage stunMessage);
-    public delegate void STUNServerResponseOutTraceDelegate(IPEndPoint localEndPoint, IPEndPoint toEndPoint, STUNMessage stunMessage);
+    // Used so the STUN server can operate in a multiplexed fashion with things like a SIP server.
 
     public class STUNServer
     {

@@ -20,15 +20,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public delegate void CDRReadyDelegate(SIPCDR cdr);                // Used to inform CDR handlers when a CDR has been udpated.
-
-    public enum SIPCallDirection
-    {
-        None = 0,
-        In = 1,
-        Out = 2,
-        Redirect = 3,
-    }
+    // Used to inform CDR handlers when a CDR has been udpated.
 
     /// <summary>
     /// Call detail record for a SIP call.

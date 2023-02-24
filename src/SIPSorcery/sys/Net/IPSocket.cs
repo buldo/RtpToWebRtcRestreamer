@@ -28,14 +28,9 @@ namespace SIPSorcery.Sys
     public class IPSocket
     {
         /// <summary>
-        /// Specifies the minimum acceptable value for the <see cref='System.Net.IPEndPoint'/> Port property.
-        /// </summary>
-        public const int MinPort = 0x00000000;
-
-        /// <summary>
         /// Specifies the maximum acceptable value for the <see cref='System.Net.IPEndPoint'/> Port property.
         /// </summary>
-        public const int MaxPort = 0x0000FFFF;
+        private const int MaxPort = 0x0000FFFF;
 
         /// <summary>
         /// This code is based on the IPEndPoint.ToString method in the dotnet source code at

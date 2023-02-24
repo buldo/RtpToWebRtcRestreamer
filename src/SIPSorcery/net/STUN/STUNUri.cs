@@ -22,63 +22,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class STUNConstants
-    {
-        public const int DEFAULT_STUN_PORT = 3478;
-        public const int DEFAULT_STUN_TLS_PORT = 5349;
-        public const int DEFAULT_TURN_PORT = 3478;
-        public const int DEFAULT_TURN_TLS_PORT = 5349;
-
-        public static int GetPortForScheme(STUNSchemesEnum scheme)
-        {
-            switch (scheme)
-            {
-                case STUNSchemesEnum.stun:
-                    return DEFAULT_STUN_PORT;
-                case STUNSchemesEnum.stuns:
-                    return DEFAULT_STUN_TLS_PORT;
-                case STUNSchemesEnum.turn:
-                    return DEFAULT_TURN_PORT;
-                case STUNSchemesEnum.turns:
-                    return DEFAULT_TURN_TLS_PORT;
-                default:
-                    throw new ApplicationException("STUN or TURN scheme not recognised in STUNConstants.GetPortForScheme.");
-            }
-        }
-    }
-
-    public enum STUNSchemesEnum
-    {
-        stun = 0,
-        stuns = 1,
-        turn = 2,
-        turns = 3
-    }
-
-    /// <summary>
-    /// A list of the transport layer protocols that are supported by STUNand TURN (the network layers
-    /// supported are IPv4 mad IPv6).
-    /// </summary>
-    public enum STUNProtocolsEnum
-    {
-        /// <summary>
-        /// User Datagram Protocol.
-        /// </summary>
-        udp = 1,
-        /// <summary>.
-        /// Transmission Control Protocol
-        /// </summary>
-        tcp = 2,
-        /// <summary>
-        /// Transport Layer Security.
-        /// </summary>
-        tls = 3,
-        /// <summary>
-        /// Transport Layer Security over UDP.
-        /// </summary>
-        dtls = 4,
-    }
-
     public class STUNUri
     {
         public const string SCHEME_TRANSPORT_TCP = "transport=tcp";

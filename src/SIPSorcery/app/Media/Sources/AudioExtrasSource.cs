@@ -32,62 +32,6 @@ using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Media
 {
-    public enum AudioSourcesEnum
-    {
-        /// <summary>
-        /// Plays music samples from a file. The file will be played in a loop until
-        /// another source option is set.
-        /// </summary>
-        Music = 0,
-
-        /// <summary>
-        /// Send an audio stream of silence. Note this option does result
-        /// in audio RTP packet getting sent.
-        /// </summary>
-        Silence = 1,
-
-        /// <summary>
-        /// White noise static.
-        /// </summary>
-        WhiteNoise = 2,
-
-        /// <summary>
-        /// A continuous sine wave.
-        /// </summary>
-        SineWave = 3,
-
-        /// <summary>
-        /// Pink noise static.
-        /// </summary>
-        PinkNoise = 4,
-
-        /// <summary>
-        /// Don't generate any audio samples.
-        /// </summary>
-        None = 5,
-    }
-
-    public class AudioSourceOptions
-    {
-        /// <summary>
-        /// The type of audio source to use.
-        /// </summary>
-        public AudioSourcesEnum AudioSource;
-
-        /// <summary>
-        /// The sampling rate used to generate the input or if the source is
-        /// being generated the sample rate to generate it at.
-        /// </summary>
-        public AudioSamplingRatesEnum MusicInputSamplingRate = AudioSamplingRatesEnum.Rate8KHz;
-
-        /// <summary>
-        /// If the audio source is set to music this must be the path to a raw PCM 8K sampled file.
-        /// If set to null or the file doesn't exist the default embedded resource music file will
-        /// be used.
-        /// </summary>
-        public string MusicFile;
-    }
-
     /// <summary>
     /// An audio source implementation that provides a diverse range of audio source options.
     /// The available options encompass signal generation, playback from file and more.

@@ -32,9 +32,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public delegate Task<SIPEndPoint> ResolveSIPUriDelegateAsync(SIPURI uri, bool preferIPv6, CancellationToken ct);
-    public delegate SIPEndPoint ResolveSIPUriFromCacheDelegate(SIPURI uri, bool preferIPv6);
-
     public class SIPTransport : IDisposable
     {
         private const int MAX_QUEUEWAIT_PERIOD = 200;              // Maximum time to wait to check the message received queue if no events are received.

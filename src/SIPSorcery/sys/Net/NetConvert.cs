@@ -66,25 +66,6 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Parse a UInt64 from a network buffer using network byte order.
-        /// </summary>
-        /// <param name="buffer">The buffer to parse the value from.</param>
-        /// <param name="posn">The position in the buffer to start the parse from.</param>
-        /// <returns>A UInt64 value.</returns>
-        public static ulong ParseUInt64(byte[] buffer, int posn)
-        {
-            return 
-                 (ulong)buffer[posn] << 56 |
-                 (ulong)buffer[posn + 1] << 48 |
-                 (ulong)buffer[posn + 2] << 40 |
-                 (ulong)buffer[posn + 3] << 32 |
-                 (ulong)buffer[posn + 4] << 24 |
-                 (ulong)buffer[posn + 5] << 16 |
-                 (ulong)buffer[posn + 6] << 8 |
-                 (ulong)buffer[posn + 7];
-        }
-
-        /// <summary>
         /// Writes a UInt16 value to a network buffer using network byte order.
         /// </summary>
         /// <param name="val">The value to write to the buffer.</param>

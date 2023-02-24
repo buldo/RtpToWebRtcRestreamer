@@ -26,35 +26,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP.App
 {
-    public enum SIPCallRedirectModesEnum
-    {
-        None = 0,
-        //Add = 1,        // (option=a)
-        //Replace = 2,    // (option=r)
-        NewDialPlan = 3,// (option=n)
-        Manual = 4,      // (option=m) Means don't do anything with a redirect response. Let the user handle it in their dialplan.
-    }
-
-    public class CRMHeaders
-    {
-        public string PersonName;
-        public string CompanyName;
-        public string AvatarURL;
-        public bool Pending = true;
-        public string LookupError;
-
-        public CRMHeaders()
-        { }
-
-        public CRMHeaders(string personName, string companyName, string avatarURL)
-        {
-            PersonName = personName;
-            CompanyName = companyName;
-            AvatarURL = avatarURL;
-            Pending = false;
-        }
-    }
-
     public class SIPCallDescriptor
     {
         private const int MAX_REINVITE_DELAY = 5;

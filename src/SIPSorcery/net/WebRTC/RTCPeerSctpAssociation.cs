@@ -32,10 +32,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public delegate void OnRTCDataChannelOpened(ushort streamID);
-
-    public delegate void OnNewRTCDataChannel(ushort streamID, DataChannelTypes type, ushort priority, uint reliability, string label, string protocol);
-
     public class RTCPeerSctpAssociation : SctpAssociation
     {
         // TODO: Add MTU path discovery.

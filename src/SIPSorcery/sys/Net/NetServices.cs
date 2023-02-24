@@ -196,23 +196,6 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Attempts to create and bind a TCP socket. The socket is always created with the ExclusiveAddressUse socket option
-        /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
-        /// sockets, see https://github.com/dotnet/runtime/issues/36618.
-        /// </summary>
-        /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
-        /// <param name="bindAddress">Optional. If specified the TCP socket will attempt to bind using this specific address.
-        /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
-        /// <param name="requireEvenPort">If true the method will only return successfully if it is able to bind on an
-        /// even numbered port.</param>
-        /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
-        /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
-        public static Socket CreateBoundTcpSocket(int port, IPAddress bindAddress, bool requireEvenPort = false, bool useDualMode = true)
-        {
-            return CreateBoundSocket(port, bindAddress, ProtocolType.Tcp, requireEvenPort, useDualMode);
-        }
-
-        /// <summary>
         /// Attempts to create and bind a socket with defined protocol. The socket is always created with the ExclusiveAddressUse socket option
         /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
         /// sockets, see https://github.com/dotnet/runtime/issues/36618.
@@ -225,7 +208,7 @@ namespace SIPSorcery.Sys
         /// even numbered port.</param>
         /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
         /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
-        public static Socket CreateBoundSocket(int port, IPAddress bindAddress, ProtocolType protocolType, bool requireEvenPort = false, bool useDualMode = true)
+        private static Socket CreateBoundSocket(int port, IPAddress bindAddress, ProtocolType protocolType, bool requireEvenPort = false, bool useDualMode = true)
         {
             if (requireEvenPort && port != 0 && port % 2 != 0)
             {

@@ -1,71 +1,22 @@
 ﻿// from http://damieng.com/blog/2006/08/08/Calculating_CRC32_in_C_and_NET
 
 using System;
-using System.Security.Cryptography;
 
 namespace SIPSorcery.Sys
 {
-    public class Crc32 : HashAlgorithm
+    public class Crc32
     {
         public const UInt32 DefaultPolynomial = 0xedb88320;
         public const UInt32 DefaultSeed = 0xffffffff;
 
-        private UInt32 hash;
-        private UInt32 seed;
-        private UInt32[] table;
         private static UInt32[] defaultTable;
-
-        public Crc32()
-        {
-            table = InitializeTable(DefaultPolynomial);
-            seed = DefaultSeed;
-            Initialize();
-        }
-
-        public Crc32(UInt32 polynomial, UInt32 seed)
-        {
-            table = InitializeTable(polynomial);
-            this.seed = seed;
-            Initialize();
-        }
-
-        public override void Initialize()
-        {
-            hash = seed;
-        }
-
-        protected override void HashCore(byte[] buffer, int start, int length)
-        {
-            hash = CalculateHash(table, hash, buffer, start, length);
-        }
-
-        protected override byte[] HashFinal()
-        {
-            byte[] hashBuffer = UInt32ToBigEndianBytes(~hash);
-            this.HashValue = hashBuffer;
-            return hashBuffer;
-        }
-
-        public override int HashSize
-        {
-            get { return 32; }
-        }
+        
 
         public static UInt32 Compute(byte[] buffer)
         {
             return ~CalculateHash(InitializeTable(DefaultPolynomial), DefaultSeed, buffer, 0, buffer.Length);
         }
-
-        public static UInt32 Compute(UInt32 seed, byte[] buffer)
-        {
-            return ~CalculateHash(InitializeTable(DefaultPolynomial), seed, buffer, 0, buffer.Length);
-        }
-
-        public static UInt32 Compute(UInt32 polynomial, UInt32 seed, byte[] buffer)
-        {
-            return ~CalculateHash(InitializeTable(polynomial), seed, buffer, 0, buffer.Length);
-        }
-
+        
         private static UInt32[] InitializeTable(UInt32 polynomial)
         {
             if (polynomial == DefaultPolynomial && defaultTable != null)
@@ -110,16 +61,6 @@ namespace SIPSorcery.Sys
                 }
             }
             return crc;
-        }
-
-        private byte[] UInt32ToBigEndianBytes(UInt32 x)
-        {
-            return new byte[] {
-                (byte)((x >> 24) & 0xff),
-                (byte)((x >> 16) & 0xff),
-                (byte)((x >> 8) & 0xff),
-                (byte)(x & 0xff)
-            };
         }
     }
 }

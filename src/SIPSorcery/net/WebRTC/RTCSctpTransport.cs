@@ -25,13 +25,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum RTCSctpTransportState
-    {
-        Connecting,
-        Connected,
-        Closed
-    };
-
     /// <summary>
     /// Represents an SCTP transport that uses a DTLS transport.
     /// </summary>

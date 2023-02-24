@@ -77,58 +77,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum STUNMessageTypesEnum : ushort
-    {
-        BindingRequest = 0x0001,
-        BindingSuccessResponse = 0x0101,
-        BindingErrorResponse = 0x0111,
-
-        // New methods defined in TURN (RFC5766).
-        Allocate = 0x0003,
-        Refresh = 0x0004,
-        Send = 0x0006,
-        Data = 0x0007,
-        CreatePermission = 0x0008,
-        ChannelBind = 0x0009,
-
-        SendIndication = 0x0016,
-        DataIndication = 0x0017,
-
-        AllocateSuccessResponse = 0x0103,
-        RefreshSuccessResponse = 0x0104,
-        CreatePermissionSuccessResponse = 0x0108,
-        ChannelBindSuccessResponse = 0x0109,
-        AllocateErrorResponse = 0x0113,
-        RefreshErrorResponse = 0x0114,
-        CreatePermissionErrorResponse = 0x0118,
-        ChannelBindErrorResponse = 0x0119,
-
-        // New methods defined in TURN (RFC6062).
-        Connect = 0x000a,
-        ConnectionBind = 0x000b,
-        ConnectionAttempt = 0x000c,
-    }
-
-    /// <summary>
-    /// The class is interpreted from the message type. It does not get explicitly
-    /// set in the STUN header.
-    /// </summary>
-    public enum STUNClassTypesEnum
-    {
-        Request = 0,
-        Indication = 1,
-        SuccessResponse = 2,
-        ErrorResponse = 3,
-    }
-
-    public class STUNMessageTypes
-    {
-        public static STUNMessageTypesEnum GetSTUNMessageTypeForId(int stunMessageTypeId)
-        {
-            return (STUNMessageTypesEnum)Enum.Parse(typeof(STUNMessageTypesEnum), stunMessageTypeId.ToString(), true);
-        }
-    }
-
     public class STUNHeader
     {
         public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.

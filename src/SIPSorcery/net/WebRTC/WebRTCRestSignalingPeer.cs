@@ -28,13 +28,6 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
 {
-    public enum WebRTCSignalTypesEnum
-    {
-        any = 0,        // Any message type.
-        sdp = 2,        // SDP offer or answer.
-        ice = 3         // ICE candidates
-    }
-
     /// <summary>
     /// This class is not a required component for using WebRTC. It is a
     /// convenience class provided to perform the signalling via a HTTP REST server.

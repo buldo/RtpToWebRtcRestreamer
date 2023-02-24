@@ -36,33 +36,6 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    public delegate void OnDataChannelMessageDelegate(RTCDataChannel dc, DataChannelPayloadProtocols protocol, byte[] data);
-
-    public enum RTCDataChannelState
-    {
-        /// <summary>
-        /// The user agent is attempting to establish the underlying data transport. 
-        /// This is the initial state of an RTCDataChannel object, whether created 
-        /// with createDataChannel, or dispatched as a part of an RTCDataChannelEvent.
-        /// </summary>
-        connecting,
-
-        /// <summary>
-        /// The underlying data transport is established and communication is possible.
-        /// </summary>
-        open,
-
-        /// <summary>
-        /// The procedure to close down the underlying data transport has started.
-        /// </summary>
-        closing,
-
-        /// <summary>
-        /// The underlying data transport has been closed or could not be established.
-        /// </summary>
-        closed
-    };
-
     /// <summary>
     /// The RTCDataChannel interface represents a bi-directional data channel between two peers.
     /// </summary>
@@ -162,15 +135,5 @@ namespace SIPSorcery.Net
         string binaryType { get; set; }
         void send(string data);
         void send(byte[] data);
-    };
-
-    public class RTCDataChannelInit
-    {
-        public bool? ordered { get; set; }
-        public ushort? maxPacketLifeTime { get; set; }
-        public ushort? maxRetransmits { get; set; }
-        public string protocol { get; set; }
-        public bool? negotiated { get; set; }
-        public ushort? id { get; set; }
     };
 }

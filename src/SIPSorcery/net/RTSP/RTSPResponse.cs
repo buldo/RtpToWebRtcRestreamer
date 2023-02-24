@@ -20,11 +20,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum RTSPResponseParserError
-    {
-        None = 0,
-    }
-
     /// <summary>
     /// RFC2326 7.1:
     /// Status-Line =   RTSP-Version SP Status-Code SP Reason-Phrase CRLF

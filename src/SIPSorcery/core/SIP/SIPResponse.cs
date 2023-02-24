@@ -21,12 +21,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.SIP
 {
-    public enum SIPResponseParserError
-    {
-        None = 0,
-        TooLarge = 1,
-    }
-
     /// <summary>
     /// Represents a SIP Response.
     /// </summary>

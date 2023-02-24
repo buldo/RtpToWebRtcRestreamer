@@ -20,11 +20,6 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public enum RTSPRequestParserError
-    {
-        None = 0,
-    }
-
     /// <summary>
     /// RFC2326 6.1:
     /// Request-Line = Method SP Request-URI SP RTSP-Version CRLF

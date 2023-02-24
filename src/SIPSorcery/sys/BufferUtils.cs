@@ -80,15 +80,5 @@ namespace SIPSorcery.Sys
         {
             return GetStringPosition(buffer, startPosition, endPosition, find, end) != -1;
         }
-
-        public static byte[] ParseHexStr(string hex)
-        {
-            return TypeExtensions.ParseHexStr(hex);
-        }
-
-        public static string HexStr(byte[] buffer)
-        {
-            return buffer.HexStr();
-        }
     }
 }

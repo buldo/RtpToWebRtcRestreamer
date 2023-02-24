@@ -109,14 +109,4 @@ namespace SIPSorcery.net.RTP
             while (node != null);
         }
     }
-
-    public interface IDateTime
-    {
-        DateTime Time { get; }
-    }
-
-    public class DefaultTimeProvider : IDateTime
-    {
-        public DateTime Time => DateTime.Now;
-    }
 }

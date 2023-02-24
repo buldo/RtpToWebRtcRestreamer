@@ -23,15 +23,6 @@ using SIPSorcery.Net;
 namespace SIPSorcery.SIP.App
 {
     /// <summary>
-    /// The type of the SDP packet being set.
-    /// </summary>
-    public enum SdpType
-    {
-        answer = 0,
-        offer = 1
-    }
-
-    /// <summary>
     /// Offering and Answering SDP messages so that it can be
     /// signaled to the other party using the SIPUserAgent.
     /// 

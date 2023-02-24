@@ -19,50 +19,10 @@ using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    internal class DtlsSrtpTlsAuthentication
-            : TlsAuthentication
-    {
-        private readonly DtlsSrtpClient mClient;
-        private readonly TlsContext mContext;
-
-        internal DtlsSrtpTlsAuthentication(DtlsSrtpClient client)
-        {
-            this.mClient = client;
-            this.mContext = client.TlsContext;
-        }
-
-        public virtual void NotifyServerCertificate(Certificate serverCertificate)
-        {
-            //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
-            mClient.ServerCertificate = serverCertificate;
-        }
-
-        public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
-        {
-            byte[] certificateTypes = certificateRequest.CertificateTypes;
-            if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))
-            {
-                return null;
-            }
-
-            return DtlsUtils.LoadSignerCredentials(mContext,
-                certificateRequest.SupportedSignatureAlgorithms,
-                SignatureAlgorithm.rsa,
-                mClient.mCertificateChain,
-                mClient.mPrivateKey);
-        }
-
-        public TlsCredentials GetClientCredentials(TlsContext context, CertificateRequest certificateRequest)
-        {
-            return GetClientCredentials(certificateRequest);
-        }
-    };
-
     public class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     {
         private static readonly ILogger logger = Log.Logger;

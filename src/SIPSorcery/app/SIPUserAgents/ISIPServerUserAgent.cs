@@ -16,8 +16,6 @@
 
 namespace SIPSorcery.SIP.App
 {
-    public delegate void SIPUASDelegate(ISIPServerUserAgent uas);
-
     /// <summary>
     /// Interface for classes implementing SIP server user agent functionality. The
     /// main function of a SIP client user agent is the ability to receive calls.
