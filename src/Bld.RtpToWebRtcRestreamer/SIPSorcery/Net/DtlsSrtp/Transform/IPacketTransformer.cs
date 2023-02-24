@@ -21,7 +21,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public interface IPacketTransformer
+    internal interface IPacketTransformer
     {
         /**
          * Transforms a specific non-secure packet.

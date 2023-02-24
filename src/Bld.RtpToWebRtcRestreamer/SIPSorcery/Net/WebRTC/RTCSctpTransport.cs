@@ -245,7 +245,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 {
                     var bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 
-                    if (bytesRead == DtlsSrtpTransport.DTLS_RETRANSMISSION_CODE)
+                    if (bytesRead == DtlsSrtpTransport.DtlsRetransmissionCode)
                     {
                         // Timed out waiting for a packet, this is by design and the receive attempt should
                         // be retired.

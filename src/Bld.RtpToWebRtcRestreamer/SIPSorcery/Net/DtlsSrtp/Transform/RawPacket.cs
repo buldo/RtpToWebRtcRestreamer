@@ -206,7 +206,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *
          * @return RTP SSRC from source RTP packet
          */
-        public int GetRTCPSSRC()
+        public int GetRtcpssrc()
         {
             return ReadInt(4);
         }
@@ -227,7 +227,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param authTagLen authentication tag length
          * @return SRTCP sequence num from source packet
          */
-        public int GetSRTCPIndex(int authTagLen)
+        public int GetSrtcpIndex(int authTagLen)
         {
             var offset = GetLength() - (4 + authTagLen);
             return ReadInt(offset);
@@ -238,7 +238,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *
          * @return RTP SSRC from source RTP packet
          */
-        public int GetSSRC()
+        public int GetSsrc()
         {
             return ReadInt(8);
         }
@@ -328,7 +328,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *
          * @param len length to shrink
          */
-        public void shrink(int delta)
+        public void Shrink(int delta)
         {
             if (delta <= 0)
             {

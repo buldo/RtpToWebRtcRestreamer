@@ -36,7 +36,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         public const int CHECKSUM_BUFFER_POSITION = 8;
 
-        private static ILogger logger = LogFactory.CreateLogger<SctpPacket>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SctpPacket>();
 
         /// <summary>
         /// The common header for the SCTP packet.

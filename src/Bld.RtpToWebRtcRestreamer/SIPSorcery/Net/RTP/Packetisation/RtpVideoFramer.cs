@@ -23,13 +23,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
     public class RtpVideoFramer
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
-        private VideoCodecsEnum _codec;
-        private int _maxFrameSize;
-        private byte[] _currVideoFrame;
+        private readonly VideoCodecsEnum _codec;
+        private readonly int _maxFrameSize;
+        private readonly byte[] _currVideoFrame;
         private int _currVideoFramePosn;
-        private H264Depacketiser _h264Depacketiser;
+        private readonly H264Depacketiser _h264Depacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
         {

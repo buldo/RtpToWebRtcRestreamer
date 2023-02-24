@@ -92,13 +92,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
      * @author Werner Dittmann (Werner.Dittmann@t-online.de)
      * @author Bing SU (nova.su@gmail.com)
      */
-    public class SrtpCipherCTR
+    public class SrtpCipherCtr
     {
-        private const int BLKLEN = 16;
-        private const int MAX_BUFFER_LENGTH = 10 * 1024;
-        private byte[] cipherInBlock = new byte[BLKLEN];
-        private byte[] tmpCipherBlock = new byte[BLKLEN];
-        private byte[] streamBuf = new byte[1024];
+        private const int Blklen = 16;
+        private const int MaxBufferLength = 10 * 1024;
+        private readonly byte[] _cipherInBlock = new byte[Blklen];
+        private readonly byte[] _tmpCipherBlock = new byte[Blklen];
+        private byte[] _streamBuf = new byte[1024];
 
         public void Process(IBlockCipher cipher, MemoryStream data, int off, int len, byte[] iv)
         {
@@ -106,17 +106,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             // buffer store it to use it for later processing - up to a defined
             // maximum size.
             byte[] cipherStream;
-            if (len > streamBuf.Length)
+            if (len > _streamBuf.Length)
             {
                 cipherStream = new byte[len];
-                if (cipherStream.Length <= MAX_BUFFER_LENGTH)
+                if (cipherStream.Length <= MaxBufferLength)
                 {
-                    streamBuf = cipherStream;
+                    _streamBuf = cipherStream;
                 }
             }
             else
             {
-                cipherStream = streamBuf;
+                cipherStream = _streamBuf;
             }
 
             GetCipherStream(cipher, cipherStream, len, iv);
@@ -140,26 +140,26 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param iv
          *            initialization vector used to generate this cipher stream
          */
-        public void GetCipherStream(IBlockCipher aesCipher, byte[] _out, int length, byte[] iv)
+        public void GetCipherStream(IBlockCipher aesCipher, byte[] @out, int length, byte[] iv)
         {
-            Array.Copy(iv, 0, cipherInBlock, 0, 14);
+            Array.Copy(iv, 0, _cipherInBlock, 0, 14);
 
             int ctr;
-            for (ctr = 0; ctr < length / BLKLEN; ctr++)
+            for (ctr = 0; ctr < length / Blklen; ctr++)
             {
                 // compute the cipher stream
-                cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-                cipherInBlock[15] = (byte)((ctr & 0x00FF));
+                _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
+                _cipherInBlock[15] = (byte)((ctr & 0x00FF));
 
-                aesCipher.ProcessBlock(cipherInBlock, 0, _out, ctr * BLKLEN);
+                aesCipher.ProcessBlock(_cipherInBlock, 0, @out, ctr * Blklen);
             }
 
             // Treat the last bytes:
-            cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-            cipherInBlock[15] = (byte)((ctr & 0x00FF));
+            _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
+            _cipherInBlock[15] = (byte)((ctr & 0x00FF));
 
-            aesCipher.ProcessBlock(cipherInBlock, 0, tmpCipherBlock, 0);
-            Array.Copy(tmpCipherBlock, 0, _out, ctr * BLKLEN, length % BLKLEN);
+            aesCipher.ProcessBlock(_cipherInBlock, 0, _tmpCipherBlock, 0);
+            Array.Copy(_tmpCipherBlock, 0, @out, ctr * Blklen, length % Blklen);
         }
     }
 }

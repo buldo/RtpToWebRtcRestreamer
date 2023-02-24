@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: DtlsSrtpTransport.cs
 //
-// Description: This class represents the DTLS SRTP transport connection to use 
+// Description: This class represents the DTLS SRTP transport connection to use
 // as Client or Server.
 //
 // Author(s):
@@ -26,29 +26,29 @@ using Org.BouncyCastle.Security;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public class DtlsSrtpTransport : DatagramTransport, IDisposable
+    internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     {
-        public const int DEFAULT_RETRANSMISSION_WAIT_MILLIS = 100;
-        public const int DEFAULT_MTU = 1500;
-        public const int MIN_IP_OVERHEAD = 20;
-        public const int MAX_IP_OVERHEAD = MIN_IP_OVERHEAD + 64;
-        public const int UDP_OVERHEAD = 8;
-        public const int DEFAULT_TIMEOUT_MILLISECONDS = 20000;
-        public const int DTLS_RETRANSMISSION_CODE = -1;
-        public const int DTLS_RECEIVE_ERROR_CODE = -2;
+        private const int DefaultRetransmissionWaitMillis = 100;
+        private const int DefaultMtu = 1500;
+        private const int MinIpOverhead = 20;
+        private const int MaxIpOverhead = MinIpOverhead + 64;
+        private const int UdpOverhead = 8;
+        private const int DefaultTimeoutMilliseconds = 20000;
+        public const int DtlsRetransmissionCode = -1;
+        private const int DtlsReceiveErrorCode = -2;
 
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger Logger = Log.Logger;
 
-        private static readonly Random random = new Random();
+        private static readonly Random Random = new Random();
 
-        private IPacketTransformer srtpEncoder;
-        private IPacketTransformer srtpDecoder;
-        private IPacketTransformer srtcpEncoder;
-        private IPacketTransformer srtcpDecoder;
-        IDtlsSrtpPeer connection;
+        private IPacketTransformer _srtpEncoder;
+        private IPacketTransformer _srtpDecoder;
+        private IPacketTransformer _srtcpEncoder;
+        private IPacketTransformer _srtcpDecoder;
+        readonly IDtlsSrtpPeer _connection;
 
         /// <summary>The collection of chunks to be written.</summary>
-        private BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+        private readonly BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
 
         public DtlsTransport Transport { get; private set; }
 
@@ -56,12 +56,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
         /// </summary>
-        public int TimeoutMilliseconds = DEFAULT_TIMEOUT_MILLISECONDS;
+        public int TimeoutMilliseconds = DefaultTimeoutMilliseconds;
 
         /// <summary>
         /// Sets the period in milliseconds that receive will wait before try retransmission
         /// </summary>
-        public int RetransmissionMilliseconds = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
+        public int RetransmissionMilliseconds = DefaultRetransmissionWaitMillis;
 
         public Action<byte[]> OnDataReady;
 
@@ -77,19 +77,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         private bool _isClosed;
 
         // Network properties
-        private int _waitMillis = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
-        private int _receiveLimit;
-        private int _sendLimit;
+        private int _waitMillis = DefaultRetransmissionWaitMillis;
+        private readonly int _receiveLimit;
+        private readonly int _sendLimit;
 
         private volatile bool _handshakeComplete;
         private volatile bool _handshaking;
 
-        public DtlsSrtpTransport(IDtlsSrtpPeer connection, int mtu = DEFAULT_MTU)
+        public DtlsSrtpTransport(IDtlsSrtpPeer connection, int mtu = DefaultMtu)
         {
             // Network properties
-            _receiveLimit = Math.Max(0, mtu - MIN_IP_OVERHEAD - UDP_OVERHEAD);
-            _sendLimit = Math.Max(0, mtu - MAX_IP_OVERHEAD - UDP_OVERHEAD);
-            this.connection = connection;
+            _receiveLimit = Math.Max(0, mtu - MinIpOverhead - UdpOverhead);
+            _sendLimit = Math.Max(0, mtu - MaxIpOverhead - UdpOverhead);
+            this._connection = connection;
 
             connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }
@@ -101,7 +101,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public bool DoHandshake(out string handshakeError)
         {
-            if (connection.IsClient())
+            if (_connection.IsClient())
             {
                 return DoHandshakeAsClient(out handshakeError);
             }
@@ -111,14 +111,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public bool IsClient
         {
-            get { return connection.IsClient(); }
+            get { return _connection.IsClient(); }
         }
 
         private bool DoHandshakeAsClient(out string handshakeError)
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as client.");
+            Logger.LogDebug("DTLS commencing handshake as client.");
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -129,7 +129,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 var clientProtocol = new DtlsClientProtocol(secureRandom);
                 try
                 {
-                    var client = (DtlsSrtpClient)connection;
+                    var client = (DtlsSrtpClient)_connection;
                     // Perform the handshake in a non-blocking fashion
                     Transport = clientProtocol.Connect(client, this);
 
@@ -138,10 +138,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                     // Generate encoders for DTLS traffic
                     if (client.GetSrtpPolicy() != null)
                     {
-                        srtpDecoder = GenerateRtpDecoder();
-                        srtpEncoder = GenerateRtpEncoder();
-                        srtcpDecoder = GenerateRtcpDecoder();
-                        srtcpEncoder = GenerateRtcpEncoder();
+                        _srtpDecoder = GenerateRtpDecoder();
+                        _srtpEncoder = GenerateRtpEncoder();
+                        _srtcpDecoder = GenerateRtcpDecoder();
+                        _srtcpEncoder = GenerateRtcpEncoder();
                     }
                     // Declare handshake as complete
                     _handshakeComplete = true;
@@ -155,7 +155,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, "DTLS handshake as client timed out waiting for handshake to complete.");
+                        Logger.LogWarning(excp, "DTLS handshake as client timed out waiting for handshake to complete.");
                         handshakeError = "timeout";
                     }
                     else
@@ -166,7 +166,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                             handshakeError = (excp as TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
+                        Logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
                     }
 
                     // Declare handshake as failed
@@ -183,7 +183,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         {
             handshakeError = null;
 
-            logger.LogDebug("DTLS commencing handshake as server.");
+            Logger.LogDebug("DTLS commencing handshake as server.");
 
             if (!_handshaking && !_handshakeComplete)
             {
@@ -194,7 +194,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 var serverProtocol = new DtlsServerProtocol(secureRandom);
                 try
                 {
-                    var server = (DtlsSrtpServer)connection;
+                    var server = (DtlsSrtpServer)_connection;
 
                     // Perform the handshake in a non-blocking fashion
                     Transport = serverProtocol.Accept(server, this);
@@ -203,10 +203,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                     // Generate encoders for DTLS traffic
                     if (server.GetSrtpPolicy() != null)
                     {
-                        srtpDecoder = GenerateRtpDecoder();
-                        srtpEncoder = GenerateRtpEncoder();
-                        srtcpDecoder = GenerateRtcpDecoder();
-                        srtcpEncoder = GenerateRtcpEncoder();
+                        _srtpDecoder = GenerateRtpDecoder();
+                        _srtpEncoder = GenerateRtpEncoder();
+                        _srtcpDecoder = GenerateRtcpDecoder();
+                        _srtcpEncoder = GenerateRtcpEncoder();
                     }
                     // Declare handshake as complete
                     _handshakeComplete = true;
@@ -219,7 +219,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 {
                     if (excp.InnerException is TimeoutException)
                     {
-                        logger.LogWarning(excp, "DTLS handshake as server timed out waiting for handshake to complete.");
+                        Logger.LogWarning(excp, "DTLS handshake as server timed out waiting for handshake to complete.");
                         handshakeError = "timeout";
                     }
                     else
@@ -230,7 +230,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                             handshakeError = (excp as TlsFatalAlert).Message;
                         }
 
-                        logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
+                        Logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
                     }
 
                     // Declare handshake as failed
@@ -245,59 +245,59 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public Certificate GetRemoteCertificate()
         {
-            return connection.GetRemoteCertificate();
+            return _connection.GetRemoteCertificate();
         }
 
         protected byte[] GetMasterServerKey()
         {
-            return connection.GetSrtpMasterServerKey();
+            return _connection.GetSrtpMasterServerKey();
         }
 
         protected byte[] GetMasterServerSalt()
         {
-            return connection.GetSrtpMasterServerSalt();
+            return _connection.GetSrtpMasterServerSalt();
         }
 
         protected byte[] GetMasterClientKey()
         {
-            return connection.GetSrtpMasterClientKey();
+            return _connection.GetSrtpMasterClientKey();
         }
 
         protected byte[] GetMasterClientSalt()
         {
-            return connection.GetSrtpMasterClientSalt();
+            return _connection.GetSrtpMasterClientSalt();
         }
 
         protected SrtpPolicy GetSrtpPolicy()
         {
-            return connection.GetSrtpPolicy();
+            return _connection.GetSrtpPolicy();
         }
 
         protected SrtpPolicy GetSrtcpPolicy()
         {
-            return connection.GetSrtcpPolicy();
+            return _connection.GetSrtcpPolicy();
         }
 
         protected IPacketTransformer GenerateRtpEncoder()
         {
-            return GenerateTransformer(connection.IsClient(), true);
+            return GenerateTransformer(_connection.IsClient(), true);
         }
 
         protected IPacketTransformer GenerateRtpDecoder()
         {
             //Generate the reverse result of "GenerateRtpEncoder"
-            return GenerateTransformer(!connection.IsClient(), true);
+            return GenerateTransformer(!_connection.IsClient(), true);
         }
 
         private IPacketTransformer GenerateRtcpEncoder()
         {
-            return GenerateTransformer(connection.IsClient(), false);
+            return GenerateTransformer(_connection.IsClient(), false);
         }
 
         protected IPacketTransformer GenerateRtcpDecoder()
         {
             //Generate the reverse result of "GenerateRctpEncoder"
-            return GenerateTransformer(!connection.IsClient(), false);
+            return GenerateTransformer(!_connection.IsClient(), false);
         }
 
         protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
@@ -317,14 +317,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 return engine.GetRTPTransformer();
             }
 
-            return engine.GetRTCPTransformer();
+            return engine.GetRtcpTransformer();
         }
 
         public byte[] UnprotectRTP(byte[] packet, int offset, int length)
         {
-            lock (srtpDecoder)
+            lock (_srtpDecoder)
             {
-                return srtpDecoder.ReverseTransform(packet, offset, length);
+                return _srtpDecoder.ReverseTransform(packet, offset, length);
             }
         }
 
@@ -346,9 +346,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public byte[] ProtectRTP(byte[] packet, int offset, int length)
         {
-            lock (srtpEncoder)
+            lock (_srtpEncoder)
             {
-                return srtpEncoder.Transform(packet, offset, length);
+                return _srtpEncoder.Transform(packet, offset, length);
             }
         }
 
@@ -368,17 +368,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRTCP(byte[] packet, int offset, int length)
+        public byte[] UnprotectRtcp(byte[] packet, int offset, int length)
         {
-            lock (srtcpDecoder)
+            lock (_srtcpDecoder)
             {
-                return srtcpDecoder.ReverseTransform(packet, offset, length);
+                return _srtcpDecoder.ReverseTransform(packet, offset, length);
             }
         }
 
-        public int UnprotectRTCP(byte[] payload, int length, out int outLength)
+        public int UnprotectRtcp(byte[] payload, int length, out int outLength)
         {
-            var result = UnprotectRTCP(payload, 0, length);
+            var result = UnprotectRtcp(payload, 0, length);
             if (result == null)
             {
                 outLength = 0;
@@ -391,17 +391,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTCP(byte[] packet, int offset, int length)
+        public byte[] ProtectRtcp(byte[] packet, int offset, int length)
         {
-            lock (srtcpEncoder)
+            lock (_srtcpEncoder)
             {
-                return srtcpEncoder.Transform(packet, offset, length);
+                return _srtcpEncoder.Transform(packet, offset, length);
             }
         }
 
-        public int ProtectRTCP(byte[] payload, int length, out int outLength)
+        public int ProtectRtcp(byte[] payload, int length, out int outLength)
         {
-            var result = ProtectRTCP(payload, 0, length);
+            var result = ProtectRtcp(payload, 0, length);
             if (result == null)
             {
                 outLength = 0;
@@ -459,7 +459,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             catch (ObjectDisposedException) { }
             catch (ArgumentNullException) { }
 
-            return DTLS_RETRANSMISSION_CODE;
+            return DtlsRetransmissionCode;
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
@@ -474,11 +474,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
                 //As HandshakeReliable class contains too long hardcoded initial waitMillis (1000 ms) we must control this internally
                 //PS: Random extra delta time guarantee that work in local networks.
-                waitMillis = _waitMillis + random.Next(5, 25);
+                waitMillis = _waitMillis + Random.Next(5, 25);
 
                 if (millisecondsRemaining <= 0)
                 {
-                    logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(connection.IsClient() ? "server" : "client")}.");
+                    Logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
 
@@ -489,7 +489,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                     //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
-                    if (receiveLen == DTLS_RETRANSMISSION_CODE)
+                    if (receiveLen == DtlsRetransmissionCode)
                     {
                         _waitMillis = BackOff(_waitMillis);
                     }
@@ -511,7 +511,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             }
 
             //throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
-            return DTLS_RECEIVE_ERROR_CODE;
+            return DtlsReceiveErrorCode;
         }
 
         public void Send(byte[] buf, int off, int len)
@@ -543,7 +543,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         }
 
         /// <summary>
-        /// Handle retransmission time based in DTLS 1.3 
+        /// Handle retransmission time based in DTLS 1.3
         /// </summary>
         /// <param name="currentWaitMillis"></param>
         /// <returns></returns>

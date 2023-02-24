@@ -124,22 +124,22 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         private string LocalSdpSessionID { get; }
 
-        private RtpIceChannel _rtpIceChannel;
+        private readonly RtpIceChannel _rtpIceChannel;
 
         readonly RTCDataChannelCollection dataChannels;
         private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
-        private Certificate _dtlsCertificate;
-        private AsymmetricKeyParameter _dtlsPrivateKey;
+        private readonly Certificate _dtlsCertificate;
+        private readonly AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
-        private Task _iceGatheringTask;
+        private readonly Task _iceGatheringTask;
 
         /// <summary>
         /// Local ICE candidates that have been supplied directly by the application.
         /// Useful for cases where the application may has extra information about the
         /// network set up such as 1:1 NATs as used by Azure and AWS.
         /// </summary>
-        private List<RTCIceCandidate> _applicationIceCandidates = new List<RTCIceCandidate>();
+        private readonly List<RTCIceCandidate> _applicationIceCandidates = new List<RTCIceCandidate>();
 
         /// <summary>
         /// The ICE role the peer is acting in.
@@ -247,7 +247,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         }
 
         private CancellationTokenSource _cancellationSource = new CancellationTokenSource();
-        private object _renegotiationLock = new object();
+        private readonly object _renegotiationLock = new object();
 
         /// <summary>
         /// A failure occurred when gathering ICE candidates.
@@ -1293,8 +1293,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             SetGlobalSecurityContext(dtlsHandle.ProtectRTP,
                 dtlsHandle.UnprotectRTP,
-                dtlsHandle.ProtectRTCP,
-                dtlsHandle.UnprotectRTCP);
+                dtlsHandle.ProtectRtcp,
+                dtlsHandle.UnprotectRtcp);
 
                         
             IsDtlsNegotiationComplete = true;
@@ -1310,7 +1310,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <param name="alertDescription">An optional description for the alert.</param>
         private void OnDtlsAlert(AlertLevelsEnum alertLevel, AlertTypesEnum alertType, string alertDescription)
         {
-            if (alertType == AlertTypesEnum.close_notify)
+            if (alertType == AlertTypesEnum.CloseNotify)
             {
                 Logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
 

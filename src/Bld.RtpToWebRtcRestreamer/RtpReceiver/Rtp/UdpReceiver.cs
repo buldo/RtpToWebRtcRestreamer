@@ -27,10 +27,10 @@ internal class UdpReceiver
     /// </summary>
     private const int RECEIVE_BUFFER_SIZE = 2048;
 
-    private static ILogger logger = new NullLogger<UdpReceiver>();
+    private static readonly ILogger logger = new NullLogger<UdpReceiver>();
 
     private readonly Socket _socket;
-    private byte[] _recvBuffer;
+    private readonly byte[] _recvBuffer;
     private bool _isClosed;
     private bool _isRunningReceive;
     private readonly IPEndPoint _localEndPoint;

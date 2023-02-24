@@ -25,14 +25,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// </summary>
         private const int RECEIVE_BUFFER_SIZE = 2048;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
         private readonly Socket m_socket;
-        private byte[] m_recvBuffer;
+        private readonly byte[] m_recvBuffer;
         private bool m_isClosed;
         private bool m_isRunningReceive;
-        private IPEndPoint m_localEndPoint;
-        private AddressFamily m_addressFamily;
+        private readonly IPEndPoint m_localEndPoint;
+        private readonly AddressFamily m_addressFamily;
 
         public bool IsClosed => m_isClosed;
 

@@ -58,22 +58,22 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         public const int RTO_MAX_SECONDS = 60;
 
-        private static ILogger logger = LogFactory.CreateLogger<SctpDataSender>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SctpDataSender>();
 
         /// <summary>
         /// Callback method that sends data chunks.
         /// </summary>
         internal Action<SctpDataChunk> _sendDataChunk;
 
-        private string _associationID;
-        private ushort _defaultMTU;
-        private uint _initialTSN;
+        private readonly string _associationID;
+        private readonly ushort _defaultMTU;
+        private readonly uint _initialTSN;
         private bool _gotFirstSACK;
         private bool _isStarted;
         private bool _isClosed;
         private int _lastAckedDataChunkSize;
         private bool _inRetransmitMode;
-        private ManualResetEventSlim _senderMre = new ManualResetEventSlim();
+        private readonly ManualResetEventSlim _senderMre = new ManualResetEventSlim();
 
         /// <summary>
         /// Congestion control window (cwnd, in bytes), which is adjusted by
@@ -115,8 +115,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         private bool _hasRoundTripTime;
         private double _smoothedRoundTripTime; // "SRTT"
         private double _roundTripTimeVariation; // "RTTVAR"
-        private double _rtoAlpha = 0.125; // Suggested value in rfc4960#section-15
-        private double _rtoBeta = 0.25; // Suggested value in rfc4960#section-15
+        private readonly double _rtoAlpha = 0.125; // Suggested value in rfc4960#section-15
+        private readonly double _rtoBeta = 0.25; // Suggested value in rfc4960#section-15
 
         /// <summary>
         /// A count of the bytes currently in-flight to the remote peer.
@@ -133,17 +133,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Keeps track of the sequence numbers for each of the streams being
         /// used by the association.
         /// </summary>
-        private Dictionary<ushort, ushort> _streamSeqnums = new Dictionary<ushort, ushort>();
+        private readonly Dictionary<ushort, ushort> _streamSeqnums = new Dictionary<ushort, ushort>();
 
         /// <summary>
         /// Queue to hold SCTP frames that are waiting to be sent to the remote peer.
         /// </summary>
-        private ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
+        private readonly ConcurrentQueue<SctpDataChunk> _sendQueue = new ConcurrentQueue<SctpDataChunk>();
 
         /// <summary>
         /// Chunks that have been sent to the remote peer but have yet to be acknowledged.
         /// </summary>
-        private ConcurrentDictionary<uint, SctpDataChunk> _unconfirmedChunks = new ConcurrentDictionary<uint, SctpDataChunk>();
+        private readonly ConcurrentDictionary<uint, SctpDataChunk> _unconfirmedChunks = new ConcurrentDictionary<uint, SctpDataChunk>();
 
         /// <summary>
         /// Chunks that have been flagged by a gap report from the remote peer as missing

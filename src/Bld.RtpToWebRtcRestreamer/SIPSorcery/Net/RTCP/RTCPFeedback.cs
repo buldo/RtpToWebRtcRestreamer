@@ -34,7 +34,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
     public class RTCPFeedback
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
         public int SENDER_PAYLOAD_SIZE = 20;
         

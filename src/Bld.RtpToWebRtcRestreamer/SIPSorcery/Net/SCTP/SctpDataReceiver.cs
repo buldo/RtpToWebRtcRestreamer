@@ -44,29 +44,29 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         private const int MAX_FRAME_SIZE = 262144;
 
-        private static ILogger logger = LogFactory.CreateLogger<SctpDataReceiver>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SctpDataReceiver>();
 
         /// <summary>
         /// This dictionary holds data chunk Transaction Sequence Numbers (TSN) that have
         /// been received out of order and are in advance of the expected TSN.
         /// </summary>
-        private SortedDictionary<uint, int> _forwardTSN = new SortedDictionary<uint, int>();
+        private readonly SortedDictionary<uint, int> _forwardTSN = new SortedDictionary<uint, int>();
 
         /// <summary>
         /// Storage for fragmented chunks.
         /// </summary>
-        private Dictionary<uint, SctpDataChunk> _fragmentedChunks = new Dictionary<uint, SctpDataChunk>();
+        private readonly Dictionary<uint, SctpDataChunk> _fragmentedChunks = new Dictionary<uint, SctpDataChunk>();
 
         /// <summary>
         /// Keeps track of the latest sequence number for each stream. Used to ensure
         /// stream chunks are delivered in order.
         /// </summary>
-        private Dictionary<ushort, ushort> _streamLatestSeqNums = new Dictionary<ushort, ushort>();
+        private readonly Dictionary<ushort, ushort> _streamLatestSeqNums = new Dictionary<ushort, ushort>();
 
         /// <summary>
         /// A dictionary of dictionaries used to hold out of order stream chunks.
         /// </summary>
-        private Dictionary<ushort, Dictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
+        private readonly Dictionary<ushort, Dictionary<ushort, SctpDataFrame>> _streamOutOfOrderFrames =
             new Dictionary<ushort, Dictionary<ushort, SctpDataFrame>>();
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// of bytes, a sender can send to a particular destination transport address 
         /// before receiving an acknowledgement.
         /// </summary>
-        private uint _receiveWindow;
+        private readonly uint _receiveWindow;
 
         /// <summary>
         /// The most recent in order TSN received. This is the value that gets used
@@ -87,13 +87,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// The window size is the maximum number of chunks we're prepared to hold in the 
         /// receive dictionary.
         /// </summary>
-        private ushort _windowSize;
+        private readonly ushort _windowSize;
 
         /// <summary>
         /// Record of the duplicate Transaction Sequence Number (TSN) chunks received since
         /// the last SACK chunk was generated.
         /// </summary>
-        private Dictionary<uint, int> _duplicateTSN = new Dictionary<uint, int>();
+        private readonly Dictionary<uint, int> _duplicateTSN = new Dictionary<uint, int>();
 
         /// <summary>
         /// Gets the Transaction Sequence Number (TSN) that can be acknowledged to the remote peer.

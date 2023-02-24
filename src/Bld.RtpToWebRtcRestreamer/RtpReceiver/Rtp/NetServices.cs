@@ -19,7 +19,7 @@ internal class NetServices
     /// </summary>
     private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;
 
-    private static ILogger logger = new NullLogger<NetServices>();
+    private static readonly ILogger logger = new NullLogger<NetServices>();
 
     /// <summary>
     /// Doing the same check as here https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/SocketPal.Unix.cs#L19.

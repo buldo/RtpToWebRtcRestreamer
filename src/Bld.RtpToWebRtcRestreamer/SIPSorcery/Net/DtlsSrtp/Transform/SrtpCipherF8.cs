@@ -72,7 +72,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         /**
          * AES block size, just a short name.
          */
-        private const int BLKLEN = 16;
+        private const int Blklen = 16;
 
         /**
          * F8 mode encryption context, see RFC3711 section 4.1.2 for detailed
@@ -81,11 +81,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         private class F8Context
         {
             public byte[] S;
-            public byte[] ivAccent;
+            public byte[] IvAccent;
             public long J;
         }
 
-        public static void DeriveForIV(IBlockCipher f8Cipher, byte[] key, byte[] salt)
+        public static void DeriveForIv(IBlockCipher f8Cipher, byte[] key, byte[] salt)
         {
             /*
              * Get memory for the special key. This is the key to compute the
@@ -123,35 +123,35 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,
                 byte[] iv, IBlockCipher f8Cipher)
         {
-            var f8ctx = new F8Context();
+            var f8Ctx = new F8Context();
 
             /*
              * Get memory for the derived IV (IV')
              */
-            f8ctx.ivAccent = new byte[BLKLEN];
+            f8Ctx.IvAccent = new byte[Blklen];
 
             /*
              * Use the derived IV encryption setup to encrypt the original IV to produce IV'.
              */
-            f8Cipher.ProcessBlock(iv, 0, f8ctx.ivAccent, 0);
+            f8Cipher.ProcessBlock(iv, 0, f8Ctx.IvAccent, 0);
 
-            f8ctx.J = 0; // initialize the counter
-            f8ctx.S = new byte[BLKLEN]; // get the key stream buffer
+            f8Ctx.J = 0; // initialize the counter
+            f8Ctx.S = new byte[Blklen]; // get the key stream buffer
 
-            Arrays.Fill(f8ctx.S, 0);
+            Arrays.Fill(f8Ctx.S, 0);
 
             var inLen = len;
 
-            while (inLen >= BLKLEN)
+            while (inLen >= Blklen)
             {
-                ProcessBlock(cipher, f8ctx, data, off, data, off, BLKLEN);
-                inLen -= BLKLEN;
-                off += BLKLEN;
+                ProcessBlock(cipher, f8Ctx, data, off, data, off, Blklen);
+                inLen -= Blklen;
+                off += Blklen;
             }
 
             if (inLen > 0)
             {
-                ProcessBlock(cipher, f8ctx, data, off, data, off, inLen);
+                ProcessBlock(cipher, f8Ctx, data, off, data, off, inLen);
             }
         }
 
@@ -172,32 +172,32 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param len
          *            length of the input data
          */
-        private static void ProcessBlock(IBlockCipher cipher, F8Context f8ctx,
-                MemoryStream _in, int inOff, MemoryStream _out, int outOff, int len)
+        private static void ProcessBlock(IBlockCipher cipher, F8Context f8Ctx,
+                MemoryStream @in, int inOff, MemoryStream @out, int outOff, int len)
         {
             /*
              * XOR the previous key stream with IV'
              * ( S(-1) xor IV' )
              */
-            for (var i = 0; i < BLKLEN; i++)
+            for (var i = 0; i < Blklen; i++)
             {
-                f8ctx.S[i] ^= f8ctx.ivAccent[i];
+                f8Ctx.S[i] ^= f8Ctx.IvAccent[i];
             }
 
             /*
              * Now XOR (S(n-1) xor IV') with the current counter, then increment 
              * the counter
              */
-            f8ctx.S[12] ^= (byte)(f8ctx.J >> 24);
-            f8ctx.S[13] ^= (byte)(f8ctx.J >> 16);
-            f8ctx.S[14] ^= (byte)(f8ctx.J >> 8);
-            f8ctx.S[15] ^= (byte)(f8ctx.J);
-            f8ctx.J++;
+            f8Ctx.S[12] ^= (byte)(f8Ctx.J >> 24);
+            f8Ctx.S[13] ^= (byte)(f8Ctx.J >> 16);
+            f8Ctx.S[14] ^= (byte)(f8Ctx.J >> 8);
+            f8Ctx.S[15] ^= (byte)(f8Ctx.J);
+            f8Ctx.J++;
 
             /*
              * Now compute the new key stream using AES encrypt
              */
-            cipher.ProcessBlock(f8ctx.S, 0, f8ctx.S, 0);
+            cipher.ProcessBlock(f8Ctx.S, 0, f8Ctx.S, 0);
 
             /*
              * As the last step XOR the plain text with the key stream to produce
@@ -205,10 +205,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
              */
             for (var i = 0; i < len; i++)
             {
-                _in.Position = inOff + i;
-                var inByte = _in.ReadByte();
-                _out.Position = outOff + i;
-                _out.WriteByte((byte)(inByte ^ f8ctx.S[i]));
+                @in.Position = inOff + i;
+                var inByte = @in.ReadByte();
+                @out.Position = outOff + i;
+                @out.WriteByte((byte)(inByte ^ f8Ctx.S[i]));
             }
         }
     }

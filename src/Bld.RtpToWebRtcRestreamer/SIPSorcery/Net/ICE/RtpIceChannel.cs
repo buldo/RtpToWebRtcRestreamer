@@ -139,8 +139,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// </summary>
         public static int FAILED_TIMEOUT_PERIOD = 16;
 
-        private IPAddress _bindAddress;
-        private RTCIceTransportPolicy _policy;
+        private readonly IPAddress _bindAddress;
+        private readonly RTCIceTransportPolicy _policy;
 
         private DateTime _startedGatheringAt = DateTime.MinValue;
         private DateTime _connectedAt = DateTime.MinValue;
@@ -175,7 +175,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// A queue of remote ICE candidates that have been added to the session and that
         /// are waiting to be processed to determine if they will create a new checklist entry.
         /// </summary>
-        private ConcurrentQueue<RTCIceCandidate> _pendingRemoteCandidates = new ConcurrentQueue<RTCIceCandidate>();
+        private readonly ConcurrentQueue<RTCIceCandidate> _pendingRemoteCandidates = new ConcurrentQueue<RTCIceCandidate>();
 
         /// <summary>
         /// The state of the checklist as the ICE checks are carried out.
@@ -234,8 +234,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         private bool _closed;
         private Timer _connectivityChecksTimer;
         private DateTime _checklistStartedAt = DateTime.MinValue;
-        private bool _includeAllInterfaceAddresses;
-        private ulong _iceTiebreaker;
+        private readonly bool _includeAllInterfaceAddresses;
+        private readonly ulong _iceTiebreaker;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
         public event Action<RTCIceConnectionState> OnIceConnectionStateChange;

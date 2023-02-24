@@ -1,8 +1,8 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SrtpTransformer.cs
 //
-// Description:  SRTPTransformer implements PacketTransformer and provides 
-// implementations for RTP packet to SRTP packet transformation and SRTP 
+// Description:  SRTPTransformer implements PacketTransformer and provides
+// implementations for RTP packet to SRTP packet transformation and SRTP
 // packet to RTP packet transformation logic.
 //
 // Derived From:
@@ -20,41 +20,41 @@
 //-----------------------------------------------------------------------------
 
 /**
-* 
+*
 * Code derived and adapted from the Jitsi client side SRTP framework.
-* 
+*
 * Distributed under LGPL license.
 * See terms of license at gnu.org.
 *//**
 * SRTPTransformer implements PacketTransformer and provides implementations for
 * RTP packet to SRTP packet transformation and SRTP packet to RTP packet
 * transformation logic.
-* 
+*
 * It will first find the corresponding SRTPCryptoContext for each packet based
 * on their SSRC and then invoke the context object to perform the
 * transformation and reverse transformation operation.
-* 
+*
 * @author Bing SU (nova.su@gmail.com)
 * @author Rafael Soares (raf.csoares@kyubinteractive.com)
-* 
+*
 */
 
 using System.Collections.Concurrent;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public class SrtpTransformer : IPacketTransformer
+    internal class SrtpTransformer : IPacketTransformer
     {
         private int _isLocked;
-        private RawPacket rawPacket;
+        private readonly RawPacket _rawPacket;
 
-        private SrtpTransformEngine forwardEngine;
-        private SrtpTransformEngine reverseEngine;
+        private readonly SrtpTransformEngine _forwardEngine;
+        private readonly SrtpTransformEngine _reverseEngine;
 
         /**
 	     * All the known SSRC's corresponding SRTPCryptoContexts
 	     */
-        private ConcurrentDictionary<long, SrtpCryptoContext> contexts;
+        private readonly ConcurrentDictionary<long, SrtpCryptoContext> _contexts;
 
         public SrtpTransformer(SrtpTransformEngine engine) : this(engine, engine)
         {
@@ -62,10 +62,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         public SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
-            this.forwardEngine = forwardEngine;
-            this.reverseEngine = reverseEngine;
-            contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
-            rawPacket = new RawPacket();
+            this._forwardEngine = forwardEngine;
+            this._reverseEngine = reverseEngine;
+            _contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
+            _rawPacket = new RawPacket();
         }
 
         public byte[] Transform(byte[] pkt)
@@ -79,20 +79,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
             try
             {
-                // Updates the contents of raw packet with new incoming packet 
-                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+                // Updates the contents of raw packet with new incoming packet
+                var rawPacket = !isLocked ? this._rawPacket : new RawPacket();
                 rawPacket.Wrap(pkt, offset, length);
 
                 // Associate packet to a crypto context
-                long ssrc = rawPacket.GetSSRC();
+                long ssrc = rawPacket.GetSsrc();
                 SrtpCryptoContext context;
-                contexts.TryGetValue(ssrc, out context);
+                _contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = forwardEngine.GetDefaultContext().deriveContext(0, 0);
+                    context = _forwardEngine.GetDefaultContext().DeriveContext(0, 0);
                     context.DeriveSrtpKeys(0);
-                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
+                    _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Transform RTP packet into SRTP
@@ -112,7 +112,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         /**
          * Reverse-transforms a specific packet (i.e. transforms a transformed
          * packet back).
-         * 
+         *
          * @param pkt
          *            the transformed packet to be restored
          * @return the restored packet
@@ -128,18 +128,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // Wrap data into the raw packet for readable format
-                var rawPacket = !isLocked ? this.rawPacket : new RawPacket();
+                var rawPacket = !isLocked ? this._rawPacket : new RawPacket();
                 rawPacket.Wrap(pkt, offset, length);
 
                 // Associate packet to a crypto context
-                long ssrc = rawPacket.GetSSRC();
+                long ssrc = rawPacket.GetSsrc();
                 SrtpCryptoContext context;
-                contexts.TryGetValue(ssrc, out context);
+                _contexts.TryGetValue(ssrc, out context);
                 if (context == null)
                 {
-                    context = reverseEngine.GetDefaultContext().deriveContext(0, 0);
+                    context = _reverseEngine.GetDefaultContext().DeriveContext(0, 0);
                     context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
-                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
+                    _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 byte[] result = null;
@@ -161,23 +161,23 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         /**
          * Close the transformer and underlying transform engine.
-         * 
+         *
          * The close functions closes all stored crypto contexts. This deletes key
          * data and forces a cleanup of the crypto contexts.
          */
         public void Close()
         {
-            forwardEngine.Close();
-            if (forwardEngine != reverseEngine)
+            _forwardEngine.Close();
+            if (_forwardEngine != _reverseEngine)
             {
-                reverseEngine.Close();
+                _reverseEngine.Close();
             }
 
-            var keys = new List<long>(contexts.Keys);
+            var keys = new List<long>(_contexts.Keys);
             foreach (var ssrc in keys)
             {
                 SrtpCryptoContext context;
-                contexts.TryRemove(ssrc, out context);
+                _contexts.TryRemove(ssrc, out context);
                 if (context != null)
                 {
                     context.Close();

@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SrtpTransformEngine.cs
 //
-// Description: SRTPTransformEngine class implements TransformEngine interface. 
+// Description: SRTPTransformEngine class implements TransformEngine interface.
 // It stores important information / objects regarding SRTP processing.Through
 // SRTPTransformEngine, we can get the needed PacketTransformer, which will be
 // used by abstract TransformConnector classes.
@@ -22,24 +22,24 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public class SrtpTransformEngine
+    internal class SrtpTransformEngine
     {
         /**
 	    * The default SRTPCryptoContext, which will be used to derivate other
 	    * contexts.
 	    */
-        private SrtpCryptoContext defaultContext;
+        private SrtpCryptoContext _defaultContext;
 
         /**
          * The default SRTPCryptoContext, which will be used to derive other
          * contexts.
          */
-        private SrtcpCryptoContext defaultContextControl;
+        private SrtcpCryptoContext _defaultContextControl;
 
         /**
          * Construct a SRTPTransformEngine based on given master encryption key,
          * master salt key and SRTP/SRTCP policy.
-         * 
+         *
          * @param masterKey
          *            the master encryption key
          * @param masterSalt
@@ -51,43 +51,43 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public SrtpTransformEngine(byte[] masterKey, byte[] masterSalt, SrtpPolicy srtpPolicy, SrtpPolicy srtcpPolicy)
         {
-            defaultContext = new SrtpCryptoContext(0, 0, masterKey, masterSalt, srtpPolicy);
-            defaultContextControl = new SrtcpCryptoContext(masterKey, masterSalt, srtcpPolicy);
+            _defaultContext = new SrtpCryptoContext(0, 0, masterKey, masterSalt, srtpPolicy);
+            _defaultContextControl = new SrtcpCryptoContext(masterKey, masterSalt, srtcpPolicy);
         }
 
         /**
          * Close the transformer engine.
-         * 
+         *
          * The close functions closes all stored default crypto contexts. This
          * deletes key data and forces a cleanup of the crypto contexts.
          */
         public void Close()
         {
-            if (defaultContext != null)
+            if (_defaultContext != null)
             {
-                defaultContext.Close();
-                defaultContext = null;
+                _defaultContext.Close();
+                _defaultContext = null;
             }
-            if (defaultContextControl != null)
+            if (_defaultContextControl != null)
             {
-                defaultContextControl.Close();
-                defaultContextControl = null;
+                _defaultContextControl.Close();
+                _defaultContextControl = null;
             }
         }
 
         /**
          * Gets the <tt>PacketTransformer</tt> for RTCP packets.
-         * 
+         *
          * @return the <tt>PacketTransformer</tt> for RTCP packets
          */
-        public IPacketTransformer GetRTCPTransformer()
+        public IPacketTransformer GetRtcpTransformer()
         {
             return new SrtcpTransformer(this);
         }
 
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see net.java.sip.communicator.impl.media.transform.
          * TransformEngine#getRTPTransformer()
          */
@@ -98,22 +98,22 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         /**
          * Get the default SRTPCryptoContext
-         * 
+         *
          * @return the default SRTPCryptoContext
          */
         public SrtpCryptoContext GetDefaultContext()
         {
-            return defaultContext;
+            return _defaultContext;
         }
 
         /**
          * Get the default SRTPCryptoContext
-         * 
+         *
          * @return the default SRTPCryptoContext
          */
         public SrtcpCryptoContext GetDefaultContextControl()
         {
-            return defaultContextControl;
+            return _defaultContextControl;
         }
     }
 }

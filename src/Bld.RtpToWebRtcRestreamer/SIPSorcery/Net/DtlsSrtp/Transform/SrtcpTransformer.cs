@@ -28,16 +28,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
     /// @author Bing SU (nova.su @gmail.com)
     /// @author Werner Dittmann<Werner.Dittmann@t-online.de>
     /// </summary>
-    public class SrtcpTransformer : IPacketTransformer
+    internal class SrtcpTransformer : IPacketTransformer
     {
         private int _isLocked;
-        private RawPacket packet;
+        private readonly RawPacket _packet;
 
-        private SrtpTransformEngine forwardEngine;
-        private SrtpTransformEngine reverseEngine;
+        private readonly SrtpTransformEngine _forwardEngine;
+        private readonly SrtpTransformEngine _reverseEngine;
 
         /** All the known SSRC's corresponding SRTCPCryptoContexts */
-        private ConcurrentDictionary<long, SrtcpCryptoContext> contexts;
+        private readonly ConcurrentDictionary<long, SrtcpCryptoContext> _contexts;
 
         public SrtcpTransformer(SrtpTransformEngine engine) : this(engine, engine)
         {
@@ -46,10 +46,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         public SrtcpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
-            packet = new RawPacket();
-            this.forwardEngine = forwardEngine;
-            this.reverseEngine = reverseEngine;
-            contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
+            _packet = new RawPacket();
+            this._forwardEngine = forwardEngine;
+            this._reverseEngine = reverseEngine;
+            _contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
         }
 
         public byte[] Transform(byte[] pkt, int offset, int length)
@@ -58,19 +58,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // Wrap the data into raw packet for readable format
-                var packet = !isLocked ? this.packet : new RawPacket();
+                var packet = !isLocked ? this._packet : new RawPacket();
                 packet.Wrap(pkt, offset, length);
 
                 // Associate the packet with its encryption context
-                long ssrc = packet.GetRTCPSSRC();
+                long ssrc = packet.GetRtcpssrc();
                 SrtcpCryptoContext context;
-                contexts.TryGetValue(ssrc, out context);
+                _contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = forwardEngine.GetDefaultContextControl().DeriveContext();
+                    context = _forwardEngine.GetDefaultContextControl().DeriveContext();
                     context.DeriveSrtcpKeys();
-                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
+                    _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Secure packet into SRTCP format
@@ -93,19 +93,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // wrap data into raw packet for readable format
-                var packet = !isLocked ? this.packet : new RawPacket();
+                var packet = !isLocked ? this._packet : new RawPacket();
                 packet.Wrap(pkt, offset, length);
 
                 // Associate the packet with its encryption context
-                long ssrc = packet.GetRTCPSSRC();
+                long ssrc = packet.GetRtcpssrc();
                 SrtcpCryptoContext context;
-                contexts.TryGetValue(ssrc, out context);
+                _contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = reverseEngine.GetDefaultContextControl().DeriveContext();
+                    context = _reverseEngine.GetDefaultContextControl().DeriveContext();
                     context.DeriveSrtcpKeys();
-                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
+                    _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Decode packet to RTCP format

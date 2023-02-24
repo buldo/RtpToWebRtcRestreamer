@@ -42,28 +42,28 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
     /// </summary>
     public class SrtpPolicy
     {
-        public const int NULL_ENCRYPTION = 0;
-        public const int AESCM_ENCRYPTION = 1;
-        public const int TWOFISH_ENCRYPTION = 3;
-        public const int AESF8_ENCRYPTION = 2;
-        public const int TWOFISHF8_ENCRYPTION = 4;
-        public const int NULL_AUTHENTICATION = 0;
-        public const int HMACSHA1_AUTHENTICATION = 1;
-        public const int SKEIN_AUTHENTICATION = 2;
+        public const int NullEncryption = 0;
+        public const int AescmEncryption = 1;
+        public const int TwofishEncryption = 3;
+        public const int Aesf8Encryption = 2;
+        public const int Twofishf8Encryption = 4;
+        public const int NullAuthentication = 0;
+        public const int Hmacsha1Authentication = 1;
+        public const int SkeinAuthentication = 2;
 
-        private int encType;
-        private int encKeyLength;
-        private int authType;
-        private int authKeyLength;
-        private int authTagLength;
-        private int saltKeyLength;
+        private readonly int _encType;
+        private readonly int _encKeyLength;
+        private readonly int _authType;
+        private readonly int _authKeyLength;
+        private readonly int _authTagLength;
+        private readonly int _saltKeyLength;
 
-        public int AuthKeyLength => authKeyLength;
-        public int AuthTagLength => authTagLength;
-        public int AuthType => authType;
-        public int EncKeyLength => encKeyLength;
-        public int EncType => encType;
-        public int SaltKeyLength => saltKeyLength;
+        public int AuthKeyLength => _authKeyLength;
+        public int AuthTagLength => _authTagLength;
+        public int AuthType => _authType;
+        public int EncKeyLength => _encKeyLength;
+        public int EncType => _encType;
+        public int SaltKeyLength => _saltKeyLength;
 
         /**
          * Construct a SRTPPolicy object based on given parameters.
@@ -84,12 +84,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                           int authTagLength,
                           int saltKeyLength)
         {
-            this.encType = encType;
-            this.encKeyLength = encKeyLength;
-            this.authType = authType;
-            this.authKeyLength = authKeyLength;
-            this.authTagLength = authTagLength;
-            this.saltKeyLength = saltKeyLength;
+            this._encType = encType;
+            this._encKeyLength = encKeyLength;
+            this._authType = authType;
+            this._authKeyLength = authKeyLength;
+            this._authTagLength = authTagLength;
+            this._saltKeyLength = saltKeyLength;
         }
     }
 }

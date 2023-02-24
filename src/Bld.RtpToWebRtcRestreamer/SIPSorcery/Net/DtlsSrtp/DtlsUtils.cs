@@ -63,7 +63,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// <summary>
         /// The key size when generating random keys for self signed certificates.
         /// </summary>
-        public const int DEFAULT_KEY_SIZE = 2048;
+        public const int DefaultKeySize = 2048;
 
         public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, X509CertificateStructure c)
         {
@@ -158,7 +158,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         private static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
-            const int keyStrength = DEFAULT_KEY_SIZE;
+            const int keyStrength = DefaultKeySize;
             if (issuerPrivateKey == null)
             {
                 issuerPrivateKey = CreatePrivateKeyResource();
@@ -223,7 +223,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public static AsymmetricKeyParameter CreatePrivateKeyResource()
         {
-            const int keyStrength = DEFAULT_KEY_SIZE;
+            const int keyStrength = DefaultKeySize;
 
             // Generating Random Numbers
             var randomGenerator = new CryptoApiRandomGenerator();

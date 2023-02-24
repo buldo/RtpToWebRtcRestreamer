@@ -27,7 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// </summary>
     public class RTCDataChannel
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
         public string label { get; set; }
 
@@ -52,7 +52,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         public bool IsOpened { get; internal set; }
 
-        private RTCSctpTransport _transport;
+        private readonly RTCSctpTransport _transport;
 
         public event Action onopen;
         //public event Action onbufferedamountlow;

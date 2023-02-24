@@ -32,9 +32,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     /// </summary>
     public class RTPChannel : IDisposable
     {
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
         private UdpReceiver m_rtpReceiver;
-        private Socket m_controlSocket;
+        private readonly Socket m_controlSocket;
         private UdpReceiver m_controlReceiver;
         private bool m_rtpReceiverStarted;
         private bool m_controlReceiverStarted;

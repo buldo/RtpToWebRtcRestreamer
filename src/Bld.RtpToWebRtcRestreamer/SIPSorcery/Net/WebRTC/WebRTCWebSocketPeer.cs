@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// </summary>
     public class WebRTCWebSocketPeer : WebSocketBehavior
     {
-        private ILogger logger = Sys.Log.Logger;
+        private readonly ILogger logger = Sys.Log.Logger;
 
         private RTCPeerConnection _pc;
 

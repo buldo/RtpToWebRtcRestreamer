@@ -42,13 +42,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         public const int DEFAULT_COOKIE_LIFETIME_SECONDS = 60;
 
-        private static ILogger logger = LogFactory.CreateLogger<SctpTransport>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SctpTransport>();
 
         /// <summary>
         /// Ephemeral secret key to use for generating cookie HMAC's. The purpose of the HMAC is
         /// to prevent resource depletion attacks. This does not justify using an external key store.
         /// </summary>
-        private static byte[] _hmacKey = new byte[HMAC_KEY_SIZE];
+        private static readonly byte[] _hmacKey = new byte[HMAC_KEY_SIZE];
 
         /// <summary>
         /// This property can be used to indicate whether an SCTP transport layer is port agnostic.

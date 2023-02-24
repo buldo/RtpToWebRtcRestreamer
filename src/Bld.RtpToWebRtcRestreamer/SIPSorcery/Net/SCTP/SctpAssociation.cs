@@ -47,14 +47,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
         private const int MAX_COOKIE_ECHO_RETRANSMITS = 3;
          
-        private static ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
+        private static readonly ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
-        SctpTransport _sctpTransport;
+        readonly SctpTransport _sctpTransport;
         private ushort _sctpSourcePort;
         private ushort _sctpDestinationPort;
-        private ushort _defaultMTU;
-        private ushort _numberOutboundStreams;
-        private ushort _numberInboundStreams;
+        private readonly ushort _defaultMTU;
+        private readonly ushort _numberOutboundStreams;
+        private readonly ushort _numberInboundStreams;
         private bool _wasAborted;
         private bool _wasShutdown;
         private bool _initialisationFailed;

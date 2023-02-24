@@ -25,10 +25,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     public class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     {
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger Logger = Log.Logger;
 
-        internal Certificate mCertificateChain;
-        internal AsymmetricKeyParameter mPrivateKey;
+        internal Certificate MCertificateChain;
+        internal AsymmetricKeyParameter MPrivateKey;
 
         internal TlsClientContext TlsContext
         {
@@ -42,18 +42,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         private RTCDtlsFingerprint Fingerprint { get; }
 
-        private UseSrtpData clientSrtpData;
+        private readonly UseSrtpData _clientSrtpData;
 
         // Asymmetric shared keys derived from the DTLS handshake and used for the SRTP encryption/
-        private byte[] srtpMasterClientKey;
-        private byte[] srtpMasterServerKey;
-        private byte[] srtpMasterClientSalt;
-        private byte[] srtpMasterServerSalt;
-        private byte[] masterSecret;
+        private byte[] _srtpMasterClientKey;
+        private byte[] _srtpMasterServerKey;
+        private byte[] _srtpMasterClientSalt;
+        private byte[] _srtpMasterServerSalt;
+        private byte[] _masterSecret;
 
         // Policies
-        private SrtpPolicy srtpPolicy;
-        private SrtpPolicy srtcpPolicy;
+        private SrtpPolicy _srtpPolicy;
+        private SrtpPolicy _srtcpPolicy;
 
         /// <summary>
         /// Parameters:
@@ -79,17 +79,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             {
                 var random = new SecureRandom();
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                var mki = new byte[(SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherKeyLength() + SrtpParameters.SRTP_AES128_CM_HMAC_SHA1_80.GetCipherSaltLength()) / 8];
+                var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() + SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
                 random.NextBytes(mki); // Reusing our secure random for generating the key.
-                this.clientSrtpData = new UseSrtpData(protectionProfiles, mki);
+                this._clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
             else
             {
-                this.clientSrtpData = clientSrtpData;
+                this._clientSrtpData = clientSrtpData;
             }
 
-            mPrivateKey = privateKey;
-            mCertificateChain = certificateChain;
+            MPrivateKey = privateKey;
+            MCertificateChain = certificateChain;
         }
 
         public override IDictionary GetClientExtensions()
@@ -102,39 +102,39 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                     clientExtensions = new Hashtable();
                 }
 
-                TlsSRTPUtils.AddUseSrtpExtension(clientExtensions, clientSrtpData);
+                TlsSRTPUtils.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
             }
             return clientExtensions;
         }
 
         public SrtpPolicy GetSrtpPolicy()
         {
-            return srtpPolicy;
+            return _srtpPolicy;
         }
 
         public SrtpPolicy GetSrtcpPolicy()
         {
-            return srtcpPolicy;
+            return _srtcpPolicy;
         }
 
         public byte[] GetSrtpMasterServerKey()
         {
-            return srtpMasterServerKey;
+            return _srtpMasterServerKey;
         }
 
         public byte[] GetSrtpMasterServerSalt()
         {
-            return srtpMasterServerSalt;
+            return _srtpMasterServerSalt;
         }
 
         public byte[] GetSrtpMasterClientKey()
         {
-            return srtpMasterClientKey;
+            return _srtpMasterClientKey;
         }
 
         public byte[] GetSrtpMasterClientSalt()
         {
-            return srtpMasterClientSalt;
+            return _srtpMasterClientSalt;
         }
 
         public override TlsAuthentication GetAuthentication()
@@ -147,8 +147,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             base.NotifyHandshakeComplete();
 
             //Copy master Secret (will be inaccessible after this call)
-            masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
-            Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, masterSecret, 0, masterSecret.Length);
+            _masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
+            Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, _masterSecret, 0, _masterSecret.Length);
 
             //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
             PrepareSrtpSharedSecret();
@@ -164,11 +164,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
         }
 
-        protected byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
+        protected byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
         {
-            if (context_value != null && !TlsUtilities.IsValidUint16(context_value.Length))
+            if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
             {
-                throw new ArgumentException("must have length less than 2^16 (or be null)", "context_value");
+                throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
             }
 
             var sp = mContext.SecurityParameters;
@@ -186,9 +186,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
 
             var seedLength = cr.Length + sr.Length;
-            if (context_value != null)
+            if (contextValue != null)
             {
-                seedLength += (2 + context_value.Length);
+                seedLength += (2 + contextValue.Length);
             }
 
             var seed = new byte[seedLength];
@@ -198,12 +198,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             seedPos += cr.Length;
             Array.Copy(sr, 0, seed, seedPos, sr.Length);
             seedPos += sr.Length;
-            if (context_value != null)
+            if (contextValue != null)
             {
-                TlsUtilities.WriteUint16(context_value.Length, seed, seedPos);
+                TlsUtilities.WriteUint16(contextValue.Length, seed, seedPos);
                 seedPos += 2;
-                Array.Copy(context_value, 0, seed, seedPos, context_value.Length);
-                seedPos += context_value.Length;
+                Array.Copy(contextValue, 0, seed, seedPos, contextValue.Length);
+                seedPos += contextValue.Length;
             }
 
             if (seedPos != seedLength)
@@ -224,17 +224,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;
 
-            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(clientSrtpData.ProtectionProfiles[0]);
+            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(_clientSrtpData.ProtectionProfiles[0]);
             var keyLen = srtpParams.GetCipherKeyLength();
             var saltLen = srtpParams.GetCipherSaltLength();
 
-            srtpPolicy = srtpParams.GetSrtpPolicy();
-            srtcpPolicy = srtpParams.GetSrtcpPolicy();
+            _srtpPolicy = srtpParams.GetSrtpPolicy();
+            _srtcpPolicy = srtpParams.GetSrtcpPolicy();
 
-            srtpMasterClientKey = new byte[keyLen];
-            srtpMasterServerKey = new byte[keyLen];
-            srtpMasterClientSalt = new byte[saltLen];
-            srtpMasterServerSalt = new byte[saltLen];
+            _srtpMasterClientKey = new byte[keyLen];
+            _srtpMasterServerKey = new byte[keyLen];
+            _srtpMasterClientSalt = new byte[saltLen];
+            _srtpMasterServerSalt = new byte[saltLen];
 
             // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
             // No need to divide by 8 here since lengths are already in bits
@@ -267,10 +267,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
              * + local key           |    remote key    | local salt   | remote salt   |
              * +------------------------+------------------------+---------------+-------------------+
              */
-            Buffer.BlockCopy(sharedSecret, 0, srtpMasterClientKey, 0, keyLen);
-            Buffer.BlockCopy(sharedSecret, keyLen, srtpMasterServerKey, 0, keyLen);
-            Buffer.BlockCopy(sharedSecret, 2 * keyLen, srtpMasterClientSalt, 0, saltLen);
-            Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), srtpMasterServerSalt, 0, saltLen);
+            Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
+            Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
+            Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
+            Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
         }
 
         public override ProtocolVersion ClientVersion
@@ -303,13 +303,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             var alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
             alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
-            if (alertDescription == AlertTypesEnum.close_notify.GetHashCode())
+            if (alertDescription == AlertTypesEnum.CloseNotify.GetHashCode())
             {
-                logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
+                Logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
             }
             else
             {
-                logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
+                Logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
             }
         }
 

@@ -46,7 +46,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
     {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
         public STUNAttributeTypesEnum AttributeType = STUNAttributeTypesEnum.Unknown;
         public byte[] Value;

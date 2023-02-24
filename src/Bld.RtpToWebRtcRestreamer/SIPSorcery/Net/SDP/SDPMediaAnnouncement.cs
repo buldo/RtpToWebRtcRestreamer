@@ -53,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public const string m_CRLF = "\r\n";
 
-        private static ILogger logger = Log.Logger;
+        private static readonly ILogger logger = Log.Logger;
 
         public SDPConnectionInformation Connection;
 

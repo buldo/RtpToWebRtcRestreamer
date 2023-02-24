@@ -5,13 +5,13 @@ namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
 internal class RtpVideoFramer
 {
-    private static ILogger logger = new NullLogger<RtpVideoFramer>();
+    private static readonly ILogger logger = new NullLogger<RtpVideoFramer>();
 
     private readonly VideoCodecsEnum _codec;
     private readonly int _maxFrameSize;
     private readonly byte[] _currentVideoFrame;
     private int _currVideoFramePosn = 0;
-    private H264Depacketiser? _h264Depacketiser;
+    private readonly H264Depacketiser? _h264Depacketiser;
 
     public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)
     {

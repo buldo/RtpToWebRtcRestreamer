@@ -94,108 +94,108 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         /**
          * The replay check windows size
          */
-        private readonly long REPLAY_WINDOW_SIZE = 64;
+        private readonly long _replayWindowSize = 64;
 
         /**
          * Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
          */
-        private int roc;
+        private int _roc;
 
         /**
          * Roll-Over-Counter guessed from packet
          */
-        private int guessedROC;
+        private int _guessedRoc;
 
         /**
          * RTP sequence number of the packet current processing
          */
-        private int seqNum;
+        private int _seqNum;
 
         /**
          * Whether we have the sequence number of current packet
          */
-        private bool seqNumSet;
+        private bool _seqNumSet;
 
         /**
          * Key Derivation Rate, used to derive session keys from master keys
          */
-        private long keyDerivationRate;
+        private readonly long _keyDerivationRate;
 
         /**
          * Bit mask for replay check
          */
-        private long replayWindow;
+        private long _replayWindow;
 
         /**
          * Master encryption key
          */
-        private byte[] masterKey;
+        private readonly byte[] _masterKey;
 
         /**
          * Master salting key
          */
-        private byte[] masterSalt;
+        private readonly byte[] _masterSalt;
 
         /**
          * Derived session encryption key
          */
-        private byte[] encKey;
+        private readonly byte[] _encKey;
 
         /**
          * Derived session authentication key
          */
-        private byte[] authKey;
+        private readonly byte[] _authKey;
 
         /**
          * Derived session salting key
          */
-        private byte[] saltKey;
+        private readonly byte[] _saltKey;
 
         /**
          * Encryption / Authentication policy for this session
          */
-        private SrtpPolicy policy;
+        private readonly SrtpPolicy _policy;
 
         /**
          * The HMAC object we used to do packet authentication
          */
-        private IMac mac;
+        private readonly IMac _mac;
 
         /**
          * The symmetric cipher engines we need here
          */
-        private IBlockCipher cipher;
+        private readonly IBlockCipher _cipher;
 
         /**
          * Used inside F8 mode only
          */
-        private IBlockCipher cipherF8;
+        private readonly IBlockCipher _cipherF8;
 
         /**
          * implements the counter cipher mode for RTP according to RFC 3711
          */
-        private SrtpCipherCTR cipherCtr = new SrtpCipherCTR();
+        private readonly SrtpCipherCtr _cipherCtr = new SrtpCipherCtr();
 
         /**
          * Temp store.
          */
-        private byte[] tagStore;
+        private readonly byte[] _tagStore;
 
         /**
          * Temp store.
          */
-        private byte[] ivStore = new byte[16];
+        private readonly byte[] _ivStore = new byte[16];
 
         /**
          * Temp store.
          */
-        private byte[] rbStore = new byte[4];
+        private readonly byte[] _rbStore = new byte[4];
 
         /**
          * this is a working store, used by some methods to avoid new operations the
          * methods must use this only to store results for immediate processing
          */
-        private byte[] tempStore = new byte[100];
+        private readonly byte[] _tempStore = new byte[100];
 
         /**
          * Construct a normal SRTPCryptoContext based on the given parameters.
@@ -226,72 +226,72 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         public SrtpCryptoContext(int rocIn, long kdr, byte[] masterK,
                 byte[] masterS, SrtpPolicy policyIn)
         {
-            roc = rocIn;
-            guessedROC = 0;
-            seqNum = 0;
-            keyDerivationRate = kdr;
-            seqNumSet = false;
+            _roc = rocIn;
+            _guessedRoc = 0;
+            _seqNum = 0;
+            _keyDerivationRate = kdr;
+            _seqNumSet = false;
 
-            policy = policyIn;
+            _policy = policyIn;
 
-            masterKey = new byte[policy.EncKeyLength];
-            Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
+            _masterKey = new byte[_policy.EncKeyLength];
+            Array.Copy(masterK, 0, _masterKey, 0, masterK.Length);
 
-            masterSalt = new byte[policy.SaltKeyLength];
-            Array.Copy(masterS, 0, masterSalt, 0, masterS.Length);
+            _masterSalt = new byte[_policy.SaltKeyLength];
+            Array.Copy(masterS, 0, _masterSalt, 0, masterS.Length);
 
-            mac = new HMac(new Sha1Digest());
+            _mac = new HMac(new Sha1Digest());
 
-            switch (policy.EncType)
+            switch (_policy.EncType)
             {
-                case SrtpPolicy.NULL_ENCRYPTION:
-                    encKey = null;
-                    saltKey = null;
+                case SrtpPolicy.NullEncryption:
+                    _encKey = null;
+                    _saltKey = null;
                     break;
 
-                case SrtpPolicy.AESF8_ENCRYPTION:
-                    cipherF8 = new AesEngine();
-                    cipher = new AesEngine();
-                    encKey = new byte[policy.EncKeyLength];
-                    saltKey = new byte[policy.SaltKeyLength];
+                case SrtpPolicy.Aesf8Encryption:
+                    _cipherF8 = new AesEngine();
+                    _cipher = new AesEngine();
+                    _encKey = new byte[_policy.EncKeyLength];
+                    _saltKey = new byte[_policy.SaltKeyLength];
                     break;
                 //$FALL-THROUGH$
 
-                case SrtpPolicy.AESCM_ENCRYPTION:
-                    cipher = new AesEngine();
-                    encKey = new byte[policy.EncKeyLength];
-                    saltKey = new byte[policy.SaltKeyLength];
+                case SrtpPolicy.AescmEncryption:
+                    _cipher = new AesEngine();
+                    _encKey = new byte[_policy.EncKeyLength];
+                    _saltKey = new byte[_policy.SaltKeyLength];
                     break;
 
-                case SrtpPolicy.TWOFISHF8_ENCRYPTION:
-                    cipherF8 = new TwofishEngine();
-                    cipher = new TwofishEngine();
-                    encKey = new byte[policy.EncKeyLength];
-                    saltKey = new byte[policy.SaltKeyLength];
+                case SrtpPolicy.Twofishf8Encryption:
+                    _cipherF8 = new TwofishEngine();
+                    _cipher = new TwofishEngine();
+                    _encKey = new byte[_policy.EncKeyLength];
+                    _saltKey = new byte[_policy.SaltKeyLength];
                     break;
 
-                case SrtpPolicy.TWOFISH_ENCRYPTION:
-                    cipher = new TwofishEngine();
-                    encKey = new byte[policy.EncKeyLength];
-                    saltKey = new byte[policy.SaltKeyLength];
+                case SrtpPolicy.TwofishEncryption:
+                    _cipher = new TwofishEngine();
+                    _encKey = new byte[_policy.EncKeyLength];
+                    _saltKey = new byte[_policy.SaltKeyLength];
                     break;
             }
 
-            switch (policy.AuthType)
+            switch (_policy.AuthType)
             {
-                case SrtpPolicy.NULL_AUTHENTICATION:
-                    authKey = null;
-                    tagStore = null;
+                case SrtpPolicy.NullAuthentication:
+                    _authKey = null;
+                    _tagStore = null;
                     break;
 
-                case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-                    mac = new HMac(new Sha1Digest());
-                    authKey = new byte[policy.AuthKeyLength];
-                    tagStore = new byte[mac.GetMacSize()];
+                case SrtpPolicy.Hmacsha1Authentication:
+                    _mac = new HMac(new Sha1Digest());
+                    _authKey = new byte[_policy.AuthKeyLength];
+                    _tagStore = new byte[_mac.GetMacSize()];
                     break;
 
                 default:
-                    tagStore = null;
+                    _tagStore = null;
                     break;
             }
         }
@@ -309,8 +309,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public void Close()
         {
-            Arrays.Fill(masterKey, 0);
-            Arrays.Fill(masterSalt, 0);
+            Arrays.Fill(_masterKey, 0);
+            Arrays.Fill(_masterSalt, 0);
         }
 
         /**
@@ -334,28 +334,28 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         public void TransformPacket(RawPacket pkt)
         {
             /* Encrypt the packet using Counter Mode encryption */
-            if (policy.EncType == SrtpPolicy.AESCM_ENCRYPTION || policy.EncType == SrtpPolicy.TWOFISH_ENCRYPTION)
+            if (_policy.EncType == SrtpPolicy.AescmEncryption || _policy.EncType == SrtpPolicy.TwofishEncryption)
             {
-                ProcessPacketAESCM(pkt);
+                ProcessPacketAescm(pkt);
             }
-            else if (policy.EncType == SrtpPolicy.AESF8_ENCRYPTION || policy.EncType == SrtpPolicy.TWOFISHF8_ENCRYPTION)
+            else if (_policy.EncType == SrtpPolicy.Aesf8Encryption || _policy.EncType == SrtpPolicy.Twofishf8Encryption)
             {
                 /* Encrypt the packet using F8 Mode encryption */
-                ProcessPacketAESF8(pkt);
+                ProcessPacketAesf8(pkt);
             }
 
             /* Authenticate the packet */
-            if (policy.AuthType != SrtpPolicy.NULL_AUTHENTICATION)
+            if (_policy.AuthType != SrtpPolicy.NullAuthentication)
             {
-                AuthenticatePacketHMCSHA1(pkt, roc);
-                pkt.Append(tagStore, policy.AuthTagLength);
+                AuthenticatePacketHmcsha1(pkt, _roc);
+                pkt.Append(_tagStore, _policy.AuthTagLength);
             }
 
             /* Update the ROC if necessary */
             var seqNo = pkt.GetSequenceNumber();
             if (seqNo == 0xFFFF)
             {
-                roc++;
+                _roc++;
             }
         }
 
@@ -382,10 +382,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         {
             var seqNo = pkt.GetSequenceNumber();
 
-            if (!seqNumSet)
+            if (!_seqNumSet)
             {
-                seqNumSet = true;
-                seqNum = seqNo;
+                _seqNumSet = true;
+                _seqNum = seqNo;
             }
 
             // Guess the SRTP index (48 bit), see rFC 3711, 3.3.1
@@ -399,20 +399,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             }
 
             // Authenticate packet
-            if (policy.AuthType != SrtpPolicy.NULL_AUTHENTICATION)
+            if (_policy.AuthType != SrtpPolicy.NullAuthentication)
             {
-                var tagLength = policy.AuthTagLength;
+                var tagLength = _policy.AuthTagLength;
 
                 // get original authentication and store in tempStore
-                pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, tempStore);
-                pkt.shrink(tagLength);
+                pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, _tempStore);
+                pkt.Shrink(tagLength);
 
                 // save computed authentication in tagStore
-                AuthenticatePacketHMCSHA1(pkt, guessedROC);
+                AuthenticatePacketHmcsha1(pkt, _guessedRoc);
 
                 for (var i = 0; i < tagLength; i++)
                 {
-                    if ((tempStore[i] & 0xff) != (tagStore[i] & 0xff))
+                    if ((_tempStore[i] & 0xff) != (_tagStore[i] & 0xff))
                     {
                         return false;
                     }
@@ -420,18 +420,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             }
 
             // Decrypt packet
-            switch (policy.EncType)
+            switch (_policy.EncType)
             {
-                case SrtpPolicy.AESCM_ENCRYPTION:
-                case SrtpPolicy.TWOFISH_ENCRYPTION:
+                case SrtpPolicy.AescmEncryption:
+                case SrtpPolicy.TwofishEncryption:
                     // using Counter Mode encryption
-                    ProcessPacketAESCM(pkt);
+                    ProcessPacketAescm(pkt);
                     break;
 
-                case SrtpPolicy.AESF8_ENCRYPTION:
-                case SrtpPolicy.TWOFISHF8_ENCRYPTION:
+                case SrtpPolicy.Aesf8Encryption:
+                case SrtpPolicy.Twofishf8Encryption:
                     // using F8 Mode encryption
-                    ProcessPacketAESF8(pkt);
+                    ProcessPacketAesf8(pkt);
                     break;
 
                 default:
@@ -447,36 +447,36 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESCM(RawPacket pkt)
+        public void ProcessPacketAescm(RawPacket pkt)
         {
-            long ssrc = pkt.GetSSRC();
+            long ssrc = pkt.GetSsrc();
             var seqNo = pkt.GetSequenceNumber();
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            var index = ((long)roc << 16) | seqNo;
+            var index = ((long)_roc << 16) | seqNo;
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
 
-            ivStore[0] = saltKey[0];
-            ivStore[1] = saltKey[1];
-            ivStore[2] = saltKey[2];
-            ivStore[3] = saltKey[3];
+            _ivStore[0] = _saltKey[0];
+            _ivStore[1] = _saltKey[1];
+            _ivStore[2] = _saltKey[2];
+            _ivStore[3] = _saltKey[3];
 
             int i;
             for (i = 4; i < 8; i++)
             {
-                ivStore[i] = (byte)((0xFF & (ssrc >> ((7 - i) * 8))) ^ saltKey[i]);
+                _ivStore[i] = (byte)((0xFF & (ssrc >> ((7 - i) * 8))) ^ _saltKey[i]);
             }
 
             for (i = 8; i < 14; i++)
             {
-                ivStore[i] = (byte)((0xFF & (byte)(index >> ((13 - i) * 8))) ^ saltKey[i]);
+                _ivStore[i] = (byte)((0xFF & (byte)(index >> ((13 - i) * 8))) ^ _saltKey[i]);
             }
 
-            ivStore[14] = ivStore[15] = 0;
+            _ivStore[14] = _ivStore[15] = 0;
 
             var payloadOffset = pkt.GetHeaderLength();
             var payloadLength = pkt.GetPayloadLength();
 
-            cipherCtr.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore);
+            _cipherCtr.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore);
         }
 
         /**
@@ -485,27 +485,27 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESF8(RawPacket pkt)
+        public void ProcessPacketAesf8(RawPacket pkt)
         {
             // 11 bytes of the RTP header are the 11 bytes of the iv
             // the first byte of the RTP header is not used.
             var buf = pkt.GetBuffer();
-            buf.Read(ivStore, (int)buf.Position, 12);
-            ivStore[0] = 0;
+            buf.Read(_ivStore, (int)buf.Position, 12);
+            _ivStore[0] = 0;
 
             // set the ROC in network order into IV
-            ivStore[12] = (byte)(roc >> 24);
-            ivStore[13] = (byte)(roc >> 16);
-            ivStore[14] = (byte)(roc >> 8);
-            ivStore[15] = (byte)roc;
+            _ivStore[12] = (byte)(_roc >> 24);
+            _ivStore[13] = (byte)(_roc >> 16);
+            _ivStore[14] = (byte)(_roc >> 8);
+            _ivStore[15] = (byte)_roc;
 
             var payloadOffset = pkt.GetHeaderLength();
             var payloadLength = pkt.GetPayloadLength();
 
-            SrtpCipherF8.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore, cipherF8);
+            SrtpCipherF8.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore, _cipherF8);
         }
 
-        byte[] tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+        readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
 
         /**
          * Authenticate a packet. Calculated authentication tag is returned.
@@ -515,19 +515,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param rocIn
          *            Roll-Over-Counter
          */
-        private void AuthenticatePacketHMCSHA1(RawPacket pkt, int rocIn)
+        private void AuthenticatePacketHmcsha1(RawPacket pkt, int rocIn)
         {
             var buf = pkt.GetBuffer();
             buf.Position = 0;
             var len = (int)buf.Length;
-            buf.Read(tempBuffer, 0, len);
-            mac.BlockUpdate(tempBuffer, 0, len);
-            rbStore[0] = (byte)(rocIn >> 24);
-            rbStore[1] = (byte)(rocIn >> 16);
-            rbStore[2] = (byte)(rocIn >> 8);
-            rbStore[3] = (byte)rocIn;
-            mac.BlockUpdate(rbStore, 0, rbStore.Length);
-            mac.DoFinal(tagStore, 0);
+            buf.Read(_tempBuffer, 0, len);
+            _mac.BlockUpdate(_tempBuffer, 0, len);
+            _rbStore[0] = (byte)(rocIn >> 24);
+            _rbStore[1] = (byte)(rocIn >> 16);
+            _rbStore[2] = (byte)(rocIn >> 8);
+            _rbStore[3] = (byte)rocIn;
+            _mac.BlockUpdate(_rbStore, 0, _rbStore.Length);
+            _mac.DoFinal(_tagStore, 0);
         }
 
         /**
@@ -551,7 +551,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             // compute the index of previously received packet and its
             // delta to the new received packet
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            var localIndex = (((long)roc) << 16) | seqNum;
+            var localIndex = (((long)_roc) << 16) | _seqNum;
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
             var delta = guessedIndex - localIndex;
 
@@ -561,13 +561,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 return true;
             }
 
-            if (-delta > REPLAY_WINDOW_SIZE)
+            if (-delta > _replayWindowSize)
             {
                 /* Packet too old */
                 return false;
             }
 
-            if (((replayWindow >> ((int)-delta)) & 0x1) != 0)
+            if (((_replayWindow >> ((int)-delta)) & 0x1) != 0)
             {
                 /* Packet already received ! */
                 return false;
@@ -589,25 +589,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private void ComputeIv(long label, long index)
         {
-            long key_id;
+            long keyId;
 
-            if (keyDerivationRate == 0)
+            if (_keyDerivationRate == 0)
             {
-                key_id = label << 48;
+                keyId = label << 48;
             }
             else
             {
-                key_id = ((label << 48) | (index / keyDerivationRate));
+                keyId = ((label << 48) | (index / _keyDerivationRate));
             }
             for (var i = 0; i < 7; i++)
             {
-                ivStore[i] = masterSalt[i];
+                _ivStore[i] = _masterSalt[i];
             }
             for (var i = 7; i < 14; i++)
             {
-                ivStore[i] = (byte)((byte)(0xFF & (key_id >> (8 * (13 - i)))) ^ masterSalt[i]);
+                _ivStore[i] = (byte)((byte)(0xFF & (keyId >> (8 * (13 - i)))) ^ _masterSalt[i]);
             }
-            ivStore[14] = ivStore[15] = 0;
+            _ivStore[14] = _ivStore[15] = 0;
         }
 
         /**
@@ -622,43 +622,43 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             long label = 0;
             ComputeIv(label, index);
 
-            var encryptionKey = new KeyParameter(masterKey);
-            cipher.Init(true, encryptionKey);
-            Arrays.Fill(masterKey, 0);
+            var encryptionKey = new KeyParameter(_masterKey);
+            _cipher.Init(true, encryptionKey);
+            Arrays.Fill(_masterKey, 0);
 
-            cipherCtr.GetCipherStream(cipher, encKey, policy.EncKeyLength, ivStore);
+            _cipherCtr.GetCipherStream(_cipher, _encKey, _policy.EncKeyLength, _ivStore);
 
             // compute the session authentication key
-            if (authKey != null)
+            if (_authKey != null)
             {
                 label = 0x01;
                 ComputeIv(label, index);
-                cipherCtr.GetCipherStream(cipher, authKey, policy.AuthKeyLength, ivStore);
+                _cipherCtr.GetCipherStream(_cipher, _authKey, _policy.AuthKeyLength, _ivStore);
 
-                switch ((policy.AuthType))
+                switch ((_policy.AuthType))
                 {
-                    case SrtpPolicy.HMACSHA1_AUTHENTICATION:
-                        var key = new KeyParameter(authKey);
-                        mac.Init(key);
+                    case SrtpPolicy.Hmacsha1Authentication:
+                        var key = new KeyParameter(_authKey);
+                        _mac.Init(key);
                         break;
                 }
             }
-            Arrays.Fill(authKey, 0);
+            Arrays.Fill(_authKey, 0);
 
             // compute the session salt
             label = 0x02;
             ComputeIv(label, index);
-            cipherCtr.GetCipherStream(cipher, saltKey, policy.SaltKeyLength, ivStore);
-            Arrays.Fill(masterSalt, 0);
+            _cipherCtr.GetCipherStream(_cipher, _saltKey, _policy.SaltKeyLength, _ivStore);
+            Arrays.Fill(_masterSalt, 0);
 
             // As last step: initialize cipher with derived encryption key.
-            if (cipherF8 != null)
+            if (_cipherF8 != null)
             {
-                SrtpCipherF8.DeriveForIV(cipherF8, encKey, saltKey);
+                SrtpCipherF8.DeriveForIv(_cipherF8, _encKey, _saltKey);
             }
-            encryptionKey = new KeyParameter(encKey);
-            cipher.Init(true, encryptionKey);
-            Arrays.Fill(encKey, 0);
+            encryptionKey = new KeyParameter(_encKey);
+            _cipher.Init(true, encryptionKey);
+            Arrays.Fill(_encKey, 0);
         }
 
         /**
@@ -671,31 +671,31 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private long GuessIndex(int seqNo)
         {
-            if (seqNum < 32768)
+            if (_seqNum < 32768)
             {
-                if (seqNo - seqNum > 32768)
+                if (seqNo - _seqNum > 32768)
                 {
-                    guessedROC = roc - 1;
+                    _guessedRoc = _roc - 1;
                 }
                 else
                 {
-                    guessedROC = roc;
+                    _guessedRoc = _roc;
                 }
             }
             else
             {
-                if (seqNum - 32768 > seqNo)
+                if (_seqNum - 32768 > seqNo)
                 {
-                    guessedROC = roc + 1;
+                    _guessedRoc = _roc + 1;
                 }
                 else
                 {
-                    guessedROC = roc;
+                    _guessedRoc = _roc;
                 }
             }
 
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            return ((long)guessedROC) << 16 | seqNo;
+            return ((long)_guessedRoc) << 16 | seqNo;
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
         }
 
@@ -713,30 +713,30 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         private void Update(int seqNo, long guessedIndex)
         {
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            var delta = guessedIndex - (((long)roc) << 16 | seqNum);
+            var delta = guessedIndex - (((long)_roc) << 16 | _seqNum);
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
 
             /* update the replay bit mask */
             if (delta > 0)
             {
-                replayWindow = replayWindow << (int)delta;
-                replayWindow |= 1;
+                _replayWindow = _replayWindow << (int)delta;
+                _replayWindow |= 1;
             }
             else
             {
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-                replayWindow |= (1 << (int)delta);
+                _replayWindow |= (1 << (int)delta);
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
             }
 
-            if (seqNo > seqNum)
+            if (seqNo > _seqNum)
             {
-                seqNum = seqNo & 0xffff;
+                _seqNum = seqNo & 0xffff;
             }
-            if (guessedROC > roc)
+            if (_guessedRoc > _roc)
             {
-                roc = guessedROC;
-                seqNum = seqNo & 0xffff;
+                _roc = _guessedRoc;
+                _seqNum = seqNo & 0xffff;
             }
         }
 
@@ -760,9 +760,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *            The key derivation rate for this context
          * @return a new SRTPCryptoContext with all relevant data set.
          */
-        public SrtpCryptoContext deriveContext(int roc, long deriveRate)
+        public SrtpCryptoContext DeriveContext(int roc, long deriveRate)
         {
-            return new SrtpCryptoContext(roc, deriveRate, masterKey, masterSalt, policy);
+            return new SrtpCryptoContext(roc, deriveRate, _masterKey, _masterSalt, _policy);
         }
     }
 }

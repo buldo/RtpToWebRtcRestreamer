@@ -27,7 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
             get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
         }
 
-        private byte m_changeRequestByte;
+        private readonly byte m_changeRequestByte;
 
         public STUNChangeRequestAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.ChangeRequest, attributeValue)

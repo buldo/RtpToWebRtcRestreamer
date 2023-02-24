@@ -6,19 +6,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
     internal class DtlsSrtpTlsAuthentication
         : TlsAuthentication
     {
-        private readonly DtlsSrtpClient mClient;
-        private readonly TlsContext mContext;
+        private readonly DtlsSrtpClient _mClient;
+        private readonly TlsContext _mContext;
 
         internal DtlsSrtpTlsAuthentication(DtlsSrtpClient client)
         {
-            mClient = client;
-            mContext = client.TlsContext;
+            _mClient = client;
+            _mContext = client.TlsContext;
         }
 
         public void NotifyServerCertificate(Certificate serverCertificate)
         {
             //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
-            mClient.ServerCertificate = serverCertificate;
+            _mClient.ServerCertificate = serverCertificate;
         }
 
         public TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
@@ -29,11 +29,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 return null;
             }
 
-            return DtlsUtils.LoadSignerCredentials(mContext,
+            return DtlsUtils.LoadSignerCredentials(_mContext,
                 certificateRequest.SupportedSignatureAlgorithms,
                 SignatureAlgorithm.rsa,
-                mClient.mCertificateChain,
-                mClient.mPrivateKey);
+                _mClient.MCertificateChain,
+                _mClient.MPrivateKey);
         }
     }
 }

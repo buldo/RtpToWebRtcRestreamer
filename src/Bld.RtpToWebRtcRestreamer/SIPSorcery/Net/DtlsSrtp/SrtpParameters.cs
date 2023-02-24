@@ -29,39 +29,39 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         //	SRTP_AES128_CM_HMAC_SHA1_80 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 80, 80, 112),
         //	SRTP_AES128_CM_HMAC_SHA1_32 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 32, 80, 112),
         // hrosa - converted lengths to work with bytes, not bits (1 byte = 8 bits)
-        public static readonly SrtpParameters SRTP_AES128_CM_HMAC_SHA1_80 = new SrtpParameters(SrtpPolicy.AESCM_ENCRYPTION, 16, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 10, 10, 14);
-        public static readonly SrtpParameters SRTP_AES128_CM_HMAC_SHA1_32 = new SrtpParameters(SrtpPolicy.AESCM_ENCRYPTION, 16, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 4, 10, 14);
-        public static readonly SrtpParameters SRTP_NULL_HMAC_SHA1_80 = new SrtpParameters(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 10, 10, 0);
-        public static readonly SrtpParameters SRTP_NULL_HMAC_SHA1_32 = new SrtpParameters(SrtpPolicy.NULL_ENCRYPTION, 0, SrtpPolicy.HMACSHA1_AUTHENTICATION, 20, 4, 10, 0);
+        public static readonly SrtpParameters SrtpAes128CmHmacSha180 = new SrtpParameters(SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 14);
+        public static readonly SrtpParameters SrtpAes128CmHmacSha132 = new SrtpParameters(SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 14);
+        public static readonly SrtpParameters SrtpNullHmacSha180 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 0);
+        public static readonly SrtpParameters SrtpNullHmacSha132 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 0);
 
 
-        private int encType;
-        private int encKeyLength;
-        private int authType;
-        private int authKeyLength;
-        private int authTagLength;
-        private int rtcpAuthTagLength;
-        private int saltLength;
+        private readonly int _encType;
+        private readonly int _encKeyLength;
+        private readonly int _authType;
+        private readonly int _authKeyLength;
+        private readonly int _authTagLength;
+        private readonly int _rtcpAuthTagLength;
+        private readonly int _saltLength;
 
         private SrtpParameters(int newEncType, int newEncKeyLength, int newAuthType, int newAuthKeyLength, int newAuthTagLength, int newRtcpAuthTagLength, int newSaltLength)
         {
-            encType = newEncType;
-            encKeyLength = newEncKeyLength;
-            authType = newAuthType;
-            authKeyLength = newAuthKeyLength;
-            authTagLength = newAuthTagLength;
-            rtcpAuthTagLength = newRtcpAuthTagLength;
-            saltLength = newSaltLength;
+            _encType = newEncType;
+            _encKeyLength = newEncKeyLength;
+            _authType = newAuthType;
+            _authKeyLength = newAuthKeyLength;
+            _authTagLength = newAuthTagLength;
+            _rtcpAuthTagLength = newRtcpAuthTagLength;
+            _saltLength = newSaltLength;
         }
 
         public int GetCipherKeyLength()
         {
-            return encKeyLength;
+            return _encKeyLength;
         }
 
         public int GetCipherSaltLength()
         {
-            return saltLength;
+            return _saltLength;
         }
 
         public static SrtpParameters GetSrtpParametersForProfile(int profileValue)
@@ -69,13 +69,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             switch (profileValue)
             {
                 case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80:
-                    return SRTP_AES128_CM_HMAC_SHA1_80;
+                    return SrtpAes128CmHmacSha180;
                 case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32:
-                    return SRTP_AES128_CM_HMAC_SHA1_32;
+                    return SrtpAes128CmHmacSha132;
                 case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80:
-                    return SRTP_NULL_HMAC_SHA1_80;
+                    return SrtpNullHmacSha180;
                 case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
-                    return SRTP_NULL_HMAC_SHA1_32;
+                    return SrtpNullHmacSha132;
                 default:
                     throw new Exception($"SRTP Protection Profile value {profileValue} is not allowed for DTLS SRTP. See http://tools.ietf.org/html/rfc5764#section-4.1.2 for valid values.");
             }
@@ -83,13 +83,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public SrtpPolicy GetSrtpPolicy()
         {
-            var sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, authTagLength, saltLength);
+            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _authTagLength, _saltLength);
             return sp;
         }
 
         public SrtpPolicy GetSrtcpPolicy()
         {
-            var sp = new SrtpPolicy(encType, encKeyLength, authType, authKeyLength, rtcpAuthTagLength, saltLength);
+            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _rtcpAuthTagLength, _saltLength);
             return sp;
         }
 
