@@ -139,7 +139,7 @@ namespace SIPSorcery.Net
             {
                 lock (this)
                 {
-                    if (data?.Length == 0)
+                    if (data.Length == 0)
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary_Empty,

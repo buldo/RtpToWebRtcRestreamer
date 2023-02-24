@@ -61,7 +61,7 @@ namespace SIPSorcery.Net
         /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
         /// return any data received.
         /// </summary>
-        public virtual void BeginReceiveFrom()
+        public void BeginReceiveFrom()
         {
             //Prevent call BeginReceiveFrom if it is already running
             if(m_isClosed && m_isRunningReceive)
@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
         /// Handler for end of the begin receive call.
         /// </summary>
         /// <param name="ar">Contains the results of the receive.</param>
-        protected virtual void EndReceiveFrom(IAsyncResult ar)
+        protected void EndReceiveFrom(IAsyncResult ar)
         {
             try
             {
@@ -198,7 +198,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Closes the socket and stops any new receives from being initiated.
         /// </summary>
-        public virtual void Close(string reason)
+        public void Close(string reason)
         {
             if (!m_isClosed)
             {

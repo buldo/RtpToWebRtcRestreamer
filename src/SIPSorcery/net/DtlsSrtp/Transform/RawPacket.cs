@@ -52,21 +52,21 @@ namespace SIPSorcery.Net
         /**
          * The size of the extension header as defined by RFC 3550.
          */
-        public const int EXT_HEADER_SIZE = 4;
+        private const int EXT_HEADER_SIZE = 4;
 
         /**
          * The size of the fixed part of the RTP header as defined by RFC 3550.
          */
-        public const int FIXED_HEADER_SIZE = 12;
+        private const int FIXED_HEADER_SIZE = 12;
 
         /**
          * Byte array storing the content of this Packet
          */
         private MemoryStream buffer;
 
-        /**
-         * Initializes a new empty <tt>RawPacket</tt> instance.
-         */
+        /// <summary>
+        /// Invoked
+        /// </summary>
         public RawPacket()
         {
             buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
@@ -130,7 +130,7 @@ namespace SIPSorcery.Net
          * @return  <tt>true</tt> if the extension bit of this packet has been set
          * and <tt>false</tt> otherwise.
          */
-        public bool GetExtensionBit()
+        private bool GetExtensionBit()
         {
             buffer.Position = 0;
             return (buffer.ReadByte() & 0x10) == 0x10;
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
          *
          * @return the length of the extensions currently added to this packet.
          */
-        public int GetExtensionLength()
+        private int GetExtensionLength()
         {
             int length = 0;
             if (GetExtensionBit())
@@ -163,7 +163,7 @@ namespace SIPSorcery.Net
          *
          * @return the CSRC count for this <tt>RawPacket</tt>.
          */
-        public int GetCsrcCount()
+        private int GetCsrcCount()
         {
             buffer.Position = 0;
             return (buffer.ReadByte() & 0x0f);
@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
          *
          * @param delta number of bytes to grow
          */
-        public void Grow(int delta)
+        private void Grow(int delta)
         {
             if (delta == 0)
             {
@@ -285,7 +285,7 @@ namespace SIPSorcery.Net
          * @param off start offset of the integer to be read
          * @return the integer to be read
          */
-        public int ReadInt(int off)
+        private int ReadInt(int off)
         {
             buffer.Position = off;
             return ((buffer.ReadByte() & 0xff) << 24) |
@@ -317,7 +317,7 @@ namespace SIPSorcery.Net
          * @param off start offset of the unsigned short
          * @return the int value of the unsigned short at offset
          */
-        public int ReadUnsignedShortAsInt(int off)
+        private int ReadUnsignedShortAsInt(int off)
         {
             buffer.Position = off;
             int b1 = (0x000000FF & (buffer.ReadByte()));

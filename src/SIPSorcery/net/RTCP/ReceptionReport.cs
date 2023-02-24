@@ -72,11 +72,6 @@ namespace SIPSorcery.Net
         private uint m_base_seq;
 
         /// <summary>
-        /// last 'bad' seq number + 1.
-        /// </summary>
-        private uint m_bad_seq;
-
-        /// <summary>
         /// sequ. packets till source is valid.
         /// </summary>
         //private uint m_probation;
@@ -187,14 +182,6 @@ namespace SIPSorcery.Net
                     // Seqnum is out of order and has wrapped.
                     m_max_seq = seq;
                     m_cycles += RTP_SEQ_MOD;
-                }
-                else
-                {
-                    // Remaining conditions are:
-                    // - seqnum == m_max_seq indicating a duplicate RTP packet, or
-                    // - is seqnum is more than 1 less than m_max_seqnum. Which most 
-                    //   likely indicates an RTP packet was delivered out of order.
-                    m_bad_seq++;
                 }
             }
 

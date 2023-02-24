@@ -17,11 +17,11 @@ namespace SIPSorcery.Net
 {
     public class SecureContext
     {
-        public ProtectRtpPacket ProtectRtpPacket { get; private set; }
-        public ProtectRtpPacket ProtectRtcpPacket { get; private set; }
+        public ProtectRtpPacket ProtectRtpPacket { get; }
+        public ProtectRtpPacket ProtectRtcpPacket { get; }
 
-        public ProtectRtpPacket UnprotectRtpPacket { get; private set; }
-        public ProtectRtpPacket UnprotectRtcpPacket { get; private set;}
+        public ProtectRtpPacket UnprotectRtpPacket { get; }
+        public ProtectRtpPacket UnprotectRtcpPacket { get; }
 
         public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
         {

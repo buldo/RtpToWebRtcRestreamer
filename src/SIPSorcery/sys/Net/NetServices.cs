@@ -426,7 +426,7 @@ namespace SIPSorcery.Sys
         /// which are required to get the remote end point. False if not</returns>
         private static bool DoCheckSupportsDualModeIPv4PacketInfo()
         {
-            bool hasDualModeReceiveSupport = true;
+            bool hasDualModeReceiveSupport;
 
             if (!Socket.OSSupportsIPv6)
             {

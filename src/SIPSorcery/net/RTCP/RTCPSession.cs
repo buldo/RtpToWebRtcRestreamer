@@ -80,11 +80,6 @@ namespace SIPSorcery.Net
         public DateTime CreatedAt { get; private set; }
 
         /// <summary>
-        /// Timestamp that the RTCP session sender report scheduler was started at.
-        /// </summary>
-        public DateTime StartedAt { get; private set; }
-
-        /// <summary>
         /// Timestamp that the last RTP or RTCP packet for was received at.
         /// </summary>
         public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
@@ -107,19 +102,9 @@ namespace SIPSorcery.Net
         public uint OctetsSentCount { get; private set; }
 
         /// <summary>
-        /// The last RTP sequence number sent by us.
-        /// </summary>
-        public ushort LastSeqNum { get; private set; }
-
-        /// <summary>
         /// The last RTP timestamp sent by us.
         /// </summary>
         public uint LastRtpTimestampSent { get; private set; }
-
-        /// <summary>
-        /// The last NTP timestamp corresponding to the last RTP timestamp sent by us.
-        /// </summary>
-        public ulong LastNtpTimestampSent { get; private set; }
 
         /// <summary>
         /// Number of RTP packets received from the remote party.
@@ -181,8 +166,6 @@ namespace SIPSorcery.Net
 
         public void Start()
         {
-            StartedAt = DateTime.Now;
-
             // Schedule an immediate sender report.
             var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
             m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
@@ -244,9 +227,7 @@ namespace SIPSorcery.Net
         {
             PacketsSentCount++;
             OctetsSentCount += (uint)rtpPacket.Payload.Length;
-            LastSeqNum = rtpPacket.Header.SequenceNumber;
             LastRtpTimestampSent = rtpPacket.Header.Timestamp;
-            LastNtpTimestampSent = DateTimeToNtpTimestamp(DateTime.Now);
         }
 
         /// <summary>

@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
                     {
                         break;
                     }
-                    STUNAttribute attribute = null;
+                    STUNAttribute attribute;
                     if (attributeType == STUNAttributeTypesEnum.ChangeRequest)
                     {
                         attribute = new STUNChangeRequestAttribute(stunAttributeValue);

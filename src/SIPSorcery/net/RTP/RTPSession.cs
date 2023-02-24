@@ -82,7 +82,6 @@ namespace SIPSorcery.Net
         public const int SRTP_MAX_PREFIX_LENGTH = 148;
         protected internal const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
         public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
-        protected const int SDP_SESSIONID_LENGTH = 10;             // The length of the pseudo-random string to use for the session ID.
         public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
         /// <summary>
@@ -97,8 +96,6 @@ namespace SIPSorcery.Net
         protected RtpSessionConfig rtpSessionConfig;
 
         private Boolean m_acceptRtpFromAny = false;
-        private string m_sdpSessionID;           // Need to maintain the same SDP session ID for all offers and answers.
-        private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
         internal int m_rtpChannelsCount;            // Need to know the number of RTP Channels
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
@@ -360,23 +357,6 @@ namespace SIPSorcery.Net
         public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReport;
 
         /// <summary>
-        /// Gets fired when an RTCP report is sent (using its nidex). This event is for diagnostics only.
-        /// </summary>
-        public event Action<int, SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReportByIndex;
-
-        /// <summary>
-        /// Gets fired when the start method is called on the session. This is the point
-        /// audio and video sources should commence generating samples.
-        /// </summary>
-        public event Action OnStarted;
-
-        /// <summary>
-        /// Gets fired when the session is closed. This is the point audio and video
-        /// source should stop generating samples.
-        /// </summary>
-        public event Action OnClosed;
-
-        /// <summary>
         /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
         /// pseudo random values.
         /// </summary>
@@ -415,7 +395,6 @@ namespace SIPSorcery.Net
         public RTPSession(RtpSessionConfig config)
         {
             rtpSessionConfig = config;
-            m_sdpSessionID = Crypto.GetRandomInt(SDP_SESSIONID_LENGTH).ToString();
 
             if (rtpSessionConfig.UseSdpCryptoNegotiation)
             {
@@ -473,7 +452,6 @@ namespace SIPSorcery.Net
             if (mediaStream.CreateRtcpSession())
             {
                 mediaStream.OnTimeoutByIndex += RaiseOnTimeOut;
-                mediaStream.OnSendReportByIndex += RaiseOnSendReport;
                 mediaStream.OnRtpEventByIndex += RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
@@ -503,7 +481,6 @@ namespace SIPSorcery.Net
             if (mediaStream.RtcpSession != null)
             {
                 mediaStream.OnTimeoutByIndex -= RaiseOnTimeOut;
-                mediaStream.OnSendReportByIndex -= RaiseOnSendReport;
                 mediaStream.OnRtpEventByIndex -= RaisedOnRtpEvent;
                 mediaStream.OnRtpPacketReceivedByIndex -= RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReportByIndex -= RaisedOnOnReceiveReport;
@@ -539,16 +516,7 @@ namespace SIPSorcery.Net
             }
             OnTimeoutByIndex?.Invoke(index, media);
         }
-
-        private void RaiseOnSendReport(int index, SDPMediaTypesEnum media, RTCPCompoundPacket report)
-        {
-            if (index == 0)
-            {
-                OnSendReport?.Invoke(media, report);
-            }
-            OnSendReportByIndex?.Invoke(index, media, report);
-        }
-
+        
         private void RaisedOnRtpEvent(int index, IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
         {
             if (index == 0)
@@ -718,7 +686,7 @@ namespace SIPSorcery.Net
 
                     currentMediaStream.RemoteTrack = remoteTrack;
 
-                    List<SDPAudioVideoMediaFormat> capabilities = null;
+                    List<SDPAudioVideoMediaFormat> capabilities;
                     if (currentMediaStream.LocalTrack == null)
                     {
                         capabilities = remoteTrack.Capabilities;
@@ -1253,7 +1221,6 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                OnStarted?.Invoke();
             }
 
             return Task.CompletedTask;
@@ -1317,7 +1284,6 @@ namespace SIPSorcery.Net
                 }
 
                 OnRtpClosed?.Invoke(reason);
-                OnClosed?.Invoke();
             }
         }
 

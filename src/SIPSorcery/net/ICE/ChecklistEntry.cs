@@ -33,10 +33,10 @@ namespace SIPSorcery.Net
         private static readonly ILogger logger = Log.Logger;
 
         //Previous RequestIds
-        protected List<string> _cachedRequestTransactionIDs = new List<string>();
+        private readonly List<string> _cachedRequestTransactionIDs = new List<string>();
 
-        public RTCIceCandidate LocalCandidate;
-        public RTCIceCandidate RemoteCandidate;
+        public readonly RTCIceCandidate LocalCandidate;
+        public readonly RTCIceCandidate RemoteCandidate;
 
         /// <summary>
         /// The current state of this checklist entry. Indicates whether a STUN check has been
@@ -56,9 +56,9 @@ namespace SIPSorcery.Net
         /// </summary>
         public bool Nominated { get; set; }
 
-        public uint LocalPriority { get; private set; }
+        public uint LocalPriority { get; }
 
-        public uint RemotePriority { get; private set; }
+        private uint RemotePriority { get; }
 
         /// <summary>
         /// The priority for the candidate pair:
@@ -91,12 +91,7 @@ namespace SIPSorcery.Net
         /// Timestamp the last connectivity check (STUN binding request) was sent at.
         /// </summary>
         public DateTime LastCheckSentAt = DateTime.MinValue;
-
-        /// <summary>
-        /// The number of checks that have been sent without a response.
-        /// </summary>
-        public int ChecksSent;
-
+        
         /// <summary>
         /// The transaction ID that was set in the last STUN request connectivity check.
         /// </summary>
@@ -141,7 +136,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public DateTime LastConnectedResponseAt { get; set; }
 
-        public bool IsLocalController { get; private set; }
+        private bool IsLocalController { get; }
 
         /// <summary>
         /// Timestamp for the most recent binding request received from the remote peer.
@@ -226,8 +221,6 @@ namespace SIPSorcery.Net
                 else
                 {
                     State = ChecklistEntryState.Succeeded;
-                    ChecksSent = 0;
-                    //LastCheckSentAt = DateTime.MinValue;
                 }
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)

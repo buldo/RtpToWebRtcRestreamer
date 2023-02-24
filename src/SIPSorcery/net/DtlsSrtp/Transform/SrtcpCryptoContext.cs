@@ -71,9 +71,6 @@ namespace SIPSorcery.Net
         /** The replay check windows size */
         private const long REPLAY_WINDOW_SIZE = 64;
 
-        /** RTCP SSRC of this cryptographic context */
-        private long ssrcCtx;
-        
         /** Index received so far */
         private int receivedIndex;
 
@@ -361,7 +358,7 @@ namespace SIPSorcery.Net
          * Perform Counter Mode AES encryption / decryption 
          * @param pkt the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESCM(RawPacket pkt, int index)
+        private void ProcessPacketAESCM(RawPacket pkt, int index)
         {
             long ssrc = pkt.GetRTCPSSRC();
 
@@ -406,7 +403,7 @@ namespace SIPSorcery.Net
          *
          * @param pkt the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAESF8(RawPacket pkt, int index)
+        private void ProcessPacketAESF8(RawPacket pkt, int index)
         {
             // byte[] iv = new byte[16];
 
@@ -438,7 +435,7 @@ namespace SIPSorcery.Net
             SrtpCipherF8.Process(cipher, pkt.GetBuffer(), payloadOffset, payloadLength, ivStore, cipherF8);
         }
 
-        byte[] tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
+        readonly byte[] tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
 
         /**
          * Authenticate a packet.

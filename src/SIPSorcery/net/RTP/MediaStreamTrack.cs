@@ -99,9 +99,7 @@ namespace SIPSorcery.Net
         /// an RTP/RTCP packet is received and needs to be matched against a media type or 
         /// RTCP report.
         /// </summary>
-        public Dictionary<uint, SDPSsrcAttribute> SdpSsrc { get; set; } = new Dictionary<uint, SDPSsrcAttribute>();
-
-        private uint _maxBandwith = 0;
+        private Dictionary<uint, SDPSsrcAttribute> SdpSsrc { get; } = new Dictionary<uint, SDPSsrcAttribute>();
 
         // The value used in the RTP Sequence Number header field for media packets.
         // Although valid values are all in the range of ushort, the underlying field is of type int, because Interlocked.CompareExchange is used to increment in a fast and thread-safe manner and there is no overload for ushort.

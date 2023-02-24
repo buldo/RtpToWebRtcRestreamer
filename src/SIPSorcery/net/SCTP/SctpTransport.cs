@@ -249,7 +249,7 @@ namespace SIPSorcery.Net
         protected string GetCookieHMAC(byte[] buffer)
         {
             var cookie = Encoding.UTF8.GetString(buffer).FromJson<SctpTransportCookie>();
-            string hmacCalculated = null;
+            string hmacCalculated;
             cookie.HMAC = string.Empty;
 
             byte[] cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());

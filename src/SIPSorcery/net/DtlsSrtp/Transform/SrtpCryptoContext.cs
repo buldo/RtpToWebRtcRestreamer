@@ -99,11 +99,6 @@ namespace SIPSorcery.Net
         private readonly long REPLAY_WINDOW_SIZE = 64;
 
         /**
-         * Master key identifier
-         */
-        private byte[] mki;
-
-        /**
          * Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
          */
         private int roc;
@@ -233,7 +228,6 @@ namespace SIPSorcery.Net
         public SrtpCryptoContext(int rocIn, long kdr, byte[] masterK,
                 byte[] masterS, SrtpPolicy policyIn)
         {
-            mki = null;
             roc = rocIn;
             guessedROC = 0;
             seqNum = 0;

@@ -572,7 +572,6 @@ namespace SIPSorcery.Net
                 string p = sessionParam.Trim();
                 try
                 {
-                    SrtpSessionParams paramType = SrtpSessionParams.unknown;
                     if (p.StartsWith(KDR_PREFIX))
                     {
                         string sKdr = p.Substring(KDR_PREFIX.Length);
@@ -585,8 +584,7 @@ namespace SIPSorcery.Net
                     else if (p.StartsWith(WSH_PREFIX))
                     {
                         string sWsh = p.Substring(WSH_PREFIX.Length);
-                        uint wsh = 0;
-                        if (uint.TryParse(sWsh, out wsh))
+                        if (uint.TryParse(sWsh, out var wsh))
                         {
                             return new SessionParameter(SrtpSessionParams.wsh) { Wsh = wsh };
                         }
@@ -610,7 +608,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        paramType = (from e in Enum.GetNames(typeof(SrtpSessionParams)) where e.CompareTo(p) == 0 select (SrtpSessionParams)Enum.Parse(typeof(SrtpSessionParams), e)).FirstOrDefault();
+                        var paramType = (from e in Enum.GetNames(typeof(SrtpSessionParams)) where e.CompareTo(p) == 0 select (SrtpSessionParams)Enum.Parse(typeof(SrtpSessionParams), e)).FirstOrDefault();
                         if (paramType == SrtpSessionParams.unknown)
                         {
                             throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");

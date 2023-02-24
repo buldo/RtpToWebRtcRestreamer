@@ -76,7 +76,7 @@ namespace SIPSorcery.Sys
 
             string[] values = endpointstring.Split(new[] { ':' });
             IPAddress ipaddr;
-            int port = -1;
+            int port;
 
             //check if we have an IPv6 or ports
             if (values.Length <= 2) // ipv4 or hostname

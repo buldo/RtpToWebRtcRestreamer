@@ -22,7 +22,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -320,8 +319,6 @@ namespace SIPSorcery.Net
 
             if (paramPosn < paramsBufferLength)
             {
-                bool stopProcessing = false;
-
                 foreach (var varParam in GetParameters(buffer, paramPosn, paramsBufferLength))
                 {
                     switch (varParam.ParameterType)

@@ -68,12 +68,7 @@ namespace SIPSorcery.net.RTP
         /// receiving any RTP or RTCP packets within the given period.
         /// </summary>
         public event Action<int, SDPMediaTypesEnum> OnTimeoutByIndex;
-
-        /// <summary>
-        /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
-        /// </summary>
-        public event Action<int, SDPMediaTypesEnum, RTCPCompoundPacket> OnSendReportByIndex;
-
+        
         /// <summary>
         /// Gets fired when an RTP packet is received from a remote party.
         /// Parameters are:
@@ -334,8 +329,7 @@ namespace SIPSorcery.net.RTP
                 }
                 else
                 {
-                    int outBufLen = 0;
-                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out outBufLen);
+                    int rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
@@ -356,7 +350,7 @@ namespace SIPSorcery.net.RTP
 
         public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
         {
-            RTPPacket rtpPacket = null;
+            RTPPacket rtpPacket;
             if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
             {
                 if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
