@@ -54,12 +54,6 @@ namespace SIPSorcery.Net
         /// </summary>
         public int BindPort { get; set; }
 
-        /// <summary>
-        /// Optional. If specified, overwrites BindPort and calls the PortRange whenever an RTP-Port
-        /// should be created.
-        /// </summary>
-        public PortRange RtpPortRange { get; set; }
-
         public bool IsSecure { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.DtlsSrtp; }
 
         public bool UseSdpCryptoNegotiation { get => RtpSecureMediaOption == RtpSecureMediaOptionEnum.SdpCryptoNegotiation; }

@@ -48,7 +48,7 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class STUNDns
+    public static class STUNDns
     {
         public const string MDNS_TLD = "local"; // Top Level Domain name for multicast lookups as per RFC6762.
         public const int DNS_TIMEOUT_SECONDS = 1;
@@ -66,7 +66,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Set to true to attempt a DNS lookup over TCP if the UDP lookup fails.
         /// </summary>
-        public static bool DnsUseTcpFallback => _dnsUseTcpFallback;
+        private static bool DnsUseTcpFallback => _dnsUseTcpFallback;
 
         static STUNDns()
         {

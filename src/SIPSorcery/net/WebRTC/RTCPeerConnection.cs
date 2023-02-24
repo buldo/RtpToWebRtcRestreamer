@@ -325,8 +325,9 @@ namespace SIPSorcery.Net
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
         /// <param name="configuration">Optional.</param>
-        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0, PortRange portRange = null, Boolean videoAsPrimary = false) :
-            base(true, true, true, configuration?.X_BindAddress, bindPort, portRange)
+        /// <param name="videoAsPrimary"></param>
+        public RTCPeerConnection(RTCConfiguration configuration, int bindPort = 0) :
+            base(true, true, true, configuration?.X_BindAddress, bindPort)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
             
@@ -369,7 +370,7 @@ namespace SIPSorcery.Net
 
             // Request the underlying RTP session to create a single RTP channel that will
             // be used to multiplex all required media streams.
-            addSingleTrack(videoAsPrimary);
+            addSingleTrack(false);
 
             _rtpIceChannel = GetRtpChannel();
 
@@ -584,8 +585,7 @@ namespace SIPSorcery.Net
             _configuration?.iceServers,
             _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
             _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
-            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2,
-            rtpSessionConfig.RtpPortRange);
+            rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2);
 
             if (rtpSessionConfig.IsMediaMultiplexed)
             {
@@ -848,7 +848,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be sued to apply additional
         /// controls over the generated offer SDP.</param>
-        public RTCSessionDescriptionInit createOffer(RTCOfferOptions options = null)
+        public RTCSessionDescriptionInit createOffer()
         {
             List<MediaStream> mediaStreamList = GetMediaStreams();
             //Revert to DefaultStreamStatus
@@ -860,8 +860,7 @@ namespace SIPSorcery.Net
                 }
             }
 
-            bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-            var offerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
+            var offerSdp = createBaseSdp(mediaStreamList);
 
             foreach (var ann in offerSdp.Media)
             {

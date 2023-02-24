@@ -30,7 +30,7 @@ namespace SIPSorcery.Sys
     /// <summary>
     /// Helper class to provide network services.
     /// </summary>
-    public class NetServices
+    public static class NetServices
     {
         private const int RTP_RECEIVE_BUFFER_SIZE = 1000000;
         private const int RTP_SEND_BUFFER_SIZE = 1000000;
@@ -67,7 +67,8 @@ namespace SIPSorcery.Sys
         /// To date the only case this has cropped up for is Mac OS as per https://github.com/sipsorcery/sipsorcery/issues/207.
         /// </summary>
         private static bool? _supportsDualModeIPv4PacketInfo = null;
-        public static bool SupportsDualModeIPv4PacketInfo
+
+        private static bool SupportsDualModeIPv4PacketInfo
         {
             get
             {
@@ -96,8 +97,6 @@ namespace SIPSorcery.Sys
         /// </summary>
         private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
             new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
-
-        private static IPAddress _internetDefaultIPv6Address = null;
 
         /// <summary>
         /// Checks whether an IP address can be used on the underlying System.
@@ -483,7 +482,7 @@ namespace SIPSorcery.Sys
         /// </summary>
         /// <param name="destination">The remote destination to find a local IP address for.</param>
         /// <returns>The local IP address to use to connect to the remote end point.</returns>
-        public static IPAddress GetLocalAddressForRemote(IPAddress destination)
+        private static IPAddress GetLocalAddressForRemote(IPAddress destination)
         {
             if (destination == null || IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
             {

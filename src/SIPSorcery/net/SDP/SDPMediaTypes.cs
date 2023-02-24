@@ -21,7 +21,7 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    public class SDPMediaTypes
+    public static class SDPMediaTypes
     {
         public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
         {

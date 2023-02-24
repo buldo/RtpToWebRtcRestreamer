@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Sys
 {
-    internal class Log
+    internal static class Log
     {
         private const string LOG_CATEGORY = "sipsorcery";
 

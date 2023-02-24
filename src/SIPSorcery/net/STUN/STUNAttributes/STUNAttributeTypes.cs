@@ -2,7 +2,7 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    public class STUNAttributeTypes
+    public static class STUNAttributeTypes
     {
         public static STUNAttributeTypesEnum GetSTUNAttributeTypeForId(int stunAttributeTypeId)
         {

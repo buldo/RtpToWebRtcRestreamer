@@ -398,15 +398,14 @@ namespace SIPSorcery.Net
         /// <param name="bindPort">Optional. If specified a single attempt will be made to bind the RTP socket
         /// on this port. It's recommended to leave this parameter as the default of 0 to let the Operating
         /// System select the port number.</param>
-        public RTPSession(bool isMediaMultiplexed, bool isRtcpMultiplexed, bool isSecure, IPAddress bindAddress = null, int bindPort = 0, PortRange portRange = null)
+        protected RTPSession(bool isMediaMultiplexed, bool isRtcpMultiplexed, bool isSecure, IPAddress bindAddress = null, int bindPort = 0)
             : this(new RtpSessionConfig
             {
                 IsMediaMultiplexed = isMediaMultiplexed,
                 IsRtcpMultiplexed = isRtcpMultiplexed,
                 RtpSecureMediaOption = isSecure ? RtpSecureMediaOptionEnum.DtlsSrtp : RtpSecureMediaOptionEnum.None,
                 BindAddress = bindAddress,
-                BindPort = bindPort,
-                RtpPortRange = portRange
+                BindPort = bindPort
             })
         {
         }
@@ -1193,7 +1192,7 @@ namespace SIPSorcery.Net
 
             // If RTCP is multiplexed we don't need a control socket.
             int bindPort = (rtpSessionConfig.BindPort == 0) ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2;
-            var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort, rtpSessionConfig.RtpPortRange);
+            var rtpChannel = new RTPChannel(!rtpSessionConfig.IsRtcpMultiplexed, rtpSessionConfig.BindAddress, bindPort);
 
 
             if (rtpSessionConfig.IsMediaMultiplexed)

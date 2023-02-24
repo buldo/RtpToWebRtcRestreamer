@@ -40,51 +40,6 @@ namespace SIPSorcery.Sys
         private int m_nextPort;
 
         /// <summary>
-        /// Initializes a new PortRange.
-        /// </summary>
-        /// <param name="startPort">Inclusive, lowest port within this portrange. must be an even number</param>
-        /// <param name="endPort">Inclusive, highest port within this portrange.</param>
-        /// <param name="shuffle">optional, if set, the ports are assigned in a pseudorandom order.</param>
-        /// <param name="randomSeed">optional, the seed for the pseudorandom order.</param>
-        /// <exception cref="ArgumentException"></exception>
-        public PortRange(int startPort, int endPort, bool shuffle = false, int? randomSeed = null)
-        {
-            if (startPort <= 0 || startPort > IPEndPoint.MaxPort)
-            {
-                throw new ArgumentException($"startPort must be greater than 0 and less than or euqal {IPEndPoint.MaxPort}");
-            }
-            if (endPort <= 0 || endPort > IPEndPoint.MaxPort)
-            {
-                throw new ArgumentException($"endPort must be greater than 0 and less than or euqal {IPEndPoint.MaxPort}");
-            }
-            if (endPort - startPort < 2)
-            {
-                throw new ArgumentException($"endPort({endPort}) - startPort({startPort}) must be at least 2, but is {endPort - startPort}");
-            }
-            if (startPort % 2 == 1)
-            {
-                throw new ArgumentException("startPort must be even");
-            }
-            if (endPort % 2 == 0)
-            {
-                endPort -= 1;// correct end-port to odd if even -> RtpPort are always handed out in pairs
-            }
-            m_startPort = startPort;
-            m_endPort = endPort;
-            m_shuffle = shuffle;
-            if (shuffle)
-            {
-                m_random = randomSeed.HasValue ? new Random(randomSeed.Value) : new Random();
-                m_nextPort = m_random.Next(m_startPort, m_endPort + 1) // The + 1 is needed to get an even distribution because Random.Next(start, end) is inclusive start but exclusive the end
-                    & 0x0000_FFFE; // AND with IPEndPoint.MaxPort but last bit is set to zero to always have an even port
-            }
-            else
-            {
-                m_nextPort = startPort;
-            }
-        }
-
-        /// <summary>
         /// Calculates the next port which should be tried.
         /// No guarantee is made, that the returned port can also be bound to; actual check is still needed.
         /// Caller of this method should try to bind to the socket and if not successful, try again for x times
@@ -93,7 +48,7 @@ namespace SIPSorcery.Sys
         /// This method is thread-safe
         /// </summary>
         /// <returns>port from the portrange</returns>
-        public virtual int GetNextPort()
+        public int GetNextPort()
         {
             lock (this)
             {

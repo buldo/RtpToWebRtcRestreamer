@@ -2,7 +2,7 @@
 
 namespace SIPSorcery.Net
 {
-    public class STUNConstants
+    public static class STUNConstants
     {
         public const int DEFAULT_STUN_PORT = 3478;
         public const int DEFAULT_STUN_TLS_PORT = 5349;

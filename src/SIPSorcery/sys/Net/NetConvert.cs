@@ -18,7 +18,7 @@ using System.Linq;
 
 namespace SIPSorcery.Sys
 {
-    public class NetConvert
+    public static class NetConvert
     {
         public static UInt16 DoReverseEndian(UInt16 x)
         {
@@ -120,7 +120,7 @@ namespace SIPSorcery.Sys
         /// <param name="val">The value to write to the buffer.</param>
         /// <param name="buffer">The buffer to write the value to.</param>
         /// <param name="posn">The start position in the buffer to write the value at.</param>
-        public static void ToBuffer(ulong val, byte[] buffer, int posn)
+        private static void ToBuffer(ulong val, byte[] buffer, int posn)
         {
             if (buffer.Length < posn + 8)
             {

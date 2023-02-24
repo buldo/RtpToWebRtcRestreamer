@@ -4,10 +4,10 @@ using System;
 
 namespace SIPSorcery.Sys
 {
-    public class Crc32
+    public static class Crc32
     {
-        public const UInt32 DefaultPolynomial = 0xedb88320;
-        public const UInt32 DefaultSeed = 0xffffffff;
+        private const UInt32 DefaultPolynomial = 0xedb88320;
+        private const UInt32 DefaultSeed = 0xffffffff;
 
         private static UInt32[] defaultTable;
         

@@ -35,16 +35,6 @@ namespace SIPSorcery.Net
         private RTCPeerConnection _pc;
 
         /// <summary>
-        /// Optional property to allow the peer connection SDP offer options to be set.
-        /// </summary>
-        public RTCOfferOptions OfferOptions { get; set; }
-
-        /// <summary>
-        /// Optional property to allow the peer connection SDP answer options to be set.
-        /// </summary>
-        public RTCAnswerOptions AnswerOptions { get; set; }
-
-        /// <summary>
         /// Optional filter that can be applied to remote ICE candidates. The filter is 
         /// primarily intended for use in testing. In real application scenarios it's 
         /// normally desirable to accept all remote ICE candidates.
@@ -94,7 +84,7 @@ namespace SIPSorcery.Net
                 {
                     if(_pc.signalingState == RTCSignalingState.have_remote_offer)
                     {
-                        var answerSdp = _pc.createAnswer(AnswerOptions);
+                        var answerSdp = _pc.createAnswer(null);
                         await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
                         logger.LogDebug($"Sending SDP answer to client {Context.UserEndPoint}.");
@@ -129,7 +119,7 @@ namespace SIPSorcery.Net
 
             if (base.Context.QueryString["role"] != "offer")
             {
-                var offerSdp = _pc.createOffer(OfferOptions);
+                var offerSdp = _pc.createOffer();
                 await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);
 
                 logger.LogDebug($"Sending SDP offer to client {Context.UserEndPoint}.");

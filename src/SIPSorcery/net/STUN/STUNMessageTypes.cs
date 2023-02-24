@@ -2,7 +2,7 @@ using System;
 
 namespace SIPSorcery.Net
 {
-    public class STUNMessageTypes
+    public static class STUNMessageTypes
     {
         public static STUNMessageTypesEnum GetSTUNMessageTypeForId(int stunMessageTypeId)
         {
