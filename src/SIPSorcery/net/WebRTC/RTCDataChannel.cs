@@ -193,18 +193,8 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for an SCTP data chunk being received for this data channel.
         /// </summary>
-        internal void GotData(ushort streamID, ushort streamSeqNum, uint ppID, byte[] data)
+        internal void GotData(uint ppID, byte[] data)
         {
-            //logger.LogTrace($"WebRTC data channel GotData stream ID {streamID}, stream seqnum {streamSeqNum}, ppid {ppID}, label {label}.");
-
-            // If the ppID is not recognised default to binary.
-            DataChannelPayloadProtocols payloadType = DataChannelPayloadProtocols.WebRTC_Binary;
-
-            if (Enum.IsDefined(typeof(DataChannelPayloadProtocols), ppID))
-            {
-                payloadType = (DataChannelPayloadProtocols)ppID;
-            }
-
             onmessage?.Invoke(this, (DataChannelPayloadProtocols)ppID, data);
         }
     }

@@ -341,11 +341,8 @@ namespace SIPSorcery.Net
             {
                 _configuration = configuration;
 
-                if (!InitializeCertificates(configuration) && !InitializeCertificates2(configuration))
-                {
-                    logger.LogWarning("No DTLS certificate is provided in the configuration");
-                }
-
+                logger.LogWarning("No DTLS certificate is provided in the configuration");
+                
                 if (_configuration.X_UseRtpFeedbackProfile)
                 {
                     RTP_MEDIA_PROFILE = RTP_MEDIA_FEEDBACK_PROFILE;
@@ -356,12 +353,10 @@ namespace SIPSorcery.Net
                 _configuration = new RTCConfiguration();
             }
 
-            if (_dtlsCertificate == null)
-            {
-                // No certificate was provided so create a new self signed one.
-                (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
-            }
-
+            
+            // No certificate was provided so create a new self signed one.
+            (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
             SessionID = Guid.NewGuid().ToString();
@@ -393,16 +388,6 @@ namespace SIPSorcery.Net
             // calls and/or initialising DNS was taking up to 600ms, see
             // https://github.com/sipsorcery-org/sipsorcery/issues/456.
             _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
-        }
-
-        private bool InitializeCertificates(RTCConfiguration configuration)
-        {
-            return false;
-        }
-
-        private bool InitializeCertificates2(RTCConfiguration configuration)
-        {
-            return false;
         }
 
         /// <summary>
@@ -1320,7 +1305,7 @@ namespace SIPSorcery.Net
         {
             if (dataChannels.TryGetChannel(frame.StreamID, out var dc))
             {
-                dc.GotData(frame.StreamID, frame.StreamSeqNum, frame.PPID, frame.UserData);
+                dc.GotData(frame.PPID, frame.UserData);
             }
             else
             {
