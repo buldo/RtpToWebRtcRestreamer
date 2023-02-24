@@ -1,4 +1,4 @@
-﻿namespace SIPSorcery.SIP.App
+﻿namespace SIPSorcery
 {
     /// <summary>
     /// The type of the SDP packet being set.

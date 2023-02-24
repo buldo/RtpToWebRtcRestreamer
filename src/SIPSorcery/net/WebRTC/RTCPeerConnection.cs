@@ -44,7 +44,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP;
 using Org.BouncyCastle.Crypto.Tls;
-using SIPSorcery.SIP.App;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net

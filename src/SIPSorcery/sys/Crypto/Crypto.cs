@@ -27,14 +27,8 @@ namespace SIPSorcery.Sys
 {
     public class Crypto
     {
-        // TODO: When .NET Standard and Framework support are deprecated these pragmas can be removed.
-#pragma warning disable SYSLIB0001
-#pragma warning disable SYSLIB0021
-#pragma warning disable SYSLIB0023
+        private const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
 
-        public const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
-        public const int AES_KEY_SIZE = 32;
-        public const int AES_IV_SIZE = 16;
         private const string CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         private static ILogger logger = Log.Logger;
@@ -44,104 +38,12 @@ namespace SIPSorcery.Sys
         static readonly ThreadLocal<Random> random =
             new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
 
-        public static int Rand()
-        {
-            return random.Value.Next();
-        }
-
         public static int Rand(int maxValue)
         {
             return random.Value.Next(maxValue);
         }
 
         private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
-
-        public static string SymmetricEncrypt(string key, string iv, string plainText)
-        {
-            if (plainText.IsNullOrBlank())
-            {
-                throw new ApplicationException("The plain text string cannot be empty in SymmetricEncrypt.");
-            }
-
-            return SymmetricEncrypt(key, iv, Encoding.UTF8.GetBytes(plainText));
-        }
-
-        public static string SymmetricEncrypt(string key, string iv, byte[] plainTextBytes)
-        {
-            if (key.IsNullOrBlank())
-            {
-                throw new ApplicationException("The key string cannot be empty in SymmetricEncrypt.");
-            }
-            else if (iv.IsNullOrBlank())
-            {
-                throw new ApplicationException("The initialisation vector cannot be empty in SymmetricEncrypt.");
-            }
-            else if (plainTextBytes == null)
-            {
-                throw new ApplicationException("The plain text string cannot be empty in SymmetricEncrypt.");
-            }
-
-            AesManaged aes = new AesManaged();
-            ICryptoTransform encryptor = aes.CreateEncryptor(GetFixedLengthByteArray(key, AES_KEY_SIZE), GetFixedLengthByteArray(iv, AES_IV_SIZE));
-
-            MemoryStream resultStream = new MemoryStream();
-            CryptoStream cryptoStream = new CryptoStream(resultStream, encryptor, CryptoStreamMode.Write);
-            cryptoStream.Write(plainTextBytes, 0, plainTextBytes.Length);
-            cryptoStream.Close();
-
-            return Convert.ToBase64String(resultStream.ToArray());
-        }
-
-        public static string SymmetricDecrypt(string key, string iv, string cipherText)
-        {
-            if (cipherText.IsNullOrBlank())
-            {
-                throw new ApplicationException("The cipher text string cannot be empty in SymmetricDecrypt.");
-            }
-
-            return SymmetricDecrypt(key, iv, Convert.FromBase64String(cipherText));
-        }
-
-        public static string SymmetricDecrypt(string key, string iv, byte[] cipherBytes)
-        {
-            if (key.IsNullOrBlank())
-            {
-                throw new ApplicationException("The key string cannot be empty in SymmetricDecrypt.");
-            }
-            else if (iv.IsNullOrBlank())
-            {
-                throw new ApplicationException("The initialisation vector cannot be empty in SymmetricDecrypt.");
-            }
-            else if (cipherBytes == null)
-            {
-                throw new ApplicationException("The cipher byte array cannot be empty in SymmetricDecrypt.");
-            }
-
-            AesManaged aes = new AesManaged();
-            ICryptoTransform encryptor = aes.CreateDecryptor(GetFixedLengthByteArray(key, AES_KEY_SIZE), GetFixedLengthByteArray(iv, AES_IV_SIZE));
-
-            MemoryStream cipherStream = new MemoryStream(cipherBytes);
-            CryptoStream cryptoStream = new CryptoStream(cipherStream, encryptor, CryptoStreamMode.Read);
-            StreamReader cryptoStreamReader = new StreamReader(cryptoStream);
-            return cryptoStreamReader.ReadToEnd();
-        }
-
-        private static byte[] GetFixedLengthByteArray(string value, int length)
-        {
-            if (value.Length < length)
-            {
-                while (value.Length < length)
-                {
-                    value += 0x00;
-                }
-            }
-            else if (value.Length > length)
-            {
-                value = value.Substring(0, length);
-            }
-
-            return Encoding.UTF8.GetBytes(value);
-        }
 
         public static string GetRandomString(int length)
         {
@@ -152,11 +54,6 @@ namespace SIPSorcery.Sys
                 buffer[i] = CHARS[Rand(CHARS.Length)];
             }
             return new string(buffer);
-        }
-
-        public static string GetRandomString()
-        {
-            return GetRandomString(DEFAULT_RANDOM_LENGTH);
         }
 
         /// <summary>
@@ -245,80 +142,6 @@ namespace SIPSorcery.Sys
             return BitConverter.ToUInt64(uint64Buffer, 0);
         }
 
-        public static byte[] createRandomSalt(int length)
-        {
-            byte[] randBytes = new byte[length];
-            m_randomProvider.GetBytes(randBytes);
-            return randBytes;
-        }
-
-        /// <summary>
-        /// This version reads the whole file in at once. This is not great since it can consume
-        /// a lot of memory if the file is large. However a buffered approach generates
-        /// different hashes across different platforms.
-        /// </summary>
-        /// <param name="filepath"></param>
-        /// <returns></returns>
-        public static string GetHash(string filepath)
-        {
-            // Check and then attempt to open the plain-text stream.
-            FileStream fileStream = GetFileStream(filepath);
-
-            // Encrypt the file using its hash as the key.
-            SHA1 shaM = new SHA1Managed();
-
-            // Buffer to read in plain text blocks.
-            byte[] fileBuffer = new byte[fileStream.Length];
-            fileStream.Read(fileBuffer, 0, (int)fileStream.Length);
-            fileStream.Close();
-
-            byte[] overallHash = shaM.ComputeHash(fileBuffer);
-
-            return Convert.ToBase64String(overallHash);
-        }
-
-        /// <summary>
-        /// Used by methods wishing to perform a hash operation on a file. This method
-        /// will perform a number of checks and if happy return a read only file stream.
-        /// </summary>
-        /// <param name="filepath">The path to the input file for the hash operation.</param>
-        /// <returns>A read only file stream for the file or throws an exception if there is a problem.</returns>
-        private static FileStream GetFileStream(string filepath)
-        {
-            // Check that the file exists.
-            if (!File.Exists(filepath))
-            {
-                logger.LogError("Cannot open a non-existent file for a hash operation, " + filepath + ".");
-                throw new IOException("Cannot open a non-existent file for a hash operation, " + filepath + ".");
-            }
-
-            // Open the file.
-            FileStream inputStream = File.OpenRead(filepath);
-
-            if (inputStream.Length == 0)
-            {
-                inputStream.Close();
-                logger.LogError("Cannot perform a hash operation on an empty file, " + filepath + ".");
-                throw new IOException("Cannot perform a hash operation on an empty file, " + filepath + ".");
-            }
-
-            return inputStream;
-        }
-
-        /// <summary>
-        /// Gets an "X2" string representation of a random number.
-        /// </summary>
-        /// <param name="byteLength">The byte length of the random number string to obtain.</param>
-        /// <returns>A string representation of the random number. It will be twice the length of byteLength.</returns>
-        public static string GetRandomByteString(int byteLength)
-        {
-            byte[] myKey = new byte[byteLength];
-            m_randomProvider.GetBytes(myKey);
-            string sessionID = null;
-            myKey.ToList().ForEach(b => sessionID += b.ToString("x2"));
-            return sessionID;
-        }
-
         /// <summary>
         /// Fills a buffer with random bytes.
         /// </summary>
@@ -328,7 +151,7 @@ namespace SIPSorcery.Sys
             m_randomProvider.GetBytes(buffer);
         }
 
-        public static byte[] GetSHAHash(params string[] values)
+        private static byte[] GetSHAHash(params string[] values)
         {
             SHA1 sha = new SHA1Managed();
             string plainText = null;
@@ -359,19 +182,6 @@ namespace SIPSorcery.Sys
         }
 
         /// <summary>
-        /// Gets the HSA256 hash of an arbitrary buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer to hash.</param>
-        /// <returns>A hex string representing the hashed buffer.</returns>
-        public static string GetSHA256Hash(byte[] buffer)
-        {
-            using(SHA256Managed sha256 = new SHA256Managed())
-            {
-                return sha256.ComputeHash(buffer).HexStr();
-            }
-        }
-
-        /// <summary>
         /// Attempts to load an X509 certificate from a Windows OS certificate store.
         /// </summary>
         /// <param name="storeLocation">The certificate store to load from, can be CurrentUser or LocalMachine.</param>
@@ -399,8 +209,4 @@ namespace SIPSorcery.Sys
             }
         }
     }
-
-#pragma warning restore SYSLIB0001
-#pragma warning restore SYSLIB0021
-#pragma warning restore SYSLIB0023
 }
