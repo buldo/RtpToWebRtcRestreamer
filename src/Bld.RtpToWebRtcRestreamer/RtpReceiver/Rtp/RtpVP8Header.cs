@@ -26,15 +26,6 @@ internal class RtpVP8Header
         get { return _length; }
     }
 
-    private int _payloadDescriptorLength;
-    public int PayloadDescriptorLength
-    {
-        get { return _payloadDescriptorLength; }
-    }
-
-    public RtpVP8Header()
-    { }
-
     public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
     {
         var vp8Header = new RtpVP8Header();
@@ -71,8 +62,6 @@ internal class RtpVP8Header
                 payloadHeaderStartIndex = 3;
             }
         }
-
-        vp8Header._payloadDescriptorLength = payloadHeaderStartIndex;
 
         return vp8Header;
     }

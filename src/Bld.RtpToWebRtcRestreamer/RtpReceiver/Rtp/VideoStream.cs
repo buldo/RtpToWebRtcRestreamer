@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
-internal class VideoStream
+internal sealed class VideoStream
 {
     private readonly ILogger _logger;
 
@@ -73,7 +73,7 @@ internal class VideoStream
         }
     }
 
-    protected class PendingPackages
+    private class PendingPackages
     {
         public RTPHeader hdr;
         public int localPort;
@@ -91,14 +91,14 @@ internal class VideoStream
         }
     }
 
-    protected object _pendingPackagesLock = new object();
-    protected List<PendingPackages> _pendingPackagesBuffer = new List<PendingPackages>();
+    private object _pendingPackagesLock = new object();
+    private List<PendingPackages> _pendingPackagesBuffer = new List<PendingPackages>();
 
     private RtpSessionConfig RtpSessionConfig;
 
-    protected RTPChannel rtpChannel;
+    private RTPChannel rtpChannel;
 
-    protected bool _isClosed;
+    private bool _isClosed;
 
     public int Index = -1;
 
@@ -275,7 +275,7 @@ internal class VideoStream
 
 
     // Submit all previous cached packages to self
-    protected virtual void DispatchPendingPackages()
+    private void DispatchPendingPackages()
     {
         PendingPackages[] pendingPackagesArray = null;
 
@@ -302,7 +302,7 @@ internal class VideoStream
     }
 
     // Clear previous buffer
-    protected virtual void ClearPendingPackages()
+    private void ClearPendingPackages()
     {
         lock (_pendingPackagesLock)
         {

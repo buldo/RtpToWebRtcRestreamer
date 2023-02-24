@@ -76,7 +76,7 @@ internal class RtpVideoFramer
             //logger.LogDebug($"rtp H264 video, seqnum {hdr.SequenceNumber}, ts {hdr.Timestamp}, marker {hdr.MarkerBit}, payload {payload.Length}.");
 
             //var hdr = rtpPacket.Header;
-            var frameStream = _h264Depacketiser!.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out var isKeyFrame);
+            var frameStream = _h264Depacketiser!.ProcessRTPPayload(payload, hdr.SequenceNumber, hdr.Timestamp, hdr.MarkerBit, out _);
 
             if (frameStream != null)
             {

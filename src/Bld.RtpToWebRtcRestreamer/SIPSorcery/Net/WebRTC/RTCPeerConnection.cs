@@ -108,7 +108,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
         private const string BUNDLE_ATTRIBUTE = "BUNDLE";
         private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
-        private const string NORMAL_CLOSE_REASON = "normal";
         private const ushort SCTP_DEFAULT_PORT = 5000;
 
         /// <summary>
@@ -1074,7 +1073,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             {
                 Logger.LogDebug("SCTP transport successfully connected.");
 
-                sctp.RTCSctpAssociation.OnDataChannelData += OnSctpAssociationDataChunk;
                 sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
                 sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
 
@@ -1127,25 +1125,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             else
             {
                 Logger.LogWarning($"WebRTC data channel got ACK but data channel not found for stream ID {streamID}.");
-            }
-        }
-
-        /// <summary>
-        /// Event handler for an SCTP DATA chunk being received on the SCTP association.
-        /// </summary>
-        /// <param name="streamID">The stream ID of the chunk.</param>
-        /// <param name="streamSeqNum">The stream sequence number of the chunk. Will be 0 for unordered streams.</param>
-        /// <param name="ppID">The payload protocol ID for the chunk.</param>
-        /// <param name="data">The chunk data.</param>
-        private void OnSctpAssociationDataChunk(SctpDataFrame frame)
-        {
-            if (dataChannels.TryGetChannel(frame.StreamID, out var dc))
-            {
-                dc.GotData(frame.PPID, frame.UserData);
-            }
-            else
-            {
-                Logger.LogWarning($"WebRTC data channel got data but no channel found for stream ID {frame.StreamID}.");
             }
         }
 

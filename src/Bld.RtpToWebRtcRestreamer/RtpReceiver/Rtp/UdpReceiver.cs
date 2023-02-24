@@ -19,7 +19,7 @@ internal delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPor
 /// Mono Socket source:
 /// https://github.com/mono/mono/blob/master/mcs/class/System/System.Net.Sockets/Socket.cs
 /// </remarks>
-internal class UdpReceiver
+internal sealed class UdpReceiver
 {
     /// <summary>
     /// MTU is 1452 bytes so this should be heaps.
@@ -36,7 +36,7 @@ internal class UdpReceiver
     private readonly IPEndPoint _localEndPoint;
     private readonly AddressFamily _addressFamily;
 
-    public virtual bool IsClosed
+    public bool IsClosed
     {
         get => _isClosed;
         protected set
@@ -49,7 +49,7 @@ internal class UdpReceiver
         }
     }
 
-    public virtual bool IsRunningReceive
+    public bool IsRunningReceive
     {
         get => _isRunningReceive;
         protected set
@@ -84,7 +84,7 @@ internal class UdpReceiver
     /// Starts the receive. This method returns immediately. An event will be fired in the corresponding "End" event to
     /// return any data received.
     /// </summary>
-    public virtual void BeginReceiveFrom()
+    public void BeginReceiveFrom()
     {
         //Prevent call BeginReceiveFrom if it is already running
         if (_isClosed && _isRunningReceive)
@@ -221,7 +221,7 @@ internal class UdpReceiver
     /// <summary>
     /// Closes the socket and stops any new receives from being initiated.
     /// </summary>
-    public virtual void Close(string reason)
+    public void Close(string reason)
     {
         if (!_isClosed)
         {
@@ -232,7 +232,7 @@ internal class UdpReceiver
         }
     }
 
-    protected virtual void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
     {
         OnPacketReceived?.Invoke(this, localPort, remoteEndPoint, packet);
     }

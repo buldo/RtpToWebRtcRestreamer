@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 /// Real-time Control Protocol (RTCP) packets. This class performs the socket management
 /// functions.
 /// </summary>
-internal class RTPChannel : IDisposable
+internal sealed class RTPChannel : IDisposable
 {
     private readonly ILogger _logger;
 
@@ -134,7 +134,7 @@ internal class RTPChannel : IDisposable
     /// <param name="localPort">The local port it was received on.</param>
     /// <param name="remoteEndPoint">The remote end point of the sender.</param>
     /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-    protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
     {
         if (packet?.Length > 0)
         {
@@ -142,7 +142,7 @@ internal class RTPChannel : IDisposable
         }
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         Close(null);
     }

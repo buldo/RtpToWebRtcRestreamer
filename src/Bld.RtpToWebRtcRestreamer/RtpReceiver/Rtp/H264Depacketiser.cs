@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
-internal class H264Depacketiser
+internal sealed class H264Depacketiser
 {
     const int SPS = 7;
     const int PPS = 8;
@@ -12,7 +12,7 @@ internal class H264Depacketiser
     uint _previousTimestamp;
     int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24; // used for diagnostics stats
 
-    public virtual MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
+    public MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
     {
         var nalUnits = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
 
@@ -98,7 +98,7 @@ internal class H264Depacketiser
 
     // Process a RTP Frame. A RTP Frame can consist of several RTP Packets which have the same Timestamp
     // Returns a list of NAL Units (with no 00 00 00 01 header and with no Size header)
-    protected virtual List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
+    private List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
     {
         bool? isKeyFrameNullable = null;
         var nalUnits = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
