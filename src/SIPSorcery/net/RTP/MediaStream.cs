@@ -56,8 +56,6 @@ namespace SIPSorcery.net.RTP
         protected SecureContext SecureContext;
         protected SrtpHandler SrtpHandler;
 
-        private RTPReorderBuffer RTPReorderBuffer = null;
-
         MediaStreamTrack m_localTrack;
 
         protected RTPChannel rtpChannel = null;
@@ -202,20 +200,6 @@ namespace SIPSorcery.net.RTP
         public IPEndPoint ControlDestinationEndPoint { get; set; }
 
         #endregion PROPERTIES
-
-        #region REORDER BUFFER
-
-        public Boolean UseBuffer()
-        {
-            return RTPReorderBuffer != null;
-        }
-
-        public RTPReorderBuffer GetBuffer()
-        {
-            return RTPReorderBuffer;
-        }
-
-        #endregion REORDER BUFFER
 
         #region SECURITY CONTEXT
 
@@ -446,27 +430,9 @@ namespace SIPSorcery.net.RTP
             var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
             if ((rtpPacket != null) && (format != null))
             {
-                if (UseBuffer())
-                {
-                    var reorderBuffer = GetBuffer();
-                    reorderBuffer.Add(rtpPacket);
-                    while (reorderBuffer.Get(out var bufferedPacket))
-                    {
-                        if (RemoteTrack != null)
-                        {
-                            LogIfWrongSeqNumber($"{MediaType}", bufferedPacket.Header, RemoteTrack);
-                            RemoteTrack.LastRemoteSeqNum = bufferedPacket.Header.SequenceNumber;
-                        }
-                        videoStream?.ProcessVideoRtpFrame(remoteEndPoint, bufferedPacket, format.Value);
-                        RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, bufferedPacket);
-                    }
-                }
-                else
-                {
-                    videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format.Value);
-                    RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
-                }
-
+                videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format.Value);
+                RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
+                
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
             }
         }
