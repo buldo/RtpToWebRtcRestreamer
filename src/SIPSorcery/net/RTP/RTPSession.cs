@@ -89,7 +89,7 @@ namespace SIPSorcery.Net
         /// still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
         /// in an RFC somewhere but I wasn't able to find it from a quick search.
         /// </summary>
-        public const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
+        private const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
 
         protected static ILogger logger = Log.Logger;
 
@@ -100,22 +100,22 @@ namespace SIPSorcery.Net
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
-        protected MediaStream m_primaryStream;
+        private MediaStream m_primaryStream;
 
         protected RTPChannel MultiplexRtpChannel;
 
-        protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
-        protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
+        private List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
+        private List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
 
         /// <summary>
         /// Track if current remote description is invalid (used in Renegotiation logic)
         /// </summary>
-        public virtual bool RequireRenegotiation { get; protected internal set; }
+        protected virtual bool RequireRenegotiation { get; set; }
 
         /// <summary>
         /// The primary stream for this session - can be an AudioStream or a VideoStream
         /// </summary>
-        public MediaStream PrimaryStream
+        protected MediaStream PrimaryStream
         {
             get
             {
@@ -126,7 +126,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The primary Audio Stream for this session
         /// </summary>
-        public AudioStream AudioStream
+        private AudioStream AudioStream
         {
             get
             {
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// The primary Video Stream for this session
         /// </summary>
-        public VideoStream VideoStream
+        private VideoStream VideoStream
         {
             get
             {
@@ -155,23 +155,23 @@ namespace SIPSorcery.Net
         /// <summary>
         /// List of all Audio Streams for this session
         /// </summary>
-        public List<AudioStream> AudioStreamList { get; private set; } = new List<AudioStream>();
+        private List<AudioStream> AudioStreamList { get; } = new List<AudioStream>();
 
         /// <summary>
         /// List of all Video Streams for this session
         /// </summary>
-        public List<VideoStream> VideoStreamList { get; private set; } = new List<VideoStream>();
+        private List<VideoStream> VideoStreamList { get; } = new List<VideoStream>();
 
         /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
-        public SDP RemoteDescription { get; protected set; }
+        protected SDP RemoteDescription { get; set; }
 
         /// <summary>
         /// If this session is using a secure context this flag MUST be set to indicate
         /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
         /// </summary>
-        public bool IsSecureContextReady()
+        private bool IsSecureContextReady()
         {
             if (HasAudio && !AudioStream.IsSecurityContextReady())
             {
@@ -190,24 +190,24 @@ namespace SIPSorcery.Net
         /// If this session is using a secure context this list MAY contain custom
         /// Crypto Suites
         /// </summary>
-        public List<SDPSecurityDescription.CryptoSuites> SrtpCryptoSuites { get; set; }
+        private List<SDPSecurityDescription.CryptoSuites> SrtpCryptoSuites { get; }
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot
         /// be restarted.
         /// </summary>
-        public bool IsClosed { get; private set; }
+        protected bool IsClosed { get; private set; }
 
         /// <summary>
         /// Indicates whether the session has been started. Starting a session tells the RTP 
         /// socket to start receiving,
         /// </summary>
-        public bool IsStarted { get; private set; }
+        private bool IsStarted { get; set; }
 
         /// <summary>
         /// Indicates whether this session is using audio.
         /// </summary>
-        public bool HasAudio
+        private bool HasAudio
         {
             get
             {
@@ -218,7 +218,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Indicates whether this session is using video.
         /// </summary>
-        public bool HasVideo
+        private bool HasVideo
         {
             get
             {
@@ -232,88 +232,14 @@ namespace SIPSorcery.Net
         /// a particular audio or video stream. It is recommended to leave the
         /// value to false unless a specific need exists.
         /// </summary>
-        public bool AcceptRtpFromAny
+        private bool AcceptRtpFromAny
         {
             get
             {
                 return m_acceptRtpFromAny;
             }
         }
-
-        /// <summary>
-        /// Gets fired when the remote SDP is received and the set of common audio formats is set. (on the primary one)
-        /// </summary>
-        public event Action<List<AudioFormat>> OnAudioFormatsNegotiated;
-
-        /// <summary>
-        /// Gets fired when the remote SDP is received and the set of common audio formats is set. (using its index)
-        /// </summary>
-        public event Action<int, List<AudioFormat>> OnAudioFormatsNegotiatedByIndex;
-
-        /// <summary>
-        /// Gets fired when the remote SDP is received and the set of common video formats is set. (on the primary one)
-        /// </summary>
-        public event Action<List<VideoFormat>> OnVideoFormatsNegotiated;
-
-        /// <summary>
-        /// Gets fired when the remote SDP is received and the set of common video formats is set. (using its index)
-        /// </summary>
-        public event Action<int, List<VideoFormat>> OnVideoFormatsNegotiatedByIndex;
-
-        /// <summary>
-        /// Gets fired when a full video frame is reconstructed from one or more RTP packets
-        /// received from the remote party. (on the primary one)
-        /// </summary>
-        /// <remarks>
-        ///  - Received from end point,
-        ///  - The frame timestamp,
-        ///  - The encoded video frame payload.
-        ///  - The video format of the encoded frame.
-        /// </remarks>
-        public event Action<IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceived;
-
-        /// <summary>
-        /// Gets fired when a full video frame is reconstructed from one or more RTP packets
-        /// received from the remote party. (using its index)
-        /// </summary>
-        /// <remarks>
-        ///  - Index of the VideoStream
-        ///  - Received from end point,
-        ///  - The frame timestamp,
-        ///  - The encoded video frame payload.
-        ///  - The video format of the encoded frame.
-        /// </remarks>
-        public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
-
-        /// <summary>
-        /// Gets fired when an RTP packet is received from a remote party. (on the primary one)
-        /// Parameters are:
-        ///  - Remote endpoint packet was received from,
-        ///  - The media type the packet contains, will be audio or video,
-        ///  - The full RTP packet.
-        /// </summary>
-        public event Action<IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceived;
-
-        /// <summary>
-        /// Gets fired when an RTP packet is received from a remote party (using its index).
-        /// Parameters are:
-        ///  - index of the AudioStream or VideoStream
-        ///  - Remote endpoint packet was received from,
-        ///  - The media type the packet contains, will be audio or video,
-        ///  - The full RTP packet.
-        /// </summary>
-        public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTPPacket> OnRtpPacketReceivedByIndex;
-
-        /// <summary>
-        /// Gets fired when an RTP event is detected on the remote call party's RTP stream (on the primary one).
-        /// </summary>
-        public event Action<IPEndPoint, RTPEvent, RTPHeader> OnRtpEvent;
-
-        /// <summary>
-        /// Gets fired when an RTP event is detected on the remote call party's RTP stream (using its index).
-        /// </summary>
-        public event Action<int, IPEndPoint, RTPEvent, RTPHeader> OnRtpEventByIndex;
-
+        
         /// <summary>
         /// Gets fired when the RTP session and underlying channel are closed.
         /// </summary>
@@ -330,27 +256,10 @@ namespace SIPSorcery.Net
         public event Action<string> OnRtcpBye;
 
         /// <summary>
-        /// Fires when the connection for a media type (the primary one) is classified as timed out due to not
-        /// receiving any RTP or RTCP packets within the given period.
-        /// </summary>
-        public event Action<SDPMediaTypesEnum> OnTimeout;
-
-        /// <summary>
-        /// Fires when the connection for a media type (using its index) is classified as timed out due to not
-        /// receiving any RTP or RTCP packets within the given period.
-        /// </summary>
-        public event Action<int, SDPMediaTypesEnum> OnTimeoutByIndex;
-
-        /// <summary>
         /// Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
         /// </summary>
         public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
-
-        /// <summary>
-        /// Gets fired when an RTCP report is received (using its index). This event is for diagnostics only.
-        /// </summary>
-        public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReportByIndex;
-
+        
         /// <summary>
         /// Gets fired when an RTCP report is sent (the primary one). This event is for diagnostics only.
         /// </summary>
@@ -451,28 +360,7 @@ namespace SIPSorcery.Net
         {
             if (mediaStream.CreateRtcpSession())
             {
-                mediaStream.OnTimeoutByIndex += RaiseOnTimeOut;
-                mediaStream.OnRtpEventByIndex += RaisedOnRtpEvent;
-                mediaStream.OnRtpPacketReceivedByIndex += RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-
-                if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
-                {
-                    var audioStream = mediaStream as AudioStream;
-                    if (audioStream != null)
-                    {
-                        audioStream.OnAudioFormatsNegotiatedByIndex += RaisedOnAudioFormatsNegotiated;
-                    }
-                }
-                else
-                {
-                    var videoStream = mediaStream as VideoStream;
-                    if (videoStream != null)
-                    {
-                        videoStream.OnVideoFormatsNegotiatedByIndex += RaisedOnVideoFormatsNegotiated;
-                        videoStream.OnVideoFrameReceivedByIndex += RaisedOnOnVideoFrameReceived;
-                    }
-                }
             }
         }
 
@@ -480,59 +368,10 @@ namespace SIPSorcery.Net
         {
             if (mediaStream.RtcpSession != null)
             {
-                mediaStream.OnTimeoutByIndex -= RaiseOnTimeOut;
-                mediaStream.OnRtpEventByIndex -= RaisedOnRtpEvent;
-                mediaStream.OnRtpPacketReceivedByIndex -= RaisedOnRtpPacketReceived;
                 mediaStream.OnReceiveReportByIndex -= RaisedOnOnReceiveReport;
-
-                if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
-                {
-                    var audioStream = mediaStream as AudioStream;
-                    if (audioStream != null)
-                    {
-                        audioStream.OnAudioFormatsNegotiatedByIndex -= RaisedOnAudioFormatsNegotiated;
-                    }
-                }
-                else
-                {
-                    var videoStream = mediaStream as VideoStream;
-                    if (videoStream != null)
-                    {
-                        videoStream.OnVideoFormatsNegotiatedByIndex -= RaisedOnVideoFormatsNegotiated;
-                        videoStream.OnVideoFrameReceivedByIndex -= RaisedOnOnVideoFrameReceived;
-                    }
-                }
-
                 mediaStream.RtcpSession.Close(reason);
                 mediaStream.RtcpSession = null;
             }
-        }
-
-        private void RaiseOnTimeOut(int index, SDPMediaTypesEnum media)
-        {
-            if (index == 0)
-            {
-                OnTimeout?.Invoke(media);
-            }
-            OnTimeoutByIndex?.Invoke(index, media);
-        }
-        
-        private void RaisedOnRtpEvent(int index, IPEndPoint ipEndPoint, RTPEvent rtpEvent, RTPHeader rtpHeader)
-        {
-            if (index == 0)
-            {
-                OnRtpEvent?.Invoke(ipEndPoint, rtpEvent, rtpHeader);
-            }
-            OnRtpEventByIndex?.Invoke(index, ipEndPoint, rtpEvent, rtpHeader);
-        }
-
-        private void RaisedOnRtpPacketReceived(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTPPacket rtpPacket)
-        {
-            if (index == 0)
-            {
-                OnRtpPacketReceived?.Invoke(ipEndPoint, media, rtpPacket);
-            }
-            OnRtpPacketReceivedByIndex?.Invoke(index, ipEndPoint, media, rtpPacket);
         }
 
         private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTCPCompoundPacket report)
@@ -541,36 +380,8 @@ namespace SIPSorcery.Net
             {
                 OnReceiveReport?.Invoke(ipEndPoint, media, report);
             }
-            OnReceiveReportByIndex?.Invoke(index, ipEndPoint, media, report);
         }
-
-        private void RaisedOnAudioFormatsNegotiated(int index, List<AudioFormat> audioFormats)
-        {
-            if (index == 0)
-            {
-                OnAudioFormatsNegotiated?.Invoke(audioFormats);
-            }
-            OnAudioFormatsNegotiatedByIndex?.Invoke(index, audioFormats);
-        }
-
-        private void RaisedOnVideoFormatsNegotiated(int index, List<VideoFormat> videoFormats)
-        {
-            if (index == 0)
-            {
-                OnVideoFormatsNegotiated?.Invoke(videoFormats);
-            }
-            OnVideoFormatsNegotiatedByIndex?.Invoke(index, videoFormats);
-        }
-
-        private void RaisedOnOnVideoFrameReceived(int index, IPEndPoint ipEndPoint, uint timestamp, byte[] frame, VideoFormat videoFormat)
-        {
-            if (index == 0)
-            {
-                OnVideoFrameReceived?.Invoke(ipEndPoint, timestamp, frame, videoFormat);
-            }
-            OnVideoFrameReceivedByIndex?.Invoke(index, ipEndPoint, timestamp, frame, videoFormat);
-        }
-
+        
         private AudioStream GetOrCreateAudioStream(int index)
         {
             if (index < AudioStreamList.Count)

@@ -256,14 +256,14 @@ namespace SIPSorcery.Net
         protected object _renegotiationLock = new object();
         protected volatile bool _requireRenegotiation = true;
 
-        public override bool RequireRenegotiation
+        protected override bool RequireRenegotiation
         {
             get
             {
                 return _requireRenegotiation;
             }
 
-            protected internal set
+            set
             {
                 lock (_renegotiationLock)
                 {
