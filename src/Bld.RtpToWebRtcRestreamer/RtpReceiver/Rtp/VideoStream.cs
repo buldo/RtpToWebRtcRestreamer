@@ -96,9 +96,9 @@ internal class VideoStream
 
     private RtpSessionConfig RtpSessionConfig;
 
-    protected RTPChannel rtpChannel = null;
+    protected RTPChannel rtpChannel;
 
-    protected bool _isClosed = false;
+    protected bool _isClosed;
 
     public int Index = -1;
 

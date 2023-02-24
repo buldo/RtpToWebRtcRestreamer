@@ -9,8 +9,8 @@ internal class H264Depacketiser
     //Payload Helper Fields
     private readonly MemoryStream _fragmentedNal = new(); // used to concatenate fragmented H264 NALs where NALs are splitted over RTP packets
     private readonly List<KeyValuePair<int, byte[]>> _temporaryRtpPayloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
-    uint _previousTimestamp = 0;
-    int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24 = 0; // used for diagnostics stats
+    uint _previousTimestamp;
+    int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24; // used for diagnostics stats
 
     public virtual MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
     {

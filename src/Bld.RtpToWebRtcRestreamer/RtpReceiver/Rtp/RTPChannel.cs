@@ -28,7 +28,7 @@ internal class RTPChannel : IDisposable
     private UdpReceiver _rtpReceiver;
     private readonly Socket _controlSocket;
     private UdpReceiver _controlReceiver;
-    private bool _rtpReceiverStarted = false;
+    private bool _rtpReceiverStarted;
     private bool _controlReceiverStarted = false;
     private bool _isClosed;
 

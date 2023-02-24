@@ -10,7 +10,7 @@ internal class RtpVideoFramer
     private readonly VideoCodecsEnum _codec;
     private readonly int _maxFrameSize;
     private readonly byte[] _currentVideoFrame;
-    private int _currVideoFramePosn = 0;
+    private int _currVideoFramePosn;
     private readonly H264Depacketiser? _h264Depacketiser;
 
     public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)

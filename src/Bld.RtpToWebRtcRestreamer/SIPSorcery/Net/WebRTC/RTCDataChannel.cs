@@ -10,7 +10,7 @@
 // 13 Jul 2020	Aaron Clauson	Created.
 // 22 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -31,35 +31,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         public string label { get; set; }
 
-        public bool ordered { get; set; }
-
-        public ushort? maxPacketLifeTime { get; set; }
-
-        public ushort? maxRetransmits { get; set; }
-
-        public string protocol { get; set; }
-
         public bool negotiated { get; set; }
 
         public ushort? id { get; set; }
 
         public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
 
-        public ulong bufferedAmount => _transport?.RTCSctpAssociation?.SendBufferedAmount ?? 0;
-
-        public ulong bufferedAmountLowThreshold { get; set; }
-        public string binaryType { get; set; }
-
         public bool IsOpened { get; internal set; }
 
         private readonly RTCSctpTransport _transport;
 
-        public event Action onopen;
-        //public event Action onbufferedamountlow;
         public event Action<string> onerror;
-        //public event Action onclosing;
         public event Action onclose;
-        public event OnDataChannelMessageDelegate onmessage;
 
         public RTCDataChannel(RTCSctpTransport transport)
         {
@@ -71,15 +54,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             logger.LogDebug($"Data channel for label {label} now open.");
             IsOpened = true;
             readyState = RTCDataChannelState.open;
-            onopen?.Invoke();
-        }
-
-        public void close()
-        {
-            IsOpened = false;
-            readyState = RTCDataChannelState.closed;
-            logger.LogDebug($"Data channel with id {id} has been closed");
-            onclose?.Invoke();
         }
 
         /// <summary>

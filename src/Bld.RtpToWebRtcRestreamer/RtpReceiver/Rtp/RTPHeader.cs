@@ -7,11 +7,11 @@ internal class RTPHeader
     public const int RTP_VERSION = 2;
 
     public int Version = RTP_VERSION;                       // 2 bits.
-    public int PaddingFlag = 0;                             // 1 bit.
-    public int HeaderExtensionFlag = 0;                     // 1 bit.
-    public int CSRCCount = 0;                               // 4 bits
-    public int MarkerBit = 0;                               // 1 bit.
-    public int PayloadType = 0;                             // 7 bits.
+    public int PaddingFlag;                             // 1 bit.
+    public int HeaderExtensionFlag;                     // 1 bit.
+    public int CSRCCount;                               // 4 bits
+    public int MarkerBit;                               // 1 bit.
+    public int PayloadType;                             // 7 bits.
     public UInt16 SequenceNumber;                           // 16 bits.
     public uint Timestamp;                                  // 32 bits.
     public uint SyncSource;                                 // 32 bits.

@@ -20,7 +20,7 @@ internal class RtpVP8Header
     public int VersionNumber;
     public bool IsKeyFrame;
 
-    private int _length = 0;
+    private int _length;
     public int Length
     {
         get { return _length; }

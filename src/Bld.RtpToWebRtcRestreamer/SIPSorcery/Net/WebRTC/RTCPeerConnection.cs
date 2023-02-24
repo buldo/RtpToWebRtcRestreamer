@@ -11,7 +11,7 @@
 // - "Session Description Protocol (SDP) Offer/Answer Procedures For Stream
 //   Control Transmission Protocol(SCTP) over Datagram Transport Layer
 //   Security(DTLS) Transport." [ed: specification for negotiating
-//   data channels in SDP, this defines the SDP "sctp-port" attribute] 
+//   data channels in SDP, this defines the SDP "sctp-port" attribute]
 //   https://tools.ietf.org/html/rfc8841
 // - "SDP-based Data Channel Negotiation" [ed: not currently implemented,
 //   actually seems like a big pain to implement this given it can already
@@ -30,7 +30,7 @@
 // 22 Mar 2021  Aaron Clauson   Refactored data channels logic for new SCTP
 //                              implementation.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -144,39 +144,23 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <summary>
         /// The ICE role the peer is acting in.
         /// </summary>
-        public IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
+        private IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
 
         /// <summary>
         /// The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
         /// that the certificate supplied during the DTLS handshake matches.
         /// </summary>
-        public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
+        private RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; set; }
 
         public bool IsDtlsNegotiationComplete { get; private set; }
 
         public RTCSessionDescription localDescription { get; private set; }
 
-        public RTCSessionDescription remoteDescription { get; private set; }
-
-        public RTCSessionDescription currentLocalDescription => localDescription;
-
-        public RTCSessionDescription pendingLocalDescription => null;
-
-        public RTCSessionDescription currentRemoteDescription => remoteDescription;
-
-        public RTCSessionDescription pendingRemoteDescription => null;
+        private RTCSessionDescription remoteDescription { get; set; }
 
         public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.closed;
 
-        public RTCIceGatheringState iceGatheringState
-        {
-            get
-            {
-                return _rtpIceChannel != null ? _rtpIceChannel.IceGatheringState : RTCIceGatheringState.@new;
-            }
-        }
-
-        public RTCIceConnectionState iceConnectionState
+        private RTCIceConnectionState iceConnectionState
         {
             get
             {
@@ -186,10 +170,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
 
-        public bool canTrickleIceCandidates { get => true; }
-
         /// <summary>
-        /// The certificate being used to negotiate the DTLS handshake with the 
+        /// The certificate being used to negotiate the DTLS handshake with the
         /// remote peer.
         /// </summary>
         //private RTCCertificate _currentCertificate;
@@ -202,7 +184,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         //}
 
         /// <summary>
-        /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the 
+        /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the
         /// remote peer.
         /// </summary>
         public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
@@ -217,7 +199,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         public RTCSctpTransport sctp { get; private set; }
 
         /// <summary>
-        /// Informs the application that session negotiation needs to be done (i.e. a createOffer call 
+        /// Informs the application that session negotiation needs to be done (i.e. a createOffer call
         /// followed by setLocalDescription).
         /// </summary>
         public event Action onnegotiationneeded;
@@ -255,7 +237,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         public event Action<RTCIceCandidate, string> onicecandidateerror;
 
         /// <summary>
-        /// The signaling state has changed. This state change is the result of either setLocalDescription or 
+        /// The signaling state has changed. This state change is the result of either setLocalDescription or
         /// setRemoteDescription being invoked.
         /// </summary>
         public event Action onsignalingstatechange;
@@ -271,12 +253,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         public event Action<RTCIceGatheringState> onicegatheringstatechange;
 
         /// <summary>
-        /// The state of the peer connection. A state of connected means the ICE checks have 
+        /// The state of the peer connection. A state of connected means the ICE checks have
         /// succeeded and the DTLS handshake has completed. Once in the connected state it's
         /// suitable for media packets can be exchanged.
         /// </summary>
         public event Action<RTCPeerConnectionState> onconnectionstatechange;
-        
+
         /// <summary>
         /// Constructor to create a new RTC peer connection instance.
         /// </summary>
@@ -286,10 +268,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             base(true, true, true, bindPort)
         {
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
-            
+
             // No certificate was provided so create a new self signed one.
             (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
-            
+
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
@@ -307,7 +289,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
-            
+
             //Cancel Negotiation Task Event to Prevent Duplicated Calls
             onnegotiationneeded += CancelOnNegotiationNeededTask;
 
@@ -468,7 +450,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// <remarks>
         /// As specified in https://www.w3.org/TR/webrtc/#dom-peerconnection-setlocaldescription.
         /// </remarks>
-        /// <param name="init">Optional. The session description to set as 
+        /// <param name="init">Optional. The session description to set as
         /// local description. If not supplied then an offer or answer will be created as required.
         /// </param>
         public Task setLocalDescription(RTCSessionDescriptionInit init)
@@ -691,14 +673,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         }
 
         /// <summary>
-        /// Closes the connection with the default reason.
-        /// </summary>
-        public void close()
-        {
-            Close(NORMAL_CLOSE_REASON);
-        }
-
-        /// <summary>
         /// Generates the SDP for an offer that can be made to a remote peer.
         /// </summary>
         /// <remarks>
@@ -810,7 +784,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             var dtlsFingerprint = DtlsCertificateFingerprint.ToString();
             var iceCandidatesAdded = false;
-            
+
 
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
@@ -978,9 +952,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
-            // By this point the RTP ICE channel has already processed any STUN packets which means 
+            // By this point the RTP ICE channel has already processed any STUN packets which means
             // it's only necessary to separate RTP/RTCP from DTLS.
-            // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP 
+            // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP
             // prefix to distinguish.
 
             if (buffer?.Length > 0)
@@ -1031,14 +1005,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         }
 
         /// <summary>
-        /// Restarts the ICE session gathering and connection checks.
-        /// </summary>
-        public void restartIce()
-        {
-            _rtpIceChannel.Restart();
-        }
-        
-        /// <summary>
         /// Once the SDP exchange has been made the SCTP transport ports are known. If the destination
         /// port is not using the default value attempt to update it on teh SCTP transprot.
         /// </summary>
@@ -1074,7 +1040,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         }
 
         /// <summary>
-        /// Initialises the SCTP transport. This will result in the DTLS SCTP transport listening 
+        /// Initialises the SCTP transport. This will result in the DTLS SCTP transport listening
         /// for incoming INIT packets if the remote peer attempts to create the association. The local
         /// peer will NOT attempt to establish the association at this point. It's up to the
         /// application to specify it wants a data channel to initiate the SCTP association attempt.
@@ -1184,7 +1150,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         }
 
         /// <summary>
-        /// When a data channel is requested an SCTP association is needed. This method attempts to 
+        /// When a data channel is requested an SCTP association is needed. This method attempts to
         /// initialise the association if it is not already available.
         /// </summary>
         private async Task InitialiseSctpAssociation()
@@ -1249,8 +1215,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         /// <summary>
         ///  DtlsHandshake requires DtlsSrtpTransport to work.
-        ///  DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform 
-        ///  Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient 
+        ///  DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform
+        ///  Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient
         ///  or DtlsSrtpServer to work.
         /// </summary>
         /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
@@ -1296,7 +1262,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 dtlsHandle.ProtectRtcp,
                 dtlsHandle.UnprotectRtcp);
 
-                        
+
             IsDtlsNegotiationComplete = true;
 
             return true;
