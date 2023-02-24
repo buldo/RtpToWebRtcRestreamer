@@ -9,7 +9,7 @@ namespace SIPSorcery.Sys
         private const UInt32 DefaultPolynomial = 0xedb88320;
         private const UInt32 DefaultSeed = 0xffffffff;
 
-        private static UInt32[] defaultTable;
+        private static UInt32[] _defaultTable;
         
 
         public static UInt32 Compute(byte[] buffer)
@@ -19,9 +19,9 @@ namespace SIPSorcery.Sys
         
         private static UInt32[] InitializeTable(UInt32 polynomial)
         {
-            if (polynomial == DefaultPolynomial && defaultTable != null)
+            if (polynomial == DefaultPolynomial && _defaultTable != null)
             {
-                return defaultTable;
+                return _defaultTable;
             }
 
             UInt32[] createTable = new UInt32[256];
@@ -44,7 +44,7 @@ namespace SIPSorcery.Sys
 
             if (polynomial == DefaultPolynomial)
             {
-                defaultTable = createTable;
+                _defaultTable = createTable;
             }
 
             return createTable;

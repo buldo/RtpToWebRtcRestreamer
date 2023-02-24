@@ -397,7 +397,6 @@ namespace SIPSorcery.net.RTP
             if (RemoteTrack != null)
             {
                 LogIfWrongSeqNumber($"{MediaType}", hdr, RemoteTrack);
-                ProcessHeaderExtensions(hdr);
             }
             if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
             {
@@ -641,22 +640,7 @@ namespace SIPSorcery.net.RTP
             throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
         }
 
-        public void ProcessHeaderExtensions(RTPHeader header)
-        {
-            header.GetHeaderExtensions().ToList().ForEach(x =>
-            {
-                if (RemoteTrack != null)
-                {
-                    var ntpTimestamp = x.GetNtpTimestamp(RemoteTrack.HeaderExtensions);
-                    if (ntpTimestamp.HasValue)
-                    {
-                        RemoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
-                    }
-                }
-            });
-        }
-
-        public MediaStream(RtpSessionConfig config, int index)
+        protected MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
             Index = index;

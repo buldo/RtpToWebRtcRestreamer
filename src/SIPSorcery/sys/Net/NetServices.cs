@@ -95,7 +95,7 @@ namespace SIPSorcery.Sys
         /// 
         /// TODO:  Clear this cache if the state of the local network interfaces change.
         /// </summary>
-        private static ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
+        private static readonly ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> m_localAddressTable =
             new ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>>();
 
         /// <summary>
@@ -328,7 +328,7 @@ namespace SIPSorcery.Sys
         /// tried before giving up. The parameter bindPort is ignored.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
+        private static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
         {
             if (bindAddress == null)
             {

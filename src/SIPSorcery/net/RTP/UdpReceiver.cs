@@ -24,16 +24,16 @@ namespace SIPSorcery.Net
         /// MTU is 1452 bytes so this should be heaps.
         /// TODO: What about fragmented UDP packets that are put back together by the OS?
         /// </summary>
-        protected const int RECEIVE_BUFFER_SIZE = 2048;
+        private const int RECEIVE_BUFFER_SIZE = 2048;
 
-        protected static ILogger logger = Log.Logger;
+        private static ILogger logger = Log.Logger;
 
-        protected readonly Socket m_socket;
-        protected byte[] m_recvBuffer;
-        protected bool m_isClosed;
-        protected bool m_isRunningReceive;
-        protected IPEndPoint m_localEndPoint;
-        protected AddressFamily m_addressFamily;
+        private readonly Socket m_socket;
+        private byte[] m_recvBuffer;
+        private bool m_isClosed;
+        private bool m_isRunningReceive;
+        private IPEndPoint m_localEndPoint;
+        private AddressFamily m_addressFamily;
 
         public bool IsClosed => m_isClosed;
 
@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
         /// Handler for end of the begin receive call.
         /// </summary>
         /// <param name="ar">Contains the results of the receive.</param>
-        protected void EndReceiveFrom(IAsyncResult ar)
+        private void EndReceiveFrom(IAsyncResult ar)
         {
             try
             {
@@ -209,7 +209,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        protected void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        private void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
         {
             OnPacketReceived?.Invoke(this, localPort, remoteEndPoint, packet);
         }
