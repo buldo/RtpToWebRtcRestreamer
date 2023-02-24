@@ -66,7 +66,7 @@ namespace SIPSorcery.Sys
         /// be able to get the remote destination end point.
         /// To date the only case this has cropped up for is Mac OS as per https://github.com/sipsorcery/sipsorcery/issues/207.
         /// </summary>
-        private static bool? _supportsDualModeIPv4PacketInfo = null;
+        private static bool? _supportsDualModeIPv4PacketInfo;
 
         private static bool SupportsDualModeIPv4PacketInfo
         {
@@ -108,7 +108,8 @@ namespace SIPSorcery.Sys
             {
                 throw new ApplicationException("A UDP socket cannot be created on an IPv6 address due to lack of OS support.");
             }
-            else if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork && !Socket.OSSupportsIPv4)
+
+            if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork && !Socket.OSSupportsIPv4)
             {
                 throw new ApplicationException("A UDP socket cannot be created on an IPv4 address due to lack of OS support.");
             }
@@ -227,20 +228,16 @@ namespace SIPSorcery.Sys
                     // If the bind was requested on a specific port there is no need to try again.
                     break;
                 }
-                else
-                {
-                    bindAttempts++;
-                }
+
+                bindAttempts++;
             }
 
             if (success)
             {
                 return socket;
             }
-            else
-            {
-                throw new ApplicationException($"Unable to bind socket using end point {logEp}.");
-            }
+
+            throw new ApplicationException($"Unable to bind socket using end point {logEp}.");
         }
 
         private static void BindSocket(Socket socket, IPAddress bindAddress, int port)
@@ -380,17 +377,15 @@ namespace SIPSorcery.Sys
                     // If a specific bind port was specified only a single attempt to create the socket is made.
                     break;
                 }
-                else
-                {
-                    rtpSocket?.Close();
-                    controlSocket?.Close();
-                    bindAttempts++;
 
-                    rtpSocket = null;
-                    controlSocket = null;
+                rtpSocket?.Close();
+                controlSocket?.Close();
+                bindAttempts++;
 
-                    logger.LogWarning($"CreateRtpSocket failed to create and bind RTP socket(s) on {bindEP}, bind attempt {bindAttempts}.");
-                }
+                rtpSocket = null;
+                controlSocket = null;
+
+                logger.LogWarning($"CreateRtpSocket failed to create and bind RTP socket(s) on {bindEP}, bind attempt {bindAttempts}.");
             }
 
             if (createControlSocket && rtpSocket != null && controlSocket != null)
@@ -449,7 +444,7 @@ namespace SIPSorcery.Sys
                     byte[] buf = new byte[1];
                     EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
 
-                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, (ar) => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
+                    testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, ar => { try { testSocket.EndReceiveFrom(ar, ref remoteEP); } catch { } }, null);
                     hasDualModeReceiveSupport = true;
                 }
                 catch (PlatformNotSupportedException platExcp)
@@ -494,49 +489,47 @@ namespace SIPSorcery.Sys
 
                 return cachedAddress.Item1;
             }
+
+            IPAddress localAddress = null;
+
+            if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
+            {
+                using (UdpClient udpClient = new UdpClient())
+                {
+                    try
+                    {
+                        udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
+                    }
+                }
+            }
             else
             {
-                IPAddress localAddress = null;
-
-                if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
+                using (UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6))
                 {
-                    using (UdpClient udpClient = new UdpClient())
+                    try
                     {
-                        try
-                        {
-                            udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                            localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                        }
-                        catch (SocketException)
-                        {
-                            // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                        }
+                        udpClient.Connect(destination, NETWORK_TEST_PORT);
+                        localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
+                    }
+                    catch (SocketException)
+                    {
+                        // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
                     }
                 }
-                else
-                {
-                    using (UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6))
-                    {
-                        try
-                        {
-                            udpClient.Connect(destination, NETWORK_TEST_PORT);
-                            localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                        }
-                        catch (SocketException)
-                        {
-                            // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                        }
-                    }
 
-                }
-
-                if (localAddress != null)
-                {
-                    m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
-                }
-
-                return localAddress;
             }
+
+            if (localAddress != null)
+            {
+                m_localAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
+            }
+
+            return localAddress;
         }
 
         /// <summary>

@@ -27,8 +27,8 @@ namespace SIPSorcery.Net
     {
         private static readonly ILogger logger = Log.Logger;
 
-        internal Certificate mCertificateChain = null;
-        internal AsymmetricKeyParameter mPrivateKey = null;
+        internal Certificate mCertificateChain;
+        internal AsymmetricKeyParameter mPrivateKey;
 
         internal TlsClientContext TlsContext
         {
@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
         private byte[] srtpMasterServerKey;
         private byte[] srtpMasterClientSalt;
         private byte[] srtpMasterServerSalt;
-        private byte[] masterSecret = null;
+        private byte[] masterSecret;
 
         // Policies
         private SrtpPolicy srtpPolicy;
@@ -90,7 +90,7 @@ namespace SIPSorcery.Net
                 this.clientSrtpData = clientSrtpData;
             }
 
-            this.mPrivateKey = privateKey;
+            mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
 
             //Generate FingerPrint
@@ -111,35 +111,6 @@ namespace SIPSorcery.Net
                 TlsSRTPUtils.AddUseSrtpExtension(clientExtensions, clientSrtpData);
             }
             return clientExtensions;
-        }
-
-        public override void ProcessServerExtensions(IDictionary clientExtensions)
-        {
-            base.ProcessServerExtensions(clientExtensions);
-
-            // set to some reasonable default value
-            int chosenProfile = SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80;
-            UseSrtpData clientSrtpData = TlsSRTPUtils.GetUseSrtpExtension(clientExtensions);
-
-            foreach (int profile in clientSrtpData.ProtectionProfiles)
-            {
-                switch (profile)
-                {
-                    case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32:
-                    case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80:
-                    case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
-                    case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80:
-                        chosenProfile = profile;
-                        break;
-                }
-            }
-
-            // server chooses a mutually supported SRTP protection profile
-            // http://tools.ietf.org/html/draft-ietf-avt-dtls-srtp-07#section-4.1.2
-            int[] protectionProfiles = { chosenProfile };
-
-            // server agrees to use the MKI offered by the client
-            clientSrtpData = new UseSrtpData(protectionProfiles, clientSrtpData.Mki);
         }
 
         public virtual SrtpPolicy GetSrtpPolicy()
@@ -320,7 +291,7 @@ namespace SIPSorcery.Net
 
         public override TlsSession GetSessionToResume()
         {
-            return this.mSession;
+            return mSession;
         }
 
         public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
@@ -346,11 +317,6 @@ namespace SIPSorcery.Net
             {
                 logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
             }
-        }
-
-        public override void NotifyServerVersion(ProtocolVersion serverVersion)
-        {
-            base.NotifyServerVersion(serverVersion);
         }
 
         public Certificate GetRemoteCertificate()

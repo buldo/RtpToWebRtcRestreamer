@@ -43,12 +43,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Crypto;
@@ -71,14 +66,14 @@ namespace SIPSorcery.Net
         /// </summary>
         public const int DEFAULT_KEY_SIZE = 2048;
 
-        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, Org.BouncyCastle.Asn1.X509.X509CertificateStructure c)
+        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, X509CertificateStructure c)
         {
             if (!IsHashSupported(hashAlgorithm))
             {
                 throw new ApplicationException($"Hash algorithm {hashAlgorithm} is not supported for DTLS fingerprints.");
             }
 
-            IDigest digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm.ToString());
+            IDigest digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm);
             byte[] der = c.GetEncoded();
             byte[] hash = DigestOf(digestAlgorithm, der);
 
@@ -162,7 +157,7 @@ namespace SIPSorcery.Net
 
         #region Self Signed Utils
 
-        public static (Org.BouncyCastle.X509.X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        public static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             const int keyStrength = DEFAULT_KEY_SIZE;
             if (issuerPrivateKey == null)
@@ -177,8 +172,8 @@ namespace SIPSorcery.Net
 
             // The Certificate Generator
             var certificateGenerator = new X509V3CertificateGenerator();
-            certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
-            certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier>() { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
+            certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
+            certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier> { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
 
             // Serial Number
             var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
@@ -211,18 +206,18 @@ namespace SIPSorcery.Net
             return (certificate, subjectKeyPair.Private);
         }
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
         {
             return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
         }
 
-        public static (Org.BouncyCastle.Crypto.Tls.Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             var tuple = CreateSelfSignedBouncyCastleCert(subjectName, issuerName, issuerPrivateKey);
             var certificate = tuple.certificate;
             var privateKey = tuple.privateKey;
-             var chain = new Org.BouncyCastle.Asn1.X509.X509CertificateStructure[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
-            var tlsCertificate = new Org.BouncyCastle.Crypto.Tls.Certificate(chain);
+             var chain = new[] { X509CertificateStructure.GetInstance(certificate.GetEncoded()) };
+            var tlsCertificate = new Certificate(chain);
 
             return (tlsCertificate, privateKey);
         }

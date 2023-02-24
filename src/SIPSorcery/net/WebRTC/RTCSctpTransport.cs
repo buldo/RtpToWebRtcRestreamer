@@ -251,11 +251,12 @@ namespace SIPSorcery.Net
                         // be retired.
                         continue;
                     }
-                    else if (bytesRead > 0)
+
+                    if (bytesRead > 0)
                     {
                         if (!SctpPacket.VerifyChecksum(recvBuffer, 0, bytesRead))
                         {
-                            logger.LogWarning($"SCTP packet received on DTLS transport dropped due to invalid checksum.");
+                            logger.LogWarning("SCTP packet received on DTLS transport dropped due to invalid checksum.");
                         }
                         else
                         {
@@ -272,11 +273,11 @@ namespace SIPSorcery.Net
                             {
                                 // The COOKIE ECHO chunk is the 3rd step in the SCTP handshake when the remote party has
                                 // requested a new association be created.
-                                var cookie = base.GetCookie(pkt);
+                                var cookie = GetCookie(pkt);
 
                                 if (cookie.IsEmpty())
                                 {
-                                    logger.LogWarning($"SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
+                                    logger.LogWarning("SCTP error acquiring handshake cookie from COOKIE ECHO chunk.");
                                 }
                                 else
                                 {
@@ -298,7 +299,7 @@ namespace SIPSorcery.Net
                     else if (_isClosed)
                     {
                         // The DTLS transport has been closed or is no longer available.
-                        logger.LogWarning($"SCTP the RTCSctpTransport DTLS transport returned an error.");
+                        logger.LogWarning("SCTP the RTCSctpTransport DTLS transport returned an error.");
                         break;
                     }
                 }

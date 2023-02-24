@@ -33,7 +33,7 @@ namespace SIPSorcery.Net
         /// The (U)nordered bit, if set to true, indicates that this is an
         /// unordered DATA chunk.
         /// </summary>
-        public bool Unordered { get; set; } = false;
+        public bool Unordered { get; set; }
 
         /// <summary>
         /// The (B)eginning fragment bit, if set, indicates the first fragment
@@ -181,7 +181,7 @@ namespace SIPSorcery.Net
 
             if (chunkLen < FIXED_PARAMETERS_LENGTH)
             {
-                throw new ApplicationException($"SCTP data chunk cannot be parsed as buffer too short for fixed parameter fields.");
+                throw new ApplicationException("SCTP data chunk cannot be parsed as buffer too short for fixed parameter fields.");
             }
 
             dataChunk.Unordered = (dataChunk.ChunkFlags & 0x04) > 0;

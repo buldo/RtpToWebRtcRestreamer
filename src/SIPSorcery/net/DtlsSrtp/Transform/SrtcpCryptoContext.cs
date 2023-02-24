@@ -55,6 +55,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
+using System;
 using System.IO;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -77,10 +78,10 @@ namespace SIPSorcery.Net
         private byte[] mki;
 
         /** Index received so far */
-        private int receivedIndex = 0;
+        private int receivedIndex;
 
         /** Index sent so far */
-        private int sentIndex = 0;
+        private int sentIndex;
 
         /** Bit mask for replay check */
         private long replayWindow;
@@ -109,8 +110,8 @@ namespace SIPSorcery.Net
         private IMac mac;             // used for various HMAC computations
 
         // The symmetric cipher engines we need here
-        private IBlockCipher cipher = null;
-        private IBlockCipher cipherF8 = null; // used inside F8 mode only
+        private IBlockCipher cipher;
+        private IBlockCipher cipherF8; // used inside F8 mode only
 
         // implements the counter cipher mode for RTP according to RFC 3711
         private SrtpCipherCTR cipherCtr = new SrtpCipherCTR();
@@ -150,9 +151,9 @@ namespace SIPSorcery.Net
             mki = null;
             policy = policyIn;
             masterKey = new byte[policy.EncKeyLength];
-            System.Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
+            Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
             masterSalt = new byte[policy.SaltKeyLength];
-            System.Array.Copy(masterS, 0, masterSalt, 0, masterS.Length);
+            Array.Copy(masterS, 0, masterSalt, 0, masterS.Length);
 
             switch (policy.EncType)
             {
@@ -164,27 +165,27 @@ namespace SIPSorcery.Net
                 case SrtpPolicy.AESF8_ENCRYPTION:
                     cipherF8 = new AesEngine();
                     cipher = new AesEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
 
                 case SrtpPolicy.AESCM_ENCRYPTION:
                     cipher = new AesEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
 
                 case SrtpPolicy.TWOFISHF8_ENCRYPTION:
                     cipherF8 = new TwofishEngine();
                     cipher = new TwofishEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
 
                 case SrtpPolicy.TWOFISH_ENCRYPTION:
                     cipher = new TwofishEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
             }
 
@@ -225,8 +226,8 @@ namespace SIPSorcery.Net
          */
         public void Close()
         {
-            Arrays.Fill(masterKey, (byte)0);
-            Arrays.Fill(masterSalt, (byte)0);
+            Arrays.Fill(masterKey, 0);
+            Arrays.Fill(masterSalt, 0);
         }
 
         /**
@@ -338,10 +339,8 @@ namespace SIPSorcery.Net
                     {
                         continue;
                     }
-                    else
-                    {
-                        return false;
-                    }
+
+                    return false;
                 }
             }
 
@@ -386,18 +385,18 @@ namespace SIPSorcery.Net
             ivStore[3] = saltKey[3];
 
             // The shifts transform the ssrc and index into network order
-            ivStore[4] = (byte)(((ssrc >> 24) & 0xff) ^ this.saltKey[4]);
-            ivStore[5] = (byte)(((ssrc >> 16) & 0xff) ^ this.saltKey[5]);
-            ivStore[6] = (byte)(((ssrc >> 8) & 0xff) ^ this.saltKey[6]);
-            ivStore[7] = (byte)((ssrc & 0xff) ^ this.saltKey[7]);
+            ivStore[4] = (byte)(((ssrc >> 24) & 0xff) ^ saltKey[4]);
+            ivStore[5] = (byte)(((ssrc >> 16) & 0xff) ^ saltKey[5]);
+            ivStore[6] = (byte)(((ssrc >> 8) & 0xff) ^ saltKey[6]);
+            ivStore[7] = (byte)((ssrc & 0xff) ^ saltKey[7]);
 
             ivStore[8] = saltKey[8];
             ivStore[9] = saltKey[9];
 
-            ivStore[10] = (byte)(((index >> 24) & 0xff) ^ this.saltKey[10]);
-            ivStore[11] = (byte)(((index >> 16) & 0xff) ^ this.saltKey[11]);
-            ivStore[12] = (byte)(((index >> 8) & 0xff) ^ this.saltKey[12]);
-            ivStore[13] = (byte)((index & 0xff) ^ this.saltKey[13]);
+            ivStore[10] = (byte)(((index >> 24) & 0xff) ^ saltKey[10]);
+            ivStore[11] = (byte)(((index >> 16) & 0xff) ^ saltKey[11]);
+            ivStore[12] = (byte)(((index >> 8) & 0xff) ^ saltKey[12]);
+            ivStore[13] = (byte)((index & 0xff) ^ saltKey[13]);
 
             ivStore[14] = ivStore[15] = 0;
 
@@ -493,27 +492,21 @@ namespace SIPSorcery.Net
                 /* Packet not yet received */
                 return true;
             }
-            else
+
+            if (-delta > REPLAY_WINDOW_SIZE)
             {
-                if (-delta > REPLAY_WINDOW_SIZE)
-                {
-                    /* Packet too old */
-                    return false;
-                }
-                else
-                {
-                    if (((this.replayWindow >> ((int)-delta)) & 0x1) != 0)
-                    {
-                        /* Packet already received ! */
-                        return false;
-                    }
-                    else
-                    {
-                        /* Packet not yet received */
-                        return true;
-                    }
-                }
+                /* Packet too old */
+                return false;
             }
+
+            if (((replayWindow >> ((int)-delta)) & 0x1) != 0)
+            {
+                /* Packet already received ! */
+                return false;
+            }
+
+            /* Packet not yet received */
+            return true;
         }
 
         /**
@@ -544,7 +537,7 @@ namespace SIPSorcery.Net
 
             KeyParameter encryptionKey = new KeyParameter(masterKey);
             cipher.Init(true, encryptionKey);
-            Arrays.Fill(masterKey, (byte)0);
+            Arrays.Fill(masterKey, 0);
 
             cipherCtr.GetCipherStream(cipher, encKey, policy.EncKeyLength, ivStore);
 
@@ -560,18 +553,15 @@ namespace SIPSorcery.Net
                         KeyParameter key = new KeyParameter(authKey);
                         mac.Init(key);
                         break;
-
-                    default:
-                        break;
                 }
             }
-            Arrays.Fill(authKey, (byte)0);
+            Arrays.Fill(authKey, 0);
 
             // compute the session salt
             label = 5;
             ComputeIv(label);
             cipherCtr.GetCipherStream(cipher, saltKey, policy.SaltKeyLength, ivStore);
-            Arrays.Fill(masterSalt, (byte)0);
+            Arrays.Fill(masterSalt, 0);
 
             // As last step: initialize cipher with derived encryption key.
             if (cipherF8 != null)
@@ -580,7 +570,7 @@ namespace SIPSorcery.Net
             }
             encryptionKey = new KeyParameter(encKey);
             cipher.Init(true, encryptionKey);
-            Arrays.Fill(encKey, (byte)0);
+            Arrays.Fill(encKey, 0);
         }
 
 

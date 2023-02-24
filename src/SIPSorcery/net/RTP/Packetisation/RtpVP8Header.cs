@@ -15,8 +15,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
-
 namespace SIPSorcery.Net
 {
     /// <summary>
@@ -29,7 +27,7 @@ namespace SIPSorcery.Net
         public bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
         public bool IsPictureIDPresent;
         
-        private int _length = 0;
+        private int _length;
         public int Length
         {
             get { return _length; }

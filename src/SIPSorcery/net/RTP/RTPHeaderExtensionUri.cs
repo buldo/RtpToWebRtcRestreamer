@@ -9,7 +9,7 @@ namespace SIPSorcery.net.RTP
             AbsCaptureTime
         }
 
-        private static Dictionary<string, Type> Types { get; } = new Dictionary<string, Type>() {{"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time", Type.AbsCaptureTime}};
+        private static Dictionary<string, Type> Types { get; } = new Dictionary<string, Type> {{"http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time", Type.AbsCaptureTime}};
 
         public static Type? GetType(string uri) {
             if (!Types.ContainsKey(uri)) {

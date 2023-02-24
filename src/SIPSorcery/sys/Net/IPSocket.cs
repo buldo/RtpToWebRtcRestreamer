@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -45,7 +44,8 @@ namespace SIPSorcery.Sys
                 {
                     return true;
                 }
-                else if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
+
+                if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
                 {
                     byte[] addrBytes = ipAddress.GetAddressBytes();
                     if ((addrBytes[0] == 10) ||
@@ -74,7 +74,7 @@ namespace SIPSorcery.Sys
                 throw new ArgumentException(string.Format("Invalid default port '{0}'", defaultport));
             }
 
-            string[] values = endpointstring.Split(new char[] { ':' });
+            string[] values = endpointstring.Split(new[] { ':' });
             IPAddress ipaddr;
             int port = -1;
 

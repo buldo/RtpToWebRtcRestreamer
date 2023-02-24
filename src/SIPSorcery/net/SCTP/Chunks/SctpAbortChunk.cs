@@ -17,10 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -59,16 +56,15 @@ namespace SIPSorcery.Net
                     .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
                 return userAbort.AbortReason;
             }
-            else if(ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation))
+
+            if(ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation))
             {
                 var protoViolation = (SctpErrorProtocolViolation)(ErrorCauses
                     .First(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation));
                 return protoViolation.AdditionalInformation;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

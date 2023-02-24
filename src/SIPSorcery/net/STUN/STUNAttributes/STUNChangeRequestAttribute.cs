@@ -21,8 +21,8 @@ namespace SIPSorcery.Net
     {
         public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
 
-        public bool ChangeAddress = false;
-        public bool ChangePort = false;
+        public bool ChangeAddress;
+        public bool ChangePort;
 
         public override UInt16 PaddedLength
         {
@@ -53,7 +53,7 @@ namespace SIPSorcery.Net
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest.ToString() + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
+            string attrDescrStr = "STUN Attribute: " + STUNAttributeTypesEnum.ChangeRequest + ", key byte=" + m_changeRequestByte.ToString("X") + ", change address=" + ChangeAddress + ", change port=" + ChangePort + ".";
 
             return attrDescrStr;
         }

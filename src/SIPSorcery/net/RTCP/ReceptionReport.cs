@@ -33,6 +33,7 @@
 //-----------------------------------------------------------------------------
 
 using System;
+using System.Threading;
 
 namespace SIPSorcery.Net
 {
@@ -108,7 +109,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Received last SR packet timestamp.
         /// </summary>
-        private ReceivedSRTimestamp m_receivedLSRTimestamp = null;
+        private ReceivedSRTimestamp m_receivedLSRTimestamp;
 
         /// <summary>
         /// Creates a new Reception Report object.
@@ -125,7 +126,7 @@ namespace SIPSorcery.Net
         /// <param name="srNtpTimestamp">The sender report timestamp.</param>
         internal void RtcpSenderReportReceived(ulong srNtpTimestamp)
         {
-            System.Threading.Interlocked.Exchange(ref m_receivedLSRTimestamp,
+            Interlocked.Exchange(ref m_receivedLSRTimestamp,
                 new ReceivedSRTimestamp
                 {
                     NTP = (uint)((srNtpTimestamp >> 16) & 0xFFFFFFFF),

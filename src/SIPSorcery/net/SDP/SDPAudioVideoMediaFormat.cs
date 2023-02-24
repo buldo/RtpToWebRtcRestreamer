@@ -38,7 +38,7 @@ namespace SIPSorcery.Net
         public const int DYNAMIC_ID_MAX = 127;
         public const int DEFAULT_AUDIO_CHANNEL_COUNT = 1;
 
-        public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat() { _isEmpty = true };
+        public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat { _isEmpty = true };
 
         /// <summary>
         /// Indicates whether the format is for audio or video.
@@ -144,7 +144,8 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException($"SDP media format IDs must be between 0 and {DYNAMIC_ID_MAX}.");
             }
-            else if (string.IsNullOrWhiteSpace(rtpmap))
+
+            if (string.IsNullOrWhiteSpace(rtpmap))
             {
                 throw new ArgumentNullException("rtpmap", "The rtpmap parameter cannot be empty for a dynamic SDPMediaFormat.");
             }
@@ -166,7 +167,8 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException($"SDP media format ID must be between 0 and {DYNAMIC_ID_MAX}.");
             }
-            else if (string.IsNullOrWhiteSpace(name))
+
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentNullException("name", "The name parameter cannot be empty for a dynamic SDPMediaFormat.");
             }
@@ -211,15 +213,14 @@ namespace SIPSorcery.Net
             {
                 return name;
             }
-            else if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
+
+            if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), ID))
             {
                 // If no rtpmap available then it must be a well known format.
                 return Enum.ToObject(typeof(SDPWellKnownMediaFormatsEnum), ID).ToString();
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
@@ -249,16 +250,15 @@ namespace SIPSorcery.Net
 
                 return new AudioFormat(ID, name, clockRate, rtpClockRate, channels, Fmtp);
             }
-            else if (ID < DYNAMIC_ID_MIN
+
+            if (ID < DYNAMIC_ID_MIN
                 && Enum.TryParse<SDPWellKnownMediaFormatsEnum>(Name(), out var wellKnownFormat)
                 && AudioVideoWellKnown.WellKnownAudioFormats.ContainsKey(wellKnownFormat))
             {
                 return AudioVideoWellKnown.WellKnownAudioFormats[wellKnownFormat];
             }
-            else
-            {
-                return AudioFormat.Empty;
-            }
+
+            return AudioFormat.Empty;
         }
 
         /// <summary>
@@ -273,10 +273,8 @@ namespace SIPSorcery.Net
             {
                 return new VideoFormat(ID, name, clockRate, Fmtp);
             }
-            else
-            {
-                return VideoFormat.Empty;
-            }
+
+            return VideoFormat.Empty;
         }
 
         /// <summary>
@@ -292,17 +290,16 @@ namespace SIPSorcery.Net
             {
                 return true;
             }
-            else if (format1.ID < DYNAMIC_ID_MIN
+
+            if (format1.ID < DYNAMIC_ID_MIN
                 && format1.ID == format2.ID
                 && string.Equals(format1.Name(), format2.Name(), StringComparison.OrdinalIgnoreCase))
             {
                 // Well known format type.
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>
@@ -330,7 +327,7 @@ namespace SIPSorcery.Net
             {
                 foreach (var format in a)
                 {
-                    if (b.Any(x => SDPAudioVideoMediaFormat.AreMatch(format, x)))
+                    if (b.Any(x => AreMatch(format, x)))
                     {
                         compatible.Add(format);
                     }
@@ -384,33 +381,29 @@ namespace SIPSorcery.Net
             {
                 return false;
             }
-            else
+
+            string[] fields = rtpmap.Trim().Split('/');
+
+            if (fields.Length >= 2)
             {
-                string[] fields = rtpmap.Trim().Split('/');
-
-                if (fields.Length >= 2)
-                {
-                    name = fields[0].Trim();
-                    if (!int.TryParse(fields[1].Trim(), out clockRate))
-                    {
-                        return false;
-                    }
-
-                    if (fields.Length >= 3)
-                    {
-                        if (!int.TryParse(fields[2].Trim(), out channels))
-                        {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-                else
+                name = fields[0].Trim();
+                if (!int.TryParse(fields[1].Trim(), out clockRate))
                 {
                     return false;
                 }
+
+                if (fields.Length >= 3)
+                {
+                    if (!int.TryParse(fields[2].Trim(), out channels))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -426,22 +419,18 @@ namespace SIPSorcery.Net
             {
                 return Empty;
             }
-            else
-            {
-                // Check if RTP events are supported and if required adjust the local format ID.
-                var aEventFormat = a.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
-                var bEventFormat = b.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
 
-                if (!aEventFormat.IsEmpty() && !bEventFormat.IsEmpty())
-                {
-                    // Both support RTP events. If using different format ID's choose the first one.
-                    return aEventFormat;
-                }
-                else
-                {
-                    return Empty;
-                }
+            // Check if RTP events are supported and if required adjust the local format ID.
+            var aEventFormat = a.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+            var bEventFormat = b.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
+
+            if (!aEventFormat.IsEmpty() && !bEventFormat.IsEmpty())
+            {
+                // Both support RTP events. If using different format ID's choose the first one.
+                return aEventFormat;
             }
+
+            return Empty;
         }
     }
 }

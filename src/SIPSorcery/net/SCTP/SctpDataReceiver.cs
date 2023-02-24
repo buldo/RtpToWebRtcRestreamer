@@ -15,10 +15,8 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace SIPSorcery.Net
@@ -103,7 +101,7 @@ namespace SIPSorcery.Net
         /// It represents the most recent in order TSN that has been received. If no in order
         /// TSN's have been received then null will be returned.
         /// </summary>
-        public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : (uint?)null;
+        public uint? CumulativeAckTSN => (_inOrderReceiveCount > 0) ? _lastInOrderTSN : null;
 
         private uint _initialTSN;
         private uint _inOrderReceiveCount;
@@ -260,15 +258,13 @@ namespace SIPSorcery.Net
             {
                 return ProcessStreamFrame(frame);
             }
-            else
-            {
-                if (!frame.IsEmpty())
-                {
-                    sortedFrames.Add(frame);
-                }
 
-                return sortedFrames;
+            if (!frame.IsEmpty())
+            {
+                sortedFrames.Add(frame);
             }
+
+            return sortedFrames;
         }
 
         /// <summary>
@@ -286,10 +282,8 @@ namespace SIPSorcery.Net
                 sack.DuplicateTSN = _duplicateTSN.Keys.ToList();
                 return sack;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>
@@ -410,8 +404,8 @@ namespace SIPSorcery.Net
         {
             unchecked
             {
-                uint? beginTSN = fragments[tsn].Begining ? (uint?)tsn : null;
-                uint? endTSN = fragments[tsn].Ending ? (uint?)tsn : null;
+                uint? beginTSN = fragments[tsn].Begining ? tsn : null;
+                uint? endTSN = fragments[tsn].Ending ? tsn : null;
 
                 uint revTSN = tsn - 1;
                 while (beginTSN == null && fragments.ContainsKey(revTSN))
@@ -494,15 +488,14 @@ namespace SIPSorcery.Net
                 // TSN wrap has occurred and the received TSN is old.
                 return false;
             }
-            else if (tsn > uint.MaxValue / 2 && receivedTSN < uint.MaxValue / 2)
+
+            if (tsn > uint.MaxValue / 2 && receivedTSN < uint.MaxValue / 2)
             {
                 // TSN wrap has occurred and the received TSN is new.
                 return true;
             }
-            else
-            {
-                return receivedTSN > tsn;
-            }
+
+            return receivedTSN > tsn;
         }
 
         public static bool IsNewerOrEqual(uint tsn, uint receivedTSN)

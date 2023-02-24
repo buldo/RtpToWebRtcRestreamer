@@ -58,9 +58,9 @@ namespace SIPSorcery.net.RTP
 
         MediaStreamTrack m_localTrack;
 
-        protected RTPChannel rtpChannel = null;
+        protected RTPChannel rtpChannel;
 
-        protected bool _isClosed = false;
+        protected bool _isClosed;
 
         public int Index = -1;
 
@@ -235,10 +235,8 @@ namespace SIPSorcery.net.RTP
                 {
                     return (true, buffer.Take(outBufLen).ToArray());
                 }
-                else
-                {
-                    logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
-                }
+
+                logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
             }
             return (false, buffer);
         }
@@ -519,8 +517,6 @@ namespace SIPSorcery.net.RTP
                     }
                     _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
                 }
-
-                return;
             }
         }
 
@@ -633,7 +629,8 @@ namespace SIPSorcery.net.RTP
                 {
                     return RemoteTrack.Capabilities.First();
                 }
-                else if (RemoteTrack == null)
+
+                if (RemoteTrack == null)
                 {
                     return LocalTrack.Capabilities.First();
                 }
@@ -656,15 +653,11 @@ namespace SIPSorcery.net.RTP
                     // is set. By this point a compatible codec should be available.
                     throw new ApplicationException($"No compatible sending format could be found for media {MediaType}.");
                 }
-                else
-                {
-                    return format;
-                }
+
+                return format;
             }
-            else
-            {
-                throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
-            }
+
+            throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
         }
 
         public void ProcessHeaderExtensions(RTPHeader header)
@@ -676,7 +669,7 @@ namespace SIPSorcery.net.RTP
                     var ntpTimestamp = x.GetNtpTimestamp(RemoteTrack.HeaderExtensions);
                     if (ntpTimestamp.HasValue)
                     {
-                        RemoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
+                        RemoteTrack.LastAbsoluteCaptureTimestamp = new TimestampPair { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
                     }
                 }
             });
@@ -685,7 +678,7 @@ namespace SIPSorcery.net.RTP
         public MediaStream(RtpSessionConfig config, int index)
         {
             RtpSessionConfig = config;
-            this.Index = index;
+            Index = index;
         }
     }
 }

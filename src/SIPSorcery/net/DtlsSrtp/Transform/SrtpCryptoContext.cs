@@ -80,6 +80,7 @@
  * @author Bing SU (nova.su@gmail.com)
  */
 
+using System;
 using System.IO;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -175,12 +176,12 @@ namespace SIPSorcery.Net
         /**
          * The symmetric cipher engines we need here
          */
-        private IBlockCipher cipher = null;
+        private IBlockCipher cipher;
 
         /**
          * Used inside F8 mode only
          */
-        private IBlockCipher cipherF8 = null;
+        private IBlockCipher cipherF8;
 
         /**
          * implements the counter cipher mode for RTP according to RFC 3711
@@ -248,10 +249,10 @@ namespace SIPSorcery.Net
             policy = policyIn;
 
             masterKey = new byte[policy.EncKeyLength];
-            System.Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
+            Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
 
             masterSalt = new byte[policy.SaltKeyLength];
-            System.Array.Copy(masterS, 0, masterSalt, 0, masterS.Length);
+            Array.Copy(masterS, 0, masterSalt, 0, masterS.Length);
 
             mac = new HMac(new Sha1Digest());
 
@@ -279,14 +280,14 @@ namespace SIPSorcery.Net
                 case SrtpPolicy.TWOFISHF8_ENCRYPTION:
                     cipherF8 = new TwofishEngine();
                     cipher = new TwofishEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
 
                 case SrtpPolicy.TWOFISH_ENCRYPTION:
                     cipher = new TwofishEngine();
-                    encKey = new byte[this.policy.EncKeyLength];
-                    saltKey = new byte[this.policy.SaltKeyLength];
+                    encKey = new byte[policy.EncKeyLength];
+                    saltKey = new byte[policy.SaltKeyLength];
                     break;
             }
 
@@ -322,8 +323,8 @@ namespace SIPSorcery.Net
          */
         public void Close()
         {
-            Arrays.Fill(masterKey, (byte)0);
-            Arrays.Fill(masterSalt, (byte)0);
+            Arrays.Fill(masterKey, 0);
+            Arrays.Fill(masterSalt, 0);
         }
 
         /**
@@ -476,12 +477,12 @@ namespace SIPSorcery.Net
             int i;
             for (i = 4; i < 8; i++)
             {
-                ivStore[i] = (byte)((0xFF & (ssrc >> ((7 - i) * 8))) ^ this.saltKey[i]);
+                ivStore[i] = (byte)((0xFF & (ssrc >> ((7 - i) * 8))) ^ saltKey[i]);
             }
 
             for (i = 8; i < 14; i++)
             {
-                ivStore[i] = (byte)((0xFF & (byte)(index >> ((13 - i) * 8))) ^ this.saltKey[i]);
+                ivStore[i] = (byte)((0xFF & (byte)(index >> ((13 - i) * 8))) ^ saltKey[i]);
             }
 
             ivStore[14] = ivStore[15] = 0;
@@ -507,10 +508,10 @@ namespace SIPSorcery.Net
             ivStore[0] = 0;
 
             // set the ROC in network order into IV
-            ivStore[12] = (byte)(this.roc >> 24);
-            ivStore[13] = (byte)(this.roc >> 16);
-            ivStore[14] = (byte)(this.roc >> 8);
-            ivStore[15] = (byte)this.roc;
+            ivStore[12] = (byte)(roc >> 24);
+            ivStore[13] = (byte)(roc >> 16);
+            ivStore[14] = (byte)(roc >> 8);
+            ivStore[15] = (byte)roc;
 
             int payloadOffset = pkt.GetHeaderLength();
             int payloadLength = pkt.GetPayloadLength();
@@ -564,7 +565,7 @@ namespace SIPSorcery.Net
             // compute the index of previously received packet and its
             // delta to the new received packet
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            long localIndex = (((long)roc) << 16) | this.seqNum;
+            long localIndex = (((long)roc) << 16) | seqNum;
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
             long delta = guessedIndex - localIndex;
 
@@ -573,27 +574,21 @@ namespace SIPSorcery.Net
                 /* Packet not yet received */
                 return true;
             }
-            else
+
+            if (-delta > REPLAY_WINDOW_SIZE)
             {
-                if (-delta > REPLAY_WINDOW_SIZE)
-                {
-                    /* Packet too old */
-                    return false;
-                }
-                else
-                {
-                    if (((this.replayWindow >> ((int)-delta)) & 0x1) != 0)
-                    {
-                        /* Packet already received ! */
-                        return false;
-                    }
-                    else
-                    {
-                        /* Packet not yet received */
-                        return true;
-                    }
-                }
+                /* Packet too old */
+                return false;
             }
+
+            if (((replayWindow >> ((int)-delta)) & 0x1) != 0)
+            {
+                /* Packet already received ! */
+                return false;
+            }
+
+            /* Packet not yet received */
+            return true;
         }
 
         /**
@@ -643,7 +638,7 @@ namespace SIPSorcery.Net
 
             KeyParameter encryptionKey = new KeyParameter(masterKey);
             cipher.Init(true, encryptionKey);
-            Arrays.Fill(masterKey, (byte)0);
+            Arrays.Fill(masterKey, 0);
 
             cipherCtr.GetCipherStream(cipher, encKey, policy.EncKeyLength, ivStore);
 
@@ -660,18 +655,15 @@ namespace SIPSorcery.Net
                         KeyParameter key = new KeyParameter(authKey);
                         mac.Init(key);
                         break;
-
-                    default:
-                        break;
                 }
             }
-            Arrays.Fill(authKey, (byte)0);
+            Arrays.Fill(authKey, 0);
 
             // compute the session salt
             label = 0x02;
             ComputeIv(label, index);
             cipherCtr.GetCipherStream(cipher, saltKey, policy.SaltKeyLength, ivStore);
-            Arrays.Fill(masterSalt, (byte)0);
+            Arrays.Fill(masterSalt, 0);
 
             // As last step: initialize cipher with derived encryption key.
             if (cipherF8 != null)
@@ -680,7 +672,7 @@ namespace SIPSorcery.Net
             }
             encryptionKey = new KeyParameter(encKey);
             cipher.Init(true, encryptionKey);
-            Arrays.Fill(encKey, (byte)0);
+            Arrays.Fill(encKey, 0);
         }
 
         /**
@@ -693,9 +685,9 @@ namespace SIPSorcery.Net
          */
         private long GuessIndex(int seqNo)
         {
-            if (this.seqNum < 32768)
+            if (seqNum < 32768)
             {
-                if (seqNo - this.seqNum > 32768)
+                if (seqNo - seqNum > 32768)
                 {
                     guessedROC = roc - 1;
                 }
@@ -735,7 +727,7 @@ namespace SIPSorcery.Net
         private void Update(int seqNo, long guessedIndex)
         {
 #pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            long delta = guessedIndex - (((long)this.roc) << 16 | this.seqNum);
+            long delta = guessedIndex - (((long)roc) << 16 | seqNum);
 #pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
 
             /* update the replay bit mask */
@@ -755,7 +747,7 @@ namespace SIPSorcery.Net
             {
                 seqNum = seqNo & 0xffff;
             }
-            if (this.guessedROC > this.roc)
+            if (guessedROC > roc)
             {
                 roc = guessedROC;
                 seqNum = seqNo & 0xffff;

@@ -6,7 +6,6 @@ namespace SIPSorcery.Net
     public interface IDtlsSrtpPeer
     {
         event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
-        bool ForceUseExtendedMasterSecret { get; set; }
         SrtpPolicy GetSrtpPolicy();
         SrtpPolicy GetSrtcpPolicy();
         byte[] GetSrtpMasterServerKey();

@@ -155,10 +155,8 @@ namespace SIPSorcery.Net
             {
                 return nonPaddedSize;
             }
-            else
-            {
-                return nonPaddedSize + 4 - (nonPaddedSize % 4);
-            }
+
+            return nonPaddedSize + 4 - (nonPaddedSize % 4);
         }
     }
 }

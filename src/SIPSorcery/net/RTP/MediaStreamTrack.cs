@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
@@ -221,7 +220,7 @@ namespace SIPSorcery.Net
                     throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
                 }
                 expectedSeqNum = actualSeqNum;
-                int nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? (ushort)0 : (ushort)(actualSeqNum + 1);
+                int nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? 0 : (ushort)(actualSeqNum + 1);
                 actualSeqNum = Interlocked.CompareExchange(ref m_seqNum, nextSeqNum, expectedSeqNum);
             } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
             return (ushort)expectedSeqNum;

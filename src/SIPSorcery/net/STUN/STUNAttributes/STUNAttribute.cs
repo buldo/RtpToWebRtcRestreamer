@@ -60,10 +60,8 @@ namespace SIPSorcery.Net
                 {
                     return Convert.ToUInt16((Value.Length % 4 == 0) ? Value.Length : Value.Length + (4 - (Value.Length % 4)));
                 }
-                else
-                {
-                    return 0;
-                }
+
+                return 0;
             }
         }
 
@@ -141,10 +139,8 @@ namespace SIPSorcery.Net
 
                 return attributes;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public virtual int ToByteBuffer(byte[] buffer, int startIndex)
@@ -183,7 +179,7 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(Value, 0, buffer, startIndex + 4, Value.Length);
             }
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
+            return STUNATTRIBUTE_HEADER_LENGTH + PaddedLength;
         }
     }
 }

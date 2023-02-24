@@ -20,6 +20,7 @@
 
 using System;
 using System.Net;
+using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -152,63 +153,61 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentNullException("Cant parse ICE candidate from empty string.", candidateLine);
             }
-            else
+
+            candidateLine = candidateLine.Replace("candidate:", "");
+
+            RTCIceCandidate candidate = new RTCIceCandidate();
+
+            string[] candidateFields = candidateLine.Trim().Split(' ');
+
+            candidate.foundation = candidateFields[0];
+
+            if (Enum.TryParse<RTCIceComponent>(candidateFields[1], out var candidateComponent))
             {
-                candidateLine = candidateLine.Replace("candidate:", "");
-
-                RTCIceCandidate candidate = new RTCIceCandidate();
-
-                string[] candidateFields = candidateLine.Trim().Split(' ');
-
-                candidate.foundation = candidateFields[0];
-
-                if (Enum.TryParse<RTCIceComponent>(candidateFields[1], out var candidateComponent))
-                {
-                    candidate.component = candidateComponent;
-                }
-
-                if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
-                {
-                    candidate.protocol = candidateProtocol;
-                }
-
-                if (uint.TryParse(candidateFields[3], out var candidatePriority))
-                {
-                    candidate.priority = candidatePriority;
-                }
-
-                candidate.address = candidateFields[4];
-                candidate.port = Convert.ToUInt16(candidateFields[5]);
-
-                if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
-                {
-                    candidate.type = candidateType;
-                }
-
-                // TCP Candidates require extra steps to be parsed
-                // {"candidate":"candidate:4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active","sdpMid":"sdparta_0","sdpMLineIndex":0}
-                var parseIndex = 8;
-                if (candidate.protocol == RTCIceProtocol.tcp)
-                {
-                    if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == TCP_TYPE_KEY)
-                    {
-                        candidate.relatedAddress = candidateFields[parseIndex + 1];
-                    }
-                    parseIndex += 2;
-                }
-
-                if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == REMOTE_ADDRESS_KEY)
-                {
-                    candidate.relatedAddress = candidateFields[parseIndex+1];
-                }
-
-                if (candidateFields.Length > parseIndex+2 && candidateFields[parseIndex+2] == REMOTE_PORT_KEY)
-                {
-                    candidate.relatedPort = Convert.ToUInt16(candidateFields[parseIndex+3]);
-                }
-
-                return candidate;
+                candidate.component = candidateComponent;
             }
+
+            if (Enum.TryParse<RTCIceProtocol>(candidateFields[2], out var candidateProtocol))
+            {
+                candidate.protocol = candidateProtocol;
+            }
+
+            if (uint.TryParse(candidateFields[3], out var candidatePriority))
+            {
+                candidate.priority = candidatePriority;
+            }
+
+            candidate.address = candidateFields[4];
+            candidate.port = Convert.ToUInt16(candidateFields[5]);
+
+            if (Enum.TryParse<RTCIceCandidateType>(candidateFields[7], out var candidateType))
+            {
+                candidate.type = candidateType;
+            }
+
+            // TCP Candidates require extra steps to be parsed
+            // {"candidate":"candidate:4 1 TCP 2105458943 10.0.1.16 9 typ host tcptype active","sdpMid":"sdparta_0","sdpMLineIndex":0}
+            var parseIndex = 8;
+            if (candidate.protocol == RTCIceProtocol.tcp)
+            {
+                if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == TCP_TYPE_KEY)
+                {
+                    candidate.relatedAddress = candidateFields[parseIndex + 1];
+                }
+                parseIndex += 2;
+            }
+
+            if (candidateFields.Length > parseIndex && candidateFields[parseIndex] == REMOTE_ADDRESS_KEY)
+            {
+                candidate.relatedAddress = candidateFields[parseIndex+1];
+            }
+
+            if (candidateFields.Length > parseIndex+2 && candidateFields[parseIndex+2] == REMOTE_PORT_KEY)
+            {
+                candidate.relatedPort = Convert.ToUInt16(candidateFields[parseIndex+3]);
+            }
+
+            return candidate;
         }
 
         /// <summary>
@@ -302,9 +301,9 @@ namespace SIPSorcery.Net
         private string GetFoundation()
         {
             var serverProtocol = "udp";
-            var builder = new System.Text.StringBuilder();
+            var builder = new StringBuilder();
             builder = builder.Append(type).Append(address).Append(protocol).Append(serverProtocol);
-            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(builder.ToString());
+            byte[] bytes = Encoding.ASCII.GetBytes(builder.ToString());
             return UpdateCrc32(0, bytes).ToString();
 
             /*int addressVal = !String.IsNullOrEmpty(address) ? Crypto.GetSHAHash(address).Sum(x => (byte)x) : 0;
@@ -363,7 +362,7 @@ namespace SIPSorcery.Net
                 sdpMid = sdpMid ?? sdpMLineIndex.ToString(),
                 sdpMLineIndex = sdpMLineIndex,
                 usernameFragment = usernameFragment,
-                candidate = CANDIDATE_PREFIX + ":" + this.ToString()
+                candidate = CANDIDATE_PREFIX + ":" + ToString()
             };
 
             return rtcCandInit.toJSON();
@@ -380,14 +379,12 @@ namespace SIPSorcery.Net
         public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
         {
             if (protocol == epPotocol && DestinationEndPoint != null &&
-               ep.Address.Equals(DestinationEndPoint.Address) && DestinationEndPoint.Port == ep.Port)
+                ep.Address.Equals(DestinationEndPoint.Address) && DestinationEndPoint.Port == ep.Port)
             {
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>

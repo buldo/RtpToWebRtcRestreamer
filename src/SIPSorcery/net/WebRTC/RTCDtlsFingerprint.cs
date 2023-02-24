@@ -36,33 +36,27 @@
             {
                 return false;
             }
-            else
-            {
-                int spaceIndex = str.IndexOf(' ');
-                if (spaceIndex == -1)
-                {
-                    return false;
-                }
-                else
-                {
-                    string algStr = str.Substring(0, spaceIndex);
-                    string val = str.Substring(spaceIndex + 1);
 
-                    if (!DtlsUtils.IsHashSupported(algStr))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        fingerprint = new RTCDtlsFingerprint
-                        {
-                            algorithm = algStr,
-                            value = val
-                        };
-                        return true;
-                    }
-                }
+            int spaceIndex = str.IndexOf(' ');
+            if (spaceIndex == -1)
+            {
+                return false;
             }
+
+            string algStr = str.Substring(0, spaceIndex);
+            string val = str.Substring(spaceIndex + 1);
+
+            if (!DtlsUtils.IsHashSupported(algStr))
+            {
+                return false;
+            }
+
+            fingerprint = new RTCDtlsFingerprint
+            {
+                algorithm = algStr,
+                value = val
+            };
+            return true;
         }
     }
 }

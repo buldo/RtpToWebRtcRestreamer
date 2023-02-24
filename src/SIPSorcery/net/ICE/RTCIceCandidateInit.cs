@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using TinyJson;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// Represents an ICE candidate and associated properties that link it to the SDP.
@@ -22,7 +24,7 @@
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            return TinyJson.JSONWriter.ToJson(this);
+            return JSONWriter.ToJson(this);
         }
 
         public static bool TryParse(string json, out RTCIceCandidateInit init)
@@ -35,15 +37,13 @@
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCIceCandidateInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                       init.candidate != null &&
-                       init.sdpMid != null;
-            }
+            init = JSONParser.FromJson<RTCIceCandidateInit>(json);
+
+            // To qualify as parsed all required fields must be set.
+            return init != null &&
+                   init.candidate != null &&
+                   init.sdpMid != null;
         }
     }
 }

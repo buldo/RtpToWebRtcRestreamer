@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -43,7 +42,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public const int DEFAULT_COOKIE_LIFETIME_SECONDS = 60;
 
-        private static ILogger logger = SIPSorcery.LogFactory.CreateLogger<SctpTransport>();
+        private static ILogger logger = LogFactory.CreateLogger<SctpTransport>();
 
         /// <summary>
         /// Ephemeral secret key to use for generating cookie HMAC's. The purpose of the HMAC is
@@ -208,7 +207,7 @@ namespace SIPSorcery.Net
         {
             var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(cookieBuffer));
+            var cookie = Encoding.UTF8.GetString(cookieBuffer).FromJson<SctpTransportCookie>();
 
             logger.LogDebug($"Cookie: {cookie.ToJson()}");
 
@@ -224,22 +223,21 @@ namespace SIPSorcery.Net
                   new SctpCauseOnlyError(SctpErrorCauseCode.InvalidMandatoryParameter));
                 return SctpTransportCookie.Empty;
             }
-            else if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
+
+            if (DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt)).TotalSeconds > cookie.Lifetime)
             {
                 logger.LogWarning($"SCTP COOKIE ECHO chunk was stale, created at {cookie.CreatedAt}, now {DateTime.Now.ToString("o")}, lifetime {cookie.Lifetime}s.");
                 var diff = DateTime.Now.Subtract(DateTime.Parse(cookie.CreatedAt).AddSeconds(cookie.Lifetime));
                 SendError(
-                  true,
-                  sctpPacket.Header.DestinationPort,
-                  sctpPacket.Header.SourcePort,
-                  0,
-                  new SctpErrorStaleCookieError { MeasureOfStaleness = (uint)(diff.TotalMilliseconds * 1000) });
+                    true,
+                    sctpPacket.Header.DestinationPort,
+                    sctpPacket.Header.SourcePort,
+                    0,
+                    new SctpErrorStaleCookieError { MeasureOfStaleness = (uint)(diff.TotalMilliseconds * 1000) });
                 return SctpTransportCookie.Empty;
             }
-            else
-            {
-                return cookie;
-            }
+
+            return cookie;
         }
 
         /// <summary>
@@ -250,7 +248,7 @@ namespace SIPSorcery.Net
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
         protected string GetCookieHMAC(byte[] buffer)
         {
-            var cookie = JSONParser.FromJson<SctpTransportCookie>(Encoding.UTF8.GetString(buffer));
+            var cookie = Encoding.UTF8.GetString(buffer).FromJson<SctpTransportCookie>();
             string hmacCalculated = null;
             cookie.HMAC = string.Empty;
 

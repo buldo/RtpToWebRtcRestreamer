@@ -46,8 +46,8 @@ namespace SIPSorcery.Net
         public const int RTCP_VERSION = 2;
 
         public int Version { get; private set; } = RTCP_VERSION;         // 2 bits.
-        public int PaddingFlag { get; private set; } = 0;                 // 1 bit.
-        public int ReceptionReportCount { get; private set; } = 0;        // 5 bits.
+        public int PaddingFlag { get; private set; } // 1 bit.
+        public int ReceptionReportCount { get; private set; } // 5 bits.
         public RTCPReportTypesEnum PacketType { get; private set; }       // 8 bits.
         public UInt16 Length { get; private set; }                        // 16 bits.
 
@@ -81,10 +81,8 @@ namespace SIPSorcery.Net
             {
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         /// <summary>

@@ -1,8 +1,4 @@
-﻿using System.Linq;
-using System.Text;
-using SIPSorcery.Net;
-
-namespace SIPSorcery.net.RTP
+﻿namespace SIPSorcery.net.RTP
 {
     public class RTPHeaderExtension
     {

@@ -32,8 +32,8 @@ namespace SIPSorcery.Net
     {
         private static readonly ILogger logger = Log.Logger;
 
-        Certificate mCertificateChain = null;
-        AsymmetricKeyParameter mPrivateKey = null;
+        Certificate mCertificateChain;
+        AsymmetricKeyParameter mPrivateKey;
 
         private RTCDtlsFingerprint mFingerPrint;
 
@@ -52,7 +52,7 @@ namespace SIPSorcery.Net
         private byte[] srtpMasterServerKey;
         private byte[] srtpMasterClientSalt;
         private byte[] srtpMasterServerSalt;
-        byte[] masterSecret = null;
+        byte[] masterSecret;
 
         // Policies
         private SrtpPolicy srtpPolicy;
@@ -75,15 +75,15 @@ namespace SIPSorcery.Net
                 (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
             }
 
-            this.cipherSuites = base.GetCipherSuites();
+            cipherSuites = base.GetCipherSuites();
 
-            this.mPrivateKey = privateKey;
+            mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
 
             //Generate FingerPrint
             var certificate = mCertificateChain.GetCertificateAt(0);
 
-            this.mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
+            mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
         protected override ProtocolVersion MaximumVersion
@@ -116,18 +116,18 @@ namespace SIPSorcery.Net
              * must be negotiated only if the server can successfully complete the handshake while using the curves and point
              * formats supported by the client [...].
              */
-            bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(this.mNamedCurves, this.mClientECPointFormats);
+            bool eccCipherSuitesEnabled = SupportsClientEccCapabilities(mNamedCurves, mClientECPointFormats);
 
             int[] cipherSuites = GetCipherSuites();
             for (int i = 0; i < cipherSuites.Length; ++i)
             {
                 int cipherSuite = cipherSuites[i];
 
-                if (Arrays.Contains(this.mOfferedCipherSuites, cipherSuite)
+                if (Arrays.Contains(mOfferedCipherSuites, cipherSuite)
                         && (eccCipherSuitesEnabled || !TlsEccUtilities.IsEccCipherSuite(cipherSuite))
                         && TlsUtilities.IsValidCipherSuiteForVersion(cipherSuite, mServerVersion))
                 {
-                    return this.mSelectedCipherSuite = cipherSuite;
+                    return mSelectedCipherSuite = cipherSuite;
                 }
             }
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
@@ -139,8 +139,8 @@ namespace SIPSorcery.Net
 
             if (TlsUtilities.IsSignatureAlgorithmsExtensionAllowed(mServerVersion))
             {
-                byte[] hashAlgorithms = new byte[] { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
-                byte[] signatureAlgorithms = new byte[] { SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
+                byte[] hashAlgorithms = { HashAlgorithm.sha512, HashAlgorithm.sha384, HashAlgorithm.sha256, HashAlgorithm.sha224, HashAlgorithm.sha1 };
+                byte[] signatureAlgorithms = { SignatureAlgorithm.rsa, SignatureAlgorithm.ecdsa };
 
                 serverSigAlgs = new List<SignatureAndHashAlgorithm>();
                 for (int i = 0; i < hashAlgorithms.Length; ++i)
@@ -151,7 +151,7 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            return new CertificateRequest(new byte[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
+            return new CertificateRequest(new[] { ClientCertificateType.rsa_sign }, serverSigAlgs, null);
         }
 
         public override void NotifyClientCertificate(Certificate clientCertificate)
@@ -481,7 +481,7 @@ namespace SIPSorcery.Net
         {
             if (!secureRenegotiation)
             {
-                logger.LogWarning($"DTLS server received a client handshake without renegotiation support.");
+                logger.LogWarning("DTLS server received a client handshake without renegotiation support.");
             }
         }
     }

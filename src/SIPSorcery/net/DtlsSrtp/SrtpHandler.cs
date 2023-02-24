@@ -29,12 +29,7 @@ namespace SIPSorcery.Net
         public IPacketTransformer SrtcpDecoder { get; private set; }
         public IPacketTransformer SrtcpEncoder { get; private set; }
 
-        public bool IsNegotiationComplete { get; private set; } = false;
-
-
-        public SrtpHandler()
-        {
-        }
+        public bool IsNegotiationComplete { get; private set; }
 
 
         public bool SetupRemote(List<SDPSecurityDescription> securityDescription, SdpType sdpType)
@@ -106,10 +101,8 @@ namespace SIPSorcery.Net
             {
                 return engine.GetRTPTransformer();
             }
-            else
-            {
-                return engine.GetRTCPTransformer();
-            }
+
+            return engine.GetRTCPTransformer();
         }
 
         public byte[] UnprotectRTP(byte[] packet, int offset, int length)
@@ -130,7 +123,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            Buffer.BlockCopy(result, 0, payload, 0, result.Length);
             outLength = result.Length;
 
             return 0; //No Errors
@@ -154,7 +147,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            Buffer.BlockCopy(result, 0, payload, 0, result.Length);
             outLength = result.Length;
 
             return 0; //No Errors
@@ -177,7 +170,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            Buffer.BlockCopy(result, 0, payload, 0, result.Length);
             outLength = result.Length;
 
             return 0; //No Errors
@@ -200,7 +193,7 @@ namespace SIPSorcery.Net
                 return -1;
             }
 
-            System.Buffer.BlockCopy(result, 0, payload, 0, result.Length);
+            Buffer.BlockCopy(result, 0, payload, 0, result.Length);
             outLength = result.Length;
 
             return 0; //No Errors

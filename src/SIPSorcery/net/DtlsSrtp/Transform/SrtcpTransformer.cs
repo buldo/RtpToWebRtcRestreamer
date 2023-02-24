@@ -32,7 +32,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class SrtcpTransformer : IPacketTransformer
     {
-        private int _isLocked = 0;
+        private int _isLocked;
         private RawPacket packet;
 
         private SrtpTransformEngine forwardEngine;
@@ -48,10 +48,10 @@ namespace SIPSorcery.Net
 
         public SrtcpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
-            this.packet = new RawPacket();
+            packet = new RawPacket();
             this.forwardEngine = forwardEngine;
             this.reverseEngine = reverseEngine;
-            this.contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
+            contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
         }
 
         /// <summary>

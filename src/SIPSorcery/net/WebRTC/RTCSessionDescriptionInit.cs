@@ -1,4 +1,6 @@
-﻿namespace SIPSorcery.Net
+﻿using TinyJson;
+
+namespace SIPSorcery.Net
 {
     /// <summary>
     /// Initialiser for the RTCSessionDescription instance.
@@ -25,7 +27,7 @@
             //    $"  \"sdp\": \"{sdp.Replace(SDP.CRLF, @"\\n").Replace("\"", "\\\"")}\"" +
             //    "}";
 
-            return TinyJson.JSONWriter.ToJson(this);
+            return JSONWriter.ToJson(this);
         }
 
         public static bool TryParse(string json, out RTCSessionDescriptionInit init)
@@ -36,14 +38,12 @@
             {
                 return false;
             }
-            else
-            {
-                init = TinyJson.JSONParser.FromJson<RTCSessionDescriptionInit>(json);
 
-                // To qualify as parsed all required fields must be set.
-                return init != null &&
-                       init.sdp != null;
-            }
+            init = JSONParser.FromJson<RTCSessionDescriptionInit>(json);
+
+            // To qualify as parsed all required fields must be set.
+            return init != null &&
+                   init.sdp != null;
         }
     }
 }

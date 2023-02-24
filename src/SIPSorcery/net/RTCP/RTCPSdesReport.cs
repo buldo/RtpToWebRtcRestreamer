@@ -106,7 +106,8 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP SDES packet.");
             }
-            else if (packet[8] != CNAME_ID)
+
+            if (packet[8] != CNAME_ID)
             {
                 throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
             }
@@ -172,10 +173,8 @@ namespace SIPSorcery.Net
             {
                 return nonPaddedSize;
             }
-            else
-            {
-                return nonPaddedSize + 4 - (nonPaddedSize % 4);
-            }
+
+            return nonPaddedSize + 4 - (nonPaddedSize % 4);
         }
     }
 }

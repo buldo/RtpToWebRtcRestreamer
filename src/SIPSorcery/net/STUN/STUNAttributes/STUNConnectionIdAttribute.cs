@@ -13,9 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using SIPSorcery.Sys;
 using System;
-using System.Text;
+using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {

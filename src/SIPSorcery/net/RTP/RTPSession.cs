@@ -23,8 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP;
@@ -100,15 +98,15 @@ namespace SIPSorcery.Net
         protected RtpSessionConfig rtpSessionConfig;
 
         private Boolean m_acceptRtpFromAny = false;
-        private string m_sdpSessionID = null;           // Need to maintain the same SDP session ID for all offers and answers.
+        private string m_sdpSessionID;           // Need to maintain the same SDP session ID for all offers and answers.
         private int m_sdpAnnouncementVersion = 0;       // The SDP version needs to increase whenever the local SDP is modified (see https://tools.ietf.org/html/rfc6337#section-5.2.5).
-        internal int m_rtpChannelsCount = 0;            // Need to know the number of RTP Channels
+        internal int m_rtpChannelsCount;            // Need to know the number of RTP Channels
 
         // The stream used for the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams. (see addSingleTrack())
         protected MediaStream m_primaryStream;
 
-        protected RTPChannel MultiplexRtpChannel = null;
+        protected RTPChannel MultiplexRtpChannel;
 
         protected List<List<SDPSsrcAttribute>> audioRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
         protected List<List<SDPSsrcAttribute>> videoRemoteSDPSsrcAttributes = new List<List<SDPSsrcAttribute>>();
@@ -613,7 +611,8 @@ namespace SIPSorcery.Net
                 // We ask too fast a new AudioStram ...
                 return AudioStreamList[index];
             }
-            else if (index == AudioStreamList.Count)
+
+            if (index == AudioStreamList.Count)
             {
                 AudioStream audioStream = new AudioStream(rtpSessionConfig, index);
                 AudioStreamList.Add(audioStream);
@@ -629,7 +628,8 @@ namespace SIPSorcery.Net
                 // We ask too fast a new AudioStram ...
                 return VideoStreamList[index];
             }
-            else if (index == VideoStreamList.Count)
+
+            if (index == VideoStreamList.Count)
             {
                 VideoStream videoStream = new VideoStream(rtpSessionConfig, index);
                 VideoStreamList.Add(videoStream);
@@ -657,14 +657,16 @@ namespace SIPSorcery.Net
                 {
                     return SetDescriptionResultEnum.NoRemoteMedia;
                 }
-                else if (sessionDescription.Media?.Count == 1)
+
+                if (sessionDescription.Media?.Count == 1)
                 {
                     var remoteMediaType = sessionDescription.Media.First().Media;
                     if (remoteMediaType == SDPMediaTypesEnum.audio && ((AudioStream == null) || (AudioStream.LocalTrack == null)))
                     {
                         return SetDescriptionResultEnum.NoMatchingMediaType;
                     }
-                    else if (remoteMediaType == SDPMediaTypesEnum.video && ((VideoStream == null) || (VideoStream.LocalTrack == null)))
+
+                    if (remoteMediaType == SDPMediaTypesEnum.video && ((VideoStream == null) || (VideoStream.LocalTrack == null)))
                     {
                         return SetDescriptionResultEnum.NoMatchingMediaType;
                     }
@@ -1421,10 +1423,8 @@ namespace SIPSorcery.Net
                         logger.LogWarning($"SRTCP unprotect failed for {mediaStream.MediaType} track, result {res}.");
                         return;
                     }
-                    else
-                    {
-                        buffer = buffer.Take(outBufLen).ToArray();
-                    }
+
+                    buffer = buffer.Take(outBufLen).ToArray();
                 }
             }
             else
@@ -1521,7 +1521,7 @@ namespace SIPSorcery.Net
                 hdr.ReceivedTime = DateTime.Now;
                 if (mediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
-                    mediaStream.OnReceiveRTPPacket(hdr, localPort, remoteEndPoint, buffer, null);
+                    mediaStream.OnReceiveRTPPacket(hdr, localPort, remoteEndPoint, buffer);
                 }
                 else if (mediaStream.MediaType == SDPMediaTypesEnum.video)
                 {
@@ -1538,7 +1538,8 @@ namespace SIPSorcery.Net
                 {
                     return audioStream;
                 }
-                else if (audioStream.LocalTrack != null && audioStream.LocalTrack.IsPayloadIDMatch(payloadId))
+
+                if (audioStream.LocalTrack != null && audioStream.LocalTrack.IsPayloadIDMatch(payloadId))
                 {
                     return audioStream;
                 }
@@ -1550,7 +1551,8 @@ namespace SIPSorcery.Net
                 {
                     return videoStream;
                 }
-                else if (videoStream.LocalTrack != null && videoStream.LocalTrack.IsPayloadIDMatch(payloadId))
+
+                if (videoStream.LocalTrack != null && videoStream.LocalTrack.IsPayloadIDMatch(payloadId))
                 {
                     return videoStream;
                 }
@@ -1582,7 +1584,8 @@ namespace SIPSorcery.Net
                 {
                     return audioStream;
                 }
-                else if (audioStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
+
+                if (audioStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
                 {
                     return audioStream;
                 }
@@ -1594,7 +1597,8 @@ namespace SIPSorcery.Net
                 {
                     return videoStream;
                 }
-                else if (videoStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
+
+                if (videoStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
                 {
                     return videoStream;
                 }
@@ -1684,11 +1688,13 @@ namespace SIPSorcery.Net
             {
                 return GetMediaStream(rtcpPkt.SenderReport.SSRC);
             }
-            else if (rtcpPkt.ReceiverReport != null)
+
+            if (rtcpPkt.ReceiverReport != null)
             {
                 return GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
             }
-            else if (rtcpPkt.Feedback != null)
+
+            if (rtcpPkt.Feedback != null)
             {
                 return GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
             }

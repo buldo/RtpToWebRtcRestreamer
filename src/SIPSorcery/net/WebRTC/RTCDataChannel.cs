@@ -16,7 +16,6 @@
 
 using System;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -52,7 +51,7 @@ namespace SIPSorcery.Net
         public ulong bufferedAmountLowThreshold { get; set; }
         public string binaryType { get; set; }
 
-        public bool IsOpened { get; internal set; } = false;
+        public bool IsOpened { get; internal set; }
 
         private RTCSctpTransport _transport;
 
@@ -95,7 +94,8 @@ namespace SIPSorcery.Net
                 throw new ApplicationException($"Data channel {label} was requested to send data of length {Encoding.UTF8.GetByteCount(message)} " +
                     $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
-            else if (_transport.state != RTCSctpTransportState.Connected)
+
+            if (_transport.state != RTCSctpTransportState.Connected)
             {
                 logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }
@@ -130,7 +130,8 @@ namespace SIPSorcery.Net
                 throw new ApplicationException($"Data channel {label} was requested to send data of length {data.Length} " +
                     $" that exceeded the maximum allowed message size of {_transport.maxMessageSize}.");
             }
-            else if (_transport.state != RTCSctpTransportState.Connected)
+
+            if (_transport.state != RTCSctpTransportState.Connected)
             {
                 logger.LogWarning($"WebRTC data channel send failed due to SCTP transport in state {_transport.state}.");
             }
@@ -148,7 +149,7 @@ namespace SIPSorcery.Net
                     {
                         _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                             (uint)DataChannelPayloadProtocols.WebRTC_Binary,
-                           data);
+                            data);
                     }
                 }
             }
@@ -160,7 +161,7 @@ namespace SIPSorcery.Net
         /// </summary>
         internal void SendDcepOpen()
         {
-            var dcepOpen = new DataChannelOpenMessage()
+            var dcepOpen = new DataChannelOpenMessage
             {
                 MessageType = (byte)DataChannelMessageTypes.OPEN,
                 ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
@@ -185,7 +186,7 @@ namespace SIPSorcery.Net
             {
                 _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
                        (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
-                       new byte[] { (byte)DataChannelMessageTypes.ACK });
+                       new[] { (byte)DataChannelMessageTypes.ACK });
             }
         }
 

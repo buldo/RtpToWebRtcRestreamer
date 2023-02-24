@@ -14,7 +14,6 @@
 //-----------------------------------------------------------------------------
 
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -190,7 +189,7 @@ namespace SIPSorcery.Net
             ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
             _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
-            _dataSender = new SctpDataSender(ID, this.SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
+            _dataSender = new SctpDataSender(ID, SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
 
             State = SctpAssociationState.Closed;
         }
@@ -218,7 +217,7 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted || _wasShutdown || _initialisationFailed)
             {
-                logger.LogWarning($"SCTP association cannot be initialised after an abort or shutdown.");
+                logger.LogWarning("SCTP association cannot be initialised after an abort or shutdown.");
             }
             else if (State == SctpAssociationState.Closed)
             {
@@ -244,7 +243,7 @@ namespace SIPSorcery.Net
             // the same time using the same ports.
             if (_wasAborted || _wasShutdown)
             {
-                logger.LogWarning($"SCTP association cannot initialise with a cookie after an abort or shutdown.");
+                logger.LogWarning("SCTP association cannot initialise with a cookie after an abort or shutdown.");
             }
             else if (!(State == SctpAssociationState.Closed || State == SctpAssociationState.CookieEchoed))
             {
@@ -266,7 +265,7 @@ namespace SIPSorcery.Net
 
                 if (_dataSender == null)
                 {
-                    _dataSender = new SctpDataSender(ID, this.SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
+                    _dataSender = new SctpDataSender(ID, SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
                 }
 
                 InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
@@ -307,21 +306,21 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP packet received but association has been aborted, ignoring.");
+                logger.LogWarning("SCTP packet received but association has been aborted, ignoring.");
             }
             else if (packet.Header.VerificationTag != VerificationTag)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong verification tag, expected " +
+                logger.LogWarning("SCTP packet dropped due to wrong verification tag, expected " +
                     $"{VerificationTag} got {packet.Header.VerificationTag}.");
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.DestinationPort != _sctpSourcePort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP destination port, expected " +
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP destination port, expected " +
                                     $"{_sctpSourcePort} got {packet.Header.DestinationPort}.");
             }
             else if (!_sctpTransport.IsPortAgnostic && packet.Header.SourcePort != _sctpDestinationPort)
             {
-                logger.LogWarning($"SCTP packet dropped due to wrong SCTP source port, expected " +
+                logger.LogWarning("SCTP packet dropped due to wrong SCTP source port, expected " +
                                     $"{_sctpDestinationPort} got {packet.Header.SourcePort}.");
             }
             else
@@ -514,7 +513,7 @@ namespace SIPSorcery.Net
         {
             if (_wasAborted)
             {
-                logger.LogWarning($"SCTP send data is not allowed on an aborted association.");
+                logger.LogWarning("SCTP send data is not allowed on an aborted association.");
             }
             else if (!(State == SctpAssociationState.Established ||
                       State == SctpAssociationState.ShutdownPending ||
@@ -692,7 +691,7 @@ namespace SIPSorcery.Net
                 _t1Init = null;
                 _initialisationFailed = true;
 
-                logger.LogWarning($"SCTP timed out waiting for INIT ACK chunk from remote peer.");
+                logger.LogWarning("SCTP timed out waiting for INIT ACK chunk from remote peer.");
 
                 SetState(SctpAssociationState.Closed);
             }
@@ -712,7 +711,7 @@ namespace SIPSorcery.Net
                 _t1Cookie = null;
                 _initialisationFailed = true;
 
-                logger.LogWarning($"SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
+                logger.LogWarning("SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
 
                 SetState(SctpAssociationState.Closed);
             }

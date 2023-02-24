@@ -178,7 +178,7 @@ namespace SIPSorcery.Net
                 fuHeader += 0x40;
             }
 
-            return new byte[] { fuIndicator, fuHeader };
+            return new[] { fuIndicator, fuHeader };
         }
     }
 }

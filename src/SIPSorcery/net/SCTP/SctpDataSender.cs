@@ -21,10 +21,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
@@ -384,40 +382,37 @@ namespace SIPSorcery.Net
                     logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} too distant from last good TSN {lastAckTSN}, ignoring rest of SACK.");
                     break;
                 }
-                else if (!SctpDataReceiver.IsNewer(lastAckTSN, goodTSNStart))
+
+                if (!SctpDataReceiver.IsNewer(lastAckTSN, goodTSNStart))
                 {
                     logger.LogWarning($"SCTP SACK gap report had a start TSN of {goodTSNStart} behind last good TSN {lastAckTSN}, ignoring rest of SACK.");
                     break;
                 }
-                else
+
+                uint missingTSN = lastAckTSN + 1;
+
+                logger.LogTrace($"SCTP SACK gap report start TSN {goodTSNStart} gap report end TSN {_cumulativeAckTSN + gapBlock.End} " +
+                                $"first missing TSN {missingTSN}.");
+
+                while (missingTSN != goodTSNStart)
                 {
-                    uint missingTSN = lastAckTSN + 1;
-
-                    logger.LogTrace($"SCTP SACK gap report start TSN {goodTSNStart} gap report end TSN {_cumulativeAckTSN + gapBlock.End} " +
-                        $"first missing TSN {missingTSN}.");
-
-                    while (missingTSN != goodTSNStart)
+                    if (!_missingChunks.ContainsKey(missingTSN))
                     {
-                        if (!_missingChunks.ContainsKey(missingTSN))
+                        if (!_unconfirmedChunks.ContainsKey(missingTSN))
                         {
-                            if (!_unconfirmedChunks.ContainsKey(missingTSN))
-                            {
-                                // What to do? Can't retransmit a chunk that's no longer available. 
-                                // Hope it's a transient error from a duplicate or out of order SACK.
-                                // TODO: Maybe keep count of how many time this occurs and send an ABORT if it
-                                // gets to a certain threshold.
-                                logger.LogWarning($"SCTP SACK gap report reported missing TSN of {missingTSN} but no matching unconfirmed chunk available.");
-                                break;
-                            }
-                            else
-                            {
-                                logger.LogTrace($"SCTP SACK gap adding retransmit entry for TSN {missingTSN}.");
-                                _missingChunks.TryAdd(missingTSN, 0);
-                            }
+                            // What to do? Can't retransmit a chunk that's no longer available. 
+                            // Hope it's a transient error from a duplicate or out of order SACK.
+                            // TODO: Maybe keep count of how many time this occurs and send an ABORT if it
+                            // gets to a certain threshold.
+                            logger.LogWarning($"SCTP SACK gap report reported missing TSN of {missingTSN} but no matching unconfirmed chunk available.");
+                            break;
                         }
 
-                        missingTSN++;
+                        logger.LogTrace($"SCTP SACK gap adding retransmit entry for TSN {missingTSN}.");
+                        _missingChunks.TryAdd(missingTSN, 0);
                     }
+
+                    missingTSN++;
                 }
 
                 lastAckTSN = _cumulativeAckTSN + gapBlock.End;
@@ -578,19 +573,16 @@ namespace SIPSorcery.Net
                 {
                     return _burstPeriodMilliseconds;
                 }
-                else
-                {
-                    return _rtoMinimumMilliseconds;
-                }
+
+                return _rtoMinimumMilliseconds;
             }
-            else if (_unconfirmedChunks.Count > 0)
+
+            if (_unconfirmedChunks.Count > 0)
             {
                 return (int)(_hasRoundTripTime ? _rto : _rtoInitialMilliseconds);
             }
-            else
-            {
-                return _rtoInitialMilliseconds;
-            }
+
+            return _rtoInitialMilliseconds;
         }
 
 
@@ -667,26 +659,19 @@ namespace SIPSorcery.Net
 
                     return increasedCwnd;
                 }
-                else
-                {
-                    return _congestionWindow;
-                }
+
+                return _congestionWindow;
             }
-            else
+            // In Congestion Avoidance mode, see RFC4960 7.2.2.
+
+            if (_congestionWindow < _outstandingBytes)
             {
-                // In Congestion Avoidance mode, see RFC4960 7.2.2.
+                logger.LogTrace($"SCTP sender congestion window in congestion avoidance increased from {_congestionWindow} to {_congestionWindow + _defaultMTU}.");
 
-                if (_congestionWindow < _outstandingBytes)
-                {
-                    logger.LogTrace($"SCTP sender congestion window in congestion avoidance increased from {_congestionWindow} to {_congestionWindow + _defaultMTU}.");
-
-                    return _congestionWindow + _defaultMTU;
-                }
-                else
-                {
-                    return _congestionWindow;
-                }
+                return _congestionWindow + _defaultMTU;
             }
+
+            return _congestionWindow;
         }
     }
 }

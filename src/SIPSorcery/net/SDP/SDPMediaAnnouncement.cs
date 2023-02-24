@@ -33,6 +33,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.net.RTP;
+using SIPSorcery.Sys;
 using SIPSorceryMedia.Abstractions;
 
 namespace SIPSorcery.Net
@@ -54,7 +55,7 @@ namespace SIPSorcery.Net
 
         public const string m_CRLF = "\r\n";
 
-        private static ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private static ILogger logger = Log.Logger;
 
         public SDPConnectionInformation Connection;
 
@@ -275,9 +276,9 @@ namespace SIPSorcery.Net
                 announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
             }
 
-            foreach (SDPSecurityDescription desc in this.SecurityDescriptions)
+            foreach (SDPSecurityDescription desc in SecurityDescriptions)
             {
-                announcement += desc.ToString() + m_CRLF;
+                announcement += desc + m_CRLF;
             }
 
             if (MediaStreamStatus != null)
@@ -346,20 +347,19 @@ namespace SIPSorcery.Net
 
                 return sb.ToString().Trim();
             }
-            else if (Media == SDPMediaTypesEnum.message)
+
+            if (Media == SDPMediaTypesEnum.message)
             {
                 return "*";
             }
-            else
-            {
-                string mediaFormatList = null;
-                foreach (var mediaFormat in MediaFormats)
-                {
-                    mediaFormatList += mediaFormat.Key + " ";
-                }
 
-                return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+            string mediaFormatList = null;
+            foreach (var mediaFormat in MediaFormats)
+            {
+                mediaFormatList += mediaFormat.Key + " ";
             }
+
+            return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
         }
 
         public string GetFormatListAttributesToString()
@@ -384,12 +384,11 @@ namespace SIPSorcery.Net
 
                     return sb.ToString();
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
-            else if (Media == SDPMediaTypesEnum.message)
+
+            if (Media == SDPMediaTypesEnum.message)
             {
                 StringBuilder sb = new StringBuilder();
 
@@ -413,34 +412,32 @@ namespace SIPSorcery.Net
                 
                 return sb.ToString();
             }
-            else
+
+            string formatAttributes = null;
+
+            if (MediaFormats != null)
             {
-                string formatAttributes = null;
-
-                if (MediaFormats != null)
+                foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
                 {
-                    foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
+                    if (mediaFormat.Rtpmap == null)
                     {
-                        if (mediaFormat.Rtpmap == null)
-                        {
-                            // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
-                            // stacks don't work without it.
-                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
-                        }
-                        else
-                        {
-                            formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
-                        }
+                        // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
+                        // stacks don't work without it.
+                        formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
+                    }
+                    else
+                    {
+                        formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                    }
 
-                        if (mediaFormat.Fmtp != null)
-                        {
-                            formatAttributes += MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
-                        }
+                    if (mediaFormat.Fmtp != null)
+                    {
+                        formatAttributes += MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
                     }
                 }
-
-                return formatAttributes;
             }
+
+            return formatAttributes;
         }
 
         public void AddExtra(string attribute)
@@ -453,7 +450,7 @@ namespace SIPSorcery.Net
 
         public void AddCryptoLine(string crypto)
         {
-            this.SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
+            SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
         }
     }
 }

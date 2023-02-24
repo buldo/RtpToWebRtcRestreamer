@@ -36,8 +36,8 @@ namespace SIPSorcery.Net
         protected UdpReceiver m_rtpReceiver;
         private Socket m_controlSocket;
         protected UdpReceiver m_controlReceiver;
-        private bool m_rtpReceiverStarted = false;
-        private bool m_controlReceiverStarted = false;
+        private bool m_rtpReceiverStarted;
+        private bool m_controlReceiverStarted;
         private bool m_isClosed;
 
         public Socket RtpSocket { get; private set; }
@@ -86,10 +86,8 @@ namespace SIPSorcery.Net
                 {
                     return RtpSocket.DualMode;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return false;
             }
         }
         
@@ -115,7 +113,8 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
             }
-            else if (createControlSocket && m_controlSocket == null)
+
+            if (createControlSocket && m_controlSocket == null)
             {
                 throw new ApplicationException("The RTP channel was not able to create a Control socket.");
             }
@@ -218,69 +217,68 @@ namespace SIPSorcery.Net
             {
                 return SocketError.Disconnecting;
             }
-            else if (dstEndPoint == null)
+
+            if (dstEndPoint == null)
             {
                 throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
             }
-            else if (buffer == null || buffer.Length == 0)
+
+            if (buffer == null || buffer.Length == 0)
             {
                 throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
             }
-            else if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
+
+            if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
             {
                 logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
                 return SocketError.DestinationAddressRequired;
             }
-            else
+
+            try
             {
-                try
+                Socket sendSocket = RtpSocket;
+                if (sendOn == RTPChannelSocketsEnum.Control)
                 {
-                    Socket sendSocket = RtpSocket;
-                    if (sendOn == RTPChannelSocketsEnum.Control)
+                    LastControlDestination = dstEndPoint;
+                    if (m_controlSocket == null)
                     {
-                        LastControlDestination = dstEndPoint;
-                        if (m_controlSocket == null)
-                        {
-                            throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
-                        }
-                        else
-                        {
-                            sendSocket = m_controlSocket;
-                        }
-                    }
-                    else
-                    {
-                        LastRtpDestination = dstEndPoint;
+                        throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
                     }
 
-                    //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                    if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-                    {
-                        dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-                    }
+                    sendSocket = m_controlSocket;
+                }
+                else
+                {
+                    LastRtpDestination = dstEndPoint;
+                }
 
-                    //Fix ReceiveFrom logic if any previous exception happens
-                    if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
-                    {
-                        m_rtpReceiver.BeginReceiveFrom();
-                    }
+                //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
+                if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+                {
+                    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
+                }
 
-                    sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-                    return SocketError.Success;
-                }
-                catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+                //Fix ReceiveFrom logic if any previous exception happens
+                if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
                 {
-                    return SocketError.Disconnecting;
+                    m_rtpReceiver.BeginReceiveFrom();
                 }
-                catch (SocketException sockExcp)
-                {
-                    return sockExcp.SocketErrorCode;
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError($"Exception RTPChannel.Send. {excp}");
-                    return SocketError.Fault;
-                }
+
+                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+                return SocketError.Success;
+            }
+            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+            {
+                return SocketError.Disconnecting;
+            }
+            catch (SocketException sockExcp)
+            {
+                return sockExcp.SocketErrorCode;
+            }
+            catch (Exception excp)
+            {
+                logger.LogError($"Exception RTPChannel.Send. {excp}");
+                return SocketError.Fault;
             }
         }
 

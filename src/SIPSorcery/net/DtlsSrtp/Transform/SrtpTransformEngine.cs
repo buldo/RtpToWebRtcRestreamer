@@ -103,7 +103,7 @@ namespace SIPSorcery.Net
          */
         public SrtpCryptoContext GetDefaultContext()
         {
-            return this.defaultContext;
+            return defaultContext;
         }
 
         /**
@@ -113,7 +113,7 @@ namespace SIPSorcery.Net
          */
         public SrtcpCryptoContext GetDefaultContextControl()
         {
-            return this.defaultContextControl;
+            return defaultContextControl;
         }
     }
 }

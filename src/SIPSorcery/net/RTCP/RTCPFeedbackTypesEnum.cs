@@ -7,7 +7,7 @@ namespace SIPSorcery.Net
     /// https://tools.ietf.org/html/rfc4585#page-35
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum RTCPFeedbackTypesEnum : int
+    public enum RTCPFeedbackTypesEnum
     {
         unassigned = 0,     // Unassigned
         NACK = 1,   		// Generic NACK	Generic negative acknowledgment		    [RFC4585]

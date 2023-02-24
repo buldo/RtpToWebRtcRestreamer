@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
         private VideoCodecsEnum _codec;
         private int _maxFrameSize;
         private byte[] _currVideoFrame;
-        private int _currVideoFramePosn = 0;
+        private int _currVideoFramePosn;
         private H264Depacketiser _h264Depacketiser;
 
         public RtpVideoFramer(VideoCodecsEnum codec, int maxFrameSize)

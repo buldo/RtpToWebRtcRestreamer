@@ -64,12 +64,12 @@ namespace SIPSorcery.Net
         {
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
             }
 
@@ -91,12 +91,12 @@ namespace SIPSorcery.Net
                 Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
             }
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+            return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
         }
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
+            string attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
 
             return attrDescrStr;
         }
@@ -107,10 +107,8 @@ namespace SIPSorcery.Net
             {
                 return new IPEndPoint(Address, Port);
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

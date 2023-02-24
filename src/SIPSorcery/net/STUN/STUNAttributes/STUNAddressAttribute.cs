@@ -44,19 +44,19 @@ namespace SIPSorcery.Net
                 Port = BitConverter.ToUInt16(attributeValue, 2);
             }
 
-            Address = new IPAddress(new byte[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+            Address = new IPAddress(new[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
         }
 
         public override int ToByteBuffer(byte[] buffer, int startIndex)
         {
             if (BitConverter.IsLittleEndian)
             {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)base.AttributeType)), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
             }
             else
             {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)base.AttributeType), 0, buffer, startIndex, 2);
+                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
                 Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
             }
 
@@ -72,12 +72,12 @@ namespace SIPSorcery.Net
             }
             Buffer.BlockCopy(Address.GetAddressBytes(), 0, buffer, startIndex + 8, 4);
 
-            return STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+            return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
         }
 
         public override string ToString()
         {
-            string attrDescrStr = "STUN Attribute: " + base.AttributeType + ", address=" + Address.ToString() + ", port=" + Port + ".";
+            string attrDescrStr = "STUN Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
 
             return attrDescrStr;
         }

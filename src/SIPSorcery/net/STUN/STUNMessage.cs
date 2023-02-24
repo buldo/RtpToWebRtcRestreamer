@@ -19,7 +19,6 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -34,7 +33,7 @@ namespace SIPSorcery.Net
         /// For parsed STUN messages this indicates whether a valid fingerprint
         /// as attached to the message.
         /// </summary>
-        public bool isFingerprintValid { get; private set; } = false;
+        public bool isFingerprintValid { get; private set; }
 
         /// <summary>
         /// For received STUN messages this is the raw buffer.
@@ -109,7 +108,7 @@ namespace SIPSorcery.Net
 
         public byte[] ToByteBufferStringKey(string messageIntegrityKey, bool addFingerprint)
         {
-            return ToByteBuffer(messageIntegrityKey.NotNullOrBlank() ? System.Text.Encoding.UTF8.GetBytes(messageIntegrityKey) : null, addFingerprint);
+            return ToByteBuffer(messageIntegrityKey.NotNullOrBlank() ? Encoding.UTF8.GetBytes(messageIntegrityKey) : null, addFingerprint);
         }
 
         public byte[] ToByteBuffer(byte[] messageIntegrityKey, bool addFingerprint)

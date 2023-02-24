@@ -17,6 +17,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
@@ -73,31 +74,31 @@ namespace TinyJson
             }
             else if (type == typeof(byte) || type == typeof(sbyte))
             {
-                stringBuilder.Append(item.ToString());
+                stringBuilder.Append(item);
             }
             else if (type == typeof(short) || type == typeof(ushort))
             {
-                stringBuilder.Append(item.ToString());
+                stringBuilder.Append(item);
             }
             else if (type == typeof(int) || type == typeof(uint))
             {
-                stringBuilder.Append(item.ToString());
+                stringBuilder.Append(item);
             }
             else if (type == typeof(long) || type == typeof(ulong))
             {
-                stringBuilder.Append(item.ToString());
+                stringBuilder.Append(item);
             }
             else if (type == typeof(float))
             {
-                stringBuilder.Append(((float)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                stringBuilder.Append(((float)item).ToString(CultureInfo.InvariantCulture));
             }
             else if (type == typeof(double))
             {
-                stringBuilder.Append(((double)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                stringBuilder.Append(((double)item).ToString(CultureInfo.InvariantCulture));
             }
             else if (type == typeof(decimal))
             {
-                stringBuilder.Append(((decimal)item).ToString(System.Globalization.CultureInfo.InvariantCulture));
+                stringBuilder.Append(((decimal)item).ToString(CultureInfo.InvariantCulture));
             }
             else if (type == typeof(bool))
             {
@@ -106,7 +107,7 @@ namespace TinyJson
             else if (type.IsEnum)
             {
                 stringBuilder.Append('"');
-                stringBuilder.Append(item.ToString());
+                stringBuilder.Append(item);
                 stringBuilder.Append('"');
             }
             else if (item is IList)

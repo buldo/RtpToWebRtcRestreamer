@@ -26,5 +26,5 @@ namespace SIPSorcery.Net
         /// The underlying data transport has been closed or could not be established.
         /// </summary>
         closed
-    };
+    }
 }

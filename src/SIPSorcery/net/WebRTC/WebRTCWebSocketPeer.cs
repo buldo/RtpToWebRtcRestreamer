@@ -30,7 +30,7 @@ namespace SIPSorcery.Net
     /// </summary>
     public class WebRTCWebSocketPeer : WebSocketBehavior
     {
-        private ILogger logger = SIPSorcery.Sys.Log.Logger;
+        private ILogger logger = Sys.Log.Logger;
 
         private RTCPeerConnection _pc;
 
@@ -42,9 +42,6 @@ namespace SIPSorcery.Net
         public Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
 
         public Func<Task<RTCPeerConnection>> CreatePeerConnection;
-
-        public WebRTCWebSocketPeer()
-        { }
 
         protected override async void OnMessage(MessageEventArgs e)
         {
@@ -78,7 +75,7 @@ namespace SIPSorcery.Net
                 {
                     logger.LogWarning($"Failed to set remote description, {result}.");
                     _pc.Close("failed to set remote description");
-                    this.Close();
+                    Close();
                 }
                 else
                 {
@@ -108,7 +105,7 @@ namespace SIPSorcery.Net
 
             _pc = await CreatePeerConnection().ConfigureAwait(false);
 
-            _pc.onicecandidate += (iceCandidate) =>
+            _pc.onicecandidate += iceCandidate =>
             {
                 if (_pc.signalingState == RTCSignalingState.have_remote_offer ||
                     _pc.signalingState == RTCSignalingState.stable)
@@ -117,7 +114,7 @@ namespace SIPSorcery.Net
                 }
             };
 
-            if (base.Context.QueryString["role"] != "offer")
+            if (Context.QueryString["role"] != "offer")
             {
                 var offerSdp = _pc.createOffer();
                 await _pc.setLocalDescription(offerSdp).ConfigureAwait(false);

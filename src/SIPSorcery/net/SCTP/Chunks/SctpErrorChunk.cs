@@ -17,9 +17,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
@@ -144,8 +142,8 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(missingMandatory);
                             break;
                         case (ushort)SctpErrorCauseCode.StaleCookieError:
-                            uint staleness = (uint)((varParam.ParameterValue != null) ?
-                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                            uint staleness = (varParam.ParameterValue != null) ?
+                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                             var staleCookie = new SctpErrorStaleCookieError { MeasureOfStaleness = staleness };
                             errorChunk.AddErrorCause(staleCookie);
                             break;
@@ -168,8 +166,8 @@ namespace SIPSorcery.Net
                             errorChunk.AddErrorCause(unrecognisedParams);
                             break;
                         case (ushort)SctpErrorCauseCode.NoUserData:
-                            uint tsn = (uint)((varParam.ParameterValue != null) ?
-                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0);
+                            uint tsn = (varParam.ParameterValue != null) ?
+                                NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                             var noData = new SctpErrorNoUserData { TSN = tsn };
                             errorChunk.AddErrorCause(noData);
                             break;

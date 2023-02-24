@@ -38,12 +38,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SIPSorcery.net.RTP;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Tls;
+using SIPSorcery.net.RTP;
 using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
@@ -121,7 +121,7 @@ namespace SIPSorcery.Net
         /// </summary>
         private const int SCTP_ASSOCIATE_TIMEOUT_SECONDS = 2;
 
-        private new readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
+        private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
         public string SessionID { get; private set; }
@@ -133,8 +133,8 @@ namespace SIPSorcery.Net
         readonly RTCDataChannelCollection dataChannels;
         public IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
-        private Org.BouncyCastle.Crypto.Tls.Certificate _dtlsCertificate;
-        private Org.BouncyCastle.Crypto.AsymmetricKeyParameter _dtlsPrivateKey;
+        private Certificate _dtlsCertificate;
+        private AsymmetricKeyParameter _dtlsPrivateKey;
         private DtlsSrtpTransport _dtlsHandle;
         private Task _iceGatheringTask;
 
@@ -156,7 +156,7 @@ namespace SIPSorcery.Net
         /// </summary>
         public RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; private set; }
 
-        public bool IsDtlsNegotiationComplete { get; private set; } = false;
+        public bool IsDtlsNegotiationComplete { get; private set; }
 
         public RTCSessionDescription localDescription { get; private set; }
 
@@ -373,9 +373,9 @@ namespace SIPSorcery.Net
 
             _rtpIceChannel = GetRtpChannel();
 
-            _rtpIceChannel.OnIceCandidate += (candidate) => _onIceCandidate?.Invoke(candidate);
+            _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
             _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
-            _rtpIceChannel.OnIceGatheringStateChange += (state) => onicegatheringstatechange?.Invoke(state);
+            _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
             _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
             OnRtpClosed += Close;
@@ -417,8 +417,8 @@ namespace SIPSorcery.Net
             {
                 if (_dtlsHandle != null)
                 {
-                    if (base.PrimaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                        base.PrimaryStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    if (PrimaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        PrimaryStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
                         var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
@@ -450,8 +450,8 @@ namespace SIPSorcery.Net
                                 IceRole == IceRolesEnum.active ?
                                 new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
                                 { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret } :
-                                (IDtlsSrtpPeer)new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
-                                { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
+                                new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                                    { ForceUseExtendedMasterSecret = !disableDtlsExtendedMasterSecret }
                                 );
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
@@ -467,7 +467,7 @@ namespace SIPSorcery.Net
 
                         if (connectionState == RTCPeerConnectionState.connected)
                         {
-                            await base.Start().ConfigureAwait(false);
+                            await Start().ConfigureAwait(false);
                             await InitialiseSctpTransport().ConfigureAwait(false);
                         }
                     }
@@ -689,7 +689,7 @@ namespace SIPSorcery.Net
                     }
                     else
                     {
-                        logger.LogWarning($"The DTLS fingerprint was invalid or not supported.");
+                        logger.LogWarning("The DTLS fingerprint was invalid or not supported.");
                         return SetDescriptionResultEnum.DtlsFingerprintDigestNotSupported;
                     }
                 }
@@ -837,28 +837,26 @@ namespace SIPSorcery.Net
             {
                 throw new ApplicationException("The remote SDP must be set before an SDP answer can be created.");
             }
-            else
+
+            List<MediaStream> mediaStreamList = GetMediaStreams();
+            //Revert to DefaultStreamStatus
+            foreach (var mediaStream in mediaStreamList)
             {
-                List<MediaStream> mediaStreamList = GetMediaStreams();
-                //Revert to DefaultStreamStatus
-                foreach (var mediaStream in mediaStreamList)
+                if (mediaStream.LocalTrack != null && mediaStream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
                 {
-                    if (mediaStream.LocalTrack != null && mediaStream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
-                    {
-                        mediaStream.LocalTrack.StreamStatus = mediaStream.LocalTrack.DefaultStreamStatus;
-                    }
+                    mediaStream.LocalTrack.StreamStatus = mediaStream.LocalTrack.DefaultStreamStatus;
                 }
-
-                var answerSdp = createBaseSdp(mediaStreamList);
-
-                RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
-                {
-                    type = RTCSdpType.answer,
-                    sdp = answerSdp.ToString()
-                };
-
-                return initDescription;
             }
+
+            var answerSdp = createBaseSdp(mediaStreamList);
+
+            RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
+            {
+                type = RTCSdpType.answer,
+                sdp = answerSdp.ToString()
+            };
+
+            return initDescription;
         }
 
         /// <summary>
@@ -898,7 +896,7 @@ namespace SIPSorcery.Net
             SDP offerSdp = new SDP(IPAddress.Loopback);
             offerSdp.SessionId = LocalSdpSessionID;
 
-            string dtlsFingerprint = this.DtlsCertificateFingerprint.ToString();
+            string dtlsFingerprint = DtlsCertificateFingerprint.ToString();
             bool iceCandidatesAdded = false;
             
 
@@ -1008,7 +1006,7 @@ namespace SIPSorcery.Net
 
                 if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
-                    logger.LogWarning($"Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
+                    logger.LogWarning("Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
                 }
                 else
                 {
@@ -1081,7 +1079,7 @@ namespace SIPSorcery.Net
                     if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                     {
                         // RTP/RTCP packet.
-                        base.OnReceive(localPort, remoteEP, buffer);
+                        OnReceive(localPort, remoteEP, buffer);
                     }
                     else
                     {
@@ -1191,13 +1189,11 @@ namespace SIPSorcery.Net
                 {
                     return;
                 }
-                else
+
+                if (_requireRenegotiation)
                 {
-                    if (_requireRenegotiation)
-                    {
-                        //We Already Subscribe CancelRenegotiationEventTask in Constructor so we dont need to handle with this function again here
-                        onnegotiationneeded?.Invoke();
-                    }
+                    //We Already Subscribe CancelRenegotiationEventTask in Constructor so we dont need to handle with this function again here
+                    onnegotiationneeded?.Invoke();
                 }
             }, token);
         }
@@ -1346,7 +1342,7 @@ namespace SIPSorcery.Net
             if (sctp.state != RTCSctpTransportState.Connected)
             {
                 TaskCompletionSource<bool> onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                sctp.OnStateChanged += (state) =>
+                sctp.OnStateChanged += state =>
                 {
                     logger.LogDebug($"SCTP transport for create data channel request changed to state {state}.");
 
@@ -1368,10 +1364,8 @@ namespace SIPSorcery.Net
                     {
                         throw new ApplicationException($"SCTP association timed out after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
                     }
-                    else
-                    {
-                        throw new ApplicationException($"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
-                    }
+
+                    throw new ApplicationException($"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
                 }
             }
         }
@@ -1412,7 +1406,7 @@ namespace SIPSorcery.Net
 
             var rtpChannel = PrimaryStream.GetRTPChannel();
 
-            dtlsHandle.OnDataReady += (buf) =>
+            dtlsHandle.OnDataReady += buf =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
                 rtpChannel.Send(RTPChannelSocketsEnum.RTP, PrimaryStream.DestinationEndPoint, buf);
@@ -1427,34 +1421,30 @@ namespace SIPSorcery.Net
                 Close("dtls handshake failed");
                 return false;
             }
-            else
+
+            logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+
+            var expectedFp = RemotePeerDtlsFingerprint;
+            var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+
+            if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
             {
-                logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+                logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+                Close("dtls fingerprint mismatch");
+                return false;
+            }
 
-                var expectedFp = RemotePeerDtlsFingerprint;
-                var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+            logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
-                if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
-                {
-                    logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
-                    Close("dtls fingerprint mismatch");
-                    return false;
-                }
-                else
-                {
-                    logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
-
-                    SetGlobalSecurityContext(dtlsHandle.ProtectRTP,
-                        dtlsHandle.UnprotectRTP,
-                        dtlsHandle.ProtectRTCP,
-                        dtlsHandle.UnprotectRTCP);
+            SetGlobalSecurityContext(dtlsHandle.ProtectRTP,
+                dtlsHandle.UnprotectRTP,
+                dtlsHandle.ProtectRTCP,
+                dtlsHandle.UnprotectRTCP);
 
                         
-                    IsDtlsNegotiationComplete = true;
+            IsDtlsNegotiationComplete = true;
 
-                    return true;
-                }
-            }
+            return true;
         }
 
         /// <summary>
@@ -1467,7 +1457,7 @@ namespace SIPSorcery.Net
         {
             if (alertType == AlertTypesEnum.close_notify)
             {
-                logger.LogDebug($"SCTP closing transport as a result of DTLS close notification.");
+                logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
 
                 // No point keeping the SCTP association open if there is no DTLS transport available.
                 sctp?.Close();

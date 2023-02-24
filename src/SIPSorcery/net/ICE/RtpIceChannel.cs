@@ -71,10 +71,10 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DnsClient;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Sys;
 
@@ -114,7 +114,7 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RtpIceChannel : RTPChannel
     {
-        private static DnsClient.LookupClient _dnsLookupClient;
+        private static LookupClient _dnsLookupClient;
 
         private const int ICE_UFRAG_LENGTH = 4;
         private const int ICE_PASSWORD_LENGTH = 24;
@@ -502,10 +502,8 @@ namespace SIPSorcery.Net
                 {
                     return Math.Max(500, Ta * Candidates.Count(x => x.type == RTCIceCandidateType.srflx || x.type == RTCIceCandidateType.relay));
                 }
-                else
-                {
-                    return Math.Max(500, Ta * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
-                }
+
+                return Math.Max(500, Ta * (_checklist.Count(x => x.State == ChecklistEntryState.Waiting) + _checklist.Count(x => x.State == ChecklistEntryState.InProgress)));
             }
         }
 
@@ -514,12 +512,12 @@ namespace SIPSorcery.Net
         public string RemoteIceUser { get; private set; }
         public string RemoteIcePassword { get; private set; }
 
-        private bool _closed = false;
+        private bool _closed;
         private Timer _connectivityChecksTimer;
         private Timer _processIceServersTimer;
         private Timer _refreshTurnTimer;
         private DateTime _checklistStartedAt = DateTime.MinValue;
-        private bool _includeAllInterfaceAddresses = false;
+        private bool _includeAllInterfaceAddresses;
         private ulong _iceTiebreaker;
 
         public event Action<RTCIceCandidate> OnIceCandidate;
@@ -559,7 +557,7 @@ namespace SIPSorcery.Net
 
         protected UdpReceiver m_rtpTcpReceiver;
 
-        private bool m_tcpRtpReceiverStarted = false;
+        private bool m_tcpRtpReceiverStarted;
 
         private bool m_isTcpClosed = true;
 
@@ -607,8 +605,8 @@ namespace SIPSorcery.Net
 
             _localChecklistCandidate.SetAddressProperties(
                 RTCIceProtocol.udp,
-                base.RTPLocalEndPoint.Address,
-                (ushort)base.RTPLocalEndPoint.Port,
+                RTPLocalEndPoint.Address,
+                (ushort)RTPLocalEndPoint.Port,
                 RTCIceCandidateType.host,
                 null,
                 0);
@@ -627,7 +625,7 @@ namespace SIPSorcery.Net
                 _startedGatheringAt = DateTime.Now;
 
                 // Start listening on the UDP socket.
-                base.Start();
+                Start();
                 StartTcpRtpReceiver();
 
                 IceGatheringState = RTCIceGatheringState.gathering;
@@ -727,7 +725,7 @@ namespace SIPSorcery.Net
         {
             if (!_closed)
             {
-                logger.LogDebug($"RtpIceChannel for {base.RTPLocalEndPoint} closed.");
+                logger.LogDebug($"RtpIceChannel for {RTPLocalEndPoint} closed.");
                 _closed = true;
                 _connectivityChecksTimer?.Dispose();
                 _processIceServersTimer?.Dispose();
@@ -867,13 +865,13 @@ namespace SIPSorcery.Net
             //    signallingDstAddress = null;
             //}
 
-            var rtpBindAddress = base.RTPLocalEndPoint.Address;
+            var rtpBindAddress = RTPLocalEndPoint.Address;
 
             // We get a list of local addresses that can be used with the address the RTP socket is bound on.
             List<IPAddress> localAddresses = null;
             if (IPAddress.IPv6Any.Equals(rtpBindAddress))
             {
-                if (base.RtpSocket.DualMode)
+                if (RtpSocket.DualMode)
                 {
                     // IPv6 dual mode listening on [::] means we can use all valid local addresses.
                     localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
@@ -903,7 +901,7 @@ namespace SIPSorcery.Net
             foreach (var localAddress in localAddresses)
             {
                 var hostCandidate = new RTCIceCandidate(init);
-                hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)base.RTPPort, RTCIceCandidateType.host, null, 0);
+                hostCandidate.SetAddressProperties(RTCIceProtocol.udp, localAddress, (ushort)RTPPort, RTCIceCandidateType.host, null, 0);
 
                 // We currently only support a single multiplexed connection for all data streams and RTCP.
                 if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == SDP_MLINE_INDEX)
@@ -933,7 +931,8 @@ namespace SIPSorcery.Net
             {
                 throw new ArgumentNullException("localCandidate", "The local candidate must be supplied for UpdateChecklist.");
             }
-            else if (remoteCandidate == null)
+
+            if (remoteCandidate == null)
             {
                 throw new ArgumentNullException("remoteCandidate", "The remote candidate must be supplied for UpdateChecklist.");
             }
@@ -966,7 +965,7 @@ namespace SIPSorcery.Net
                 else
                 {
                     // The candidate string can be a hostname or an IP address.
-                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, DnsClient.QueryType.A).ConfigureAwait(false);
+                    var lookupResult = await _dnsLookupClient.QueryAsync(remoteCandidate.address, QueryType.A).ConfigureAwait(false);
 
                     if (lookupResult.Answers.Count > 0)
                     {
@@ -1004,8 +1003,8 @@ namespace SIPSorcery.Net
                 }
                 else
                 {
-                    supportsIPv4 = base.RtpSocket.AddressFamily == AddressFamily.InterNetwork || base.IsDualMode;
-                    supportsIPv6 = base.RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || base.IsDualMode;
+                    supportsIPv4 = RtpSocket.AddressFamily == AddressFamily.InterNetwork || IsDualMode;
+                    supportsIPv6 = RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || IsDualMode;
                 }
 
                 lock (_checklist)
@@ -1206,7 +1205,7 @@ namespace SIPSorcery.Net
                                         // Do a check for any timed out that has succeded
                                         var failedNominatedEntries = _checklist.Where(x =>
                                             x.State == ChecklistEntryState.Succeeded
-                                            && x.LastCheckSentAt > System.DateTime.MinValue
+                                            && x.LastCheckSentAt > DateTime.MinValue
                                             && DateTime.Now.Subtract(x.LastCheckSentAt).TotalSeconds > FAILED_TIMEOUT_PERIOD).ToList();
 
                                         var requireReprocess = false;
@@ -1347,12 +1346,12 @@ namespace SIPSorcery.Net
                 if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
                 {
                     
-                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to relay at TODO (use candidate {setUseCandidate}).");
+                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to relay at TODO (use candidate {setUseCandidate}).");
                 }
                 else
                 {
                     IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {base.RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
+                    logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
                 }
                 SendSTUNBindingRequest(candidatePair, setUseCandidate);
             }
@@ -1393,7 +1392,7 @@ namespace SIPSorcery.Net
             else
             {
                 IPEndPoint remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                var sendResult = base.Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                var sendResult = Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
 
                 if (sendResult != SocketError.Success)
                 {
@@ -1804,7 +1803,7 @@ namespace SIPSorcery.Net
                     remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
                 }
 
-                base.LastRtpDestination = remoteEndPoint;
+                LastRtpDestination = remoteEndPoint;
 
                 if (packet[0] == 0x00 || packet[0] == 0x01)
                 {

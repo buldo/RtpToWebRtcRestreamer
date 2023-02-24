@@ -13,29 +13,29 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Net;
-
+using System.Net.Sockets;
 
 namespace SIPSorcery.Net
 {
     public static class IPAddressHelper
     {
         // Prefixes used for categorizing IPv6 addresses.
-        static byte[] k6To4Prefix = new byte[] { 0x20, 0x02, 0 };
-        static byte[] kV4CompatibilityPrefix = new byte[] { 0 };
-        static byte[] k6BonePrefix = new byte[] { 0x3f, 0xfe, 0 };
+        static byte[] k6To4Prefix = { 0x20, 0x02, 0 };
+        static byte[] kV4CompatibilityPrefix = { 0 };
+        static byte[] k6BonePrefix = { 0x3f, 0xfe, 0 };
 
         public static uint IPAddressPrecedence(IPAddress ip)
         {
             try
             {
                 // Precedence values from RFC 3484-bis. Prefers native v4 over 6to4/Teredo.
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
                     return 30;
                 }
-                else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+
+                if (ip.AddressFamily == AddressFamily.InterNetworkV6)
                 {
                     if (IPAddress.IsLoopback(ip))
                     {
@@ -46,15 +46,18 @@ namespace SIPSorcery.Net
                     // Unique local addresses are available for use in private networks, e.g. inside a single site
                     // or organisation, or spanning a limited number of sites or organisations.
                     // They are not routable in the global IPv6 Internet.
-                    else if (ip.IsIPv6SiteLocal)
+
+                    if (ip.IsIPv6SiteLocal)
                     {
                         return 50;
                     }
-                    else if (ip.IsIPv4MappedToIPv6)
+
+                    if (ip.IsIPv4MappedToIPv6)
                     {
                         return 30;
                     }
-                    else if (IPIs6To4(ip))
+
+                    if (IPIs6To4(ip))
                     {
                         return 20;
                     }
@@ -63,19 +66,19 @@ namespace SIPSorcery.Net
                     // no direct native connection to an IPv6 network. Compared to other similar protocols
                     // its distinguishing feature is that it is able to perform its function even from behind
                     // network address translation (NAT) devices such as home routers.
-                    else if (ip.IsIPv6Teredo)
+
+                    if (ip.IsIPv6Teredo)
                     {
                         return 10;
                     }
-                    else if (IPIsV4Compatibility(ip) || IPIsSiteLocal(ip) || IPIs6Bone(ip))
+
+                    if (IPIsV4Compatibility(ip) || IPIsSiteLocal(ip) || IPIs6Bone(ip))
                     {
                         return 1;
                     }
-                    else
-                    {
-                        // A 'normal' IPv6 address.
-                        return 40;
-                    }
+
+                    // A 'normal' IPv6 address.
+                    return 40;
                 }
             }
             catch { }
@@ -91,7 +94,7 @@ namespace SIPSorcery.Net
             try
             {
                 // Can't use the helper because the prefix is 10 bits.
-                ip = ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6 ? ip : ip.MapToIPv6();
+                ip = ip.AddressFamily == AddressFamily.InterNetworkV6 ? ip : ip.MapToIPv6();
                 byte[] addr = ip.GetAddressBytes();
                 return addr[0] == 0xFE && (addr[1] & 0xC0) == 0xC0;
             }

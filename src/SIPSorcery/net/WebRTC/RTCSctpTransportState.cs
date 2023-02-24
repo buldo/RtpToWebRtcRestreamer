@@ -5,5 +5,5 @@
         Connecting,
         Connected,
         Closed
-    };
+    }
 }

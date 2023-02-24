@@ -141,12 +141,12 @@ namespace SIPSorcery.Net
 
         public decimal Version = SDP_PROTOCOL_VERSION;
 
-        private string m_rawSdp = null;
+        private string m_rawSdp;
 
         // Owner fields.
         public string Username = "-";       // Username of the session originator.
         public string SessionId = "-";      // Unique Id for the session.
-        public int AnnouncementVersion = 0; // Version number for each announcement, number must be increased for each subsequent SDP modification.
+        public int AnnouncementVersion; // Version number for each announcement, number must be increased for each subsequent SDP modification.
         public string NetworkType = "IN";   // Type of network, IN = Internet.
         public string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
         public string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
@@ -167,7 +167,7 @@ namespace SIPSorcery.Net
         public IceImplementationEnum IceImplementation = IceImplementationEnum.full;
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
-        public IceRolesEnum? IceRole = null;
+        public IceRolesEnum? IceRole;
         public string DtlsFingerprint;              // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public List<string> IceCandidates;
 
@@ -187,7 +187,7 @@ namespace SIPSorcery.Net
         /// If child media announcements have an explicit status set then 
         /// they take precedence.
         /// </summary>
-        public MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; } = null;
+        public MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; }
 
         public List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
 
@@ -216,7 +216,7 @@ namespace SIPSorcery.Net
                     Dictionary<int, string> _pendingFmtp = new Dictionary<int, string>();
 
                     //string[] sdpLines = Regex.Split(sdpDescription, CRLF);
-                    string[] sdpLines = sdpDescription.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] sdpLines = sdpDescription.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (string sdpLine in sdpLines)
                     {
@@ -766,10 +766,8 @@ namespace SIPSorcery.Net
 
                     return sdp;
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
             catch (Exception excp)
             {
@@ -802,13 +800,13 @@ namespace SIPSorcery.Net
 
             sdp += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + CRLF : null;
             sdp += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + CRLF : null;
-            sdp += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{CRLF}" : null;
+            sdp += IceRole != null ? $"a={ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{CRLF}" : null;
             sdp += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + CRLF : null;
             if (IceCandidates?.Count > 0)
             {
                 foreach (var candidate in IceCandidates)
                 {
-                    sdp += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{CRLF}";
+                    sdp += $"a={ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{CRLF}";
                 }
             }
             sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;

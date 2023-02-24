@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 
 namespace SIPSorcery.Net
 {
@@ -43,7 +42,7 @@ namespace SIPSorcery.Net
     public class SDPSecurityDescription
     {
         public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
-        private readonly char[] WHITE_SPACES = new char[] { ' ', '\t' };
+        private readonly char[] WHITE_SPACES = { ' ', '\t' };
         private const char SEMI_COLON = ';';
         private const string COLON = ":";
         private const string WHITE_SPACE = " ";
@@ -70,7 +69,7 @@ namespace SIPSorcery.Net
             private const string COLON = ":";
             private const string PIPE = "|";
             public const string KEY_METHOD = "inline";
-            private byte[] m_key = null;
+            private byte[] m_key;
             //128 bit for AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_32, F8_128_HMAC_SHA1_80, AEAD_AES_128_GCM
             //192 bit for AES_192_CM_HMAC_SHA1_80, AES_192_CM_HMAC_SHA1_32
             //256 bit for AEAD_AES_256_GCM, AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32 
@@ -79,7 +78,7 @@ namespace SIPSorcery.Net
             {
                 get
                 {
-                    return this.m_key;
+                    return m_key;
                 }
                 set
                 {
@@ -93,10 +92,10 @@ namespace SIPSorcery.Net
                         throw new ArgumentOutOfRangeException("Key", "Key must be at least 16 characters long");
                     }
 
-                    this.m_key = value;
+                    m_key = value;
                 }
             }
-            private byte[] m_salt = null;
+            private byte[] m_salt;
             //112 bit for AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_32, F8_128_HMAC_SHA1_80
             //112 bit for AES_192_CM_HMAC_SHA1_80,AES_192_CM_HMAC_SHA1_32 , AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32 
             //96 bit for AEAD_AES_128_GCM
@@ -105,7 +104,7 @@ namespace SIPSorcery.Net
             {
                 get
                 {
-                    return this.m_salt;
+                    return m_salt;
                 }
                 set
                 {
@@ -119,16 +118,16 @@ namespace SIPSorcery.Net
                         throw new ArgumentOutOfRangeException("Salt", "Salt must be at least 12 characters long");
                     }
 
-                    this.m_salt = value;
+                    m_salt = value;
                 }
             }
             public string KeySaltBase64
             {
                 get
                 {
-                    byte[] b = new byte[this.Key.Length + this.Salt.Length];
-                    Array.Copy(this.Key, 0, b, 0, this.Key.Length);
-                    Array.Copy(this.Salt, 0, b, this.Key.Length, this.Salt.Length);
+                    byte[] b = new byte[Key.Length + Salt.Length];
+                    Array.Copy(Key, 0, b, 0, Key.Length);
+                    Array.Copy(Salt, 0, b, Key.Length, Salt.Length);
                     string s64 = Convert.ToBase64String(b);
                     //removal of Padding-Characters "=" happens when decoding of Base64-String
                     //https://tools.ietf.org/html/rfc4568 page 13
@@ -136,12 +135,12 @@ namespace SIPSorcery.Net
                     return s64;
                 }
             }
-            private ulong m_lifeTime = 0;
+            private ulong m_lifeTime;
             public ulong LifeTime
             {
                 get
                 {
-                    return this.m_lifeTime;
+                    return m_lifeTime;
                 }
                 set
                 {
@@ -160,21 +159,17 @@ namespace SIPSorcery.Net
                             {
                                 throw new ArgumentOutOfRangeException("LifeTime", "LifeTime value must be power of 2");
                             }
-                            else
-                            {
-                                ul = ul >> 1;
-                                break;
-                            }
-                        }
-                        else
-                        {
+
                             ul = ul >> 1;
+                            break;
                         }
+
+                        ul = ul >> 1;
                     }
                     if (ul == 0)
                     {
-                        this.m_lifeTime = value;
-                        this.m_sLifeTime = $"2^{i}";
+                        m_lifeTime = value;
+                        m_sLifeTime = $"2^{i}";
                     }
                     else
                     {
@@ -182,12 +177,12 @@ namespace SIPSorcery.Net
                     }
                 }
             }
-            private string m_sLifeTime = null;
+            private string m_sLifeTime;
             public string LifeTimeString
             {
                 get
                 {
-                    return this.m_sLifeTime;
+                    return m_sLifeTime;
                 }
                 set
                 {
@@ -207,8 +202,8 @@ namespace SIPSorcery.Net
                         throw new ArgumentOutOfRangeException("LifeTimeString", "LifeTimeString value must be power of 2");
                     }
 
-                    this.m_lifeTime = (ulong)Math.Pow(2, d);
-                    this.m_sLifeTime = $"2^{(ulong)d}";
+                    m_lifeTime = (ulong)Math.Pow(2, d);
+                    m_sLifeTime = $"2^{(ulong)d}";
                 }
             }
             public uint MkiValue
@@ -216,18 +211,18 @@ namespace SIPSorcery.Net
                 get;
                 set;
             }
-            private uint m_mkiLength = 0;
+            private uint m_mkiLength;
             public uint MkiLength
             {
                 get
                 {
-                    return this.m_mkiLength;
+                    return m_mkiLength;
                 }
                 set
                 {
                     if (value > 0 && value <= 128)
                     {
-                        this.m_mkiLength = value;
+                        m_mkiLength = value;
                     }
                     else
                     {
@@ -237,25 +232,25 @@ namespace SIPSorcery.Net
             }
             public KeyParameter(byte[] key, byte[] salt)
             {
-                this.Key = key;
-                this.Salt = salt;
+                Key = key;
+                Salt = salt;
             }
 
             public override string ToString()
             {
-                string s = KEY_METHOD + COLON + this.KeySaltBase64;
-                if (!string.IsNullOrWhiteSpace(this.LifeTimeString))
+                string s = KEY_METHOD + COLON + KeySaltBase64;
+                if (!string.IsNullOrWhiteSpace(LifeTimeString))
                 {
-                    s += PIPE + this.LifeTimeString;
+                    s += PIPE + LifeTimeString;
                 }
-                else if (this.LifeTime > 0)
+                else if (LifeTime > 0)
                 {
-                    s += PIPE + this.LifeTime;
+                    s += PIPE + LifeTime;
                 }
 
-                if (this.MkiLength > 0 && this.MkiValue > 0)
+                if (MkiLength > 0 && MkiValue > 0)
                 {
-                    s += PIPE + this.MkiValue + COLON + this.MkiLength;
+                    s += PIPE + MkiValue + COLON + MkiLength;
                 }
 
                 return s;
@@ -378,7 +373,7 @@ namespace SIPSorcery.Net
 
             private static void checkValidKeyInfoCharacters(string keyParameter, string keyInfo)
             {
-                foreach (char c in keyInfo.ToCharArray())
+                foreach (char c in keyInfo)
                 {
                     if (c < 0x21 || c > 0x7e)
                     {
@@ -472,12 +467,12 @@ namespace SIPSorcery.Net
             public const string FEC_ORDER_PREFIX = "FEC_ORDER=";
             public const string WSH_PREFIX = "WSH=";
             public const string KDR_PREFIX = "KDR=";
-            private ulong m_kdr = 0;
+            private ulong m_kdr;
             public ulong Kdr
             {
                 get
                 {
-                    return this.m_kdr;
+                    return m_kdr;
                 }
                 set
                 {
@@ -511,7 +506,7 @@ namespace SIPSorcery.Net
                         throw new ArgumentOutOfRangeException("Kdr", "Kdr must be between 0 and 24");
                     }
 
-                    this.m_kdr = value;
+                    m_kdr = value;
                 }
             }
             private ulong m_wsh = 64;
@@ -519,7 +514,7 @@ namespace SIPSorcery.Net
             {
                 get
                 {
-                    return this.m_wsh;
+                    return m_wsh;
                 }
                 set
                 {
@@ -528,7 +523,7 @@ namespace SIPSorcery.Net
                         throw new ArgumentOutOfRangeException("WSH", "WSH must be greater than 64");
                     }
 
-                    this.m_wsh = value;
+                    m_wsh = value;
                 }
             }
 
@@ -540,29 +535,29 @@ namespace SIPSorcery.Net
 
             public SessionParameter(SrtpSessionParams paramType)
             {
-                this.SrtpSessionParam = paramType;
+                SrtpSessionParam = paramType;
             }
             public override string ToString()
             {
-                if (this.SrtpSessionParam == SrtpSessionParams.unknown)
+                if (SrtpSessionParam == SrtpSessionParams.unknown)
                 {
                     return "";
                 }
 
-                switch (this.SrtpSessionParam)
+                switch (SrtpSessionParam)
                 {
                     case SrtpSessionParams.UNAUTHENTICATED_SRTP:
                     case SrtpSessionParams.UNENCRYPTED_SRTP:
                     case SrtpSessionParams.UNENCRYPTED_SRTCP:
-                        return this.SrtpSessionParam.ToString();
+                        return SrtpSessionParam.ToString();
                     case SrtpSessionParams.wsh:
-                        return $"{WSH_PREFIX}{this.Wsh}";
+                        return $"{WSH_PREFIX}{Wsh}";
                     case SrtpSessionParams.kdr:
-                        return $"{KDR_PREFIX}{this.Kdr}";
+                        return $"{KDR_PREFIX}{Kdr}";
                     case SrtpSessionParams.fec_order:
-                        return $"{FEC_ORDER_PREFIX}{this.FecOrder.ToString()}";
+                        return $"{FEC_ORDER_PREFIX}{FecOrder.ToString()}";
                     case SrtpSessionParams.fec_key:
-                        return $"{FEC_KEY_PREFIX}{this.FecKey?.ToString()}";
+                        return $"{FEC_KEY_PREFIX}{FecKey}";
                 }
                 return "";
             }
@@ -577,7 +572,7 @@ namespace SIPSorcery.Net
                 string p = sessionParam.Trim();
                 try
                 {
-                    SessionParameter.SrtpSessionParams paramType = SrtpSessionParams.unknown;
+                    SrtpSessionParams paramType = SrtpSessionParams.unknown;
                     if (p.StartsWith(KDR_PREFIX))
                     {
                         string sKdr = p.Substring(KDR_PREFIX.Length);
@@ -605,7 +600,7 @@ namespace SIPSorcery.Net
                     else if (p.StartsWith(FEC_ORDER_PREFIX))
                     {
                         string sFecOrder = p.Substring(FEC_ORDER_PREFIX.Length);
-                        SessionParameter.FecTypes fecOrder = (from e in Enum.GetNames(typeof(FecTypes)) where e.CompareTo(sFecOrder) == 0 select (FecTypes)Enum.Parse(typeof(FecTypes), e)).FirstOrDefault();
+                        FecTypes fecOrder = (from e in Enum.GetNames(typeof(FecTypes)) where e.CompareTo(sFecOrder) == 0 select (FecTypes)Enum.Parse(typeof(FecTypes), e)).FirstOrDefault();
                         if (fecOrder == FecTypes.unknown)
                         {
                             throw new FormatException($"sessionParam '{sessionParam}' is not recognized as a valid SRTP_SESSION_PARAM ");
@@ -645,13 +640,13 @@ namespace SIPSorcery.Net
         {
             get
             {
-                return this.m_iTag;
+                return m_iTag;
             }
             set
             {
                 if (value > 0 && value < 1000000000)
                 {
-                    this.m_iTag = value;
+                    m_iTag = value;
                 }
                 else
                 {
@@ -683,31 +678,31 @@ namespace SIPSorcery.Net
         }
         public SDPSecurityDescription(uint tag, CryptoSuites cryptoSuite)
         {
-            this.Tag = tag;
-            this.CryptoSuite = cryptoSuite;
-            this.KeyParams = new List<KeyParameter>();
+            Tag = tag;
+            CryptoSuite = cryptoSuite;
+            KeyParams = new List<KeyParameter>();
         }
 
         public override string ToString()
         {
-            if (this.Tag < 1 || this.CryptoSuite == CryptoSuites.unknown || this.KeyParams.Count < 1)
+            if (Tag < 1 || CryptoSuite == CryptoSuites.unknown || KeyParams.Count < 1)
             {
                 return null;
             }
 
-            string s = CRYPTO_ATTRIBUE_PREFIX + this.Tag + WHITE_SPACE + this.CryptoSuite.ToString() + WHITE_SPACE;
-            for (int i = 0; i < this.KeyParams.Count; i++)
+            string s = CRYPTO_ATTRIBUE_PREFIX + Tag + WHITE_SPACE + CryptoSuite + WHITE_SPACE;
+            for (int i = 0; i < KeyParams.Count; i++)
             {
                 if (i > 0)
                 {
                     s += SEMI_COLON;
                 }
 
-                s += this.KeyParams[i].ToString();
+                s += KeyParams[i].ToString();
             }
-            if (this.SessionParam != null)
+            if (SessionParam != null)
             {
-                s += WHITE_SPACE + this.SessionParam.ToString();
+                s += WHITE_SPACE + SessionParam;
             }
             return s;
         }

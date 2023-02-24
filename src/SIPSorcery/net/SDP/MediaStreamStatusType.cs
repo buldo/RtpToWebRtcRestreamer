@@ -21,25 +21,23 @@
             {
                 return false;
             }
-            else
+
+            switch (attributeString.ToLower())
             {
-                switch (attributeString.ToLower())
-                {
-                    case SEND_RECV_ATTRIBUTE:
-                        mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
-                        return true;
-                    case SEND_ONLY_ATTRIBUTE:
-                        mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
-                        return true;
-                    case RECV_ONLY_ATTRIBUTE:
-                        mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
-                        return true;
-                    case INACTIVE_ATTRIBUTE:
-                        mediaStreamStatus = MediaStreamStatusEnum.Inactive;
-                        return true;
-                    default:
-                        return false;
-                }
+                case SEND_RECV_ATTRIBUTE:
+                    mediaStreamStatus = MediaStreamStatusEnum.SendRecv;
+                    return true;
+                case SEND_ONLY_ATTRIBUTE:
+                    mediaStreamStatus = MediaStreamStatusEnum.SendOnly;
+                    return true;
+                case RECV_ONLY_ATTRIBUTE:
+                    mediaStreamStatus = MediaStreamStatusEnum.RecvOnly;
+                    return true;
+                case INACTIVE_ATTRIBUTE:
+                    mediaStreamStatus = MediaStreamStatusEnum.Inactive;
+                    return true;
+                default:
+                    return false;
             }
         }
 

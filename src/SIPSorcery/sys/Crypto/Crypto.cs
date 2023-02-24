@@ -73,7 +73,8 @@ namespace SIPSorcery.Sys
             {
                 throw new ArgumentOutOfRangeException("minValue");
             }
-            else if (minValue == maxValue)
+
+            if (minValue == maxValue)
             {
                 return minValue;
             }

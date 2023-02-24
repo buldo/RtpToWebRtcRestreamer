@@ -47,14 +47,14 @@ namespace SIPSorcery.Net
 
         private SrtpParameters(int newProfile, int newEncType, int newEncKeyLength, int newAuthType, int newAuthKeyLength, int newAuthTagLength, int newRtcpAuthTagLength, int newSaltLength)
         {
-            this.profile = newProfile;
-            this.encType = newEncType;
-            this.encKeyLength = newEncKeyLength;
-            this.authType = newAuthType;
-            this.authKeyLength = newAuthKeyLength;
-            this.authTagLength = newAuthTagLength;
-            this.rtcpAuthTagLength = newRtcpAuthTagLength;
-            this.saltLength = newSaltLength;
+            profile = newProfile;
+            encType = newEncType;
+            encKeyLength = newEncKeyLength;
+            authType = newAuthType;
+            authKeyLength = newAuthKeyLength;
+            authTagLength = newAuthTagLength;
+            rtcpAuthTagLength = newRtcpAuthTagLength;
+            saltLength = newSaltLength;
         }
 
         public int GetCipherKeyLength()

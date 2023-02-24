@@ -47,7 +47,7 @@ namespace SIPSorcery.Net
 {
     public class SrtpTransformer : IPacketTransformer
     {
-        private int _isLocked = 0;
+        private int _isLocked;
         private RawPacket rawPacket;
 
         private SrtpTransformEngine forwardEngine;
@@ -66,8 +66,8 @@ namespace SIPSorcery.Net
         {
             this.forwardEngine = forwardEngine;
             this.reverseEngine = reverseEngine;
-            this.contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
-            this.rawPacket = new RawPacket();
+            contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
+            rawPacket = new RawPacket();
         }
 
         public byte[] Transform(byte[] pkt)
@@ -136,10 +136,10 @@ namespace SIPSorcery.Net
                 // Associate packet to a crypto context
                 long ssrc = rawPacket.GetSSRC();
                 SrtpCryptoContext context = null;
-                this.contexts.TryGetValue(ssrc, out context);
+                contexts.TryGetValue(ssrc, out context);
                 if (context == null)
                 {
-                    context = this.reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context = reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
                     context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
                     contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }

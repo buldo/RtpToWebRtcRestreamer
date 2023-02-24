@@ -95,7 +95,7 @@ namespace SIPSorcery.Net
         /// occurs if no RTP or RTCP packets have been received during an expected
         /// interval.
         /// </summary>
-        public bool IsTimedOut { get; private set; } = false;
+        public bool IsTimedOut { get; private set; }
 
         /// <summary>
         /// Number of RTP packets sent to the remote party.
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
         /// Indicates whether the RTCP session has been closed.
         /// An RTCP BYE request will typically trigger an close.
         /// </summary>
-        public bool IsClosed { get; private set; } = false;
+        public bool IsClosed { get; private set; }
 
         /// <summary>
         /// Indicates the sample rate for RTP media data.
@@ -154,7 +154,7 @@ namespace SIPSorcery.Net
         private Timer m_rtcpReportTimer;
 
         private ReceptionReport m_receptionReport;
-        private uint m_previousPacketsSentCount = 0;    // Used to track whether we have sent any packets since the last report was sent.
+        private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
 
         /// <summary>
         /// Event handler for sending RTCP reports.
@@ -367,19 +367,17 @@ namespace SIPSorcery.Net
                 var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
                 return new RTCPCompoundPacket(senderReport, sdesReport);
             }
+
+            // If we have NOT sent a packet since the last report then we send an RTCP Receiver Report.
+            if (rr != null)
+            {
+                var receiverReport = new RTCPReceiverReport(Ssrc, new List<ReceptionReportSample> { rr });
+                return new RTCPCompoundPacket(receiverReport, sdesReport);
+            }
             else
             {
-                // If we have NOT sent a packet since the last report then we send an RTCP Receiver Report.
-                if (rr != null)
-                {
-                    var receiverReport = new RTCPReceiverReport(Ssrc, new List<ReceptionReportSample> { rr });
-                    return new RTCPCompoundPacket(receiverReport, sdesReport);
-                }
-                else
-                {
-                    var receiverReport = new RTCPReceiverReport(Ssrc, null);
-                    return new RTCPCompoundPacket(receiverReport, sdesReport);
-                }
+                var receiverReport = new RTCPReceiverReport(Ssrc, null);
+                return new RTCPCompoundPacket(receiverReport, sdesReport);
             }
         }
 

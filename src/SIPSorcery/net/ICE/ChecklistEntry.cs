@@ -131,7 +131,7 @@ namespace SIPSorcery.Net
         /// This field records the number of Create Permissions requests that have been
         /// sent for this entry.
         /// </summary>
-        public int TurnPermissionsRequestSent { get; set; } = 0;
+        public int TurnPermissionsRequestSent { get; set; }
 
         /// <summary>
         /// This field records the time a Create Permissions response was received.
@@ -189,10 +189,8 @@ namespace SIPSorcery.Net
                 //return Priority.CompareTo((other as ChecklistEntry).Priority);
                 return (other as ChecklistEntry).Priority.CompareTo(Priority);
             }
-            else
-            {
-                throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");
-            }
+
+            throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");
         }
 
         internal void GotStunResponse(STUNMessage stunResponse, IPEndPoint remoteEndPoint)

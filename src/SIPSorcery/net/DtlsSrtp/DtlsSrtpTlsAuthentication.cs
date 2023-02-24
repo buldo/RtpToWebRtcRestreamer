@@ -11,8 +11,8 @@ namespace SIPSorcery.Net
 
         internal DtlsSrtpTlsAuthentication(DtlsSrtpClient client)
         {
-            this.mClient = client;
-            this.mContext = client.TlsContext;
+            mClient = client;
+            mContext = client.TlsContext;
         }
 
         public virtual void NotifyServerCertificate(Certificate serverCertificate)
@@ -35,5 +35,5 @@ namespace SIPSorcery.Net
                 mClient.mCertificateChain,
                 mClient.mPrivateKey);
         }
-    };
+    }
 }

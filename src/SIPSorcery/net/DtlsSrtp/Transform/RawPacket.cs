@@ -40,6 +40,7 @@
 * 
 */
 
+using System;
 using System.IO;
 
 namespace SIPSorcery.Net
@@ -68,22 +69,22 @@ namespace SIPSorcery.Net
          */
         public RawPacket()
         {
-            this.buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
+            buffer = new MemoryStream(RTP_PACKET_MAX_SIZE);
         }
 
         public void Wrap(byte[] data, int offset, int length)
         {
-            this.buffer.Position = 0;
-            this.buffer.Write(data, offset, length);
-            this.buffer.SetLength(length - offset);
-            this.buffer.Position = 0;
+            buffer.Position = 0;
+            buffer.Write(data, offset, length);
+            buffer.SetLength(length - offset);
+            buffer.Position = 0;
         }
 
         public byte[] GetData()
         {
-            this.buffer.Position = 0;
-            byte[] data = new byte[this.buffer.Length];
-            this.buffer.Read(data, 0, data.Length);
+            buffer.Position = 0;
+            byte[] data = new byte[buffer.Length];
+            buffer.Read(data, 0, data.Length);
             return data;
         }
 
@@ -98,7 +99,7 @@ namespace SIPSorcery.Net
         {
             if (data == null || len <= 0 || len > data.Length)
             {
-                throw new System.Exception("Invalid combination of parameters data and length to append()");
+                throw new Exception("Invalid combination of parameters data and length to append()");
             }
 
             long oldLimit = buffer.Length;
@@ -119,7 +120,7 @@ namespace SIPSorcery.Net
          */
         public MemoryStream GetBuffer()
         {
-            return this.buffer;
+            return buffer;
         }
 
         /**
@@ -164,8 +165,8 @@ namespace SIPSorcery.Net
          */
         public int GetCsrcCount()
         {
-            this.buffer.Position = 0;
-            return (this.buffer.ReadByte() & 0x0f);
+            buffer.Position = 0;
+            return (buffer.ReadByte() & 0x0f);
         }
 
         /**
@@ -190,7 +191,7 @@ namespace SIPSorcery.Net
          */
         public int GetLength()
         {
-            return (int)this.buffer.Length;
+            return (int)buffer.Length;
         }
 
         /**
@@ -268,16 +269,14 @@ namespace SIPSorcery.Net
                 buffer.SetLength(newLen);
                 return;
             }
-            else
-            {
-                // create a new bigger buffer
-                MemoryStream newBuffer = new MemoryStream();
-                buffer.Position = 0;
-                newBuffer.Write(buffer.GetBuffer(), 0, (int)buffer.Length);
-                newBuffer.SetLength(newLen);
-                // switch to new buffer
-                buffer = newBuffer;
-            }
+
+            // create a new bigger buffer
+            MemoryStream newBuffer = new MemoryStream();
+            buffer.Position = 0;
+            newBuffer.Write(buffer.GetBuffer(), 0, (int)buffer.Length);
+            newBuffer.SetLength(newLen);
+            // switch to new buffer
+            buffer = newBuffer;
         }
 
         /**
@@ -320,9 +319,9 @@ namespace SIPSorcery.Net
          */
         public int ReadUnsignedShortAsInt(int off)
         {
-            this.buffer.Position = off;
-            int b1 = (0x000000FF & (this.buffer.ReadByte()));
-            int b2 = (0x000000FF & (this.buffer.ReadByte()));
+            buffer.Position = off;
+            int b1 = (0x000000FF & (buffer.ReadByte()));
+            int b2 = (0x000000FF & (buffer.ReadByte()));
             int val = b1 << 8 | b2;
             return val;
         }
@@ -344,7 +343,7 @@ namespace SIPSorcery.Net
             {
                 newLimit = 0;
             }
-            this.buffer.SetLength(newLimit);
+            buffer.SetLength(newLimit);
         }
     }
 }

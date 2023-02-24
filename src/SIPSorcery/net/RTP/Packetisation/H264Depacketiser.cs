@@ -18,8 +18,8 @@ namespace SIPSorcery.Net
         const int NON_IDR_SLICE = 5;
 
         //Payload Helper Fields
-        uint previous_timestamp = 0;
-        int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24 = 0; // used for diagnostics stats
+        uint previous_timestamp;
+        int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24; // used for diagnostics stats
         List<KeyValuePair<int, byte[]>> temporary_rtp_payloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
         MemoryStream fragmented_nal = new MemoryStream(); // used to concatenate fragmented H264 NALs where NALs are splitted over RTP packets
 
@@ -99,12 +99,10 @@ namespace SIPSorcery.Net
 
                 return nal_units;
             }
-            else
-            {
-                isKeyFrame = false;
-                previous_timestamp = rtp_timestamp;
-                return null; // we don't have a frame yet. Keep accumulating RTP packets
-            }
+
+            isKeyFrame = false;
+            previous_timestamp = rtp_timestamp;
+            return null; // we don't have a frame yet. Keep accumulating RTP packets
         }
 
         // Process a RTP Frame. A RTP Frame can consist of several RTP Packets which have the same Timestamp
@@ -197,7 +195,7 @@ namespace SIPSorcery.Net
                         fragmented_nal.SetLength(0);
 
                         // Add reconstructed_nal_type byte to the memory stream
-                        fragmented_nal.WriteByte((byte)reconstructed_nal_type);
+                        fragmented_nal.WriteByte(reconstructed_nal_type);
 
                         // copy the rest of the RTP payload to the memory stream
                         fragmented_nal.Write(rtp_payloads[payload_index].Value, 2, rtp_payloads[payload_index].Value.Length - 2);
@@ -246,14 +244,14 @@ namespace SIPSorcery.Net
         {
             if (isKeyFrame == null)
             {
-                isKeyFrame = nal_type == SPS || nal_type == PPS ? new bool?(true) :
+                isKeyFrame = nal_type == SPS || nal_type == PPS ? true :
                     (nal_type == NON_IDR_SLICE ? new bool?(false) : null);
             }
             else
             {
                 isKeyFrame = nal_type == SPS || nal_type == PPS ?
-                    (isKeyFrame.Value ? isKeyFrame : new bool?(false)) :
-                    (nal_type == NON_IDR_SLICE ? new bool?(false) : isKeyFrame);
+                    (isKeyFrame.Value ? isKeyFrame : false) :
+                    (nal_type == NON_IDR_SLICE ? false : isKeyFrame);
             }
         }
     }
