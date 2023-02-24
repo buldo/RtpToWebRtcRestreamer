@@ -604,9 +604,8 @@ namespace SIPSorcery.Net
             List<RTCIceServer> iceServers = null,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
-            int bindPort = 0,
-            PortRange rtpPortRange = null) :
-            base(false, bindAddress, bindPort, rtpPortRange)
+            int bindPort = 0) :
+            base(false, bindAddress, bindPort)
         {
             _bindAddress = bindAddress;
             Component = component;
@@ -643,7 +642,7 @@ namespace SIPSorcery.Net
                     a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) != null;
             if (supportTcp)
             {
-                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, rtpPortRange, out var rtpTcpSocket, out _);
+                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, out var rtpTcpSocket, out _);
 
                 if (rtpTcpSocket == null)
                 {

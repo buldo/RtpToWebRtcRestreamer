@@ -309,9 +309,9 @@ namespace SIPSorcery.Sys
         /// tried before giving up. The parameter bindPort is ignored.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(bool createControlSocket, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
         {
-            CreateRtpSocket(createControlSocket, ProtocolType.Udp, bindAddress, bindPort, portRange, out rtpSocket, out controlSocket);
+            CreateRtpSocket(createControlSocket, ProtocolType.Udp, bindAddress, bindPort, out rtpSocket, out controlSocket);
         }
 
         /// <summary>
@@ -331,7 +331,7 @@ namespace SIPSorcery.Sys
         /// tried before giving up. The parameter bindPort is ignored.</param>
         /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
         /// <param name="controlSocket">An output parameter that will contain the allocated control (RTCP) socket.</param>
-        public static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, PortRange portRange, out Socket rtpSocket, out Socket controlSocket)
+        public static void CreateRtpSocket(bool createControlSocket, ProtocolType protocolType, IPAddress bindAddress, int bindPort, out Socket rtpSocket, out Socket controlSocket)
         {
             if (bindAddress == null)
             {
@@ -351,10 +351,6 @@ namespace SIPSorcery.Sys
             {
                 try
                 {
-                    if (portRange != null)
-                    {
-                        bindPort = portRange.GetNextPort();
-                    }
                     rtpSocket = CreateBoundSocket(bindPort, bindAddress, protocolType, createControlSocket);
                     rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                     rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
@@ -379,7 +375,7 @@ namespace SIPSorcery.Sys
                 }
                 catch (ApplicationException) { }
 
-                if ((rtpSocket != null && (!createControlSocket || controlSocket != null)) || (bindPort != 0 && portRange == null))
+                if ((rtpSocket != null && (!createControlSocket || controlSocket != null)) || (bindPort != 0 ))
                 {
                     // If a specific bind port was specified only a single attempt to create the socket is made.
                     break;

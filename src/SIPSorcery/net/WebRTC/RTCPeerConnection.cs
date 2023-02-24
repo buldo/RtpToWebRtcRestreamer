@@ -398,64 +398,12 @@ namespace SIPSorcery.Net
 
         private bool InitializeCertificates(RTCConfiguration configuration)
         {
-            if (configuration.certificates == null || configuration.certificates.Count == 0)
-            {
-                return false;
-            }
-
-            // Find the first certificate that has a usable private key.
-#pragma warning disable CS0618 // Type or member is obsolete
-            RTCCertificate usableCert = null;
-#pragma warning restore CS0618 // Type or member is obsolete
-            foreach (var cert in _configuration.certificates)
-            {
-                // Attempting to check that a certificate has an exportable private key.
-                // TODO: Does not seem to be a particularly reliable way of checking private key exportability.
-                if (cert.Certificate.HasPrivateKey)
-                {
-                    //if (cert.Certificate.PrivateKey is RSACryptoServiceProvider)
-                    //{
-                    //    var rsa = cert.Certificate.PrivateKey as RSACryptoServiceProvider;
-                    //    if (!rsa.CspKeyContainerInfo.Exportable)
-                    //    {
-                    //        logger.LogWarning($"RTCPeerConnection was passed a certificate for {cert.Certificate.FriendlyName} with a non-exportable RSA private key.");
-                    //    }
-                    //    else
-                    //    {
-                    //        usableCert = cert;
-                    //        break;
-                    //    }
-                    //}
-                    //else
-                    //{
-                    usableCert = cert;
-                    break;
-                    //}
-                }
-            }
-
-            if (usableCert == null)
-            {
-                throw new ApplicationException("RTCPeerConnection was not able to find a certificate from the input configuration list with a usable private key.");
-            }
-
-            _dtlsCertificate = DtlsUtils.LoadCertificateChain(usableCert.Certificate);
-            _dtlsPrivateKey = DtlsUtils.LoadPrivateKeyResource(usableCert.Certificate);
-
-            return true;
+            return false;
         }
 
         private bool InitializeCertificates2(RTCConfiguration configuration)
         {
-            if (configuration.certificates2 == null || configuration.certificates2.Count == 0)
-            {
-                return false;
-            }
-
-            _dtlsCertificate = new Certificate(new [] { configuration.certificates2[0].Certificate.CertificateStructure });
-            _dtlsPrivateKey = configuration.certificates2[0].PrivateKey;
-
-            return true;
+            return false;
         }
 
         /// <summary>

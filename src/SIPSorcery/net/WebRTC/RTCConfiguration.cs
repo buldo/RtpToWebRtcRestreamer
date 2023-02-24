@@ -13,10 +13,6 @@ namespace SIPSorcery.Net
     {
         public List<RTCIceServer> iceServers;
         public RTCIceTransportPolicy iceTransportPolicy;
-#pragma warning disable CS0618 // Type or member is obsolete
-        public List<RTCCertificate> certificates;
-#pragma warning restore CS0618 // Type or member is obsolete
-        public List<RTCCertificate2> certificates2;
 
         /// <summary>
         /// The Bouncy Castle DTLS logic enforces the use of Extended Master 
