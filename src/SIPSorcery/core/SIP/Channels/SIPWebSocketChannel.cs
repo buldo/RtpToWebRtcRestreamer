@@ -87,7 +87,7 @@ namespace SIPSorcery.SIP
 
             protected override void OnOpen()
             {
-                Logger.LogDebug($"SIPMessagWebSocketBehavior.OnOpen.");
+                Logger.LogDebug($"SIPMessagWebSocketBehavior.OpenAsync.");
 
                 _sipProtocol = this.Context.IsSecureConnection ? SIPProtocolsEnum.wss : SIPProtocolsEnum.ws;
                 _remoteEndPoint = this.Context.UserEndPoint;

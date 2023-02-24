@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Bld.RtpToWebRtcRestreamer.App
 {
     public class Program
@@ -8,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.App
 
             // Add services to the container.
 
-            builder.Services.AddRtpRestreamer();
+            builder.Services.AddRtpRestreamer(new IPEndPoint(IPAddress.Any, 5600));
 
             builder.Services.AddSignalR();
 
@@ -30,9 +32,7 @@ namespace Bld.RtpToWebRtcRestreamer.App
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller}/{action=Index}/{id?}");
-
-            app.MapRtpRestreamer("/hub/video");
-
+            
             app.MapFallbackToFile("index.html");
 
             app.Run();
