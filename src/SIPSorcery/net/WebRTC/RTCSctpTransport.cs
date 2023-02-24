@@ -337,7 +337,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer containing the data to send.</param>
         /// <param name="offset">The position in the buffer to send from.</param>
         /// <param name="length">The number of bytes to send.</param>
-        public override void Send(string associationID, byte[] buffer, int offset, int length)
+        public override void Send(byte[] buffer, int offset, int length)
         {
             if (length > maxMessageSize)
             {

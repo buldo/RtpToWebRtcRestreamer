@@ -22,7 +22,7 @@
 
 namespace SIPSorcery.Net
 {
-    public class SrtpTransformEngine : ITransformEngine
+    public class SrtpTransformEngine
     {
         /**
 	    * The default SRTPCryptoContext, which will be used to derivate other

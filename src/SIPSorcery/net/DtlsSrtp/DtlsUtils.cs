@@ -157,12 +157,12 @@ namespace SIPSorcery.Net
 
         #region Self Signed Utils
 
-        public static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        private static (X509Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedBouncyCastleCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             const int keyStrength = DEFAULT_KEY_SIZE;
             if (issuerPrivateKey == null)
             {
-                issuerPrivateKey = CreatePrivateKeyResource(issuerName);
+                issuerPrivateKey = CreatePrivateKeyResource();
             }
 
             // Generating Random Numbers
@@ -222,7 +222,7 @@ namespace SIPSorcery.Net
             return (tlsCertificate, privateKey);
         }
 
-        public static AsymmetricKeyParameter CreatePrivateKeyResource(string subjectName = "CN=root")
+        public static AsymmetricKeyParameter CreatePrivateKeyResource()
         {
             const int keyStrength = DEFAULT_KEY_SIZE;
 

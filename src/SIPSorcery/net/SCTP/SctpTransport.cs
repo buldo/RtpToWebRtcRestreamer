@@ -63,7 +63,7 @@ namespace SIPSorcery.Net
         /// </returns>
         public virtual bool IsPortAgnostic => false;
 
-        public abstract void Send(string associationID, byte[] buffer, int offset, int length);
+        public abstract void Send(byte[] buffer, int offset, int length);
 
         static SctpTransport()
         {
@@ -102,7 +102,7 @@ namespace SIPSorcery.Net
             {
                 var initAckPacket = GetInitAck(initPacket, remoteEndPoint);
                 var buffer = initAckPacket.GetBytes();
-                Send(null, buffer, 0, buffer.Length);
+                Send(buffer, 0, buffer.Length);
             }
         }
 
@@ -288,7 +288,7 @@ namespace SIPSorcery.Net
             errorPacket.AddChunk(errorChunk);
 
             var buffer = errorPacket.GetBytes();
-            Send(null, buffer, 0, buffer.Length);
+            Send(buffer, 0, buffer.Length);
         }
     }
 }

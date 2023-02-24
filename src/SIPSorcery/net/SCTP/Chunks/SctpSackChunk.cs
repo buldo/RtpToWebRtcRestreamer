@@ -132,7 +132,7 @@ namespace SIPSorcery.Net
         public static SctpSackChunk ParseChunk(byte[] buffer, int posn)
         {
             var sackChunk = new SctpSackChunk();
-            ushort chunkLen = sackChunk.ParseFirstWord(buffer, posn);
+            sackChunk.ParseFirstWord(buffer, posn);
 
             ushort startPosn = (ushort)(posn + SCTP_CHUNK_HEADER_LENGTH);
 

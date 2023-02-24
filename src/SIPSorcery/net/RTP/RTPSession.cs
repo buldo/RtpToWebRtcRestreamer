@@ -1382,7 +1382,7 @@ namespace SIPSorcery.Net
                             buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
                             buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
                         {
-                            OnReceiveRTCPPacket(localPort, remoteEndPoint, buffer);
+                            OnReceiveRTCPPacket(remoteEndPoint, buffer);
                         }
                     }
                     else
@@ -1393,7 +1393,7 @@ namespace SIPSorcery.Net
             }
         }
 
-        private void OnReceiveRTCPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+        private void OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
         {
             //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
 
@@ -1476,7 +1476,7 @@ namespace SIPSorcery.Net
                             }
                         }
 
-                        mediaStream.RtcpSession.ReportReceived(remoteEndPoint, rtcpPkt);
+                        mediaStream.RtcpSession.ReportReceived(rtcpPkt);
                         mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
                     }
                     else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)

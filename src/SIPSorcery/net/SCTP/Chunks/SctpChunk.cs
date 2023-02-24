@@ -108,7 +108,7 @@ namespace SIPSorcery.Net
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position in the buffer that indicates the start of the chunk.</param>
         /// <returns>The chunk length value.</returns>
-        public ushort ParseFirstWord(byte[] buffer, int posn)
+        protected ushort ParseFirstWord(byte[] buffer, int posn)
         {
             ChunkType = buffer[posn];
             ChunkFlags = buffer[posn + 1];

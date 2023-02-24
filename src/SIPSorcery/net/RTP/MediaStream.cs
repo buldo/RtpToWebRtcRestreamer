@@ -102,7 +102,7 @@ namespace SIPSorcery.net.RTP
 
         #region PROPERTIES
 
-        public Boolean AcceptRtpFromAny { get; set; } = false;
+        public Boolean AcceptRtpFromAny { get; set; }
 
         /// <summary>
         /// Indicates whether the session has been closed. Once a session is closed it cannot

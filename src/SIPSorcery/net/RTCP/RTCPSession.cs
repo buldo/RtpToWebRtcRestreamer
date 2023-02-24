@@ -255,7 +255,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="remoteEndPoint">The end point the packet was received from.</param>
         /// <param name="buffer">The data received.</param>
-        public void ReportReceived(IPEndPoint remoteEndPoint, RTCPCompoundPacket rtcpCompoundPacket)
+        public void ReportReceived(RTCPCompoundPacket rtcpCompoundPacket)
         {
             try
             {

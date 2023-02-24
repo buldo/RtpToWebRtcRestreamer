@@ -291,7 +291,7 @@ namespace SIPSorcery.Net
             try
             {
                 Socket sendSocket = (Socket)ar.AsyncState;
-                int bytesSent = sendSocket.EndSendTo(ar);
+                sendSocket.EndSendTo(ar);
             }
             catch (SocketException sockExcp)
             {

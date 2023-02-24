@@ -407,7 +407,7 @@ namespace SIPSorcery.Net
             long guessedIndex = GuessIndex(seqNo);
 
             // Replay control
-            if (!CheckReplay(seqNo, guessedIndex))
+            if (!CheckReplay(guessedIndex))
             {
                 return false;
             }
@@ -560,7 +560,7 @@ namespace SIPSorcery.Net
          * @return true if this sequence number indicates the packet is not a
          *         replayed one, false if not
          */
-        bool CheckReplay(int seqNo, long guessedIndex)
+        bool CheckReplay(long guessedIndex)
         {
             // compute the index of previously received packet and its
             // delta to the new received packet
