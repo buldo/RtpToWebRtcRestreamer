@@ -8,7 +8,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#rtcsessiondescription-class.
     /// </remarks>
-    public class RTCSessionDescriptionInit
+    internal class RTCSessionDescriptionInit
     {
         /// <summary>
         /// The type of the Session Description.

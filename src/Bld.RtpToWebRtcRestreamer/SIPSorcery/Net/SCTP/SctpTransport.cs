@@ -33,7 +33,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
     /// As well as being able to be carried directly in IP packets, SCTP packets can
     /// also be wrapped in higher level protocols.
     /// </summary>
-    public abstract class SctpTransport
+    internal abstract class SctpTransport
     {
         private const int HMAC_KEY_SIZE = 64;
 

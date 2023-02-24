@@ -7,7 +7,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// https://tools.ietf.org/html/rfc4585#page-35
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum PSFBFeedbackTypesEnum : byte
+    internal enum PSFBFeedbackTypesEnum : byte
     {
         unassigned = 0,     // Unassigned
         PLI = 1,            // Picture Loss Indication                              [RFC4585]

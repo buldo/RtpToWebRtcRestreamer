@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer
 {
-    public class ConnectedClientsChangedEventArgs : EventArgs
+    internal class ConnectedClientsChangedEventArgs : EventArgs
     {
         public ConnectedClientsChangedEventArgs(int newCount)
         {

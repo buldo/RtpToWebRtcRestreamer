@@ -10,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.8
     /// </remarks>
-    public struct SctpErrorUnrecognizedParameters : ISctpErrorCause
+    internal struct SctpErrorUnrecognizedParameters : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnrecognizedParameters;
 

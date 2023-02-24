@@ -67,7 +67,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// is reserved across all chunks to represent an IPv4 address and MUST
     /// NOT be reused with a different meaning in any other chunk.
     /// </remarks>
-    public class SctpTlvChunkParameter
+    internal class SctpTlvChunkParameter
     {
         public const int SCTP_PARAMETER_HEADER_LENGTH = 4;
 

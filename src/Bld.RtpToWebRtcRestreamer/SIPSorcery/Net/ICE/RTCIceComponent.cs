@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecomponent.
     /// </remarks>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum RTCIceComponent
+    internal enum RTCIceComponent
     {
         rtp = 1,
         rtcp = 2

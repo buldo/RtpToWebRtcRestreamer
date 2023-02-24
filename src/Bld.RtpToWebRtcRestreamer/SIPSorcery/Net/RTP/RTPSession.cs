@@ -53,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     ///   e. Optionally perform any additional set up, such as negotiating SRTP keying material,
     ///   f. Call Start to commence RTCP reporting.
     /// </remarks>
-    public class RTPSession : IDisposable
+    internal class RTPSession : IDisposable
     {
         //Reduced to be smaller than MTU (1400) beucase header will add extra 2 butes that will fail to deliver to linux as the real size of the package will be 1402
         protected internal const int RTP_MAX_PAYLOAD = 1200;

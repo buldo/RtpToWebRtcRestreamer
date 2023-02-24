@@ -3,7 +3,7 @@
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum AlertTypesEnum : byte
+    internal enum AlertTypesEnum : byte
     {
         CloseNotify = 0,
         UnexpectedMessage = 10,

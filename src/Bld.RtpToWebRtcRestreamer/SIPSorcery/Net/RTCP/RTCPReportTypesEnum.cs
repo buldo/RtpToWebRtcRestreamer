@@ -6,7 +6,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// The different types of RTCP packets as defined in RFC3550.
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum RTCPReportTypesEnum : byte
+    internal enum RTCPReportTypesEnum : byte
     {
         SR = 200,     // Send Report.
         RR = 201,     // Receiver Report.

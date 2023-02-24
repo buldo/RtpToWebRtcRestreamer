@@ -18,7 +18,7 @@ using System.Net.Sockets;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
-    public static class IPAddressHelper
+    internal static class IPAddressHelper
     {
         // Prefixes used for categorizing IPv6 addresses.
         static readonly byte[] k6To4Prefix = { 0x20, 0x02, 0 };

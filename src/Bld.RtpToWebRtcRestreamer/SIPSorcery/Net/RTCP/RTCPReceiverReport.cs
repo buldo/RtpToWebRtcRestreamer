@@ -48,7 +48,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
-    public class RTCPReceiverReport
+    internal class RTCPReceiverReport
     {
         public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4;
 

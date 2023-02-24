@@ -26,7 +26,7 @@ using Org.BouncyCastle.Utilities;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
+    internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
         private static readonly ILogger Logger = Log.Logger;
 
@@ -37,7 +37,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
-        public Certificate ClientCertificate { get; private set; }
+        private Certificate ClientCertificate { get; set; }
 
         // the server response to the client handshake request
         // http://tools.ietf.org/html/rfc5764#section-4.1.1
@@ -298,11 +298,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
 
             /*
-             * 
+             *
              * See: http://tools.ietf.org/html/rfc5764#section-4.2
-             * 
+             *
              * sharedSecret is an equivalent of :
-             * 
+             *
              * struct {
              *     client_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
              *     server_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
@@ -311,14 +311,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
              *  } ;
              *
              * Here, client = local configuration, server = remote.
-             * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client. 
-             *                Here we run as a server, so 'local' referring to the client is actually confusing. 
-             * 
+             * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client.
+             *                Here we run as a server, so 'local' referring to the client is actually confusing.
+             *
              * l(k) = KEY length
              * s(k) = salt length
-             * 
+             *
              * So we have the following repartition :
-             *                           l(k)                                 2*l(k)+s(k)   
+             *                           l(k)                                 2*l(k)+s(k)
              *                                                   2*l(k)                       2*(l(k)+s(k))
              * +------------------------+------------------------+---------------+-------------------+
              * + local key           |    remote key    | local salt   | remote salt   |

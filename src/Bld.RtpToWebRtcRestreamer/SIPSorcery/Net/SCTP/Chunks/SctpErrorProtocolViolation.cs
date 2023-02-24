@@ -11,7 +11,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.13
     /// </remarks>
-    public struct SctpErrorProtocolViolation : ISctpErrorCause
+    internal struct SctpErrorProtocolViolation : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.ProtocolViolation;
 

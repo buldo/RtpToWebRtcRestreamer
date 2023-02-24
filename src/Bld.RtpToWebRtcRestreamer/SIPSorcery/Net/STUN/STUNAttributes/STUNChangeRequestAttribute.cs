@@ -15,7 +15,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
-    public class STUNChangeRequestAttribute : STUNAttribute
+    internal class STUNChangeRequestAttribute : STUNAttribute
     {
         public const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
 

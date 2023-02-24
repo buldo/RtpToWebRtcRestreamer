@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.2
     /// </remarks>
-    public struct SctpErrorMissingMandatoryParameter : ISctpErrorCause
+    internal struct SctpErrorMissingMandatoryParameter : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.MissingMandatoryParameter;
 

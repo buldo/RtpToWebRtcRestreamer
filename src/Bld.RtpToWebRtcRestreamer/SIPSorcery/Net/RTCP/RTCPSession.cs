@@ -51,7 +51,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     ///   - First RTCP packet must be a SR or RR,
     ///   - Must contain an SDES packet.
     /// </remarks>
-    public class RTCPSession
+    internal class RTCPSession
     {
         private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
         private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;

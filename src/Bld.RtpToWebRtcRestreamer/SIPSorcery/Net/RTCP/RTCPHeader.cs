@@ -39,7 +39,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// <summary>
     /// RTCP Header as defined in RFC3550.
     /// </summary>
-    public class RTCPHeader
+    internal class RTCPHeader
     {
         public const int HEADER_BYTES_LENGTH = 4;
         public const int RTCP_VERSION = 2;

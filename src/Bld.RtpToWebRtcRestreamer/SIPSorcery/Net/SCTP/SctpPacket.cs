@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
     /// An SCTP packet is composed of a common header and chunks. A chunk
     /// contains either control information or user data.
     /// </summary>
-    public class SctpPacket
+    internal class SctpPacket
     {
         /// <summary>
         /// The position in a serialised SCTP packet buffer that the checksum 

@@ -4,7 +4,7 @@
     /// List of state conditions for a check list entry as the connectivity checks are 
     /// carried out.
     /// </summary>
-    public enum ChecklistEntryState
+    internal enum ChecklistEntryState
     {
         /// <summary>
         /// A check has not been sent for this pair, but the pair is not Frozen.

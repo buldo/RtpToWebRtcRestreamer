@@ -42,7 +42,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public class RawPacket
+    internal class RawPacket
     {
 
         public const int RTPPacketMaxSize = 8192;

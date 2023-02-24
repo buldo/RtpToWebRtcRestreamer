@@ -31,7 +31,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.7
     /// </remarks>
-    public class SctpAbortChunk : SctpErrorChunk
+    internal class SctpAbortChunk : SctpErrorChunk
     {
         /// <summary>
         /// Creates a new ABORT chunk.

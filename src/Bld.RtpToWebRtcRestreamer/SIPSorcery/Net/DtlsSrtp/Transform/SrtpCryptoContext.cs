@@ -89,7 +89,7 @@ using Org.BouncyCastle.Utilities;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public class SrtpCryptoContext
+    internal class SrtpCryptoContext
     {
         /**
          * The replay check windows size

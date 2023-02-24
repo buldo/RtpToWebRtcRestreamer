@@ -58,7 +58,7 @@ using Org.BouncyCastle.X509;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public static class DtlsUtils
+    internal static class DtlsUtils
     {
         /// <summary>
         /// The key size when generating random keys for self signed certificates.

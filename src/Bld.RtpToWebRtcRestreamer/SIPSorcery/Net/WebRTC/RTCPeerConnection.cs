@@ -53,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#dictionary-rtcofferoptions-members.
     /// </remarks>
-    //public class RTCOfferOptions
+    //internal class RTCOfferOptions
     //{
     //    /// <summary>
     //    /// If true then a new set of ICE credentials will be generated otherwise any
@@ -66,7 +66,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// Describes a pairing of an RTP sender and receiver and their shared state. The state
     /// is set by and relevant for the SDP that is controlling the RTP.
     /// </summary>
-    //public class RTCRtpTransceiver
+    //internal class RTCRtpTransceiver
     //{
     //    /// <summary>
     //    /// The media ID of the SDP m-line associated with this transceiver.
@@ -97,7 +97,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// The Session Description offer/answer mechanisms are detailed in
     /// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
     /// </remarks>
-    public class RTCPeerConnection : RTPSession
+    internal class RTCPeerConnection : RTPSession
     {
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";

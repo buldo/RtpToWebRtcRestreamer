@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// class provided to assist when using a web socket server for the  WebRTC 
     /// signalling.
     /// </summary>
-    public class WebRTCWebSocketPeer : WebSocketBehavior
+    internal class WebRTCWebSocketPeer : WebSocketBehavior
     {
         private readonly ILogger logger = Sys.Log.Logger;
 

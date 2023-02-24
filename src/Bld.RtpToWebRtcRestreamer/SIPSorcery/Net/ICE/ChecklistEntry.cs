@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// that is being checked for connectivity. If the overall ICE session does succeed it will
     /// be due to one of these checklist entries successfully completing the ICE checks.
     /// </summary>
-    public class ChecklistEntry : IComparable
+    internal class ChecklistEntry : IComparable
     {
         private static readonly ILogger logger = Log.Logger;
 

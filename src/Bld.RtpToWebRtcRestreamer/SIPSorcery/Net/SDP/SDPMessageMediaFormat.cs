@@ -17,7 +17,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
-    public class SDPMessageMediaFormat
+    internal class SDPMessageMediaFormat
     {
         public List<string> AcceptTypes;
 

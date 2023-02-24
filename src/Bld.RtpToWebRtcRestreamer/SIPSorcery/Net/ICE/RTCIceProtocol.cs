@@ -6,7 +6,7 @@
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#rtciceprotocol-enum.
     /// </remarks>
-    public enum RTCIceProtocol
+    internal enum RTCIceProtocol
     {
         udp,
         tcp

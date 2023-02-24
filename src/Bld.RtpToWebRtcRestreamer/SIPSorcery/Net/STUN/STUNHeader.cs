@@ -76,7 +76,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 {
-    public class STUNHeader
+    internal class STUNHeader
     {
         public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
         public const int STUN_HEADER_LENGTH = 20;

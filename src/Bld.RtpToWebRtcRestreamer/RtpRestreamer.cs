@@ -15,7 +15,7 @@ using WebSocketSharp.Server;
 
 namespace Bld.RtpToWebRtcRestreamer
 {
-    public class RtpRestreamer
+    internal class RtpRestreamer
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<RtpRestreamer> _logger;

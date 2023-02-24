@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
-    public class RTCIceCandidate
+    internal class RTCIceCandidate
     {
         public const string TCP_TYPE_KEY = "tcpType";
         public const string REMOTE_ADDRESS_KEY = "raddr";

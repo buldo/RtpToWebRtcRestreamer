@@ -10,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.12
     /// </remarks>
-    public struct SctpErrorUserInitiatedAbort : ISctpErrorCause
+    internal struct SctpErrorUserInitiatedAbort : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UserInitiatedAbort;
 

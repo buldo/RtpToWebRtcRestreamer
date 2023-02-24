@@ -25,7 +25,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// that allows peers to exchange generic data in a peer
     /// to peer manner.
     /// </summary>
-    public class RTCDataChannel
+    internal class RTCDataChannel
     {
         private static readonly ILogger logger = Log.Logger;
 

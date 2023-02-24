@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 01 Apr 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -29,14 +29,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// Operation Error is not considered fatal in and of itself, but may be
     /// used with an ABORT chunk to report a fatal condition.
     /// </summary>
-    public class SctpErrorChunk : SctpChunk
+    internal class SctpErrorChunk : SctpChunk
     {
         private const byte ABORT_CHUNK_TBIT_FLAG = 0x01;
 
         public List<ISctpErrorCause> ErrorCauses { get; private set; } = new List<ISctpErrorCause>();
 
         /// <summary>
-        /// This constructor is for the ABORT chunk type which is identical to the 
+        /// This constructor is for the ABORT chunk type which is identical to the
         /// ERROR chunk except for the optional verification tag bit.
         /// </summary>
         /// <param name="chunkType">The chunk type, typically ABORT.</param>

@@ -19,7 +19,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public class AudioStream : MediaStream
+    internal class AudioStream : MediaStream
     {
         #region EVENTS
 

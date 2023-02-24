@@ -26,7 +26,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
     /// An SCTP association represents an established connection between two SCTP endpoints.
     /// This class also represents the Transmission Control Block (TCB) referred to in RFC4960.
     /// </summary>
-    public class SctpAssociation
+    internal class SctpAssociation
     {
         public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 262144U;
         public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;

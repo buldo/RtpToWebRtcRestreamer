@@ -1,6 +1,6 @@
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public enum SetDescriptionResultEnum
+    internal enum SetDescriptionResultEnum
     {
         /// <summary>
         /// At least one media stream with a compatible format was available.

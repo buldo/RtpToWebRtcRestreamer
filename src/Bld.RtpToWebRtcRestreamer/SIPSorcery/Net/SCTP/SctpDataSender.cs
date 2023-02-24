@@ -24,7 +24,7 @@ using SIPSorcery;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
-    public class SctpDataSender
+    internal class SctpDataSender
     {
         public const ushort DEFAULT_SCTP_MTU = 1300;
 

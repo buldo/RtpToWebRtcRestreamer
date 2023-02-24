@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public enum RtpSecureMediaOptionEnum
+    internal enum RtpSecureMediaOptionEnum
     {
         /// <summary>
         /// Secure media not used.

@@ -17,7 +17,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
-    public struct SDPApplicationMediaFormat
+    internal struct SDPApplicationMediaFormat
     {
         public string ID;
 

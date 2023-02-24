@@ -3,7 +3,7 @@
 //
 // Description: Parameters for Secure RTP (SRTP) sessions.
 //
-// Derived From: 
+// Derived From:
 // https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTPParameters.java
 //
 // Author(s):
@@ -21,9 +21,9 @@ using Org.BouncyCastle.Crypto.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public struct SrtpParameters
+    internal struct SrtpParameters
     {
-        // DTLS derived key and salt lengths for SRTP 
+        // DTLS derived key and salt lengths for SRTP
         // http://tools.ietf.org/html/rfc5764#section-4.1.2
 
         //	SRTP_AES128_CM_HMAC_SHA1_80 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 80, 80, 112),

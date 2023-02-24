@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// https://tools.ietf.org/html/rfc4960#section-3.2
     /// </remarks>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum SctpChunkType : byte
+    internal enum SctpChunkType : byte
     {
         DATA = 0,
         INIT = 1,

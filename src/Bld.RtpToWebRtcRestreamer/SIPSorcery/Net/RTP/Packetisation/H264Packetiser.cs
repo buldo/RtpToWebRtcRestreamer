@@ -32,9 +32,9 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
-    public static class H264Packetiser
+    internal static class H264Packetiser
     {
-        public struct H264Nal
+        internal struct H264Nal
         {
             public byte[] NAL { get; }
             public bool IsLast { get; }

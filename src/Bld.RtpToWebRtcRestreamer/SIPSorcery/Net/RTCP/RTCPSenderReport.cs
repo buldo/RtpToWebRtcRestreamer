@@ -60,7 +60,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// site has sent any data packets during the interval since issuing the
     /// last report or the previous one, otherwise the RR is issued."
     /// </remarks>
-    public class RTCPSenderReport
+    internal class RTCPSenderReport
     {
         public const int SENDER_PAYLOAD_SIZE = 20;
         public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;

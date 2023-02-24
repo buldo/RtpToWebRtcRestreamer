@@ -21,7 +21,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
-    public class SctpDataChunk : SctpChunk
+    internal class SctpDataChunk : SctpChunk
     {
         /// <summary>
         /// The length in bytes of the fixed parameters used by the DATA chunk.

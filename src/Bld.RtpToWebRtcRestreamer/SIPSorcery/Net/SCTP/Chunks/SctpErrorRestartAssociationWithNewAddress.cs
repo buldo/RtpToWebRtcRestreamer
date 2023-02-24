@@ -10,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.11
     /// </remarks>
-    public struct SctpErrorRestartAssociationWithNewAddress : ISctpErrorCause
+    internal struct SctpErrorRestartAssociationWithNewAddress : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.RestartAssociationWithNewAddress;
 

@@ -27,7 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// sub-sequences of DATA chunks as represented by their Transmission
     /// Sequence Numbers (TSN).
     /// </summary>
-    public class SctpSackChunk : SctpChunk
+    internal class SctpSackChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 12;
         private const int GAP_REPORT_LENGTH = 4;

@@ -23,7 +23,7 @@ using SIPSorcery;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
 {
-    public class SctpChunk
+    internal class SctpChunk
     {
         public const int SCTP_CHUNK_HEADER_LENGTH = 4;
 

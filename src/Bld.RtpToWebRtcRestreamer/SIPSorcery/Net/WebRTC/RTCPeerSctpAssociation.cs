@@ -29,7 +29,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
-    public class RTCPeerSctpAssociation : SctpAssociation
+    internal class RTCPeerSctpAssociation : SctpAssociation
     {
         // TODO: Add MTU path discovery.
         private const ushort DEFAULT_DTLS_MTU = 1200;

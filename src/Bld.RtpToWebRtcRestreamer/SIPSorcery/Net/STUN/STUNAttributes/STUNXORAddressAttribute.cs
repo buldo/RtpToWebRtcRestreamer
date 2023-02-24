@@ -22,7 +22,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
     /// This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 
     /// THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.
     /// </summary>
-    public class STUNXORAddressAttribute : STUNAttribute
+    internal class STUNXORAddressAttribute : STUNAttribute
     {
         public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
 

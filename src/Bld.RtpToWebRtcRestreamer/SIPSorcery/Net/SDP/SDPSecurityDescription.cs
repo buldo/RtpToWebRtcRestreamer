@@ -36,7 +36,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     /// 
     /// </code>
     /// </summary>
-    public class SDPSecurityDescription
+    internal class SDPSecurityDescription
     {
         public const string CRYPTO_ATTRIBUE_PREFIX = "a=crypto:";
         private readonly char[] WHITE_SPACES = { ' ', '\t' };
@@ -61,7 +61,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             AES_CM_256_HMAC_SHA1_80, //https://tools.ietf.org/html/rfc6188
             AES_CM_256_HMAC_SHA1_32 //https://tools.ietf.org/html/rfc6188
         }
-        public class KeyParameter
+        internal class KeyParameter
         {
             private const string COLON = ":";
             private const string PIPE = "|";
@@ -430,7 +430,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
        }
 
-        public class SessionParameter
+        internal class SessionParameter
         {
             public enum SrtpSessionParams
             {

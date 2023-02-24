@@ -92,7 +92,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
      * @author Werner Dittmann (Werner.Dittmann@t-online.de)
      * @author Bing SU (nova.su@gmail.com)
      */
-    public class SrtpCipherCtr
+    internal class SrtpCipherCtr
     {
         private const int Blklen = 16;
         private const int MaxBufferLength = 10 * 1024;

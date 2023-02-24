@@ -4,7 +4,7 @@
     /// If ICE servers (STUN or TURN) are being used with the session this class is used to track
     /// the connection state for each server that gets used.
     /// </summary>
-    public static class IceServerConsts
+    internal static class IceServerConsts
     {
         /// <summary>
         /// The maximum number of requests to send to an ICE server without getting 

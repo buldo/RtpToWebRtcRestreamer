@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.9
     /// </remarks>
-    public struct SctpErrorNoUserData : ISctpErrorCause
+    internal struct SctpErrorNoUserData : ISctpErrorCause
     {
         private const ushort ERROR_CAUSE_LENGTH = 8;
 

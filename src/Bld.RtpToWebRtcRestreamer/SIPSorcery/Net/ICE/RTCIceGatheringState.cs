@@ -6,7 +6,7 @@
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicegatheringstate.
     /// </remarks>
-    public enum RTCIceGatheringState
+    internal enum RTCIceGatheringState
     {
         @new,
         gathering,

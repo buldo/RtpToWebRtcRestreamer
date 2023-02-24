@@ -7,7 +7,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// https://tools.ietf.org/html/rfc4585#page-35
     /// </summary>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum RTCPFeedbackTypesEnum
+    internal enum RTCPFeedbackTypesEnum
     {
         unassigned = 0,     // Unassigned
         NACK = 1,   		// Generic NACK	Generic negative acknowledgment		    [RFC4585]

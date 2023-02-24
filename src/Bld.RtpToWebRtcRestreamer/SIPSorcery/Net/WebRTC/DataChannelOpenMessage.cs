@@ -37,7 +37,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// <remarks>
     /// See https://tools.ietf.org/html/rfc8832#section-5.1
     /// </remarks>
-    public struct DataChannelOpenMessage
+    internal struct DataChannelOpenMessage
     {
         private const int DCEP_OPEN_FIXED_PARAMETERS_LENGTH = 12;
 

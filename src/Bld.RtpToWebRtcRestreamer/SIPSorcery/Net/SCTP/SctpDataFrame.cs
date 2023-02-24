@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
-    public struct SctpDataFrame
+    internal struct SctpDataFrame
     {
         public static SctpDataFrame Empty = new SctpDataFrame();
 

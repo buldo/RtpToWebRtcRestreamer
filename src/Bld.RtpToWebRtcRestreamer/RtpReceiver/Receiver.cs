@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver;
 
-public class Receiver
+internal class Receiver
 {
     private static int _nextIndex;
 

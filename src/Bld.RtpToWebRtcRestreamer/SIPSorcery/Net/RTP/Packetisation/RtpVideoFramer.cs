@@ -21,7 +21,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
-    public class RtpVideoFramer
+    internal class RtpVideoFramer
     {
         private static readonly ILogger logger = Log.Logger;
 

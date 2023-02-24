@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.8
     /// </remarks>
-    public class SctpShutdownChunk : SctpChunk
+    internal class SctpShutdownChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 4;
 

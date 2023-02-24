@@ -2,7 +2,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public interface IDtlsSrtpPeer
+    internal interface IDtlsSrtpPeer
     {
         event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
         SrtpPolicy GetSrtpPolicy();

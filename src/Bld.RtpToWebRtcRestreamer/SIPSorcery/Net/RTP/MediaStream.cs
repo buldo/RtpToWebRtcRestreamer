@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public class MediaStream
+    internal class MediaStream
     {
         protected class PendingPackages
         {

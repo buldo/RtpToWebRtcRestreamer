@@ -5,7 +5,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// <summary>
     /// Represents a point in time sample for a reception report.
     /// </summary>
-    public class ReceptionReportSample
+    internal class ReceptionReportSample
     {
         public const int PAYLOAD_SIZE = 24;
 

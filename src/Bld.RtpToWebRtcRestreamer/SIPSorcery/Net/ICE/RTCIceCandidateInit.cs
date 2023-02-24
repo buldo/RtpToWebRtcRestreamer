@@ -8,7 +8,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.
     /// </remarks>
-    public class RTCIceCandidateInit
+    internal class RTCIceCandidateInit
     {
         public string candidate { get; set; }
         public string sdpMid { get; set; }

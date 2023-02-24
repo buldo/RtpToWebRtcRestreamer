@@ -32,7 +32,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
-    public class RTCPFeedback
+    internal class RTCPFeedback
     {
         private static readonly ILogger logger = Log.Logger;
 

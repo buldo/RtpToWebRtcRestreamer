@@ -17,7 +17,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
-    public class SecureContext
+    internal class SecureContext
     {
         public ProtectRtpPacket ProtectRtpPacket { get; }
         public ProtectRtpPacket ProtectRtcpPacket { get; }

@@ -21,7 +21,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
-    public struct SctpHeader
+    internal struct SctpHeader
     {
         public const int SCTP_HEADER_LENGTH = 12;
 

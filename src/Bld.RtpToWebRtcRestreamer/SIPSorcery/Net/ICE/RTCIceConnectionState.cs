@@ -6,7 +6,7 @@
     /// <remarks>
     /// As specified in https://www.w3.org/TR/webrtc/#rtciceconnectionstate-enum.
     /// </remarks>
-    public enum RTCIceConnectionState
+    internal enum RTCIceConnectionState
     {
         /// <summary>
         /// The connection has been closed. All checks stop.

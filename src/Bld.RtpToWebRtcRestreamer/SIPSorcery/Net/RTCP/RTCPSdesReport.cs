@@ -59,7 +59,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// RTCP Source Description (SDES) report as defined in RFC3550.
     /// Only the mandatory CNAME item is supported.
     /// </summary>
-    public class RTCPSDesReport
+    internal class RTCPSDesReport
     {
         public const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
         public const int MAX_CNAME_BYTES = 255;

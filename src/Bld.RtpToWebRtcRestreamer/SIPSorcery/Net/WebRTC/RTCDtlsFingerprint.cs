@@ -5,7 +5,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// <summary>
     /// Represents a fingerprint of a certificate used to authenticate WebRTC communications.
     /// </summary>
-    public class RTCDtlsFingerprint
+    internal class RTCDtlsFingerprint
     {
         /// <summary>
         /// One of the hash function algorithms defined in the 'Hash function Textual Names' registry.

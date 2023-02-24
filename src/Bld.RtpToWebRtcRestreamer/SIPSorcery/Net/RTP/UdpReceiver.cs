@@ -17,7 +17,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     /// Mono Socket source:
     /// https://github.com/mono/mono/blob/master/mcs/class/System/System.Net.Sockets/Socket.cs
     /// </remarks>
-    public class UdpReceiver
+    internal class UdpReceiver
     {
         /// <summary>
         /// MTU is 1452 bytes so this should be heaps.

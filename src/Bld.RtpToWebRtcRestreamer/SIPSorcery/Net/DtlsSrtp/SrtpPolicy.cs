@@ -40,7 +40,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
     ///
     /// @author Bing SU (nova.su @gmail.com)
     /// </summary>
-    public class SrtpPolicy
+    internal class SrtpPolicy
     {
         public const int NullEncryption = 0;
         public const int AescmEncryption = 1;

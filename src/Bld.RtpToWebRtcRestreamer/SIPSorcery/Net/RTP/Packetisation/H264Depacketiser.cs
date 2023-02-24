@@ -7,7 +7,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
 {
-    public class H264Depacketiser
+    internal class H264Depacketiser
     {
         const int SPS = 7;
         const int PPS = 8;

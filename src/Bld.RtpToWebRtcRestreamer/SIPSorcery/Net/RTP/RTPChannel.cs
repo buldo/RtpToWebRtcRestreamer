@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     /// Real-time Control Protocol (RTCP) packets. This class performs the socket management
     /// functions.
     /// </summary>
-    public class RTPChannel : IDisposable
+    internal class RTPChannel : IDisposable
     {
         private static readonly ILogger logger = Log.Logger;
         private UdpReceiver m_rtpReceiver;

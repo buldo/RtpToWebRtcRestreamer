@@ -29,7 +29,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     /// created.
     /// TODO: With C#9 the struct could become a "record" type.
     /// </remarks>
-    public struct SDPAudioVideoMediaFormat
+    internal struct SDPAudioVideoMediaFormat
     {
         public const int DYNAMIC_ID_MIN = 96;
         public const int DYNAMIC_ID_MAX = 127;

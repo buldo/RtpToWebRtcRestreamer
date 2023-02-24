@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
-    public struct SctpTsnGapBlock
+    internal struct SctpTsnGapBlock
     {
         /// <summary>
         /// Indicates the Start offset TSN for this Gap Ack Block.  To

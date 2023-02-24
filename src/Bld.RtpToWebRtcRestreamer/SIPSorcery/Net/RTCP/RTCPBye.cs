@@ -35,7 +35,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates 
     /// that one or more sources are no longer active.
     /// </summary>
-    public class RTCPBye
+    internal class RTCPBye
     {
         public const int MAX_REASON_BYTES = 255;
         public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.

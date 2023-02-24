@@ -3,7 +3,7 @@
     /// <remarks>
     /// Defined in https://tools.ietf.org/html/rfc4960#section-3.3.10
     /// </remarks>
-    public enum SctpErrorCauseCode : ushort
+    internal enum SctpErrorCauseCode : ushort
     {
         InvalidStreamIdentifier = 1,
         MissingMandatoryParameter = 2,

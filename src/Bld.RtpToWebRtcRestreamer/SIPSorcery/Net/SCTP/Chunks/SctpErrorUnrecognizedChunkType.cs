@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.6
     /// </remarks>
-    public struct SctpErrorUnrecognizedChunkType : ISctpErrorCause
+    internal struct SctpErrorUnrecognizedChunkType : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnrecognizedChunkType;
 

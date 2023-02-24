@@ -5,7 +5,7 @@
     /// a media source and the relationship between them.
     /// As specified in RFC5576, https://tools.ietf.org/html/rfc5576.
     /// </summary>
-    public class SDPSsrcAttribute
+    internal class SDPSsrcAttribute
     {
         public const string MEDIA_CNAME_ATTRIBUE_PREFIX = "cname";
 

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer
 {
-    public class WebRtcHostedService : IHostedService
+    internal class WebRtcHostedService : IHostedService
     {
         private readonly RtpRestreamer? _rtpRestreamer;
 

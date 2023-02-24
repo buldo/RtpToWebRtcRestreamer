@@ -111,7 +111,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
-    public class SDP
+    internal class SDP
     {
         public const string CRLF = "\r\n";
         public const decimal SDP_PROTOCOL_VERSION = 0M;

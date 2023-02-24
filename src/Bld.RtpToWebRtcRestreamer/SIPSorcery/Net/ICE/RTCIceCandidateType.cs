@@ -6,7 +6,7 @@
     /// <remarks>
     /// As defined in https://www.w3.org/TR/webrtc/#rtcicecandidatetype-enum.
     /// </remarks>
-    public enum RTCIceCandidateType
+    internal enum RTCIceCandidateType
     {
         /// <summary>
         /// A host candidate, locally gathered.

@@ -1,6 +1,6 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public class RTPHeaderExtension
+    internal class RTPHeaderExtension
     {
         public RTPHeaderExtension(int id, string uri)
         {

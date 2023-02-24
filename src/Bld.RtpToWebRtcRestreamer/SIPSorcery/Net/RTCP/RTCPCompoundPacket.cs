@@ -27,7 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// and an SDES report). This implementation does not enforce that constraint for
     /// received reports but does for sends.
     /// </summary>
-    public class RTCPCompoundPacket
+    internal class RTCPCompoundPacket
     {
         private static readonly ILogger logger = Log.Logger;
 

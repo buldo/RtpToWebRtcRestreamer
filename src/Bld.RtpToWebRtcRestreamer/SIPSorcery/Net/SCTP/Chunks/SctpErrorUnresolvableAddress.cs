@@ -10,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.5
     /// </remarks>
-    public struct SctpErrorUnresolvableAddress : ISctpErrorCause
+    internal struct SctpErrorUnresolvableAddress : ISctpErrorCause
     {
         public SctpErrorCauseCode CauseCode => SctpErrorCauseCode.UnresolvableAddress;
 

@@ -32,7 +32,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// endpoints. The INIT ACK chunk is used to respond to an incoming
     /// INIT chunk from a remote peer.
     /// </summary>
-    public class SctpInitChunk : SctpChunk
+    internal class SctpInitChunk : SctpChunk
     {
         public const int FIXED_PARAMETERS_LENGTH = 16;
 

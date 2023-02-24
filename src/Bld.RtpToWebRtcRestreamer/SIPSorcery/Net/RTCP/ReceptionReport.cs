@@ -37,7 +37,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// <summary>
     /// Maintains the reception statistics for a received RTP stream.
     /// </summary>
-    public class ReceptionReport
+    internal class ReceptionReport
     {
         //private const int MAX_DROPOUT = 3000;
         //private const int MAX_MISORDER = 100;

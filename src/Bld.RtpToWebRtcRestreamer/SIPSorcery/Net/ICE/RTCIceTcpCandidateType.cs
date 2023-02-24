@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// As defined in https://www.w3.org/TR/webrtc/#rtcicetcpcandidatetype-enum.
     /// </remarks>
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public enum RTCIceTcpCandidateType
+    internal enum RTCIceTcpCandidateType
     {
         /// <summary>
         /// An active TCP candidate is one for which the transport will attempt to 

@@ -35,7 +35,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// WebRTC API RTCSctpTransport Interface definition:
     /// https://www.w3.org/TR/webrtc/#webidl-1410933428
     /// </remarks>
-    public class RTCSctpTransport : SctpTransport
+    internal class RTCSctpTransport : SctpTransport
     {
         private const string THREAD_NAME_PREFIX = "rtcsctprecv-";
 

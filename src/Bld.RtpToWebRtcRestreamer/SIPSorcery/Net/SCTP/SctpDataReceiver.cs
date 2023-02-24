@@ -26,7 +26,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
     /// can have different ordering requirements so it's left up to each stream handler to
     /// deal with full frames as they see fit.
     /// </summary>
-    public class SctpDataReceiver
+    internal class SctpDataReceiver
     {
         /// <summary>
         /// The window size is the maximum number of entries that can be recorded in the 

@@ -17,7 +17,7 @@ using System.Text;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
-    public class STUNErrorCodeAttribute : STUNAttribute
+    internal class STUNErrorCodeAttribute : STUNAttribute
     {
         public byte ErrorClass;             // The hundreds value of the error code must be between 3 and 6.
         public byte ErrorNumber;            // The units value of the error code must be between 0 and 99.

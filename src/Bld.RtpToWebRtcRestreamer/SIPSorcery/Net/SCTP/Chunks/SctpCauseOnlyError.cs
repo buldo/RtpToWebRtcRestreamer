@@ -31,7 +31,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// Invalid Mandatory Parameter: https://tools.ietf.org/html/rfc4960#section-3.3.10.7
     /// Cookie Received While Shutting Down: https://tools.ietf.org/html/rfc4960#section-3.3.10.10
     /// </remarks>
-    public struct SctpCauseOnlyError : ISctpErrorCause
+    internal struct SctpCauseOnlyError : ISctpErrorCause
     {
         private const ushort ERROR_CAUSE_LENGTH = 4;
 

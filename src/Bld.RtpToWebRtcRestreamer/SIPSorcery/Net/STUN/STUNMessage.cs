@@ -22,7 +22,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 {
-    public class STUNMessage
+    internal class STUNMessage
     {
         private const int FINGERPRINT_XOR = 0x5354554e;
         private const int MESSAGE_INTEGRITY_ATTRIBUTE_HMAC_LENGTH = 20;

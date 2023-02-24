@@ -18,7 +18,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
-    public class STUNAddressAttribute : STUNAttribute
+    internal class STUNAddressAttribute : STUNAttribute
     {
         public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
 

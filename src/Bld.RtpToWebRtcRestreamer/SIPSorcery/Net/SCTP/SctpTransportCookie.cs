@@ -4,7 +4,7 @@
     /// The opaque cookie structure that will be sent in response to an SCTP INIT
     /// packet.
     /// </summary>
-    public struct SctpTransportCookie
+    internal struct SctpTransportCookie
     {
         public static SctpTransportCookie Empty = new SctpTransportCookie { _isEmpty = true };
 

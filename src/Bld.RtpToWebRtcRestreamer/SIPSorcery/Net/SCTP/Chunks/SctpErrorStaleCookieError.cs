@@ -8,7 +8,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// <remarks>
     /// https://tools.ietf.org/html/rfc4960#section-3.3.10.3
     /// </remarks>
-    public struct SctpErrorStaleCookieError : ISctpErrorCause
+    internal struct SctpErrorStaleCookieError : ISctpErrorCause
     {
         private const ushort ERROR_CAUSE_LENGTH = 8;
 

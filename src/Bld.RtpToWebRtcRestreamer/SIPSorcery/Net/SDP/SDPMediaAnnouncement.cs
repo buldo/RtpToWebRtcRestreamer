@@ -36,7 +36,7 @@ using SIPSorceryMedia.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
-    public class SDPMediaAnnouncement
+    internal class SDPMediaAnnouncement
     {
         public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
         public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";

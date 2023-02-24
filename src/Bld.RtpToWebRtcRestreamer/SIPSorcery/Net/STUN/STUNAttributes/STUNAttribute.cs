@@ -42,7 +42,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
-    public class STUNAttribute
+    internal class STUNAttribute
     {
         public const short STUNATTRIBUTE_HEADER_LENGTH = 4;
 

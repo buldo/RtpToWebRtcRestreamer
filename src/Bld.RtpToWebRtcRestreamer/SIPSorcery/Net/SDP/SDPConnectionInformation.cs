@@ -18,7 +18,7 @@ using System.Net.Sockets;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
-    public class SDPConnectionInformation
+    internal class SDPConnectionInformation
     {
         public const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
         public const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";

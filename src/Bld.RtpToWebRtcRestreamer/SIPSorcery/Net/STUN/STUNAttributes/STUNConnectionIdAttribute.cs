@@ -17,7 +17,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
-    public class STUNConnectionIdAttribute : STUNAttribute
+    internal class STUNConnectionIdAttribute : STUNAttribute
     {
         public readonly uint ConnectionId;
 

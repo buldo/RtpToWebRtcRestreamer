@@ -67,7 +67,7 @@ using Org.BouncyCastle.Utilities;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 {
-    public static class SrtpCipherF8
+    internal static class SrtpCipherF8
     {
         /**
          * AES block size, just a short name.

@@ -16,7 +16,7 @@
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
-    public class RTPPacket
+    internal class RTPPacket
     {
         public readonly RTPHeader Header;
         public readonly byte[] Payload;
