@@ -501,7 +501,7 @@ namespace SIPSorcery.Net
 					else
 						throw new ArgumentOutOfRangeException("Kdr", "Kdr must be power of 2 and less than 2^24");
 					*/
-                    if (value < 0 || value > 24)
+                    if (value > 24)
                     {
                         throw new ArgumentOutOfRangeException("Kdr", "Kdr must be between 0 and 24");
                     }

@@ -107,7 +107,7 @@ namespace SIPSorcery.Net
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
         /// <returns>The length of the chunk. This method gets overridden by specialised SCTP parameters 
         /// that each have their own fields that determine the length.</returns>
-        public virtual ushort GetParameterLength(bool padded)
+        public ushort GetParameterLength(bool padded)
         {
             ushort len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
                 + (ParameterValue == null ? 0 : ParameterValue.Length));
@@ -136,7 +136,7 @@ namespace SIPSorcery.Net
         /// must have the required space already allocated.</param>
         /// <param name="posn">The position in the buffer to write to.</param>
         /// <returns>The number of bytes, including padding, written to the buffer.</returns>
-        public virtual int WriteTo(byte[] buffer, int posn)
+        public int WriteTo(byte[] buffer, int posn)
         {
             WriteParameterHeader(buffer, posn);
 

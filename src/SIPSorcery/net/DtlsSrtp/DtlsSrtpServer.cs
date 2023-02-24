@@ -28,14 +28,12 @@ using SIPSorcery.Sys;
 
 namespace SIPSorcery.Net
 {
-    public class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
+    public sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
         private static readonly ILogger logger = Log.Logger;
 
         Certificate mCertificateChain;
         AsymmetricKeyParameter mPrivateKey;
-
-        private RTCDtlsFingerprint mFingerPrint;
 
         //private AlgorithmCertificate algorithmCertificate;
 
@@ -79,11 +77,6 @@ namespace SIPSorcery.Net
 
             mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
-
-            //Generate FingerPrint
-            var certificate = mCertificateChain.GetCertificateAt(0);
-
-            mFingerPrint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
         protected override ProtocolVersion MaximumVersion
@@ -285,7 +278,7 @@ namespace SIPSorcery.Net
             return DtlsUtils.LoadSignerCredentials(mContext, mCertificateChain, mPrivateKey, signatureAndHashAlgorithm);
         }
 
-        protected virtual void PrepareSrtpSharedSecret()
+        private void PrepareSrtpSharedSecret()
         {
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.masterSecret = masterSecret;
@@ -339,12 +332,12 @@ namespace SIPSorcery.Net
             Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), srtpMasterServerSalt, 0, saltLen);
         }
 
-        protected byte[] GetKeyingMaterial(int length)
+        private byte[] GetKeyingMaterial(int length)
         {
             return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
         }
 
-        protected virtual byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
+        private byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
         {
             if (context_value != null && !TlsUtilities.IsValidUint16(context_value.Length))
             {

@@ -23,7 +23,7 @@ namespace SIPSorcery.Net
         List<KeyValuePair<int, byte[]>> temporary_rtp_payloads = new List<KeyValuePair<int, byte[]>>(); // used to assemble the RTP packets that form one RTP Frame
         MemoryStream fragmented_nal = new MemoryStream(); // used to concatenate fragmented H264 NALs where NALs are splitted over RTP packets
 
-        public virtual MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
+        public MemoryStream ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
         {
             List<byte[]> nal_units = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit);
 
@@ -62,14 +62,14 @@ namespace SIPSorcery.Net
             return null;
         }
 
-        public virtual List<byte[]> ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
+        private List<byte[]> ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
         {
             List<byte[]> nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit);
 
             return nal_units;
         }
 
-        protected virtual List<byte[]> ProcessH264Payload(byte[] rtp_payload, ushort seqNum, uint rtp_timestamp, int rtp_marker)
+        private List<byte[]> ProcessH264Payload(byte[] rtp_payload, ushort seqNum, uint rtp_timestamp, int rtp_marker)
         {
             if (previous_timestamp != rtp_timestamp && previous_timestamp > 0)
             {
@@ -106,7 +106,7 @@ namespace SIPSorcery.Net
 
         // Process a RTP Frame. A RTP Frame can consist of several RTP Packets which have the same Timestamp
         // Returns a list of NAL Units (with no 00 00 00 01 header and with no Size header)
-        protected virtual List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads)
+        private List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads)
         {
             bool? isKeyFrameNullable = null;
             List<byte[]> nal_units = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.

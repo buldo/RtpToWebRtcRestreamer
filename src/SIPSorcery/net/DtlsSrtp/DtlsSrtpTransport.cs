@@ -78,18 +78,15 @@ namespace SIPSorcery.Net
 
         // Network properties
         private int _waitMillis = DEFAULT_RETRANSMISSION_WAIT_MILLIS;
-        private int _mtu;
         private int _receiveLimit;
         private int _sendLimit;
 
         private volatile bool _handshakeComplete;
-        private volatile bool _handshakeFailed;
         private volatile bool _handshaking;
 
         public DtlsSrtpTransport(IDtlsSrtpPeer connection, int mtu = DEFAULT_MTU)
         {
             // Network properties
-            _mtu = mtu;
             _receiveLimit = Math.Max(0, mtu - MIN_IP_OVERHEAD - UDP_OVERHEAD);
             _sendLimit = Math.Max(0, mtu - MAX_IP_OVERHEAD - UDP_OVERHEAD);
             this.connection = connection;
@@ -148,7 +145,6 @@ namespace SIPSorcery.Net
                     }
                     // Declare handshake as complete
                     _handshakeComplete = true;
-                    _handshakeFailed = false;
                     _handshaking = false;
                     // Warn listeners handshake completed
                     //UnityEngine.Debug.Log("DTLS Handshake Completed");
@@ -175,7 +171,6 @@ namespace SIPSorcery.Net
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
-                    _handshakeFailed = true;
                     _handshaking = false;
                     // Warn listeners handshake completed
                     //UnityEngine.Debug.Log("DTLS Handshake failed\n" + e);
@@ -215,7 +210,6 @@ namespace SIPSorcery.Net
                     }
                     // Declare handshake as complete
                     _handshakeComplete = true;
-                    _handshakeFailed = false;
                     _handshaking = false;
                     // Warn listeners handshake completed
                     //UnityEngine.Debug.Log("DTLS Handshake Completed");
@@ -241,7 +235,6 @@ namespace SIPSorcery.Net
 
                     // Declare handshake as failed
                     _handshakeComplete = false;
-                    _handshakeFailed = true;
                     _handshaking = false;
                     // Warn listeners handshake completed
                     //UnityEngine.Debug.Log("DTLS Handshake failed\n"+ e);
@@ -296,9 +289,8 @@ namespace SIPSorcery.Net
             return GenerateTransformer(!connection.IsClient(), true);
         }
 
-        protected IPacketTransformer GenerateRtcpEncoder()
+        private IPacketTransformer GenerateRtcpEncoder()
         {
-            var isClient = connection is DtlsSrtpClient;
             return GenerateTransformer(connection.IsClient(), false);
         }
 
@@ -310,7 +302,7 @@ namespace SIPSorcery.Net
 
         protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
         {
-            SrtpTransformEngine engine = null;
+            SrtpTransformEngine engine;
             if (!isClient)
             {
                 engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
@@ -535,7 +527,7 @@ namespace SIPSorcery.Net
             OnDataReady?.Invoke(buf);
         }
 
-        public virtual void Close()
+        public void Close()
         {
             _isClosed = true;
             _startTime = DateTime.MinValue;
@@ -555,7 +547,7 @@ namespace SIPSorcery.Net
         /// </summary>
         /// <param name="currentWaitMillis"></param>
         /// <returns></returns>
-        protected virtual int BackOff(int currentWaitMillis)
+        protected int BackOff(int currentWaitMillis)
         {
             return Math.Min(currentWaitMillis * 2, 6000);
         }

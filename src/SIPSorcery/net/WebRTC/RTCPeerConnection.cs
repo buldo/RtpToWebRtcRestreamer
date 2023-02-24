@@ -1151,7 +1151,7 @@ namespace SIPSorcery.Net
         /// These internal function is used to call Renegotiation Event with delay as the user should call addTrack/removeTrack in sequence so we need a small delay to prevent multiple renegotiation calls
         /// </summary>
         /// <returns>Current Executing Task</returns>
-        protected virtual Task StartOnNegotiationNeededTask()
+        private Task StartOnNegotiationNeededTask()
         {
             const int RENEGOTIATION_CALL_DELAY = 100;
 
@@ -1186,7 +1186,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Cancel current Negotiation Event Call to prevent running thread to call OnNegotiationNeeded
         /// </summary>
-        protected virtual void CancelOnNegotiationNeededTask()
+        protected void CancelOnNegotiationNeededTask()
         {
             lock (_renegotiationLock)
             {
@@ -1407,7 +1407,7 @@ namespace SIPSorcery.Net
                 return false;
             }
 
-            logger.LogDebug($"RTCPeerConnection DTLS handshake result {handshakeResult}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+            logger.LogDebug($"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
             var expectedFp = RemotePeerDtlsFingerprint;
             var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));

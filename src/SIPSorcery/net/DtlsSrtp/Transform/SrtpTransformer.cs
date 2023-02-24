@@ -87,12 +87,12 @@ namespace SIPSorcery.Net
 
                 // Associate packet to a crypto context
                 long ssrc = rawPacket.GetSSRC();
-                SrtpCryptoContext context = null;
+                SrtpCryptoContext context;
                 contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context = forwardEngine.GetDefaultContext().deriveContext(0, 0);
                     context.DeriveSrtpKeys(0);
                     contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
@@ -135,11 +135,11 @@ namespace SIPSorcery.Net
 
                 // Associate packet to a crypto context
                 long ssrc = rawPacket.GetSSRC();
-                SrtpCryptoContext context = null;
+                SrtpCryptoContext context;
                 contexts.TryGetValue(ssrc, out context);
                 if (context == null)
                 {
-                    context = reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
+                    context = reverseEngine.GetDefaultContext().deriveContext(0, 0);
                     context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
                     contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }

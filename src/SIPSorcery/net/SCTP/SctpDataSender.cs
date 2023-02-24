@@ -317,7 +317,7 @@ namespace SIPSorcery.Net
                     Buffer.BlockCopy(data, offset, payload, 0, payloadLength);
 
                     bool isBegining = index == 0;
-                    bool isEnd = ((offset + payloadLength) >= data.Length) ? true : false;
+                    bool isEnd = ((offset + payloadLength) >= data.Length);
 
                     SctpDataChunk dataChunk = new SctpDataChunk(
                         false,

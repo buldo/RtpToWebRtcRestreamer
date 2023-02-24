@@ -35,14 +35,12 @@ namespace SIPSorcery.Net
             get { return mContext; }
         }
 
-        protected internal TlsSession mSession;
-
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         //Received from server
         public Certificate ServerCertificate { get; internal set; }
 
-        public RTCDtlsFingerprint Fingerprint { get; private set; }
+        private RTCDtlsFingerprint Fingerprint { get; }
 
         private UseSrtpData clientSrtpData;
 
@@ -92,10 +90,6 @@ namespace SIPSorcery.Net
 
             mPrivateKey = privateKey;
             mCertificateChain = certificateChain;
-
-            //Generate FingerPrint
-            var certificate = mCertificateChain.GetCertificateAt(0);
-            Fingerprint = certificate != null ? DtlsUtils.Fingerprint(certificate) : null;
         }
 
         public override IDictionary GetClientExtensions()
@@ -113,32 +107,32 @@ namespace SIPSorcery.Net
             return clientExtensions;
         }
 
-        public virtual SrtpPolicy GetSrtpPolicy()
+        public SrtpPolicy GetSrtpPolicy()
         {
             return srtpPolicy;
         }
 
-        public virtual SrtpPolicy GetSrtcpPolicy()
+        public SrtpPolicy GetSrtcpPolicy()
         {
             return srtcpPolicy;
         }
 
-        public virtual byte[] GetSrtpMasterServerKey()
+        public byte[] GetSrtpMasterServerKey()
         {
             return srtpMasterServerKey;
         }
 
-        public virtual byte[] GetSrtpMasterServerSalt()
+        public byte[] GetSrtpMasterServerSalt()
         {
             return srtpMasterServerSalt;
         }
 
-        public virtual byte[] GetSrtpMasterClientKey()
+        public byte[] GetSrtpMasterClientKey()
         {
             return srtpMasterClientKey;
         }
 
-        public virtual byte[] GetSrtpMasterClientSalt()
+        public byte[] GetSrtpMasterClientSalt()
         {
             return srtpMasterClientSalt;
         }
@@ -165,12 +159,12 @@ namespace SIPSorcery.Net
             return true;
         }
 
-        protected byte[] GetKeyingMaterial(int length)
+        private byte[] GetKeyingMaterial(int length)
         {
             return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
         }
 
-        protected virtual byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
+        protected byte[] GetKeyingMaterial(string asciiLabel, byte[] context_value, int length)
         {
             if (context_value != null && !TlsUtilities.IsValidUint16(context_value.Length))
             {
@@ -225,7 +219,7 @@ namespace SIPSorcery.Net
             return ForceUseExtendedMasterSecret;
         }
 
-        protected virtual void PrepareSrtpSharedSecret()
+        protected void PrepareSrtpSharedSecret()
         {
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;
@@ -291,7 +285,7 @@ namespace SIPSorcery.Net
 
         public override TlsSession GetSessionToResume()
         {
-            return mSession;
+            return null;
         }
 
         public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
@@ -322,35 +316,6 @@ namespace SIPSorcery.Net
         public Certificate GetRemoteCertificate()
         {
             return ServerCertificate;
-        }
-
-        public override void NotifyAlertReceived(byte alertLevel, byte alertDescription)
-        {
-            string description = AlertDescription.GetText(alertDescription);
-
-            AlertLevelsEnum level = AlertLevelsEnum.Warning;
-            AlertTypesEnum alertType = AlertTypesEnum.unknown;
-
-            if (Enum.IsDefined(typeof(AlertLevelsEnum), alertLevel))
-            {
-                level = (AlertLevelsEnum)alertLevel;
-            }
-
-            if (Enum.IsDefined(typeof(AlertTypesEnum), alertDescription))
-            {
-                alertType = (AlertTypesEnum)alertDescription;
-            }
-
-            if (alertType == AlertTypesEnum.close_notify)
-            {
-                logger.LogDebug($"DTLS client received close notification: {AlertLevel.GetText(alertLevel)}, {description}.");
-            }
-            else
-            {
-                logger.LogWarning($"DTLS client received unexpected alert: {AlertLevel.GetText(alertLevel)}, {description}.");
-            }
-
-            OnAlert?.Invoke(level, alertType, description);
         }
     }
 }

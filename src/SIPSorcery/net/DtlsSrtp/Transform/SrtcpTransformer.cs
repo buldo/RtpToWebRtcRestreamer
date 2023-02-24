@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace SIPSorcery.Net
@@ -54,16 +53,6 @@ namespace SIPSorcery.Net
             contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
         }
 
-        /// <summary>
-        /// Encrypts a SRTCP packet
-        /// </summary>
-        /// <param name="pkt">plain SRTCP packet to be encrypted.</param>
-        /// <returns>encrypted SRTCP packet.</returns>
-        public byte[] Transform(byte[] pkt)
-        {
-            return Transform(pkt, 0, pkt.Length);
-        }
-
         public byte[] Transform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
@@ -75,12 +64,12 @@ namespace SIPSorcery.Net
 
                 // Associate the packet with its encryption context
                 long ssrc = packet.GetRTCPSSRC();
-                SrtcpCryptoContext context = null;
+                SrtcpCryptoContext context;
                 contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = forwardEngine.GetDefaultContextControl().DeriveContext(ssrc);
+                    context = forwardEngine.GetDefaultContextControl().DeriveContext();
                     context.DeriveSrtcpKeys();
                     contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
@@ -99,11 +88,6 @@ namespace SIPSorcery.Net
             }
         }
 
-        public byte[] ReverseTransform(byte[] pkt)
-        {
-            return ReverseTransform(pkt, 0, pkt.Length);
-        }
-
         public byte[] ReverseTransform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
@@ -115,12 +99,12 @@ namespace SIPSorcery.Net
 
                 // Associate the packet with its encryption context
                 long ssrc = packet.GetRTCPSSRC();
-                SrtcpCryptoContext context = null;
+                SrtcpCryptoContext context;
                 contexts.TryGetValue(ssrc, out context);
 
                 if (context == null)
                 {
-                    context = reverseEngine.GetDefaultContextControl().DeriveContext(ssrc);
+                    context = reverseEngine.GetDefaultContextControl().DeriveContext();
                     context.DeriveSrtcpKeys();
                     contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
@@ -139,29 +123,6 @@ namespace SIPSorcery.Net
                 //Unlock
                 if (!isLocked)
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
-            }
-        }
-
-        /// <summary>
-        /// Close the transformer and underlying transform engine.
-        /// The close functions closes all stored crypto contexts. This deletes key data
-        /// and forces a cleanup of the crypto contexts.
-        /// </summary>
-        public void Close()
-        {
-            forwardEngine.Close();
-            if (forwardEngine != reverseEngine)
-            {
-                reverseEngine.Close();
-            }
-
-            var keys = new List<long>(contexts.Keys);
-            foreach (var ssrc in keys)
-            {
-                if (contexts.TryRemove(ssrc, out var context))
-                {
-                    context.Close();
-                }
             }
         }
     }

@@ -117,10 +117,7 @@ namespace SIPSorcery.Net
                         _cachedRequestTransactionIDs.RemoveAt(_cachedRequestTransactionIDs.Count - 1);
                     }
 
-                    if (MAX_CACHED_REQUEST_IDS > 0)
-                    {
-                        _cachedRequestTransactionIDs.Insert(0, value);
-                    }
+                    _cachedRequestTransactionIDs.Insert(0, value);
                 }
             }
         }

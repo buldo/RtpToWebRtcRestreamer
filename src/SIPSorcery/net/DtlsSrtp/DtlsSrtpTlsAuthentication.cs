@@ -15,13 +15,13 @@ namespace SIPSorcery.Net
             mContext = client.TlsContext;
         }
 
-        public virtual void NotifyServerCertificate(Certificate serverCertificate)
+        public void NotifyServerCertificate(Certificate serverCertificate)
         {
             //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
             mClient.ServerCertificate = serverCertificate;
         }
 
-        public virtual TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
+        public TlsCredentials GetClientCredentials(CertificateRequest certificateRequest)
         {
             byte[] certificateTypes = certificateRequest.CertificateTypes;
             if (certificateTypes == null || !Arrays.Contains(certificateTypes, ClientCertificateType.rsa_sign))

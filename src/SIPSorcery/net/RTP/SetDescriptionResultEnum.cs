@@ -55,10 +55,5 @@ namespace SIPSorcery.Net
         /// An SDP offer was received when the local agent had already entered have local offer state.
         /// </summary>
         WrongSdpTypeOfferAfterOffer,
-
-        /// <summary>
-        /// Crypto attributes invalid or not compatible.
-        /// </summary>
-        CryptoNegotiationFailed,
     }
 }

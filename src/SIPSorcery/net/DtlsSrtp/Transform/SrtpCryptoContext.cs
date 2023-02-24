@@ -99,11 +99,6 @@ namespace SIPSorcery.Net
         private readonly long REPLAY_WINDOW_SIZE = 64;
 
         /**
-         * RTP SSRC of this cryptographic context
-         */
-        private long ssrcCtx;
-
-        /**
          * Master key identifier
          */
         private byte[] mki;
@@ -235,10 +230,9 @@ namespace SIPSorcery.Net
          *            encryption algorithm, the authentication algorithm, etc
          */
 
-        public SrtpCryptoContext(long ssrcIn, int rocIn, long kdr, byte[] masterK,
+        public SrtpCryptoContext(int rocIn, long kdr, byte[] masterK,
                 byte[] masterS, SrtpPolicy policyIn)
         {
-            ssrcCtx = ssrcIn;
             mki = null;
             roc = rocIn;
             guessedROC = 0;
@@ -774,9 +768,9 @@ namespace SIPSorcery.Net
          *            The key derivation rate for this context
          * @return a new SRTPCryptoContext with all relevant data set.
          */
-        public SrtpCryptoContext deriveContext(long ssrc, int roc, long deriveRate)
+        public SrtpCryptoContext deriveContext(int roc, long deriveRate)
         {
-            return new SrtpCryptoContext(ssrc, roc, deriveRate, masterKey, masterSalt, policy);
+            return new SrtpCryptoContext(roc, deriveRate, masterKey, masterSalt, policy);
         }
     }
 }

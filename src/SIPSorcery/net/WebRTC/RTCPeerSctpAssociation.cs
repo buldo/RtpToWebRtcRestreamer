@@ -37,11 +37,6 @@ namespace SIPSorcery.Net
         private static readonly ILogger logger = Log.Logger;
 
         /// <summary>
-        /// The DTLS transport to send and receive SCTP packets on.
-        /// </summary>
-        private RTCSctpTransport _rtcSctpTransport;
-
-        /// <summary>
         /// Event notifications for user data on an SCTP stream representing a data channel.
         /// </summary>
         public event Action<SctpDataFrame> OnDataChannelData;
@@ -71,8 +66,7 @@ namespace SIPSorcery.Net
         public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
             : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
         {
-            _rtcSctpTransport = rtcSctpTransport;
-            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {_rtcSctpTransport.IsDtlsClient}, ID {ID}.");
+            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
 
             OnData += OnDataFrameReceived;
         }

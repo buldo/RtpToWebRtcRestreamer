@@ -73,10 +73,7 @@ namespace SIPSorcery.Net
 
         /** RTCP SSRC of this cryptographic context */
         private long ssrcCtx;
-
-        /** Master key identifier */
-        private byte[] mki;
-
+        
         /** Index received so far */
         private int receivedIndex;
 
@@ -145,10 +142,8 @@ namespace SIPSorcery.Net
          *            SRTP policy for this SRTP cryptographic context, defined the
          *            encryption algorithm, the authentication algorithm, etc
          */
-        public SrtcpCryptoContext(long ssrcIn, byte[] masterK, byte[] masterS, SrtpPolicy policyIn)
+        public SrtcpCryptoContext(byte[] masterK, byte[] masterS, SrtpPolicy policyIn)
         {
-            ssrcCtx = ssrcIn;
-            mki = null;
             policy = policyIn;
             masterKey = new byte[policy.EncKeyLength];
             Array.Copy(masterK, 0, masterKey, 0, masterK.Length);
@@ -617,11 +612,10 @@ namespace SIPSorcery.Net
          *            The SSRC for this context
          * @return a new SRTPCryptoContext with all relevant data set.
          */
-        public SrtcpCryptoContext DeriveContext(long ssrc)
+        public SrtcpCryptoContext DeriveContext()
         {
-            SrtcpCryptoContext pcc = null;
-            pcc = new SrtcpCryptoContext(ssrc, masterKey,
-                    masterSalt, policy);
+            
+            var pcc = new SrtcpCryptoContext(masterKey, masterSalt, policy);
             return pcc;
         }
     }

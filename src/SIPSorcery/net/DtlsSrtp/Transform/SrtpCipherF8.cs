@@ -120,8 +120,6 @@ namespace SIPSorcery.Net
              */
             KeyParameter encryptionKey = new KeyParameter(maskedKey);
             f8Cipher.Init(true, encryptionKey);
-            saltMask = null;
-            maskedKey = null;
         }
 
         public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,

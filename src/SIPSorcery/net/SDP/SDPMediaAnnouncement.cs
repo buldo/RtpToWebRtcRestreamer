@@ -191,33 +191,30 @@ namespace SIPSorcery.Net
             if (!String.IsNullOrWhiteSpace(formatList))
             {
                 string[] formatIDs = Regex.Split(formatList, @"\s");
-                if (formatIDs != null)
+                foreach (string formatID in formatIDs)
                 {
-                    foreach (string formatID in formatIDs)
+                    if (Media == SDPMediaTypesEnum.application)
                     {
-                        if (Media == SDPMediaTypesEnum.application)
+                        ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                    }
+                    else if (Media == SDPMediaTypesEnum.message)
+                    {
+                        //TODO
+                    }
+                    else
+                    {
+                        if (Int32.TryParse(formatID, out int id)
+                            && !MediaFormats.ContainsKey(id)
+                            && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                         {
-                            ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
-                        }
-                        else if (Media == SDPMediaTypesEnum.message)
-                        {
-                            //TODO
-                        }
-                        else
-                        {
-                            if (Int32.TryParse(formatID, out int id)
-                                && !MediaFormats.ContainsKey(id)
-                                && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+                            if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
+                                Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
                             {
-                                if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
-                                    Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
-                                {
-                                    MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
-                                }
-                                else
-                                {
-                                    logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
-                                }
+                                MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
+                            }
+                            else
+                            {
+                                logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
                             }
                         }
                     }

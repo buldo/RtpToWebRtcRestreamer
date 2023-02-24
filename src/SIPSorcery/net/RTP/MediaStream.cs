@@ -49,13 +49,10 @@ namespace SIPSorcery.net.RTP
 
         private static ILogger logger = Log.Logger;
 
-        private uint m_lastRtpTimestamp;
-
         private RtpSessionConfig RtpSessionConfig;
 
         protected SecureContext SecureContext;
-        protected SrtpHandler SrtpHandler;
-
+        
         MediaStreamTrack m_localTrack;
 
         protected RTPChannel rtpChannel;
@@ -261,15 +258,6 @@ namespace SIPSorcery.net.RTP
             return true;
         }
 
-        public SrtpHandler GetOrCreateSrtpHandler()
-        {
-            if (SrtpHandler == null)
-            {
-                SrtpHandler = new SrtpHandler();
-            }
-            return SrtpHandler;
-        }
-
         #endregion SECURITY CONTEXT
 
         #region RTP CHANNEL
@@ -357,8 +345,7 @@ namespace SIPSorcery.net.RTP
                         rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
                     }
                 }
-                m_lastRtpTimestamp = timestamp;
-
+                
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
         }

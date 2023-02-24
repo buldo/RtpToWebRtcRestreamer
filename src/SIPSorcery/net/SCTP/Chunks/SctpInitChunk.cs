@@ -377,13 +377,6 @@ namespace SIPSorcery.Net
                             initChunk.GotUnrecognisedParameter(varParam);
                             break;
                     }
-
-                    if (stopProcessing)
-                    {
-                        logger.LogWarning($"SCTP unrecognised parameter {varParam.ParameterType} for chunk type {initChunk.KnownType} "
-                            + "indicated no further chunks should be processed.");
-                        break;
-                    }
                 }
             }
 
