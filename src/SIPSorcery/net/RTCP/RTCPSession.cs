@@ -61,13 +61,13 @@ namespace SIPSorcery.Net
 
         private static ILogger logger = Log.Logger;
 
-        private static DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
-        private static DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
+        private static readonly DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         /// The media type this report session is measuring.
         /// </summary>
-        public SDPMediaTypesEnum MediaType { get; private set; }
+        private SDPMediaTypesEnum MediaType { get; set; }
 
         /// <summary>
         /// The SSRC number of the RTP packets we are sending.
@@ -139,18 +139,7 @@ namespace SIPSorcery.Net
 
         private ReceptionReport m_receptionReport;
         private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
-
-        /// <summary>
-        /// Event handler for sending RTCP reports.
-        /// </summary>
-        public event Action<SDPMediaTypesEnum, RTCPCompoundPacket> OnReportReadyToSend;
-
-        /// <summary>
-        /// Fires when the connection is classified as timed out due to not
-        /// receiving any RTP or RTCP packets within the given period.
-        /// </summary>
-        public event Action<SDPMediaTypesEnum> OnTimeout;
-
+        
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -180,7 +169,6 @@ namespace SIPSorcery.Net
 
                 var byeReport = GetRtcpReport();
                 byeReport.Bye = new RTCPBye(Ssrc, reason);
-                OnReportReadyToSend?.Invoke(MediaType, byeReport);
             }
         }
 
@@ -218,8 +206,6 @@ namespace SIPSorcery.Net
         /// <summary>
         /// Event handler for an RTCP packet being received from the remote party.
         /// </summary>
-        /// <param name="remoteEndPoint">The end point the packet was received from.</param>
-        /// <param name="buffer">The data received.</param>
         public void ReportReceived(RTCPCompoundPacket rtcpCompoundPacket)
         {
             try
@@ -233,24 +219,6 @@ namespace SIPSorcery.Net
                     {
                         m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
                     }
-
-                    // TODO: Apply information from report.
-                    //if (rtcpCompoundPacket.SenderReport != null)
-                    //{
-                    //    if (m_receptionReport == null)
-                    //    {
-                    //        m_receptionReport = new ReceptionReport(rtcpCompoundPacket.SenderReport.SSRC);
-                    //    }
-
-                    //    m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
-
-                    //    var sr = rtcpCompoundPacket.SenderReport;
-                    //}
-
-                    //if (rtcpCompoundPacket.ReceiverReport != null)
-                    //{
-                    //    var rr = rtcpCompoundPacket.ReceiverReport.ReceptionReports.First();
-                    //}
                 }
             }
             catch (Exception excp)
@@ -278,16 +246,10 @@ namespace SIPSorcery.Net
                             {
                                 logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
                                 IsTimedOut = true;
-
-                                OnTimeout?.Invoke(MediaType);
                             }
                         }
 
                         //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
-
-                        var report = GetRtcpReport();
-
-                        OnReportReadyToSend?.Invoke(MediaType, report);
 
                         m_previousPacketsSentCount = PacketsSentCount;
 
@@ -357,7 +319,7 @@ namespace SIPSorcery.Net
                 (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval));
         }
 
-        public static uint To32Bit(ulong ntpTime) => (uint)((ntpTime >> 16) & 0xFFFFFFFF);
+        private static uint To32Bit(ulong ntpTime) => (uint)((ntpTime >> 16) & 0xFFFFFFFF);
 
         public static uint DateTimeToNtpTimestamp32(DateTime value) { return (uint)((DateTimeToNtpTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
@@ -377,7 +339,7 @@ namespace SIPSorcery.Net
         /// bits of the integer part and the high 16 bits of the fractional part.
         /// The high 16 bits of the integer part must be determined independently.
         /// </notes>
-        public static ulong DateTimeToNtpTimestamp(DateTime value)
+        private static ulong DateTimeToNtpTimestamp(DateTime value)
         {
             DateTime baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
 

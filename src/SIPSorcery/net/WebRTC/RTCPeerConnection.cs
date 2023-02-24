@@ -103,7 +103,6 @@ namespace SIPSorcery.Net
         // SDP constants.
         //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
         private const string RTP_MEDIA_NON_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVP";
-        private const string RTP_MEDIA_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVPF";
         private const string RTP_MEDIA_DATACHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
         private const string RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE = "UDP/DTLS/SCTP";
         private const string SDP_DATACHANNEL_FORMAT_ID = "webrtc-datachannel";
@@ -124,14 +123,12 @@ namespace SIPSorcery.Net
         private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
         private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
-        public string SessionID { get; private set; }
-        public string SdpSessionID { get; private set; }
-        public string LocalSdpSessionID { get; private set; }
+        private string LocalSdpSessionID { get; }
 
         private RtpIceChannel _rtpIceChannel;
 
         readonly RTCDataChannelCollection dataChannels;
-        public IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
+        private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
         private Certificate _dtlsCertificate;
         private AsymmetricKeyParameter _dtlsPrivateKey;
@@ -296,7 +293,6 @@ namespace SIPSorcery.Net
             
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
-            SessionID = Guid.NewGuid().ToString();
             LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
 
             // Request the underlying RTP session to create a single RTP channel that will
@@ -576,8 +572,6 @@ namespace SIPSorcery.Net
                         }
                     }
                 }
-
-                SdpSessionID = remoteSdp.SessionId;
 
                 if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
                     _rtpIceChannel.IsController = true;

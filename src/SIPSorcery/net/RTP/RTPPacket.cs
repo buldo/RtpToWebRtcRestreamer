@@ -20,8 +20,8 @@ namespace SIPSorcery.Net
 {
     public class RTPPacket
     {
-        public RTPHeader Header;
-        public byte[] Payload;
+        public readonly RTPHeader Header;
+        public readonly byte[] Payload;
 
         public RTPPacket(int payloadSize)
         {

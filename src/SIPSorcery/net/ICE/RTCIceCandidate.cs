@@ -46,14 +46,14 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
         /// </remarks>
-        public string foundation { get; set; }
+        public string foundation { get; private set; }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
         /// that identifies the specific component of the data stream for
         /// which this is a candidate.
         /// </summary>
-        public RTCIceComponent component { get; set; } = RTCIceComponent.rtp;
+        public RTCIceComponent component { get; private set; } = RTCIceComponent.rtp;
 
         /// <summary>
         /// A positive integer between 1 and (2**31 - 1) inclusive.
@@ -64,38 +64,38 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// See specification at https://tools.ietf.org/html/rfc8445#section-5.1.2.
         /// </remarks>
-        public uint priority { get; set; }
+        public uint priority { get; private set; }
 
         /// <summary>
         /// The address or hostname for the candidate.
         /// </summary>
-        public string address { get; set; }
+        public string address { get; private set; }
 
         /// <summary>
         /// The transport protocol for the candidate, supported options are UDP and TCP.
         /// </summary>
-        public RTCIceProtocol protocol { get; set; }
+        public RTCIceProtocol protocol { get; private set; }
 
         /// <summary>
         /// The local port the candidate is listening on.
         /// </summary>
-        public ushort port { get; set; }
+        public ushort port { get; private set; }
 
         /// <summary>
         /// The type of ICE candidate, host, srflx etc.
         /// </summary>
-        public RTCIceCandidateType type { get; set; }
+        public RTCIceCandidateType type { get; private set; }
 
         /// <summary>
         /// For TCP candidates the role they are fulfilling (client, server or both).
         /// </summary>
-        public RTCIceTcpCandidateType tcpType { get; set; }
+        public RTCIceTcpCandidateType tcpType { get; }
 
-        public string relatedAddress { get; set; }
+        public string relatedAddress { get; private set; }
 
-        public ushort relatedPort { get; set; }
+        public ushort relatedPort { get; private set; }
 
-        public string usernameFragment { get; set; }
+        public string usernameFragment { get; }
 
         /// <summary>
         /// This is the end point to use for a remote candidate. The address supplied for an ICE
@@ -147,7 +147,7 @@ namespace SIPSorcery.Net
             priority = GetPriority();
         }
 
-        public static RTCIceCandidate Parse(string candidateLine)
+        private static RTCIceCandidate Parse(string candidateLine)
         {
             if (string.IsNullOrEmpty(candidateLine))
             {

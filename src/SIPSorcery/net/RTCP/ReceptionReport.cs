@@ -72,11 +72,6 @@ namespace SIPSorcery.Net
         private uint m_base_seq;
 
         /// <summary>
-        /// sequ. packets till source is valid.
-        /// </summary>
-        //private uint m_probation;
-
-        /// <summary>
         /// packets received.
         /// </summary>
         private uint m_received;

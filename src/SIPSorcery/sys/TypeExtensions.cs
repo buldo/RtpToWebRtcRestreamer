@@ -16,7 +16,6 @@
 //-----------------------------------------------------------------------------
 
 using System.Collections.Generic;
-using System.Net;
 
 namespace SIPSorcery.Sys
 {

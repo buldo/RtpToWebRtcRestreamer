@@ -51,7 +51,7 @@ namespace SIPSorcery.Net
         /// <remarks>
         /// https://www.w3.org/TR/webrtc/#sctp-transport-update-mms
         /// </remarks>
-        internal const uint SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
+        private const uint SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -65,7 +65,7 @@ namespace SIPSorcery.Net
         /// The transport over which all SCTP packets for data channels 
         /// will be sent and received.
         /// </summary>
-        public DatagramTransport transport { get; private set; }
+        private DatagramTransport transport { get; set; }
 
         /// <summary>
         /// Indicates the role of this peer in the DTLS connection. This influences
