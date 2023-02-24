@@ -68,7 +68,7 @@ using Org.BouncyCastle.Utilities;
 
 namespace SIPSorcery.Net
 {
-    public class SrtpCipherF8
+    public static class SrtpCipherF8
     {
         /**
          * AES block size, just a short name.

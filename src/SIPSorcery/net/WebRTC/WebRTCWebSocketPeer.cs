@@ -84,7 +84,7 @@ namespace SIPSorcery.Net
                 {
                     if(_pc.signalingState == RTCSignalingState.have_remote_offer)
                     {
-                        var answerSdp = _pc.createAnswer(null);
+                        var answerSdp = _pc.createAnswer();
                         await _pc.setLocalDescription(answerSdp).ConfigureAwait(false);
 
                         logger.LogDebug($"Sending SDP answer to client {Context.UserEndPoint}.");

@@ -39,27 +39,14 @@ namespace SIPSorcery.Net
         /// Allows quick matching of responses for ICE servers compared to responses for
         /// ICE candidate connectivity checks;
         /// </summary>
-        internal const string ICE_SERVER_TXID_PREFIX = "91245";
+        private const string ICE_SERVER_TXID_PREFIX = "91245";
 
         /// <summary>
         /// The length of the magic cookie of server ID that are used as the prefix for
         /// each ICE server transaction ID.
         /// </summary>
-        internal const int ICE_SERVER_TXID_PREFIX_LENGTH = 6;
-
-        /// <summary>
-        /// The minimum ICE server ID that can be set.
-        /// </summary>
-        internal const int MINIMUM_ICE_SERVER_ID = 0;
-
-        /// <summary>
-        /// The maximum ICE server ID that can be set. Means the number of ICE servers per
-        /// session is limited to 10. Checking 10 ICE servers when attempting to establish
-        /// a peer connection seems very, very high. It would generally be expected that only
-        /// 1 or 2 ICE servers would ever be used.
-        /// </summary>
-        internal const int MAXIMUM_ICE_SERVER_ID = 9;
-
+        private const int ICE_SERVER_TXID_PREFIX_LENGTH = 6;
+        
         /// <summary>
         /// The maximum number of requests to send to an ICE server without getting 
         /// a response.
@@ -94,7 +81,7 @@ namespace SIPSorcery.Net
         /// <summary>
         /// An incrementing number that needs to be unique for each server in the session.
         /// </summary>
-        internal int _id;
+        private int _id;
 
         /// <summary>
         /// The end point for this STUN or TURN server. Will be set asynchronously once

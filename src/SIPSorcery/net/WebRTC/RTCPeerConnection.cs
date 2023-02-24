@@ -831,7 +831,7 @@ namespace SIPSorcery.Net
         /// </remarks>
         /// <param name="options">Optional. If supplied the options will be used to apply additional
         /// controls over the generated answer SDP.</param>
-        public RTCSessionDescriptionInit createAnswer(RTCAnswerOptions options = null)
+        public RTCSessionDescriptionInit createAnswer()
         {
             if (remoteDescription == null)
             {
@@ -849,20 +849,7 @@ namespace SIPSorcery.Net
                     }
                 }
 
-                bool excludeIceCandidates = options != null && options.X_ExcludeIceCandidates;
-                var answerSdp = createBaseSdp(mediaStreamList, excludeIceCandidates);
-
-                //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.audio))
-                //{
-                //    var audioAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.audio).Single();
-                //    audioAnnouncement.IceRole = IceRole;
-                //}
-
-                //if (answerSdp.Media.Any(x => x.Media == SDPMediaTypesEnum.video))
-                //{
-                //    var videoAnnouncement = answerSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.video).Single();
-                //    videoAnnouncement.IceRole = IceRole;
-                //}
+                var answerSdp = createBaseSdp(mediaStreamList);
 
                 RTCSessionDescriptionInit initDescription = new RTCSessionDescriptionInit
                 {
@@ -879,7 +866,7 @@ namespace SIPSorcery.Net
         /// Unlike the base RTP session peer connections only ever use a single RTP channel.
         /// Audio and video (and RTCP) are all multiplexed on the same channel.
         /// </summary>
-        public RtpIceChannel GetRtpChannel()
+        private RtpIceChannel GetRtpChannel()
         {
             return PrimaryStream.GetRTPChannel() as RtpIceChannel;
         }

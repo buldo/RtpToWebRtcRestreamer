@@ -63,20 +63,9 @@ namespace SIPSorcery.Net
         public event Action onclose;
         public event OnDataChannelMessageDelegate onmessage;
 
-        public RTCDataChannel(RTCSctpTransport transport, RTCDataChannelInit init = null)
+        public RTCDataChannel(RTCSctpTransport transport)
         {
             _transport = transport;
-
-            if (init == null) {
-                return;
-            }
-            // TODO: Utilize ordered, maxPacketLifeTime, maxRetransmits, and protocol;
-            ordered = init.ordered ?? true;
-            maxPacketLifeTime = init.maxPacketLifeTime;
-            maxRetransmits = init.maxRetransmits;
-            protocol = init.protocol ?? "";
-            negotiated = init.negotiated ?? false;
-            id = init.id;
         }
 
         internal void GotAck()

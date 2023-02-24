@@ -429,11 +429,11 @@ namespace SIPSorcery.Net
         private DateTime _startedGatheringAt = DateTime.MinValue;
         private DateTime _connectedAt = DateTime.MinValue;
 
-        internal ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
+        private ConcurrentDictionary<STUNUri, IceServer> _iceServerConnections;
 
         private IceServer _activeIceServer;
 
-        public RTCIceComponent Component { get; private set; }
+        public RTCIceComponent Component { get; }
 
         public RTCIceGatheringState IceGatheringState { get; private set; } = RTCIceGatheringState.@new;
 

@@ -1,11 +1,11 @@
 ﻿namespace SIPSorcery.Net
 {
-    public class MediaStreamStatusType
+    public static class MediaStreamStatusType
     {
-        public const string SEND_RECV_ATTRIBUTE = "a=sendrecv";
-        public const string SEND_ONLY_ATTRIBUTE = "a=sendonly";
-        public const string RECV_ONLY_ATTRIBUTE = "a=recvonly";
-        public const string INACTIVE_ATTRIBUTE = "a=inactive";
+        private const string SEND_RECV_ATTRIBUTE = "a=sendrecv";
+        private const string SEND_ONLY_ATTRIBUTE = "a=sendonly";
+        private const string RECV_ONLY_ATTRIBUTE = "a=recvonly";
+        private const string INACTIVE_ATTRIBUTE = "a=inactive";
 
         /// <summary>
         /// Checks whether an SDP attribute is one of the four possible media stream attributes.
