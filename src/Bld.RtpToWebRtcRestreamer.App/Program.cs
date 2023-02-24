@@ -8,7 +8,13 @@ namespace Bld.RtpToWebRtcRestreamer.App
 
             // Add services to the container.
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddRtpRestreamer();
+
+            builder.Services.AddSignalR();
+
+            builder.Services
+                .AddControllersWithViews()
+                .AddControllersAsServices();
 
             var app = builder.Build();
 
@@ -24,6 +30,8 @@ namespace Bld.RtpToWebRtcRestreamer.App
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller}/{action=Index}/{id?}");
+
+            app.MapRtpRestreamer("/hub/video");
 
             app.MapFallbackToFile("index.html");
 

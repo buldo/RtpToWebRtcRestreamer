@@ -5,7 +5,14 @@ VisualStudioVersion = 17.5.33402.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bld.RtpToWebRtcRestreamer", "Bld.RtpToWebRtcRestreamer\Bld.RtpToWebRtcRestreamer.csproj", "{30379DFB-8E36-45E2-AB34-3D2F223B46BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bld.RtpToWebRtcRestreamer.App", "Bld.RtpToWebRtcRestreamer.App\Bld.RtpToWebRtcRestreamer.App.csproj", "{9AD9AB3D-7B11-4954-930B-1D30DAB68795}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bld.RtpToWebRtcRestreamer.App", "Bld.RtpToWebRtcRestreamer.App\Bld.RtpToWebRtcRestreamer.App.csproj", "{9AD9AB3D-7B11-4954-930B-1D30DAB68795}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{06B64A44-C846-460D-9691-C09A76644877}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SIPSorcery", "SIPSorcery\SIPSorcery.csproj", "{A41D51D8-BB09-448A-81E0-AB5DB62409BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +28,10 @@ Global
 		{9AD9AB3D-7B11-4954-930B-1D30DAB68795}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AD9AB3D-7B11-4954-930B-1D30DAB68795}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AD9AB3D-7B11-4954-930B-1D30DAB68795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A41D51D8-BB09-448A-81E0-AB5DB62409BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A41D51D8-BB09-448A-81E0-AB5DB62409BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A41D51D8-BB09-448A-81E0-AB5DB62409BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A41D51D8-BB09-448A-81E0-AB5DB62409BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
