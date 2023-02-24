@@ -32,8 +32,12 @@ namespace Bld.RtpToWebRtcRestreamer
             _logger = _loggerFactory.CreateLogger<RtpRestreamer>();
 
             _webSocketServer = new WebSocketServer(webSocketEndpoint.Address, webSocketEndpoint.Port, false);
-            _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) => peer.CreatePeerConnection = CreatePeerConnection);
-
+            _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) =>
+            {
+                //peer.SetLogger(loggerFactory.CreateLogger<WebRTCWebSocketPeer>());
+                peer.CreatePeerConnection = CreatePeerConnection;
+            });
+            
             _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>());
             _streamMultiplexer = new StreamMultiplexer(_receiver, _loggerFactory.CreateLogger<StreamMultiplexer>());
 
@@ -100,15 +104,7 @@ namespace Bld.RtpToWebRtcRestreamer
             {
                 _logger.LogDebug($"RTCP Send for {media}\n{sr.GetDebugSummary()}");
             };
-            pc.GetRtpChannel().OnStunMessageReceived += (msg, ep, isRelay) =>
-            {
-                _logger.LogDebug($"STUN {msg.Header.MessageType} received from {ep}.");
-            };
-            pc.oniceconnectionstatechange += (state) =>
-            {
-                _logger.LogDebug("ICE connection state change to {state}.", state);
-            };
-
+            
             return pc;
         }
 
