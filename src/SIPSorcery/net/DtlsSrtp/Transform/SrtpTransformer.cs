@@ -94,7 +94,7 @@ namespace SIPSorcery.Net
                 {
                     context = forwardEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
                     context.DeriveSrtpKeys(0);
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Transform RTP packet into SRTP
@@ -141,7 +141,7 @@ namespace SIPSorcery.Net
                 {
                     context = this.reverseEngine.GetDefaultContext().deriveContext(ssrc, 0, 0);
                     context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 byte[] result = null;

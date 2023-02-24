@@ -239,7 +239,7 @@ namespace SIPSorcery.SIP
         {
             try
             {
-                int bytesSent = m_udpSocket.EndSendTo(ar);
+                m_udpSocket.EndSendTo(ar);
             }
             catch (SocketException sockExcp)
             {

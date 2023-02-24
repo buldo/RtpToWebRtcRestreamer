@@ -82,7 +82,7 @@ namespace SIPSorcery.Net
                 {
                     context = forwardEngine.GetDefaultContextControl().DeriveContext(ssrc);
                     context.DeriveSrtcpKeys();
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Secure packet into SRTCP format
@@ -122,7 +122,7 @@ namespace SIPSorcery.Net
                 {
                     context = reverseEngine.GetDefaultContextControl().DeriveContext(ssrc);
                     context.DeriveSrtcpKeys();
-                    contexts.AddOrUpdate(ssrc, context, (a, b) => context);
+                    contexts.AddOrUpdate(ssrc, context, (_, _) => context);
                 }
 
                 // Decode packet to RTCP format

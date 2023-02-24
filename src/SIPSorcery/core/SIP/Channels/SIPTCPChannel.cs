@@ -369,7 +369,7 @@ namespace SIPSorcery.SIP
 
                 // Attempt to connect.
                 TaskCompletionSource<SocketError> connectTcs = new TaskCompletionSource<SocketError>(TaskCreationOptions.RunContinuationsAsynchronously);
-                connectArgs.Completed += (sender, sockArgs) =>
+                connectArgs.Completed += (_, sockArgs) =>
                 {
                     if (sockArgs.LastOperation == SocketAsyncOperation.Connect)
                     {
@@ -383,7 +383,7 @@ namespace SIPSorcery.SIP
                 }
 
                 var timeoutTask = Task.Delay(TCP_ATTEMPT_CONNECT_TIMEOUT);
-                var connectResult = await Task.WhenAny(connectTcs.Task, timeoutTask).ConfigureAwait(false);
+                await Task.WhenAny(connectTcs.Task, timeoutTask).ConfigureAwait(false);
 
                 if (timeoutTask.IsCompleted)
                 {

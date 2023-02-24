@@ -30,10 +30,10 @@ namespace SIPSorcery.SIP
     {
         private static ILogger logger = Log.Logger;
 
-        public static event CDRReadyDelegate CDRCreated = c => { };
-        public static event CDRReadyDelegate CDRUpdated = c => { };
-        public static event CDRReadyDelegate CDRAnswered = c => { };
-        public static event CDRReadyDelegate CDRHungup = c => { };
+        public static event CDRReadyDelegate CDRCreated = _ => { };
+        public static event CDRReadyDelegate CDRUpdated = _ => { };
+        public static event CDRReadyDelegate CDRAnswered = _ => { };
+        public static event CDRReadyDelegate CDRHungup = _ => { };
 
         [DataMember]
         public Guid CDRId { get; set; }

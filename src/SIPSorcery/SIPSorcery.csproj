@@ -1,17 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <Compile Remove="net\RTSP\RTSPClient.cs" />
-    <Compile Remove="net\RTSP\RTSPConnection.cs" />
-    <Compile Remove="net\RTSP\RTSPServer.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="core\SIPEvents\Dialog\EventDialogSchema.xsd" />
-    <None Remove="core\SIPEvents\Presence\PIDFSchema.xsd" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="DnsClient" Version="1.6.1" />
     <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
