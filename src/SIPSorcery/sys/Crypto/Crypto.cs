@@ -20,23 +20,23 @@ using System.Threading;
 
 namespace SIPSorcery.Sys
 {
-    public class Crypto
+    public static class Crypto
     {
         private const int DEFAULT_RANDOM_LENGTH = 10;    // Number of digits to return for default random numbers.
 
         private const string CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-        static int seed = Environment.TickCount;
+        static int _seed = Environment.TickCount;
 
-        static readonly ThreadLocal<Random> random =
-            new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+        private static readonly ThreadLocal<Random> Random =
+            new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref _seed)));
 
-        public static int Rand(int maxValue)
+        private static int Rand(int maxValue)
         {
-            return random.Value.Next(maxValue);
+            return Random.Value.Next(maxValue);
         }
 
-        private static RNGCryptoServiceProvider m_randomProvider = new RNGCryptoServiceProvider();
+        private static readonly RNGCryptoServiceProvider MRandomProvider = new RNGCryptoServiceProvider();
 
         public static string GetRandomString(int length)
         {
@@ -83,7 +83,7 @@ namespace SIPSorcery.Sys
             while (attempts < 10)
             {
                 byte[] uint32Buffer = new byte[4];
-                m_randomProvider.GetBytes(uint32Buffer);
+                MRandomProvider.GetBytes(uint32Buffer);
                 UInt32 rand = BitConverter.ToUInt32(uint32Buffer, 0);
 
                 Int64 max = (1 + (Int64)UInt32.MaxValue);
@@ -100,19 +100,19 @@ namespace SIPSorcery.Sys
         public static UInt16 GetRandomUInt16()
         {
             byte[] uint16Buffer = new byte[2];
-            m_randomProvider.GetBytes(uint16Buffer);
+            MRandomProvider.GetBytes(uint16Buffer);
             return BitConverter.ToUInt16(uint16Buffer, 0);
         }
 
         public static UInt32 GetRandomUInt(bool noZero = false)
         {
             byte[] uint32Buffer = new byte[4];
-            m_randomProvider.GetBytes(uint32Buffer);
+            MRandomProvider.GetBytes(uint32Buffer);
             var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
 
             if(noZero && randomUint == 0)
             {
-                m_randomProvider.GetBytes(uint32Buffer);
+                MRandomProvider.GetBytes(uint32Buffer);
                 randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
             }
 
@@ -122,7 +122,7 @@ namespace SIPSorcery.Sys
         public static UInt64 GetRandomULong()
         {
             byte[] uint64Buffer = new byte[8];
-            m_randomProvider.GetBytes(uint64Buffer);
+            MRandomProvider.GetBytes(uint64Buffer);
             return BitConverter.ToUInt64(uint64Buffer, 0);
         }
 
@@ -132,7 +132,7 @@ namespace SIPSorcery.Sys
         /// <param name="buffer">The buffer to fill.</param>
         public static void GetRandomBytes(byte[] buffer)
         {
-            m_randomProvider.GetBytes(buffer);
+            MRandomProvider.GetBytes(buffer);
         }
     }
 }

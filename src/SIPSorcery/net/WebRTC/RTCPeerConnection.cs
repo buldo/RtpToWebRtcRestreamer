@@ -332,8 +332,7 @@ namespace SIPSorcery.Net
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
             
             if (_configuration != null &&
-               _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay &&
-               _configuration.iceServers?.Count == 0)
+               _configuration.iceTransportPolicy == RTCIceTransportPolicy.relay)
             {
                 throw new ApplicationException("RTCPeerConnection must have at least one ICE server specified for a relay only transport policy.");
             }
@@ -530,7 +529,6 @@ namespace SIPSorcery.Net
             var rtpIceChannel = new RtpIceChannel(
             _configuration?.X_BindAddress,
             RTCIceComponent.rtp,
-            _configuration?.iceServers,
             _configuration != null ? _configuration.iceTransportPolicy : RTCIceTransportPolicy.all,
             _configuration != null ? _configuration.X_ICEIncludeAllInterfaceAddresses : false,
             rtpSessionConfig.BindPort == 0 ? 0 : rtpSessionConfig.BindPort + m_rtpChannelsCount * 2 + 2);

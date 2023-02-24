@@ -424,7 +424,6 @@ namespace SIPSorcery.Net
         public static uint ALLOCATION_TIME_TO_EXPIRY_VALUE = 600;
 
         private IPAddress _bindAddress;
-        private List<RTCIceServer> _iceServers;
         private RTCIceTransportPolicy _policy;
 
         private DateTime _startedGatheringAt = DateTime.MinValue;
@@ -601,7 +600,6 @@ namespace SIPSorcery.Net
         public RtpIceChannel(
             IPAddress bindAddress,
             RTCIceComponent component,
-            List<RTCIceServer> iceServers = null,
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
             int bindPort = 0) :
@@ -609,7 +607,6 @@ namespace SIPSorcery.Net
         {
             _bindAddress = bindAddress;
             Component = component;
-            _iceServers = iceServers != null? new List<RTCIceServer>(iceServers) : null;
             _policy = policy;
             _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
             _iceTiebreaker = Crypto.GetRandomULong();
@@ -631,26 +628,6 @@ namespace SIPSorcery.Net
                 RTCIceCandidateType.host,
                 null,
                 0);
-
-            // Create TCP Socket to implement TURN Control
-            // Take a note that TURN Control will only use TCP for CreatePermissions/Allocate/BindRequests/Data
-            // Ice Candidates returned by relay will always be UDP Based
-            var supportTcp = _iceServers != null && 
-                _iceServers.Find(a => 
-                    a != null && 
-                    (a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TCP) || 
-                    a.urls.Contains(STUNUri.SCHEME_TRANSPORT_TLS))) != null;
-            if (supportTcp)
-            {
-                NetServices.CreateRtpSocket(false, ProtocolType.Tcp, bindAddress, bindPort, out var rtpTcpSocket, out _);
-
-                if (rtpTcpSocket == null)
-                {
-                    throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-                }
-
-                RtpTcpSocket = rtpTcpSocket;
-            }
         }
 
         /// <summary>
@@ -663,24 +640,6 @@ namespace SIPSorcery.Net
         {
             if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
             {
-                if (_iceServers != null)
-                {
-                    InitialiseIceServers(_iceServers);
-
-                    // DNS is only needed if there are ICE server hostnames to lookup.
-                    if (_dnsLookupClient == null && _iceServerConnections.Any(x => !IPAddress.TryParse(x.Key.Host, out _)))
-                    {
-                        if (DefaultNameServers != null)
-                        {
-                            _dnsLookupClient = new DnsClient.LookupClient(DefaultNameServers.ToArray());
-                        }
-                        else
-                        {
-                            _dnsLookupClient = new DnsClient.LookupClient();
-                        }
-                    }
-                }
-
                 _startedGatheringAt = DateTime.Now;
 
                 // Start listening on the UDP socket.
@@ -703,7 +662,7 @@ namespace SIPSorcery.Net
 
                 if (_iceServerConnections?.Count > 0)
                 {
-                    InitialiseIceServers(_iceServers);
+                    InitialiseIceServers();
                     _processIceServersTimer = new Timer(CheckIceServers, null, 0, Ta);
                 }
                 else
@@ -987,79 +946,9 @@ namespace SIPSorcery.Net
         /// servers will be added to the list of ICE servers being checked.
         /// </summary>
         /// <remarks>See https://tools.ietf.org/html/rfc8445#section-5.1.1.2</remarks>
-        private void InitialiseIceServers(List<RTCIceServer> iceServers)
+        private void InitialiseIceServers()
         {
             _iceServerConnections = new ConcurrentDictionary<STUNUri, IceServer>();
-
-            int iceServerID = IceServer.MINIMUM_ICE_SERVER_ID;
-
-            //TODO: We only support one control tcp socket, so we need to skip processing multiple tcp servers
-            bool skipNextTcp = false;
-
-            // Add each of the ICE servers to the list. Ideally only one will be used but add 
-            // all in case backups are needed.
-            foreach (var iceServer in iceServers)
-            {
-                string[] urls = iceServer.urls.Split(',');
-
-                foreach (string url in urls)
-                {
-                    if (!String.IsNullOrWhiteSpace(url))
-                    {
-                        if (STUNUri.TryParse(url, out var stunUri))
-                        {
-                            if (stunUri.Scheme == STUNSchemesEnum.stuns || stunUri.Scheme == STUNSchemesEnum.turns)
-                            {
-                                logger.LogWarning($"ICE channel does not currently support TLS for STUN and TURN servers, not checking {stunUri}.");
-                            }
-                            else if (_policy == RTCIceTransportPolicy.relay && stunUri.Scheme == STUNSchemesEnum.stun)
-                            {
-                                logger.LogWarning($"ICE channel policy is relay only, ignoring STUN server {stunUri}.");
-                            }
-                            else if (!_iceServerConnections.ContainsKey(stunUri))
-                            {
-                                //Check if we need to skip TCP ice server as a limitation of our implementation.
-                                if (stunUri.Protocol == ProtocolType.Tcp)
-                                {
-                                    if (!skipNextTcp)
-                                    {
-                                        skipNextTcp = true;
-                                    }
-                                    else
-                                    {
-                                        logger.LogWarning($"ICE channel only support one ice server with tcp protocol. ignoring server {stunUri}.");
-                                        continue;
-                                    }
-                                }
-
-                                logger.LogDebug($"Adding ICE server for {stunUri}.");
-
-                                var iceServerState = new IceServer(stunUri, iceServerID, iceServer.username, iceServer.credential);
-
-                                // Check whether the server end point can be set. IF it can't a DNS lookup will be required.
-                                if (IPAddress.TryParse(iceServerState._uri.Host, out var serverIPAddress))
-                                {
-                                    iceServerState.ServerEndPoint = new IPEndPoint(serverIPAddress, iceServerState._uri.Port);
-                                    logger.LogDebug($"ICE server end point for {iceServerState._uri} set to {iceServerState.ServerEndPoint}.");
-                                }
-
-                                _iceServerConnections.TryAdd(stunUri, iceServerState);
-
-                                iceServerID++;
-                                if (iceServerID > IceServer.MAXIMUM_ICE_SERVER_ID)
-                                {
-                                    logger.LogWarning("The maximum number of ICE servers for the session has been reached.");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            logger.LogWarning($"RTP ICE Channel could not parse ICE server URL {url}.");
-                        }
-                    }
-                }
-            }
         }
 
         //

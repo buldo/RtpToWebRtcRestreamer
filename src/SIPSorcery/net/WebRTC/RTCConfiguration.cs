@@ -11,7 +11,6 @@ namespace SIPSorcery.Net
     /// </remarks>
     public class RTCConfiguration
     {
-        public List<RTCIceServer> iceServers;
         public RTCIceTransportPolicy iceTransportPolicy;
 
         /// <summary>
