@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // Easter Sunday 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         public const uint CONGESTION_WINDOW_FACTOR = 4380;
 
         /// <summary>
-        /// Used to limit the number of packets that are sent at any one time, i.e. when 
+        /// Used to limit the number of packets that are sent at any one time, i.e. when
         /// the transmit timer fires do not send more than this many packets.
         /// </summary>
         public const int MAX_BURST = 4;
@@ -83,8 +83,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
         /// <summary>
         /// The current Advertised Receiver Window Credit for the remote peer.
-        /// This value represents the dedicated  buffer space on the remote peer, 
-        /// in number of bytes, that will be used for the receive buffer for DATA 
+        /// This value represents the dedicated  buffer space on the remote peer,
+        /// in number of bytes, that will be used for the receive buffer for DATA
         /// chunks sent to it.
         /// </summary>
         internal uint _receiverWindow;
@@ -97,15 +97,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
         /// <summary>
         /// The initial Advertised Receiver Window Credit for the remote peer.
-        /// This value represents the dedicated  buffer space on the remote peer, 
-        /// in number of bytes, that will be used for the receive buffer for DATA 
+        /// This value represents the dedicated  buffer space on the remote peer,
+        /// in number of bytes, that will be used for the receive buffer for DATA
         /// chunks sent to it.
         /// </summary>
         private uint _initialRemoteARwnd;
 
         internal int _burstPeriodMilliseconds = BURST_PERIOD_MILLISECONDS;
         /// <summary>
-        /// Retransmission timeout. 
+        /// Retransmission timeout.
         /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
         /// </summary>
         internal double _rto = RTO_INITIAL_SECONDS * 1000;
@@ -150,11 +150,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// and that need to be re-sent.
         /// </summary>
         internal ConcurrentDictionary<uint, int> _missingChunks = new ConcurrentDictionary<uint, int>();
-
-        /// <summary>
-        /// The total size (in bytes) of queued user data that will be sent to the peer.
-        /// </summary>
-        public ulong BufferedAmount => (ulong)_sendQueue.Sum(x => x.UserData?.Length ?? 0);
 
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.
@@ -254,8 +249,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                     if (sack.DuplicateTSN.Count > 0)
                     {
-                        // The remote is reporting that we have sent a duplicate TSN. 
-                        // This is probably because a SACK chunk was dropped. 
+                        // The remote is reporting that we have sent a duplicate TSN.
+                        // This is probably because a SACK chunk was dropped.
                         // Ensure that we stop sending the duplicate.
                         foreach (var duplicateTSN in sack.DuplicateTSN)
                         {
@@ -398,7 +393,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                     {
                         if (!_unconfirmedChunks.ContainsKey(missingTSN))
                         {
-                            // What to do? Can't retransmit a chunk that's no longer available. 
+                            // What to do? Can't retransmit a chunk that's no longer available.
                             // Hope it's a transient error from a duplicate or out of order SACK.
                             // TODO: Maybe keep count of how many time this occurs and send an ABORT if it
                             // gets to a certain threshold.
@@ -510,7 +505,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                         _sendDataChunk(chunk);
                         chunksSent++;
-                        
+
                         if (!_inRetransmitMode)
                         {
                             _inRetransmitMode = true;
@@ -585,7 +580,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
 
         /// <summary>
-        /// Updates the round trip time. 
+        /// Updates the round trip time.
         /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
         /// </summary>
         /// <param name="rttMilliseconds">The last round trip time</param>
@@ -624,7 +619,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Note the receive window in the SACK chunk does not take account for in flight
         /// DATA chunks hence the need for this calculation.
         /// </summary>
-        /// <param name="advertisedReceiveWindow">The last receive window value supplied by the remote peer 
+        /// <param name="advertisedReceiveWindow">The last receive window value supplied by the remote peer
         /// either in the INIT handshake or in a SACK chunk.</param>
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc4960#section-6.2.1.

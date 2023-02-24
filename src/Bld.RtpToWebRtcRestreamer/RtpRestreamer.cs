@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpReceiver;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
@@ -39,17 +34,16 @@ namespace Bld.RtpToWebRtcRestreamer
                 //peer.SetLogger(loggerFactory.CreateLogger<WebRTCWebSocketPeer>());
                 peer.CreatePeerConnection = CreatePeerConnection;
             });
-            
+
             _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>());
             _streamMultiplexer = new StreamMultiplexer(_receiver, _loggerFactory.CreateLogger<StreamMultiplexer>());
 
             _periodicalManagementTask = BackgroundTask();
         }
 
-        public int ConnectedClientsCount
+        private int ConnectedClientsCount
         {
-            get => _connectedClientsCount;
-            private set
+            set
             {
                 if (_connectedClientsCount != value)
                 {
@@ -101,7 +95,7 @@ namespace Bld.RtpToWebRtcRestreamer
             {
                 _logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
             };
-            
+
             return pc;
         }
 

@@ -1,19 +1,19 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: RtpIceChannel.cs
 //
-// Description: Represents an RTP channel with ICE connectivity checks as 
+// Description: Represents an RTP channel with ICE connectivity checks as
 // described in the Interactive Connectivity Establishment RFC8445
 // https://tools.ietf.org/html/rfc8445.
 //
 // Remarks:
 //
-// Support for the following standards or proposed standards 
+// Support for the following standards or proposed standards
 // is included:
 //
 // - "Trickle ICE" as per draft RFC
 //   https://tools.ietf.org/html/draft-ietf-ice-trickle-21.
 //
-// - "WebRTC IP Address Handling Requirements" as per draft RFC 
+// - "WebRTC IP Address Handling Requirements" as per draft RFC
 //   https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12
 //   SECURITY NOTE: See https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
 //   for recommendations on how a WebRTC application should expose a
@@ -22,7 +22,7 @@
 // - Session Traversal Utilities for NAT (STUN)
 //   https://tools.ietf.org/html/rfc8553
 //
-// - Traversal Using Relays around NAT (TURN): Relay Extensions to 
+// - Traversal Using Relays around NAT (TURN): Relay Extensions to
 //   Session Traversal Utilities for NAT (STUN)
 //   https://tools.ietf.org/html/rfc5766
 //
@@ -39,13 +39,13 @@
 // https://chromium.googlesource.com/external/webrtc/+/refs/heads/master/p2p/base/p2p_transport_channel.cc
 //
 // Multicast DNS: Chromium (and possibly other WebRTC stacks) make use of *.local
-// DNS hostnames (see Multicast RFC linked above). Support for such hostnames is 
+// DNS hostnames (see Multicast RFC linked above). Support for such hostnames is
 // not supported directly in this library because there is no underlying support
 // in .NET Core. A callback hook is available so that an application can connect
 // up an MDNS resolver if required.
 // Windows 10 has recently introduced a level of support for MDNS:
 // https://docs.microsoft.com/en-us/uwp/api/windows.networking.servicediscovery.dnssd?view=winrt-19041
-// From a command prompt: 
+// From a command prompt:
 // c:\> dns-md -B
 // c:\> dns-sd -G v4 fbba6380-2cc4-41b1-ab0d-61548dd28a29.local
 // c:\> dns-sd -G v6 b1f949b8-5ec9-41a6-b3ef-eb529f217de9.local
@@ -54,13 +54,13 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 15 Mar 2020	Aaron Clauson	Created, Dublin, Ireland.
 // 23 Jun 2020  Aaron Clauson   Renamed from IceSession to RtpIceChannel.
 // 03 Oct 2022  Rafal Soares	Add support to TCP IceServerConsts
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -89,13 +89,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// "host" candidates with an extra NAT address mapping. The NAT address mapping is needed for the
     /// remote ICE peer but locally a server reflexive candidate is always going to be represented by
     /// a "host" candidate.
-    /// 
+    ///
     /// Limitations:
-    ///  - To reduce complexity only a single checklist is used. This is based on the main 
-    ///    webrtc use case where RTP (audio and video) and RTCP are all multiplexed on a 
-    ///    single socket pair. Therefore  there only needs to be a single component and single 
+    ///  - To reduce complexity only a single checklist is used. This is based on the main
+    ///    webrtc use case where RTP (audio and video) and RTCP are all multiplexed on a
+    ///    single socket pair. Therefore  there only needs to be a single component and single
     ///    data stream. If an additional use case occurs then multiple checklists could be added.
-    ///    
+    ///
     /// Developer Notes:
     /// There are 4 main tasks occurring during the ICE checks:
     /// - Local candidates: ICE server checks (which can take seconds) are being carried out to
@@ -104,8 +104,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     ///   be validated and if accepted new entries added to the checklist.
     /// - Checklist connectivity checks: the candidate pairs in the checklist need to have
     ///   connectivity checks sent.
-    /// - Match STUN messages: STUN requests and responses are being received and need to be 
-    ///   matched to either an ICE server check or a checklist entry check. After matching 
+    /// - Match STUN messages: STUN requests and responses are being received and need to be
+    ///   matched to either an ICE server check or a checklist entry check. After matching
     ///   action needs to be taken to update the status of the ICE server or checklist entry
     ///   check.
     /// </remarks>
@@ -115,7 +115,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         private const int ICE_PASSWORD_LENGTH = 24;
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
-        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected. 
+        private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
         public const string SDP_MID = "0";
         public const int SDP_MLINE_INDEX = 0;
 
@@ -188,11 +188,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
-        /// For local candidates this implementation takes a shortcut to reduce complexity. 
+        /// For local candidates this implementation takes a shortcut to reduce complexity.
         /// The RTP socket will always be bound to one of:
-        ///  - IPAddress.IPv6Any [::], 
+        ///  - IPAddress.IPv6Any [::],
         ///  - IPAddress.Any 0.0.0.0, or,
-        ///  - a specific single IP address. 
+        ///  - a specific single IP address.
         /// As such it's only necessary to create a single checklist entry to cover all local
         /// Host type candidates.
         /// Host candidates must still be generated, based on all local IP addresses, and
@@ -202,7 +202,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         internal readonly RTCIceCandidate _localChecklistCandidate;
 
         /// <summary>
-        /// If the connectivity checks are successful this will hold the entry that was 
+        /// If the connectivity checks are successful this will hold the entry that was
         /// nominated by the connection check process.
         /// </summary>
         public ChecklistEntry NominatedEntry { get; private set; }
@@ -245,18 +245,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         public new event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
 
         /// <summary>
-        /// Creates a new instance of an RTP ICE channel to provide RTP channel functions 
+        /// Creates a new instance of an RTP ICE channel to provide RTP channel functions
         /// with ICE connectivity checks.
         /// </summary>
-        /// <param name="bindAddress"> Optional. If this is not set then the default is to 
+        /// <param name="bindAddress"> Optional. If this is not set then the default is to
         /// bind to the IPv6 wildcard address in dual mode to the IPv4 wildcard address if
         /// IPv6 is not available.</param>
         /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
         /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
         /// <param name="iceServers">A list of STUN or TURN servers that can be used by this ICE agent.</param>
         /// <param name="policy">Determines which ICE candidates can be used in this RTP ICE Channel.</param>
-        /// <param name="includeAllInterfaceAddresses">If set to true then IP addresses from ALL local  
-        /// interfaces will be used for host ICE candidates. If left as the default false value host 
+        /// <param name="includeAllInterfaceAddresses">If set to true then IP addresses from ALL local
+        /// interfaces will be used for host ICE candidates. If left as the default false value host
         /// candidates will be restricted to the single interface that the OS routing table matches to
         /// the destination address or the Internet facing interface if the destination is not known.
         /// The restrictive behaviour is as per the recommendation at:
@@ -295,7 +295,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
         /// <summary>
         /// We've been given the green light to start the ICE candidate gathering process.
-        /// This could include contacting external STUN and TURN servers. Events will 
+        /// This could include contacting external STUN and TURN servers. Events will
         /// be fired as each ICE is identified and as the gathering state machine changes
         /// state.
         /// </summary>
@@ -307,7 +307,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
                 // Start listening on the UDP socket.
                 Start();
-                
+
                 IceGatheringState = RTCIceGatheringState.gathering;
                 OnIceGatheringStateChange?.Invoke(IceGatheringState);
 
@@ -322,11 +322,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
                 logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
 
-                
+
                 // If there are no ICE servers then gathering has finished.
                 IceGatheringState = RTCIceGatheringState.complete;
                 OnIceGatheringStateChange?.Invoke(IceGatheringState);
-                
+
 
                 _connectivityChecksTimer = new Timer(DoConnectivityCheck, null, 0, Ta);
             }
@@ -357,7 +357,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
                 _checklistStartedAt = DateTime.Now;
 
-                // Once the remote party's ICE credentials are known connection checking can 
+                // Once the remote party's ICE credentials are known connection checking can
                 // commence immediately as candidates trickle in.
                 IceConnectionState = RTCIceConnectionState.checking;
                 OnIceConnectionStateChange?.Invoke(IceConnectionState);
@@ -433,40 +433,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         }
 
         /// <summary>
-        /// Restarts the ICE gathering and connection checks for this RTP ICE Channel.
-        /// </summary>
-        public void Restart()
-        {
-            // Reset the session state.
-            _connectivityChecksTimer?.Dispose();
-            _candidates = new ConcurrentBag<RTCIceCandidate>();
-            _checklist?.Clear();
-            IceGatheringState = RTCIceGatheringState.@new;
-            IceConnectionState = RTCIceConnectionState.@new;
-
-            StartGathering();
-        }
-
-        /// <summary>
         /// Acquires an ICE candidate for each IP address that this host has except for:
         /// - Loopback addresses must not be included.
         /// - Deprecated IPv4-compatible IPv6 addresses and IPv6 site-local unicast addresses
         ///   must not be included,
         /// - IPv4-mapped IPv6 address should not be included.
-        /// - If a non-location tracking IPv6 address is available use it and do not included 
-        ///   location tracking enabled IPv6 addresses (i.e. prefer temporary IPv6 addresses over 
+        /// - If a non-location tracking IPv6 address is available use it and do not included
+        ///   location tracking enabled IPv6 addresses (i.e. prefer temporary IPv6 addresses over
         ///   permanent addresses), see RFC6724.
         ///
         /// SECURITY NOTE: https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2
         /// Makes recommendations about how host IP address information should be exposed.
         /// Of particular relevance are:
-        /// 
+        ///
         ///   Mode 1:  Enumerate all addresses: WebRTC MUST use all network
         ///   interfaces to attempt communication with STUN servers, TURN
         ///   servers, or peers.This will converge on the best media
         ///   path, and is ideal when media performance is the highest
         ///   priority, but it discloses the most information.
-        ///    
+        ///
         ///   Mode 2:  Default route + associated local addresses: WebRTC MUST
         ///   follow the kernel routing table rules, which will typically
         ///   cause media packets to take the same route as the
@@ -477,7 +462,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         ///   discovered and provided to the application as host
         ///   candidates.This ensures that direct connections can still
         ///   be established in this mode.
-        ///   
+        ///
         /// This implementation implements Mode 2.
         /// </summary>
         /// <remarks>
@@ -635,7 +620,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                         AddChecklistEntry(entry);
                     }
 
-                    // Finally sort the checklist to put it in priority order and if necessary remove lower 
+                    // Finally sort the checklist to put it in priority order and if necessary remove lower
                     // priority pairs.
                     _checklist.Sort();
 
@@ -663,7 +648,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             // local candidates on a SINGLE address (typically 0.0.0.0 or [::]). Consequently
             // there is no need to check the local candidate when determining duplicates. As long
             // as there is one checklist entry with each remote candidate the connectivity check will
-            // work. To put it another way the local candidate information is not used on the 
+            // work. To put it another way the local candidate information is not used on the
             // "Nominated" pair.
 
             var entryRemoteEP = entry.RemoteCandidate.DestinationEndPoint;
@@ -833,7 +818,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                                         }
                                     }
 
-                                    // If this point is reached and all entries are in a failed state then the overall result 
+                                    // If this point is reached and all entries are in a failed state then the overall result
                                     // of the ICE check is a failure.
                                     if (_checklist.All(x => x.State == ChecklistEntryState.Failed))
                                     {
@@ -863,7 +848,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         }
 
         /// <summary>
-        /// Sets the nominated checklist entry. This action completes the checklist processing and 
+        /// Sets the nominated checklist entry. This action completes the checklist processing and
         /// indicates the connection checks were successful.
         /// </summary>
         /// <param name="entry">The checklist entry that was nominated.</param>
@@ -903,14 +888,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <param name="setUseCandidate">If true indicates we are acting as the "controlling" ICE agent
         /// and are nominating this candidate as the chosen one.</param>
         /// <remarks>As specified in https://tools.ietf.org/html/rfc8445#section-7.2.4.
-        /// 
+        ///
         /// Relay candidates are a special (and more difficult) case. The extra steps required to send packets via
         /// a TURN server are:
         /// - A Channel Bind request needs to be sent for each peer end point the channel will be used to
         ///   communicate with.
         /// - Packets need to be sent and received as TURN Channel Data messages.
         /// </remarks>
-        /// 
+        ///
         private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
         {
             if (_closed)
@@ -947,7 +932,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             {
                 if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
                 {
-                    
+
                     logger.LogDebug($"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to relay at TODO (use candidate {setUseCandidate}).");
                 }
                 else
@@ -1064,7 +1049,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <remarks>
         /// Actions to take on a successful STUN response https://tools.ietf.org/html/rfc8445#section-7.2.5.3
         /// - Discover peer reflexive remote candidates as per https://tools.ietf.org/html/rfc8445#section-7.2.5.3.1.
-        /// - Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange 
+        /// - Construct a valid pair which means match a candidate pair in the check list and mark it as valid (since a successful STUN exchange
         ///   has now taken place on it). A new entry may need to be created for this pair for a peer reflexive candidate.
         /// - Update state of candidate pair that generated the check to Succeeded.
         /// - If the controlling candidate set the USE_CANDIDATE attribute then the ICE agent that receives the successful response sets the nominated
@@ -1202,7 +1187,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             /*if (IsController && !_checklist.Any(x => x.Nominated))
             {
                 // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-                // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be 
+                // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be
                 // the selection algorithm can improve over time.
 
                 //Find high priority succeded event
@@ -1262,7 +1247,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     {
                         // The matching checklist entry is chosen as:
                         // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
-                        // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is 
+                        // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is
                         //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
                         matchingChecklistEntry = _checklist.Where(x => x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) &&
                          (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
@@ -1272,8 +1257,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     if (matchingChecklistEntry == null &&
                         (_remoteCandidates == null || !_remoteCandidates.Any(x => x.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint))))
                     {
-                        // This STUN request has come from a socket not in the remote ICE candidates list. 
-                        // Add a new remote peer reflexive candidate. 
+                        // This STUN request has come from a socket not in the remote ICE candidates list.
+                        // Add a new remote peer reflexive candidate.
                         var peerRflxCandidate = new RTCIceCandidate(new RTCIceCandidateInit());
                         peerRflxCandidate.SetAddressProperties(RTCIceProtocol.udp, remoteEndPoint.Address, (ushort)remoteEndPoint.Port, RTCIceCandidateType.prflx, null, 0);
                         peerRflxCandidate.SetDestinationEndPoint(remoteEndPoint);
@@ -1313,7 +1298,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                         {
                             if (IceConnectionState != RTCIceConnectionState.connected)
                             {
-                                // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated 
+                                // If we are the "controlled" agent and get a "use candidate" attribute that sets the matching candidate as nominated
                                 // as per https://tools.ietf.org/html/rfc8445#section-7.3.1.5.
                                 logger.LogDebug($"ICE RTP channel remote peer nominated entry from binding request: {matchingChecklistEntry.RemoteCandidate.ToShortString()}.");
                                 SetNominatedEntry(matchingChecklistEntry);
@@ -1362,7 +1347,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
             return matchingChecklistEntry;
         }
-        
+
         /// <summary>
         /// Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
         /// and extract STUN messages to deal with ICE connectivity checks and TURN relays.

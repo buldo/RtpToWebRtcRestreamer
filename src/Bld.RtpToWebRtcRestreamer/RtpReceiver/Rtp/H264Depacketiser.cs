@@ -12,9 +12,9 @@ internal sealed class H264Depacketiser
     uint _previousTimestamp;
     int norm, fu_a, fu_b, stap_a, stap_b, mtap16, mtap24; // used for diagnostics stats
 
-    public MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
+    public MemoryStream? ProcessRTPPayload(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
     {
-        var nalUnits = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
+        var nalUnits = ProcessRTPPayloadAsNals(rtpPayload, seqNum, timestamp, markbit);
 
         if (nalUnits != null)
         {
@@ -51,14 +51,14 @@ internal sealed class H264Depacketiser
         return null;
     }
 
-    private List<byte[]>? ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit, out bool isKeyFrame)
+    private List<byte[]>? ProcessRTPPayloadAsNals(byte[] rtpPayload, ushort seqNum, uint timestamp, int markbit)
     {
-        var nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit, out isKeyFrame);
+        var nal_units = ProcessH264Payload(rtpPayload, seqNum, timestamp, markbit);
 
         return nal_units;
     }
 
-    private List<byte[]>? ProcessH264Payload(byte[] rtp_payload, ushort seqNum, uint rtp_timestamp, int rtp_marker, out bool isKeyFrame)
+    private List<byte[]>? ProcessH264Payload(byte[] rtp_payload, ushort seqNum, uint rtp_timestamp, int rtp_marker)
     {
         if (_previousTimestamp != rtp_timestamp && _previousTimestamp > 0)
         {
@@ -81,7 +81,7 @@ internal sealed class H264Depacketiser
             }
 
             // End Marker is set. Process the list of RTP Packets (forming 1 RTP frame) and save the NALs to a file
-            var nal_units = ProcessH264PayloadFrame(_temporaryRtpPayloads, out isKeyFrame);
+            var nal_units = ProcessH264PayloadFrame(_temporaryRtpPayloads);
             _temporaryRtpPayloads.Clear();
             _previousTimestamp = 0;
             _fragmentedNal.SetLength(0);
@@ -90,7 +90,6 @@ internal sealed class H264Depacketiser
         }
         else
         {
-            isKeyFrame = false;
             _previousTimestamp = rtp_timestamp;
             return null; // we don't have a frame yet. Keep accumulating RTP packets
         }
@@ -98,7 +97,7 @@ internal sealed class H264Depacketiser
 
     // Process a RTP Frame. A RTP Frame can consist of several RTP Packets which have the same Timestamp
     // Returns a list of NAL Units (with no 00 00 00 01 header and with no Size header)
-    private List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads, out bool isKeyFrame)
+    private List<byte[]> ProcessH264PayloadFrame(List<KeyValuePair<int, byte[]>> rtp_payloads)
     {
         bool? isKeyFrameNullable = null;
         var nalUnits = new List<byte[]>(); // Stores the NAL units for a Video Frame. May be more than one NAL unit in a video frame.
@@ -224,8 +223,6 @@ internal sealed class H264Depacketiser
                 fu_b++;
             }
         }
-
-        isKeyFrame = isKeyFrameNullable ?? false;
 
         // Output all the NALs that form one RTP Frame (one frame of video)
         return nalUnits;

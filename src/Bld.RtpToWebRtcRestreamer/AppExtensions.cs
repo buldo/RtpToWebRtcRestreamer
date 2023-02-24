@@ -1,8 +1,5 @@
 ﻿using System.Net;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer
 {
@@ -13,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRtpRestreamer(this IServiceCollection services, IPEndPoint rtpListenerEndpoint)
+        public static IServiceCollection AddRtpRestreamer(this IServiceCollection services)
         {
             services.AddHostedService<WebRtcHostedService>();
             return services;

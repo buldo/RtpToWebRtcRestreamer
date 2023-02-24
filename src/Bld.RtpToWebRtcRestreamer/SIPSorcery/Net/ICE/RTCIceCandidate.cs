@@ -1,20 +1,20 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: RTCIceCandidate.cs
 //
-// Description: Represents a candidate used in the Interactive Connectivity 
-// Establishment (ICE) negotiation to set up a usable network connection 
+// Description: Represents a candidate used in the Interactive Connectivity
+// Establishment (ICE) negotiation to set up a usable network connection
 // between two peers as per RFC8445 https://tools.ietf.org/html/rfc8445
 // (previously implemented for RFC5245 https://tools.ietf.org/html/rfc5245).
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 26 Feb 2016	Aaron Clauson	Created, Hobart, Australia.
 // 15 Mar 2020  Aaron Clauson   Updated for RFC8445.
 // 17 Mar 2020  Aaron Clauson   Renamed from IceCandidate to RTCIceCandidate.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -29,8 +29,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         public const string REMOTE_ADDRESS_KEY = "raddr";
         public const string REMOTE_PORT_KEY = "rport";
         public const string CANDIDATE_PREFIX = "candidate";
-
-        public string candidate => ToString();
 
         public string sdpMid { get; set; }
 
@@ -215,7 +213,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// </summary>
         /// <remarks>
         /// The specification regarding how an ICE candidate should be serialised in SDP is at
-        /// https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1.   
+        /// https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-5.1.
         /// </remarks>
         /// <returns>A string representing the ICE candidate suitable for inclusion in an SDP session
         /// description.</returns>
@@ -296,7 +294,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         {
             DestinationEndPoint = destinationEP;
         }
-       
+
         private string GetFoundation()
         {
             var serverProtocol = "udp";

@@ -56,26 +56,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         }
 
         /**
-         * Close the transformer engine.
-         *
-         * The close functions closes all stored default crypto contexts. This
-         * deletes key data and forces a cleanup of the crypto contexts.
-         */
-        public void Close()
-        {
-            if (_defaultContext != null)
-            {
-                _defaultContext.Close();
-                _defaultContext = null;
-            }
-            if (_defaultContextControl != null)
-            {
-                _defaultContextControl.Close();
-                _defaultContextControl = null;
-            }
-        }
-
-        /**
          * Gets the <tt>PacketTransformer</tt> for RTCP packets.
          *
          * @return the <tt>PacketTransformer</tt> for RTCP packets

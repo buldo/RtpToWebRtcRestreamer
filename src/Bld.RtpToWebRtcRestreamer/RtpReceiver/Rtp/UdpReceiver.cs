@@ -36,32 +36,6 @@ internal sealed class UdpReceiver
     private readonly IPEndPoint _localEndPoint;
     private readonly AddressFamily _addressFamily;
 
-    public bool IsClosed
-    {
-        get => _isClosed;
-        protected set
-        {
-            if (_isClosed == value)
-            {
-                return;
-            }
-            _isClosed = value;
-        }
-    }
-
-    public bool IsRunningReceive
-    {
-        get => _isRunningReceive;
-        protected set
-        {
-            if (_isRunningReceive == value)
-            {
-                return;
-            }
-            _isRunningReceive = value;
-        }
-    }
-
     /// <summary>
     /// Fires when a new packet has been received on the UDP socket.
     /// </summary>

@@ -105,57 +105,6 @@ internal class RTPHeader
             }
         }
     }
-
-    public byte[] GetHeader(UInt16 sequenceNumber, uint timestamp, uint syncSource)
-    {
-        SequenceNumber = sequenceNumber;
-        Timestamp = timestamp;
-        SyncSource = syncSource;
-
-        return GetBytes();
-    }
-
-    public byte[] GetBytes()
-    {
-        var header = new byte[Length];
-
-        var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
-
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SequenceNumber)), 0, header, 2, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Timestamp)), 0, header, 4, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SyncSource)), 0, header, 8, 4);
-
-            if (HeaderExtensionFlag == 1)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionProfile)), 0, header, 12 + 4 * CSRCCount, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ExtensionLength)), 0, header, 14 + 4 * CSRCCount, 2);
-            }
-        }
-        else
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(SequenceNumber), 0, header, 2, 2);
-            Buffer.BlockCopy(BitConverter.GetBytes(Timestamp), 0, header, 4, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(SyncSource), 0, header, 8, 4);
-
-            if (HeaderExtensionFlag == 1)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtensionProfile), 0, header, 12 + 4 * CSRCCount, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ExtensionLength), 0, header, 14 + 4 * CSRCCount, 2);
-            }
-        }
-
-        if (ExtensionLength > 0 && ExtensionPayload != null)
-        {
-            Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
-        }
-
-        return header;
-    }
-
     private RTPHeaderExtensionData GetExtensionAtPosition(ref int position, int id, int len, RTPHeaderExtensionType type, out bool invalid)
     {
         RTPHeaderExtensionData ext = null;

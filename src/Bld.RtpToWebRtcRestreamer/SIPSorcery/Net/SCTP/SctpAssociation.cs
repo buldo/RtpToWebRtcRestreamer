@@ -5,11 +5,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 20 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
     {
         public const uint DEFAULT_ADVERTISED_RECEIVE_WINDOW = 262144U;
         public const int DEFAULT_NUMBER_OUTBOUND_STREAMS = 65535;
-        public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535; 
+        public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
         private const byte SHUTDOWN_CHUNK_TBIT_FLAG = 0x01;
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         private const int T1_COOKIE_TIMER_MILLISECONDS = 1000;
 
         private const int MAX_COOKIE_ECHO_RETRANSMITS = 3;
-         
+
         private static readonly ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
         readonly SctpTransport _sctpTransport;
@@ -87,11 +87,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </remarks>
         private Timer _t1Cookie;
 
-        /// <summary>
-        /// The total size (in bytes) of outgoing user data queued in the <see cref="SctpDataSender"/>.
-        /// </summary>
-        public ulong SendBufferedAmount => _dataSender?.BufferedAmount ?? 0;
-
         public uint VerificationTag { get; private set; }
 
         /// <summary>
@@ -108,8 +103,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         public readonly string ID;
 
         /// <summary>
-        /// Advertised Receiver Window Credit. This value represents the dedicated 
-        /// buffer space, in number of bytes, that will be used for the receive buffer 
+        /// Advertised Receiver Window Credit. This value represents the dedicated
+        /// buffer space, in number of bytes, that will be used for the receive buffer
         /// for this association.
         /// </summary>
         public uint ARwnd { get; private set; }
@@ -164,8 +159,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <param name="defaultMTU">The default Maximum Transmission Unit (MTU) for the underlying
         /// transport. This determines the maximum size of an SCTP packet that will be used with
         /// the transport.</param>
-        /// <param name="localTransportPort">Optional. The local transport (e.g. UDP or DTLS) port being 
-        /// used for the underlying SCTP transport. This be set on the SCTP association's ID to aid in 
+        /// <param name="localTransportPort">Optional. The local transport (e.g. UDP or DTLS) port being
+        /// used for the underlying SCTP transport. This be set on the SCTP association's ID to aid in
         /// diagnostics.</param>
         protected SctpAssociation(
             SctpTransport sctpTransport,
@@ -352,8 +347,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                             break;
 
                         case SctpChunkType.COOKIE_ECHO:
-                            // In standard operation an SCTP association gets created when the parent transport 
-                            // receives a COOKIE ECHO chunk. The association gets initialised from the chunk and 
+                            // In standard operation an SCTP association gets created when the parent transport
+                            // receives a COOKIE ECHO chunk. The association gets initialised from the chunk and
                             // does not need to process it.
                             // The scenarios in https://tools.ietf.org/html/rfc4960#section-5.2 describe where
                             // an association could receive a COOKIE ECHO.
@@ -557,7 +552,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
                 // TODO: Check outstanding data chunks.
 
-                // If no DATA chunks have been received use the initial TSN - 1 from 
+                // If no DATA chunks have been received use the initial TSN - 1 from
                 // the remote party. Seems weird to use the - 1, and couldn't find anything
                 // in the RFC that says to do it, but that's what usrsctp accepts.
                 uint? ackTSN = _dataReceiver.CumulativeAckTSN ?? _remoteInitialTSN - 1;
@@ -574,7 +569,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         }
 
         /// <summary>
-        /// Sends an SCTP control packet with an abort chunk to terminate 
+        /// Sends an SCTP control packet with an abort chunk to terminate
         /// the association.
         /// </summary>
         /// <param name="errorCause">The cause of the abort.</param>

@@ -274,33 +274,6 @@ internal sealed class VideoStream
     }
 
 
-    // Submit all previous cached packages to self
-    private void DispatchPendingPackages()
-    {
-        PendingPackages[] pendingPackagesArray = null;
-
-        var isContextValid = !IsClosed;
-
-        lock (_pendingPackagesLock)
-        {
-            if (isContextValid)
-            {
-                pendingPackagesArray = _pendingPackagesBuffer.ToArray();
-            }
-            _pendingPackagesBuffer.Clear();
-        }
-        if (isContextValid)
-        {
-            foreach (var pendingPackage in pendingPackagesArray)
-            {
-                if (pendingPackage != null)
-                {
-                    OnReceiveRTPPacket(pendingPackage.hdr, pendingPackage.localPort, pendingPackage.remoteEndPoint, pendingPackage.buffer, pendingPackage.videoStream);
-                }
-            }
-        }
-    }
-
     // Clear previous buffer
     private void ClearPendingPackages()
     {

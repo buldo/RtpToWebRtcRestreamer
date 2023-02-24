@@ -8,7 +8,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         readonly ConcurrentBag<RTCDataChannel> pendingChannels = new ConcurrentBag<RTCDataChannel>();
         readonly ConcurrentDictionary<ushort, RTCDataChannel> activeChannels = new ConcurrentDictionary<ushort, RTCDataChannel>();
         readonly Func<bool> useEvenIds;
-        
+
         readonly object idSyncObj = new object();
         ushort lastChannelId = ushort.MaxValue - 1;
 
@@ -24,10 +24,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 yield return channel;
             }
         }
-        
-        public bool TryGetChannel(ushort dataChannelID, out RTCDataChannel result)
-            => activeChannels.TryGetValue(dataChannelID, out result);
-        
+
+        public void TryGetChannel(ushort dataChannelID, out RTCDataChannel result)
+        {
+            activeChannels.TryGetValue(dataChannelID, out result);
+        }
+
         public bool AddActiveChannel(RTCDataChannel channel)
         {
             if (channel.id.HasValue)
@@ -51,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             channel.onclose += OnClose;
             channel.onerror += OnError;
             return true;
-            
+
             void OnClose()
             {
                 channel.onclose -= OnClose;
@@ -60,7 +62,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             }
             void OnError(string error) => OnClose();
         }
-        
+
         ushort GetNextChannelID()
         {
             lock (idSyncObj)

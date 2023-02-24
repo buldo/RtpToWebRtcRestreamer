@@ -142,11 +142,6 @@ internal sealed class RTPChannel : IDisposable
         }
     }
 
-    private void Dispose(bool disposing)
-    {
-        Close(null);
-    }
-
     public void Dispose()
     {
         Close(null);

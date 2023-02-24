@@ -68,11 +68,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             _rawPacket = new RawPacket();
         }
 
-        public byte[] Transform(byte[] pkt)
-        {
-            return Transform(pkt, 0, pkt.Length);
-        }
-
         public byte[] Transform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
@@ -109,19 +104,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             }
         }
 
-        /**
-         * Reverse-transforms a specific packet (i.e. transforms a transformed
-         * packet back).
-         *
-         * @param pkt
-         *            the transformed packet to be restored
-         * @return the restored packet
-         */
-        public byte[] ReverseTransform(byte[] pkt)
-        {
-            return ReverseTransform(pkt, 0, pkt.Length);
-        }
-
         public byte[] ReverseTransform(byte[] pkt, int offset, int length)
         {
             var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
@@ -156,32 +138,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                 //Unlock
                 if (!isLocked)
                     Interlocked.CompareExchange(ref _isLocked, 0, 1);
-            }
-        }
-
-        /**
-         * Close the transformer and underlying transform engine.
-         *
-         * The close functions closes all stored crypto contexts. This deletes key
-         * data and forces a cleanup of the crypto contexts.
-         */
-        public void Close()
-        {
-            _forwardEngine.Close();
-            if (_forwardEngine != _reverseEngine)
-            {
-                _reverseEngine.Close();
-            }
-
-            var keys = new List<long>(_contexts.Keys);
-            foreach (var ssrc in keys)
-            {
-                SrtpCryptoContext context;
-                _contexts.TryRemove(ssrc, out context);
-                if (context != null)
-                {
-                    context.Close();
-                }
             }
         }
     }

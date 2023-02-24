@@ -204,23 +204,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         }
 
         /**
-         * Close the crypto context.
-         *
-         * The close functions deletes key data and performs a cleanup of the
-         * crypto context.
-         *
-         * Clean up key data, maybe this is the second time. However, sometimes
-         * we cannot know if the CryptoContext was used and the application called
-         * deriveSrtpKeys(...) that would have cleaned the key data.
-         *
-         */
-        public void Close()
-        {
-            Arrays.Fill(_masterKey, 0);
-            Arrays.Fill(_masterSalt, 0);
-        }
-
-        /**
          * Transform a RTP packet into a SRTP packet.
          * This method is called when a normal RTP packet ready to be sent.
          *
