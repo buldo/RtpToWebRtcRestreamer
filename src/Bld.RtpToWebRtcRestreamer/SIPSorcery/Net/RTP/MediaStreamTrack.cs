@@ -111,8 +111,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             DefaultStreamStatus = streamStatus;
             HeaderExtensions = headerExtensions ?? new Dictionary<int, RTPHeaderExtension>();
             
-            Ssrc = Convert.ToUInt32(Crypto.GetRandomInt(0, Int32.MaxValue));
-            m_seqNum = Convert.ToUInt16(Crypto.GetRandomInt(0, UInt16.MaxValue));
+            Ssrc = Convert.ToUInt32(Random.Shared.Next(0, Int32.MaxValue));
+            m_seqNum = Convert.ToUInt16(Random.Shared.Next(0, UInt16.MaxValue));
             
                 // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
             // RTP and RTCP packets received from the remote party.

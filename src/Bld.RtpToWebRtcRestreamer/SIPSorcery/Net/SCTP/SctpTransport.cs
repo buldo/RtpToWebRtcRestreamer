@@ -4,16 +4,16 @@
 // Description: Represents a common SCTP transport layer.
 //
 // Remarks:
-// The interface defined in https://tools.ietf.org/html/rfc4960#section-10 
+// The interface defined in https://tools.ietf.org/html/rfc4960#section-10
 // was used as a basis for this class.
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // St Patrick's Day 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
         /// <summary>
         /// This property can be used to indicate whether an SCTP transport layer is port agnostic.
-        /// For example a DTLS transport is likely to only ever create a single SCTP association 
+        /// For example a DTLS transport is likely to only ever create a single SCTP association
         /// and the SCTP ports are redundant for matching end points. This allows the checks done
         /// on received SCTP packets to be more accepting about the ports used in the SCTP packet
         /// header.
@@ -67,7 +67,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 
         static SctpTransport()
         {
-            Crypto.GetRandomBytes(_hmacKey);
+            Random.Shared.NextBytes(_hmacKey);
         }
 
         protected void GotInit(SctpPacket initPacket, IPEndPoint remoteEndPoint)
