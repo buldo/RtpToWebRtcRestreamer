@@ -248,7 +248,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
                 switch ((SctpChunkType)chunkType)
                 {
                     case SctpChunkType.ABORT:
-                        return SctpAbortChunk.ParseChunk(buffer, posn, true);
+                        return SctpErrorChunk.ParseChunk(buffer, posn, true);
                     case SctpChunkType.DATA:
                         return SctpDataChunk.ParseChunk(buffer, posn);
                     case SctpChunkType.ERROR:

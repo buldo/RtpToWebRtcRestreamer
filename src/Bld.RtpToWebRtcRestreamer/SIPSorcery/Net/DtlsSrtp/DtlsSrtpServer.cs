@@ -392,10 +392,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         protected override int[] GetCipherSuites()
         {
-            var cipherSuites = new int[this._cipherSuites.Length];
-            for (var i = 0; i < this._cipherSuites.Length; i++)
+            var cipherSuites = new int[_cipherSuites.Length];
+            for (var i = 0; i < _cipherSuites.Length; i++)
             {
-                cipherSuites[i] = this._cipherSuites[i];
+                cipherSuites[i] = _cipherSuites[i];
             }
             return cipherSuites;
         }

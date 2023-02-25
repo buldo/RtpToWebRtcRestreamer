@@ -1,5 +1,4 @@
-﻿#nullable enable
-using System.Net;
+﻿using System.Net;
 using Bld.RtpToWebRtcRestreamer.Common;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +19,7 @@ internal sealed class VideoStream
         int index,
         ILogger logger)
     {
-        this.Index = index;
+        _index = index;
         _logger = logger;
     }
 
@@ -48,7 +47,7 @@ internal sealed class VideoStream
             var frame = _rtpVideoFramer.GotRtpPacket(packet);
             if (frame != null)
             {
-                OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame);
+                OnVideoFrameReceivedByIndex?.Invoke(_index, endpoint, packet.Header.Timestamp, frame);
             }
         }
         else
@@ -63,7 +62,7 @@ internal sealed class VideoStream
                 var frame = _rtpVideoFramer.GotRtpPacket(packet);
                 if (frame != null)
                 {
-                    OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame);
+                    OnVideoFrameReceivedByIndex?.Invoke(_index, endpoint, packet.Header.Timestamp, frame);
                 }
             }
             else
@@ -73,20 +72,7 @@ internal sealed class VideoStream
         }
     }
 
-    private int Index = -1;
-
-    #region EVENTS
-
-    /// <summary>
-    /// Fires when the connection for a media type is classified as timed out due to not
-    /// receiving any RTP or RTCP packets within the given period.
-    /// </summary>
-    public event Action<int> OnTimeoutByIndex;
-
-    /// <summary>
-    /// Gets fired when an RTCP report is sent. This event is for diagnostics only.
-    /// </summary>
-    public event Action<int> OnSendReportByIndex;
+    private readonly int _index = -1;
 
     /// <summary>
     /// Gets fired when an RTP packet is received from a remote party.
@@ -96,22 +82,6 @@ internal sealed class VideoStream
     ///  - The full RTP packet.
     /// </summary>
     public event Action<int, IPEndPoint, RTPPacket> OnRtpPacketReceivedByIndex;
-
-    /// <summary>
-    /// Gets fired when an RTP event is detected on the remote call party's RTP stream.
-    /// </summary>
-    public event Action<int, IPEndPoint, RTPEvent, RTPHeader> OnRtpEventByIndex;
-
-    /// <summary>
-    /// Gets fired when an RTCP report is received. This event is for diagnostics only.
-    /// </summary>
-    public event Action<int, IPEndPoint> OnReceiveReportByIndex;
-
-    public event Action<bool> OnIsClosedStateChanged;
-
-    #endregion EVENTS
-
-    #region PROPERTIES
 
     private bool AcceptRtpFromAny => true;
 
@@ -125,20 +95,8 @@ internal sealed class VideoStream
     /// </summary>
     private IPEndPoint DestinationEndPoint { get; set; }
 
-
-    #endregion PROPERTIES
-
-    private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
+    public void OnReceiveRTPPacket(RTPHeader hdr, IPEndPoint remoteEndPoint, byte[] buffer)
     {
-        packet = new RTPPacket(buf);
-        packet.Header.ReceivedTime = header.ReceivedTime;
-        return true;
-    }
-
-    public void OnReceiveRTPPacket(RTPHeader hdr, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
-    {
-        RTPPacket? rtpPacket = null;
-
         // Set the remote track SSRC so that RTCP reports can match the media type.
         if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
         {
@@ -146,48 +104,32 @@ internal sealed class VideoStream
 
             if (isValidSource)
             {
-                _logger.LogDebug($"Set remote track (index={Index}) SSRC to {hdr.SyncSource}.");
+                _logger.LogDebug($"Set remote track (index={_index}) SSRC to {hdr.SyncSource}.");
                 RemoteTrack.Ssrc = hdr.SyncSource;
             }
         }
 
-
-        // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
-        // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
-        // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual
-        // intervention to synchronise.
-        //if (RemoteDescription != null)
-        //{
-
-        // Don't hand RTP packets to the application until the remote description has been set. Without it
-        // things like the common codec, DTMF support etc. are not known.
-
-        //SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
-
-        // For video RTP packets an attempt will be made to collate into frames. It's up to the application
-        // whether it wants to subscribe to frames of RTP packets.
-
-        rtpPacket = null;
         if (RemoteTrack != null)
         {
             LogIfWrongSeqNumber($"", hdr, RemoteTrack);
-            ProcessHeaderExtensions(hdr);
-        }
-        if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
-        {
-            return;
         }
 
-        // When receiving an Payload from other peer, it will be related to our LocalDescription,
-        // not to RemoteDescription (as proved by Azure WebRTC Implementation)
-        // TODO: Buldo
-        var codec = GetFormatForPayloadID(hdr.PayloadType);
-        if (rtpPacket != null && codec != null)
+        var rtpPacket = new RTPPacket(buffer)
         {
-            videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, codec.Value);
+            Header =
+            {
+                ReceivedTime = hdr.ReceivedTime
+            }
+        };
+
+        var codec = GetFormatForPayloadID(rtpPacket.Header.PayloadType);
+        if (codec != null)
+        {
+            ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, codec.Value);
             RaiseOnRtpPacketReceivedByIndex(remoteEndPoint, rtpPacket);
         }
     }
+
     private VideoCodecsEnum? GetFormatForPayloadID(int hdrPayloadType)
     {
         if (hdrPayloadType == 97 || hdrPayloadType == 96)
@@ -200,7 +142,7 @@ internal sealed class VideoStream
 
     private void RaiseOnRtpPacketReceivedByIndex(IPEndPoint ipEndPoint, RTPPacket rtpPacket)
     {
-        OnRtpPacketReceivedByIndex?.Invoke(Index, ipEndPoint, rtpPacket);
+        OnRtpPacketReceivedByIndex?.Invoke(_index, ipEndPoint, rtpPacket);
     }
 
     private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
@@ -258,20 +200,5 @@ internal sealed class VideoStream
         }
 
         return isValidSource;
-    }
-
-    private void ProcessHeaderExtensions(RTPHeader header)
-    {
-        header.GetHeaderExtensions().ToList().ForEach(x =>
-        {
-            if (RemoteTrack != null)
-            {
-                var ntpTimestamp = x.GetNtpTimestamp(RemoteTrack.HeaderExtensions);
-                if (ntpTimestamp.HasValue)
-                {
-                    new TimestampPair() { NtpTimestamp = ntpTimestamp.Value, RtpTimestamp = header.Timestamp };
-                }
-            }
-        });
     }
 }

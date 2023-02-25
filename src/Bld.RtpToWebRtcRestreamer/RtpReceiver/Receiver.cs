@@ -45,6 +45,6 @@ internal class Receiver
     private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
         var hdr = new RTPHeader(buffer);
-        _videoStream.OnReceiveRTPPacket(hdr, remoteEndPoint, buffer, _videoStream);
+        _videoStream.OnReceiveRTPPacket(hdr, remoteEndPoint, buffer);
     }
 }

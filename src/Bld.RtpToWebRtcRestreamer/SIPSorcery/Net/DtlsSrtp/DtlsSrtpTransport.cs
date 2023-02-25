@@ -89,7 +89,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             // Network properties
             _receiveLimit = Math.Max(0, mtu - MinIpOverhead - UdpOverhead);
             _sendLimit = Math.Max(0, mtu - MaxIpOverhead - UdpOverhead);
-            this._connection = connection;
+            _connection = connection;
 
             connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
         }

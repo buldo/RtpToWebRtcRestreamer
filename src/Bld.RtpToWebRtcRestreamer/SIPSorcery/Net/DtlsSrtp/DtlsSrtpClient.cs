@@ -81,11 +81,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
                 var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() + SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
                 random.NextBytes(mki); // Reusing our secure random for generating the key.
-                this._clientSrtpData = new UseSrtpData(protectionProfiles, mki);
+                _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
             }
             else
             {
-                this._clientSrtpData = clientSrtpData;
+                _clientSrtpData = clientSrtpData;
             }
 
             MPrivateKey = privateKey;

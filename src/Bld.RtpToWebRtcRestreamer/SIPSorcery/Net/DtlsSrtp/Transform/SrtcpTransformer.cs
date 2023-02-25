@@ -47,8 +47,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         private SrtcpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
             _packet = new RawPacket();
-            this._forwardEngine = forwardEngine;
-            this._reverseEngine = reverseEngine;
+            _forwardEngine = forwardEngine;
+            _reverseEngine = reverseEngine;
             _contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
         }
 
@@ -58,7 +58,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // Wrap the data into raw packet for readable format
-                var packet = !isLocked ? this._packet : new RawPacket();
+                var packet = !isLocked ? _packet : new RawPacket();
                 packet.Wrap(pkt, offset, length);
 
                 // Associate the packet with its encryption context
@@ -93,7 +93,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // wrap data into raw packet for readable format
-                var packet = !isLocked ? this._packet : new RawPacket();
+                var packet = !isLocked ? _packet : new RawPacket();
                 packet.Wrap(pkt, offset, length);
 
                 // Associate the packet with its encryption context

@@ -226,7 +226,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         public void AddRtpChannel(RTPChannel rtpChannel)
         {
-            this._rtpChannel = rtpChannel;
+            _rtpChannel = rtpChannel;
         }
 
         public Boolean HasRtpChannel()

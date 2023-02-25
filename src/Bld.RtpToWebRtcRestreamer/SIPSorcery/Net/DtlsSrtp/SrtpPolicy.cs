@@ -84,12 +84,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                           int authTagLength,
                           int saltKeyLength)
         {
-            this._encType = encType;
-            this._encKeyLength = encKeyLength;
-            this._authType = authType;
-            this._authKeyLength = authKeyLength;
-            this._authTagLength = authTagLength;
-            this._saltKeyLength = saltKeyLength;
+            _encType = encType;
+            _encKeyLength = encKeyLength;
+            _authType = authType;
+            _authKeyLength = authKeyLength;
+            _authTagLength = authTagLength;
+            _saltKeyLength = saltKeyLength;
         }
     }
 }

@@ -62,8 +62,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         private SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
-            this._forwardEngine = forwardEngine;
-            this._reverseEngine = reverseEngine;
+            _forwardEngine = forwardEngine;
+            _reverseEngine = reverseEngine;
             _contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
             _rawPacket = new RawPacket();
         }
@@ -75,7 +75,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // Updates the contents of raw packet with new incoming packet
-                var rawPacket = !isLocked ? this._rawPacket : new RawPacket();
+                var rawPacket = !isLocked ? _rawPacket : new RawPacket();
                 rawPacket.Wrap(pkt, offset, length);
 
                 // Associate packet to a crypto context
@@ -110,7 +110,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             try
             {
                 // Wrap data into the raw packet for readable format
-                var rawPacket = !isLocked ? this._rawPacket : new RawPacket();
+                var rawPacket = !isLocked ? _rawPacket : new RawPacket();
                 rawPacket.Wrap(pkt, offset, length);
 
                 // Associate packet to a crypto context
