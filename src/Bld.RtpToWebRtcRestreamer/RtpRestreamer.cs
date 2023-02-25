@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using Bld.RtpToWebRtcRestreamer.Common;
-using Bld.RtpToWebRtcRestreamer.RtpReceiver;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
@@ -16,7 +15,7 @@ namespace Bld.RtpToWebRtcRestreamer
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<RtpRestreamer> _logger;
         private readonly WebSocketServer _webSocketServer;
-        private readonly Receiver _receiver;
+        private readonly RtpReceiver _receiver;
         private readonly StreamMultiplexer _streamMultiplexer;
         private readonly Task _periodicalManagementTask;
         private int _connectedClientsCount;
@@ -36,7 +35,7 @@ namespace Bld.RtpToWebRtcRestreamer
                 peer.CreatePeerConnection = CreatePeerConnection;
             });
 
-            _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>(), RtpProcessor);
+            _receiver = new RtpReceiver(rtpListenEndpoint, RtpProcessor);
             _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
 
             _periodicalManagementTask = BackgroundTask();
