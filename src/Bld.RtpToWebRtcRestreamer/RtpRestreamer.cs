@@ -123,6 +123,11 @@ namespace Bld.RtpToWebRtcRestreamer
             }
             // ReSharper disable once FunctionNeverReturns
         }
+
+        public void Stop()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 
