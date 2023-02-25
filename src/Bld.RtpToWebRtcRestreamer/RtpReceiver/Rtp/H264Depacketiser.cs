@@ -1,4 +1,5 @@
 ﻿namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
+#nullable enable
 
 internal sealed class H264Depacketiser
 {

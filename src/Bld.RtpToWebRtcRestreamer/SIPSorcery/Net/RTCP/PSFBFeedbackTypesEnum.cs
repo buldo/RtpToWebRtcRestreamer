@@ -20,9 +20,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         PSLEI = 8,          // Payload-Specific Third-Party Loss Early Indication  [RFC6642]
         ROI = 9,            // Video region-of-interest (ROI)	[3GPP TS 26.114 v16.3.0][Ozgur_Oyman]
         LRR = 10,           // Layer Refresh Request Command   [RFC-ietf-avtext-lrr-07]
-        // 11-14		    // Unassigned	
+        // 11-14		    // Unassigned
         AFB = 15            // Application Layer Feedback  [RFC4585]
-        // 16-30		    // Unassigned	
+        // 16-30		    // Unassigned
         // Extension = 31   //Extension   Reserved for future extensions  [RFC4585]
     }
 }

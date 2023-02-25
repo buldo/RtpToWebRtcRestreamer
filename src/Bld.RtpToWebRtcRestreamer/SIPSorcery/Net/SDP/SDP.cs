@@ -159,9 +159,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         // Optional fields.
         private string SessionDescription;
-        private string URI;                          // URI for additional information about the session.
-        private string[] OriginatorEmailAddresses;   // Email addresses for the person responsible for the session.
-        private string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
         public IceImplementationEnum IceImplementation = IceImplementationEnum.full;
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
@@ -808,23 +805,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 }
             }
             sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
-            sdp += string.IsNullOrWhiteSpace(URI) ? null : "u=" + URI + CRLF;
-
-            if (OriginatorEmailAddresses != null && OriginatorEmailAddresses.Length > 0)
-            {
-                foreach (var originatorAddress in OriginatorEmailAddresses)
-                {
-                    sdp += string.IsNullOrWhiteSpace(originatorAddress) ? null : "e=" + originatorAddress + CRLF;
-                }
-            }
-
-            if (OriginatorPhoneNumbers != null && OriginatorPhoneNumbers.Length > 0)
-            {
-                foreach (var originatorNumber in OriginatorPhoneNumbers)
-                {
-                    sdp += string.IsNullOrWhiteSpace(originatorNumber) ? null : "p=" + originatorNumber + CRLF;
-                }
-            }
 
             sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
 
