@@ -278,7 +278,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
                     }
                     else {
-                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.AsSpan(0,outBufLen).ToArray());
                     }
                 }
 

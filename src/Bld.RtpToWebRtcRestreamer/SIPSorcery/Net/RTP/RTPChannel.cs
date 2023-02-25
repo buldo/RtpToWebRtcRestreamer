@@ -6,14 +6,14 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 27 Feb 2012	Aaron Clauson	Created, Hobart, Australia.
 // 06 Dec 2019  Aaron Clauson   Simplify by removing all frame logic and reduce responsibility
 //                              to only managing sending and receiving of packets.
 // 28 Dec 2019  Aaron Clauson   Added RTCP reporting as per RFC3550.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 return false;
             }
         }
-        
+
         public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
         public event Action<int, IPEndPoint, byte[]> OnControlDataReceived;
         public event Action<string> OnClosed;
@@ -243,6 +243,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 }
 
                 sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+
                 return SocketError.Success;
             }
             catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
