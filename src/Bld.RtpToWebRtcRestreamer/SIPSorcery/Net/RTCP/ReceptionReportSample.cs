@@ -44,38 +44,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// </summary>
         private uint DelaySinceLastSenderReport;
 
-        /// <summary>
-        /// Creates a new Reception Report object.
-        /// </summary>
-        /// <param name="ssrc">The synchronisation source this reception report is for.</param>
-        /// <param name="fractionLost">The fraction of RTP packets lost since the previous Sender or Receiver
-        /// Report was sent.</param>
-        /// <param name="packetsLost">The total number of RTP packets that have been lost since the
-        /// beginning of reception.</param>
-        /// <param name="highestSeqNum">Extended highest sequence number received from source.</param>
-        /// <param name="jitter">Interarrival jitter of the RTP packets received within the last reporting period.</param>
-        /// <param name="lastSRTimestamp">The timestamp from the most recent RTCP Sender Report packet
-        /// received.</param>
-        /// <param name="delaySinceLastSR">The delay between receiving the last Sender Report packet and the sending
-        /// of this Reception Report.</param>
-        public ReceptionReportSample(
-            uint ssrc,
-            byte fractionLost,
-            int packetsLost,
-            uint highestSeqNum,
-            uint jitter,
-            uint lastSRTimestamp,
-            uint delaySinceLastSR)
-        {
-            SSRC = ssrc;
-            FractionLost = fractionLost;
-            PacketsLost = packetsLost;
-            ExtendedHighestSequenceNumber = highestSeqNum;
-            Jitter = jitter;
-            LastSenderReportTimestamp = lastSRTimestamp;
-            DelaySinceLastSenderReport = delaySinceLastSR;
-        }
-
         public ReceptionReportSample(byte[] packet)
         {
             if (BitConverter.IsLittleEndian)

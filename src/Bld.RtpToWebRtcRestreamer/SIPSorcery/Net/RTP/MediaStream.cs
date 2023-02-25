@@ -194,23 +194,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return (false, buffer);
         }
 
-        private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
+        private bool EnsureBufferUnprotected(byte[] buf)
         {
             if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
             {
-                var (succeeded, newBuffer) = UnprotectBuffer(buf);
+                var (succeeded, _) = UnprotectBuffer(buf);
                 if (!succeeded)
                 {
-                    packet = null;
                     return false;
                 }
-                packet = new RTPPacket(newBuffer);
             }
-            else
-            {
-                packet = new RTPPacket(buf);
-            }
-            packet.Header.ReceivedTime = header.ReceivedTime;
+
             return true;
         }
 
@@ -296,7 +290,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         {
             if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
             {
-                if (!EnsureBufferUnprotected(buffer, hdr, out _))
+                if (!EnsureBufferUnprotected(buffer))
                 {
                     // Cache pending packages to use it later to prevent missing frames
                     // when DTLS was not completed yet as a Server bt already completed as a client

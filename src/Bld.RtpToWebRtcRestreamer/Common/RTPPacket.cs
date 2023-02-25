@@ -29,13 +29,6 @@ namespace Bld.RtpToWebRtcRestreamer.Common
             Payload = new byte[payloadSize];
         }
 
-        public RTPPacket(byte[] packet)
-        {
-            Header = new RTPHeader(packet);
-            Payload = new byte[Header.PayloadSize];
-            Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
-        }
-
         public RTPPacket(Span<byte> packet)
         {
             Header = new RTPHeader(packet);

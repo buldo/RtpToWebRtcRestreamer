@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 44488",
+    "start": "ng serve --port 44488 --host 0.0.0.0",
     "build": "ng build",
     "build:ssr": "ng run Bld.RtpToWebRtcRestreamer.App:server:dev",
     "watch": "ng build --watch --configuration development",

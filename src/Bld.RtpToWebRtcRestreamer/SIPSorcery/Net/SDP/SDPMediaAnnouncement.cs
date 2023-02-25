@@ -1,10 +1,10 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SDPMediaAnnouncement.cs
 //
-// Description: 
+// Description:
 //
 // Remarks:
-// 
+//
 // An example of an "application" type media announcement use is negotiating
 // SCTP-over-DTLS which acts as the transport for WebRTC data channels.
 // https://tools.ietf.org/html/rfc8841
@@ -22,7 +22,7 @@
 // rj2: add SDPSecurityDescription parser
 // 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -64,7 +64,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
         public string IcePwd;                   // If ICE is being used the password for the STUN requests.
         public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
-        private bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public IceRolesEnum? IceRole = null;
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public int MLineIndex = 0;
@@ -241,7 +240,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             announcement += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + m_CRLF : null;
             announcement += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + m_CRLF : null;
             announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
-            announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null; 
+            announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null;
 
             if (IceCandidates?.Count() > 0)
             {
@@ -254,11 +253,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             if (IceOptions != null)
             {
                 announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
-            }
-
-            if (IceEndOfCandidates)
-            {
-                announcement += $"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}" + m_CRLF;
             }
 
             announcement += !string.IsNullOrWhiteSpace(MediaID) ? "a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":" + MediaID + m_CRLF : null;
@@ -404,7 +398,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 {
                     sb.Append($"{MEDIA_FORMAT_PATH_MSRP_PREFIX}//{Connection.ConnectionAddress}:{Port}/{mediaFormat.Endpoint}{m_CRLF}");
                 }
-                
+
                 return sb.ToString();
             }
 

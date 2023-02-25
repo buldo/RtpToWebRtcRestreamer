@@ -39,12 +39,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         public uint Ssrc { get; set; }
 
         /// <summary>
-        /// The value used in the RTP Timestamp header field for media packets
-        /// sent using this media stream.
-        /// </summary>
-        public uint Timestamp { get; internal set; }
-
-        /// <summary>
         /// By default audio channels will support DTMF via telephone events. To opt
         /// out of DTMF support set this property to true.
         /// </summary>
@@ -155,16 +149,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         public bool IsSsrcMatch(uint ssrc)
         {
             return ssrc == Ssrc || SdpSsrc.ContainsKey(ssrc);
-        }
-
-        /// <summary>
-        /// Gets the matching audio or video format for a payload ID.
-        /// </summary>
-        /// <param name="payloadID">The payload ID to get the format for.</param>
-        /// <returns>An audio or video format or null if no payload ID matched.</returns>
-        public SDPAudioVideoMediaFormat? GetFormatForPayloadID(int payloadID)
-        {
-            return Capabilities?.FirstOrDefault(x => x.ID == payloadID);
         }
 
         /// <summary>

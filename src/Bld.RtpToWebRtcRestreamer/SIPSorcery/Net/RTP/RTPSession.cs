@@ -56,9 +56,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     /// </remarks>
     internal class RTPSession : IDisposable
     {
-        //Reduced to be smaller than MTU (1400) beucase header will add extra 2 butes that will fail to deliver to linux as the real size of the package will be 1402
-        protected internal const int RTP_MAX_PAYLOAD = 1200;
-
         /// <summary>
         /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
         /// (authentication tag and MKI) supported by libSRTP.This value is
@@ -1039,7 +1036,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         }
                     }
 
-                    mediaStream.RtcpSession.ReportReceived(rtcpPkt);
+                    mediaStream.RtcpSession.ReportReceived();
                     mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
                 }
                 else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)

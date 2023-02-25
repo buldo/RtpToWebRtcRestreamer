@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿#nullable enable
+using System.Net;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -11,14 +12,14 @@ namespace Bld.RtpToWebRtcRestreamer
         public WebRtcHostedService(
             ILoggerFactory loggerFactory)
         {
-            
+
                 _rtpRestreamer = new RtpRestreamer(
                     new IPEndPoint(IPAddress.Any, 8081),
                     new IPEndPoint(IPAddress.Any, 5600),
                     loggerFactory
                 );
                 _rtpRestreamer.ConnectedClientsChanged += RtpRestreamerOnConnectedClientsChanged;
-            
+
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

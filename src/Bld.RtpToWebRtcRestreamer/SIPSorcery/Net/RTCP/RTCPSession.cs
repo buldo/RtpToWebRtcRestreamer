@@ -112,11 +112,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         public uint PacketsReceivedCount { get; private set; }
 
         /// <summary>
-        /// Number of RTP bytes received from the remote party.
-        /// </summary>
-        private uint OctetsReceivedCount { get; set; }
-
-        /// <summary>
         /// Unique common name field for use in SDES packets.
         /// </summary>
         public string Cname { get; private set; }
@@ -128,16 +123,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         private bool IsClosed { get; set; }
 
         /// <summary>
-        /// Indicates the sample rate for RTP media data.
-        /// </summary>
-        private int PayloadSampleRateHz { get; set; } = 0;
-
-        /// <summary>
         /// Time to schedule the delivery of RTCP reports.
         /// </summary>
         private Timer m_rtcpReportTimer;
 
-        private ReceptionReport m_receptionReport;
         private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
 
         /// <summary>
@@ -186,24 +175,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Event handler for an RTCP packet being received from the remote party.
         /// </summary>
-        public void ReportReceived(RTCPCompoundPacket rtcpCompoundPacket)
+        public void ReportReceived()
         {
             try
             {
                 LastActivityAt = DateTime.Now;
                 IsTimedOut = false;
-
-                if (rtcpCompoundPacket != null)
-                {
-                    if (rtcpCompoundPacket.SenderReport != null && m_receptionReport != null)
-                    {
-                        m_receptionReport.RtcpSenderReportReceived(rtcpCompoundPacket.SenderReport.NtpTimestamp);
-                    }
-                }
             }
-            catch (Exception excp)
+            catch (Exception exception)
             {
-                logger.LogError($"Exception RTCPSession.ReportReceived. {excp.Message}");
+                logger.LogError($"Exception RTCPSession.ReportReceived. {exception.Message}");
             }
         }
 
@@ -264,28 +245,18 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         private RTCPCompoundPacket GetRtcpReport()
         {
             var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-            var rr = (m_receptionReport != null) ? m_receptionReport.GetSample(To32Bit(ntcTime)) : null;
             var sdesReport = new RTCPSDesReport(Ssrc, Cname);
 
             if (PacketsSentCount > m_previousPacketsSentCount)
             {
                 // If we have sent a packet since the last report then we send an RTCP Sender Report.
                 // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, (rr != null) ? new List<ReceptionReportSample> { rr } : null);
+                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
                 return new RTCPCompoundPacket(senderReport, sdesReport);
             }
 
-            // If we have NOT sent a packet since the last report then we send an RTCP Receiver Report.
-            if (rr != null)
-            {
-                var receiverReport = new RTCPReceiverReport(Ssrc, new List<ReceptionReportSample> { rr });
-                return new RTCPCompoundPacket(receiverReport, sdesReport);
-            }
-            else
-            {
-                var receiverReport = new RTCPReceiverReport(Ssrc, null);
-                return new RTCPCompoundPacket(receiverReport, sdesReport);
-            }
+            var receiverReport = new RTCPReceiverReport(Ssrc, null);
+            return new RTCPCompoundPacket(receiverReport, sdesReport);
         }
 
         /// <summary>
@@ -298,10 +269,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
             return Crypto.GetRandomInt((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval),
                 (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval));
         }
-
-        private static uint To32Bit(ulong ntpTime) => (uint)((ntpTime >> 16) & 0xFFFFFFFF);
-
-        public static uint DateTimeToNtpTimestamp32(DateTime value) { return (uint)((DateTimeToNtpTimestamp(value) >> 16) & 0xFFFFFFFF); }
 
         /// <summary>
         /// Converts specified DateTime value to long NTP time.

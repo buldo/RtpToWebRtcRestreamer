@@ -40,7 +40,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         public int PayloadSize;
         private byte PaddingCount;
-        public DateTime ReceivedTime;
+
         public int Length
         {
             get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
