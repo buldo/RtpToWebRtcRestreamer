@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace Bld.RtpToWebRtcRestreamer
 {
@@ -10,10 +9,9 @@ namespace Bld.RtpToWebRtcRestreamer
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static IServiceCollection AddRtpRestreamer(this IServiceCollection services)
+        public static void AddRtpRestreamer(this IServiceCollection services)
         {
             services.AddHostedService<WebRtcHostedService>();
-            return services;
         }
     }
 }

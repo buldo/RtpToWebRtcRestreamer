@@ -21,10 +21,9 @@ internal class Receiver
             BindPort = _bindEndPoint.Port,
             IsMediaMultiplexed = false,
         };
-        _videoStream = new VideoStream(sessionConfig, _nextIndex, logger);
+        _videoStream = new VideoStream(_nextIndex, logger);
         _videoStream.OnVideoFrameReceivedByIndex += VideoStreamOnOnVideoFrameReceivedByIndex;
         _channel = new RTPChannel(false, sessionConfig.BindAddress, sessionConfig.BindPort, logger);
-        _videoStream.AddRtpChannel(_channel);
         _channel.OnRtpDataReceived += OnReceiveRTPPacket;
 
         _nextIndex++;
@@ -46,6 +45,6 @@ internal class Receiver
     private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
         var hdr = new RTPHeader(buffer);
-        _videoStream.OnReceiveRTPPacket(hdr, localPort, remoteEndPoint, buffer, _videoStream);
+        _videoStream.OnReceiveRTPPacket(hdr, remoteEndPoint, buffer, _videoStream);
     }
 }

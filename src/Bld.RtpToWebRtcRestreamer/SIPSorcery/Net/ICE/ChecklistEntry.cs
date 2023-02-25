@@ -5,11 +5,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 23 Jun 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
     /// </summary>
     internal class ChecklistEntry : IComparable
     {
-        private static readonly ILogger logger = Log.Logger;
+        private static readonly ILogger Logger = Log.Logger;
 
         //Previous RequestIds
         private readonly List<string> _cachedRequestTransactionIDs = new List<string>();
@@ -91,15 +91,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// Timestamp the last connectivity check (STUN binding request) was sent at.
         /// </summary>
         public DateTime LastCheckSentAt = DateTime.MinValue;
-        
+
         /// <summary>
         /// The transaction ID that was set in the last STUN request connectivity check.
         /// </summary>
-        public string RequestTransactionID 
-        { 
-            get 
-            { 
-                return _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null; 
+        public string RequestTransactionID
+        {
+            get
+            {
+                return _cachedRequestTransactionIDs?.Count > 0 ? _cachedRequestTransactionIDs[0] : null;
             }
             set
             {
@@ -165,7 +165,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
             if(index >= 1)
             {
-                logger.LogInformation($"Received transaction id from a previous cached RequestTransactionID {id} Index: {index}");
+                Logger.LogInformation($"Received transaction id from a previous cached RequestTransactionID {id} Index: {index}");
             }
 
             return index >= 0;
@@ -207,7 +207,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
             if (stunResponse.Header.MessageType == STUNMessageTypesEnum.RefreshErrorResponse)
             {
-                logger.LogError("Cannot refresh TURN allocation");
+                Logger.LogError("Cannot refresh TURN allocation");
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingSuccessResponse)
             {
@@ -225,13 +225,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.BindingErrorResponse)
             {
-                logger.LogWarning($"ICE RTP channel a STUN binding error response was received from {remoteEndPoint}.");
-                logger.LogWarning($"ICE RTP channel check list entry set to failed: {RemoteCandidate}");
+                Logger.LogWarning($"ICE RTP channel a STUN binding error response was received from {remoteEndPoint}.");
+                Logger.LogWarning($"ICE RTP channel check list entry set to failed: {RemoteCandidate}");
                 State = ChecklistEntryState.Failed;
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionSuccessResponse)
             {
-                logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
+                Logger.LogDebug($"A TURN Create Permission success response was received from {remoteEndPoint} (TxID: {Encoding.ASCII.GetString(stunResponse.Header.TransactionId)}).");
                 TurnPermissionsRequestSent = 1;
                 TurnPermissionsResponseAt = DateTime.Now;
 
@@ -245,13 +245,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             }
             else if (stunResponse.Header.MessageType == STUNMessageTypesEnum.CreatePermissionErrorResponse)
             {
-                logger.LogWarning($"ICE RTP channel TURN Create Permission error response was received from {remoteEndPoint}.");
+                Logger.LogWarning($"ICE RTP channel TURN Create Permission error response was received from {remoteEndPoint}.");
                 TurnPermissionsResponseAt = DateTime.Now;
                 State = retry ? State : ChecklistEntryState.Failed;
             }
             else
             {
-                logger.LogWarning($"ICE RTP channel received an unexpected STUN response {stunResponse.Header.MessageType} from {remoteEndPoint}.");
+                Logger.LogWarning($"ICE RTP channel received an unexpected STUN response {stunResponse.Header.MessageType} from {remoteEndPoint}.");
             }
         }
     }

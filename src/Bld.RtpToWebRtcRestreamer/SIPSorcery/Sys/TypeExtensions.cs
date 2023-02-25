@@ -28,9 +28,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 
         private static readonly char[] Hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
-        /// <summary>    
-        /// Gets a value that indicates whether or not the collection is empty.    
-        /// </summary>    
+        /// <summary>
+        /// Gets a value that indicates whether or not the collection is empty.
+        /// </summary>
         public static bool IsNullOrBlank(this string s)
         {
             if (s == null || s.Trim(WhiteSpaceChars).Length == 0)
@@ -81,6 +81,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
         /// <example>
         /// (var field0, var field1, var field2) = "a b c".Split();
         /// </example>
+        // ReSharper disable once OutParameterValueIsAlwaysDiscarded.Global
         public static void Deconstruct<T>(this IList<T> list, out T first, out T second, out T third)
         {
             first = list.Count > 0 ? list[0] : default(T);

@@ -15,11 +15,9 @@ internal sealed class VideoStream
     private RtpVideoFramer? _rtpVideoFramer;
 
     public VideoStream(
-        RtpSessionConfig config,
         int index,
         ILogger logger)
     {
-        RtpSessionConfig = config;
         this.Index = index;
         _logger = logger;
     }
@@ -73,33 +71,6 @@ internal sealed class VideoStream
         }
     }
 
-    private class PendingPackages
-    {
-        public RTPHeader hdr;
-        public int localPort;
-        public IPEndPoint remoteEndPoint;
-        public byte[] buffer;
-        public VideoStream videoStream;
-
-        public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream)
-        {
-            this.hdr = hdr;
-            this.localPort = localPort;
-            this.remoteEndPoint = remoteEndPoint;
-            this.buffer = buffer;
-            this.videoStream = videoStream;
-        }
-    }
-
-    private object _pendingPackagesLock = new object();
-    private List<PendingPackages> _pendingPackagesBuffer = new List<PendingPackages>();
-
-    private RtpSessionConfig RtpSessionConfig;
-
-    private RTPChannel rtpChannel;
-
-    private bool _isClosed;
-
     public int Index = -1;
 
     #region EVENTS
@@ -143,31 +114,6 @@ internal sealed class VideoStream
     public bool AcceptRtpFromAny => true;
 
     /// <summary>
-    /// Indicates whether the session has been closed. Once a session is closed it cannot
-    /// be restarted.
-    /// </summary>
-    public bool IsClosed
-    {
-        get
-        {
-            return _isClosed;
-        }
-        set
-        {
-            if (_isClosed == value)
-            {
-                return;
-            }
-            _isClosed = value;
-
-            //Clear previous buffer
-            ClearPendingPackages();
-
-            OnIsClosedStateChanged?.Invoke(_isClosed);
-        }
-    }
-
-    /// <summary>
     /// The remote video track. Will be null if the remote party is not sending this media
     /// </summary>
     public MediaStreamTrack? RemoteTrack { get; set; }
@@ -187,27 +133,9 @@ internal sealed class VideoStream
         return true;
     }
 
-    public void AddRtpChannel(RTPChannel rtpChannel)
-    {
-        this.rtpChannel = rtpChannel;
-    }
-
-    public void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
+    public void OnReceiveRTPPacket(RTPHeader hdr, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
     {
         RTPPacket? rtpPacket = null;
-        //if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
-        //{
-        //    if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
-        //    {
-        //        // Cache pending packages to use it later to prevent missing frames
-        //        // when DTLS was not completed yet as a Server bt already completed as a client
-        //        AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
-        //        return;
-        //    }
-
-        //    RaiseOnRtpEventByIndex(remoteEndPoint, new RTPEvent(rtpPacket.Payload), rtpPacket.Header);
-        //    return;
-        //}
 
         // Set the remote track SSRC so that RTCP reports can match the media type.
         if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
@@ -271,16 +199,6 @@ internal sealed class VideoStream
     private void RaiseOnRtpPacketReceivedByIndex(IPEndPoint ipEndPoint, RTPPacket rtpPacket)
     {
         OnRtpPacketReceivedByIndex?.Invoke(Index, ipEndPoint, rtpPacket);
-    }
-
-
-    // Clear previous buffer
-    private void ClearPendingPackages()
-    {
-        lock (_pendingPackagesLock)
-        {
-            _pendingPackagesBuffer.Clear();
-        }
     }
 
     private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)

@@ -25,13 +25,6 @@ internal class RTPHeader
     public DateTime ReceivedTime;
     public int Length => MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4));
 
-    public RTPHeader()
-    {
-        SequenceNumber = Crypto.GetRandomUInt16();
-        SyncSource = Crypto.GetRandomUInt();
-        Timestamp = Crypto.GetRandomUInt();
-    }
-
     /// <summary>
     /// Extract and load the RTP header from an RTP packet.
     /// </summary>

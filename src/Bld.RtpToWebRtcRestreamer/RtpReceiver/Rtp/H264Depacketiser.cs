@@ -167,10 +167,8 @@ internal sealed class H264Depacketiser
                 fu_a++;
 
                 // Parse Fragmentation Unit Header
-                int fu_indicator = rtp_payloads[payload_index].Value[0];
                 var fu_header_s = (rtp_payloads[payload_index].Value[1] >> 7) & 0x01;  // start marker
                 var fu_header_e = (rtp_payloads[payload_index].Value[1] >> 6) & 0x01;  // end marker
-                var fu_header_r = (rtp_payloads[payload_index].Value[1] >> 5) & 0x01;  // reserved. should be 0
                 var fu_header_type = (rtp_payloads[payload_index].Value[1] >> 0) & 0x1F; // Original NAL unit header
 
                 // Check Start and End flags
