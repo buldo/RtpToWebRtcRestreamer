@@ -26,9 +26,8 @@ internal class Receiver
         _channel.Start();
     }
 
-    private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+    private void OnReceiveRTPPacket(RTPPacket packet)
     {
-        var rtpPacket = new RTPPacket(buffer);
-        _rtpProcessor(rtpPacket);
+        _rtpProcessor(packet);
     }
 }

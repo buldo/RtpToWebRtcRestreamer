@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Bld.RtpToWebRtcRestreamer.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
-internal delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
+internal delegate void PacketReceivedDelegate(UdpReceiver receiver, RTPPacket packet);
 
 /// <summary>
 /// A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
@@ -27,13 +28,12 @@ internal sealed class UdpReceiver
     /// </summary>
     private const int RECEIVE_BUFFER_SIZE = 2048;
 
-    private static readonly ILogger logger = new NullLogger<UdpReceiver>();
+    private readonly ILogger _logger = NullLogger.Instance;
 
     private readonly Socket _socket;
     private readonly byte[] _recvBuffer;
     private bool _isClosed;
     private bool _isRunningReceive;
-    private readonly IPEndPoint _localEndPoint;
     private readonly AddressFamily _addressFamily;
 
     /// <summary>
@@ -49,7 +49,6 @@ internal sealed class UdpReceiver
     public UdpReceiver(Socket socket, int mtu = RECEIVE_BUFFER_SIZE)
     {
         _socket = socket;
-        _localEndPoint = _socket.LocalEndPoint as IPEndPoint;
         _recvBuffer = new byte[mtu];
         _addressFamily = _socket.LocalEndPoint.AddressFamily;
     }
@@ -87,7 +86,7 @@ internal sealed class UdpReceiver
         catch (SocketException socketException)
         {
             _isRunningReceive = false;
-            logger.LogWarning($"Socket error {socketException.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {socketException.Message}");
+            _logger.LogWarning($"Socket error {socketException.SocketErrorCode} in UdpReceiver.BeginReceiveFrom. {socketException.Message}");
             //Close(sockExcp.Message);
         }
         catch (Exception exception)
@@ -96,7 +95,7 @@ internal sealed class UdpReceiver
             // From https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/Socket.cs#L3262
             // the BeginReceiveFrom will only throw if there is an problem with the arguments or the socket has been disposed of. In that
             // case the socket can be considered to be unusable and there's no point trying another receive.
-            logger.LogError(exception, $"Exception UdpReceiver.BeginReceiveFrom. {exception.Message}");
+            _logger.LogError(exception, $"Exception UdpReceiver.BeginReceiveFrom. {exception.Message}");
             Close(exception.Message);
         }
     }
@@ -117,18 +116,8 @@ internal sealed class UdpReceiver
 
                 if (bytesRead > 0)
                 {
-                    // During experiments IPPacketInformation wasn't getting set on Linux. Without it the local IP address
-                    // cannot be determined when a listener was bound to IPAddress.Any (or IPv6 equivalent). If the caller
-                    // is relying on getting the local IP address on Linux then something may fail.
-                    //if (packetInfo != null && packetInfo.Address != null)
-                    //{
-                    //    localEndPoint = new IPEndPoint(packetInfo.Address, localEndPoint.Port);
-                    //}
-
-                    var packetBuffer = new byte[bytesRead];
-                    // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
-                    Buffer.BlockCopy(_recvBuffer, 0, packetBuffer, 0, bytesRead);
-                    CallOnPacketReceivedCallback(_localEndPoint.Port, remoteEP as IPEndPoint, packetBuffer);
+                    var packet = new RTPPacket(_recvBuffer.AsSpan(0, bytesRead));
+                    CallOnPacketReceivedCallback(packet);
                 }
             }
 
@@ -146,10 +135,8 @@ internal sealed class UdpReceiver
 
                     if (bytesReadSync > 0)
                     {
-                        var packetBufferSync = new byte[bytesReadSync];
-                        // TODO: When .NET Framework support is dropped switch to using a slice instead of a copy.
-                        Buffer.BlockCopy(_recvBuffer, 0, packetBufferSync, 0, bytesReadSync);
-                        CallOnPacketReceivedCallback(_localEndPoint.Port, remoteEP as IPEndPoint, packetBufferSync);
+                        var packet = new RTPPacket(_recvBuffer.AsSpan(0, bytesReadSync));
+                        CallOnPacketReceivedCallback(packet);
                     }
                     else
                     {
@@ -173,13 +160,13 @@ internal sealed class UdpReceiver
             // in the BeginReceive method (very handy). Follow-up, this doesn't seem to be the case, the socket exception can occur in
             // BeginReceive before any packets have been exchanged. This means it's not safe to close if BeginReceive gets an ICMP
             // error since the remote party may not have initialised their socket yet.
-            logger.LogWarning(socketException, $"SocketException UdpReceiver.EndReceiveFrom ({socketException.SocketErrorCode}). {socketException.Message}");
+            _logger.LogWarning(socketException, $"SocketException UdpReceiver.EndReceiveFrom ({socketException.SocketErrorCode}). {socketException.Message}");
         }
         catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         { }
         catch (Exception excp)
         {
-            logger.LogError($"Exception UdpReceiver.EndReceiveFrom. {excp}");
+            _logger.LogError($"Exception UdpReceiver.EndReceiveFrom. {excp}");
             Close(excp.Message);
         }
         finally
@@ -206,8 +193,8 @@ internal sealed class UdpReceiver
         }
     }
 
-    private void CallOnPacketReceivedCallback(int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private void CallOnPacketReceivedCallback(RTPPacket packet)
     {
-        OnPacketReceived?.Invoke(this, localPort, remoteEndPoint, packet);
+        OnPacketReceived?.Invoke(this, packet);
     }
 }

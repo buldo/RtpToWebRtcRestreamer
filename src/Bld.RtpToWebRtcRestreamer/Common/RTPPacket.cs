@@ -5,12 +5,12 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 24 May 2005	Aaron Clauson 	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -34,6 +34,14 @@ namespace Bld.RtpToWebRtcRestreamer.Common
             Header = new RTPHeader(packet);
             Payload = new byte[Header.PayloadSize];
             Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
+        }
+
+        public RTPPacket(Span<byte> packet)
+        {
+            Header = new RTPHeader(packet);
+            Payload = packet
+                .Slice(Header.Length, Header.PayloadSize)
+                .ToArray();
         }
 
         public byte[] GetBytes()

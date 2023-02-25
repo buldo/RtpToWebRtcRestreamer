@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Bld.RtpToWebRtcRestreamer.Common;
 using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
@@ -33,7 +34,7 @@ internal sealed class RTPChannel : IDisposable
     }
 
 
-    public event Action<int, IPEndPoint, byte[]> OnRtpDataReceived;
+    public event Action<RTPPacket> OnRtpDataReceived;
 
     /// <summary>
     /// Starts listening on the RTP and control ports.
@@ -75,16 +76,9 @@ internal sealed class RTPChannel : IDisposable
     /// <summary>
     /// Event handler for packets received on the RTP UDP socket.
     /// </summary>
-    /// <param name="receiver">The UDP receiver the packet was received on.</param>
-    /// <param name="localPort">The local port it was received on.</param>
-    /// <param name="remoteEndPoint">The remote end point of the sender.</param>
-    /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-    private void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private void OnRTPPacketReceived(UdpReceiver receiver, RTPPacket packet)
     {
-        if (packet?.Length > 0)
-        {
-            OnRtpDataReceived?.Invoke(localPort, remoteEndPoint, packet);
-        }
+        OnRtpDataReceived?.Invoke(packet);
     }
 
     public void Dispose()

@@ -10,7 +10,7 @@
 // 22 May 2005	Aaron Clauson	Created, Dublin, Ireland.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -57,27 +57,27 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// Extract and load the RTP header from an RTP packet.
         /// </summary>
         /// <param name="packet"></param>
-        public RTPHeader(byte[] packet)
+        public RTPHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_HEADER_LEN)
             {
                 throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTP header packet.");
             }
 
-            var firstWord = BitConverter.ToUInt16(packet, 0);
+            var firstWord = BitConverter.ToUInt16(packet);
 
             if (BitConverter.IsLittleEndian)
             {
                 firstWord = NetConvert.DoReverseEndian(firstWord);
-                SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-                Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-                SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 8));
+                SequenceNumber = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet[2..]));
+                Timestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet[4..]));
+                SyncSource = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet[8..]));
             }
             else
             {
-                SequenceNumber = BitConverter.ToUInt16(packet, 2);
-                Timestamp = BitConverter.ToUInt32(packet, 4);
-                SyncSource = BitConverter.ToUInt32(packet, 8);
+                SequenceNumber = BitConverter.ToUInt16(packet[2..]);
+                Timestamp = BitConverter.ToUInt32(packet[4..]);
+                SyncSource = BitConverter.ToUInt32(packet[8..]);
             }
 
 
@@ -96,23 +96,23 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             {
                 if (BitConverter.IsLittleEndian)
                 {
-                    ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount));
+                    ExtensionProfile = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet[(12 + 4 * CSRCCount)..]));
                     headerExtensionLength += 2;
-                    ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount));
+                    ExtensionLength = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet[(14 + 4 * CSRCCount)..]));
                     headerExtensionLength += 2 + ExtensionLength * 4;
                 }
                 else
                 {
-                    ExtensionProfile = BitConverter.ToUInt16(packet, 12 + 4 * CSRCCount);
+                    ExtensionProfile = BitConverter.ToUInt16(packet[(12 + 4 * CSRCCount)..]);
                     headerExtensionLength += 2;
-                    ExtensionLength = BitConverter.ToUInt16(packet, 14 + 4 * CSRCCount);
+                    ExtensionLength = BitConverter.ToUInt16(packet[(14 + 4 * CSRCCount)..]);
                     headerExtensionLength += 2 + ExtensionLength * 4;
                 }
 
                 if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
                 {
                     ExtensionPayload = new byte[ExtensionLength * 4];
-                    Buffer.BlockCopy(packet, headerAndCSRCLength + 4, ExtensionPayload, 0, ExtensionLength * 4);
+                    packet[(headerAndCSRCLength + 4)..].CopyTo(ExtensionPayload[(ExtensionLength * 4)..]);
                 }
             }
 
@@ -120,7 +120,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             if (PaddingFlag == 1)
             {
                 PaddingCount = packet[packet.Length - 1];
-                if (PaddingCount < PayloadSize)//Prevent some protocol attacks 
+                if (PaddingCount < PayloadSize)//Prevent some protocol attacks
                 {
                     PayloadSize -= PaddingCount;
                 }
