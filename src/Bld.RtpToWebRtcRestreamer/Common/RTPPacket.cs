@@ -14,7 +14,9 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+
+namespace Bld.RtpToWebRtcRestreamer.Common
 {
     internal class RTPPacket
     {

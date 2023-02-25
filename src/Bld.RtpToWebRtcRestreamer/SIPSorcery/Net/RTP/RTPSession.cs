@@ -15,7 +15,7 @@
 // 26 Jul 2021  Kurt Kießling       Added secure media negotiation.
 // 05 Apr 2022  Christophe Irles    Simplify file using MediaSteam, AudioStream and Video Stream
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -31,11 +31,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     /// <summary>
     /// The RTPSession class is the primary point for interacting with the Real-Time
     /// Protocol. It manages all the resources required for setting up and then sending
-    /// and receiving RTP packets. This class IS designed to be inherited by child 
+    /// and receiving RTP packets. This class IS designed to be inherited by child
     /// classes and for child classes to add audio and video processing logic.
     /// </summary>
     /// <remarks>
-    /// The setting up of an RTP stream involved the exchange of Session Descriptions 
+    /// The setting up of an RTP stream involved the exchange of Session Descriptions
     /// (SDP) with the remote party. This class has adopted the mechanism used by WebRTC.
     /// The steps are:
     /// 1. If acting as the initiator:
@@ -63,13 +63,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// (authentication tag and MKI) supported by libSRTP.This value is
         /// the maximum number of octets that will be added to an RTP packet by
         /// srtp_protect().
-        /// 
+        ///
         /// srtp_protect():
         /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
         /// into the location in memory immediately following the RTP packet.
         /// Callers MUST ensure that this much writeable memory is available in
         /// the buffer that holds the RTP packet.
-        /// 
+        ///
         /// srtp_protect_rtcp():
         /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
         /// to the location in memory immediately following the RTCP packet.
@@ -102,7 +102,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new List<List<SDPSsrcAttribute>>();
         private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new List<List<SDPSsrcAttribute>>();
-        
+
         /// <summary>
         /// The primary stream for this session - can be an AudioStream or a VideoStream
         /// </summary>
@@ -184,7 +184,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         protected bool IsClosed { get; private set; }
 
         /// <summary>
-        /// Indicates whether the session has been started. Starting a session tells the RTP 
+        /// Indicates whether the session has been started. Starting a session tells the RTP
         /// socket to start receiving,
         /// </summary>
         private bool IsStarted { get; set; }
@@ -213,7 +213,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         /// <summary>
         /// If set to true RTP will be accepted from ANY remote end point. If false
-        /// certain rules are used to determine whether RTP should be accepted for 
+        /// certain rules are used to determine whether RTP should be accepted for
         /// a particular audio or video stream. It is recommended to leave the
         /// value to false unless a specific need exists.
         /// </summary>
@@ -246,7 +246,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <param name="isRtcpMultiplexed">If true RTCP reports will be multiplexed with RTP on a single channel.
         /// If false (standard mode) then a separate socket is used to send and receive RTCP reports.</param>
         /// <param name="isSecure">If true indicated this session is using SRTP to encrypt and authorise
-        /// RTP and RTCP packets. No communications or reporting will commence until the 
+        /// RTP and RTCP packets. No communications or reporting will commence until the
         /// is explicitly set as complete.</param>
         /// <param name="isMediaMultiplexed">If true only a single RTP socket will be used for both audio
         /// and video (standard case for WebRTC). If false two separate RTP sockets will be used for
@@ -348,7 +348,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 OnReceiveReport?.Invoke(ipEndPoint, media, report);
             }
         }
-        
+
         private AudioStream GetOrCreateAudioStream(int index)
         {
             if (index < AudioStreamList.Count)
@@ -423,7 +423,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 {
                     connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
                 }
-                
+
                 var currentAudioStreamCount = 0;
                 var currentVideoStreamCount = 0;
 
@@ -610,7 +610,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             {
                 return;
             }
-            
+
              AddLocalTrack(track);
         }
 
@@ -758,8 +758,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     if (IPAddress.Any.Equals(remoteRTPEndPoint.Address) || IPAddress.IPv6Any.Equals(remoteRTPEndPoint.Address))
                     {
                         // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive, except
-                        // if a special port number is used (defined as "9") which indicates that the media announcement is not 
-                        // responsible for setting the remote end point for the audio stream. Instead it's most likely being set 
+                        // if a special port number is used (defined as "9") which indicates that the media announcement is not
+                        // responsible for setting the remote end point for the audio stream. Instead it's most likely being set
                         // using ICE.
                         if (remoteRTPEndPoint.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
                         {
@@ -979,7 +979,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             #region RTCP packet.
 
-            // Get the SSRC in order to be able to figure out which media type 
+            // Get the SSRC in order to be able to figure out which media type
             // This will let us choose the apropriate unprotect methods
             uint ssrc;
             if (BitConverter.IsLittleEndian)
@@ -1019,7 +1019,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 Logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
 
                 // In some cases, such as a SIP re-INVITE, it's possible the RTP session
-                // will keep going with a new remote SSRC. 
+                // will keep going with a new remote SSRC.
                 // We close peer connection only if there is no more local/remote tracks on the primary stream
                 if (_mPrimaryStream.LocalTrack == null)
                 {
@@ -1108,7 +1108,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             var found = false;
             int index;
 
-            // Loop au audioRemoteSDPSsrcAttributes 
+            // Loop au audioRemoteSDPSsrcAttributes
             for (index = 0; index < _audioRemoteSdpSsrcAttributes.Count; index++)
             {
                 foreach (var ssrcAttributes in _audioRemoteSdpSsrcAttributes[index])
@@ -1136,7 +1136,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 return audioStream;
             }
 
-            // Loop au videoRemoteSDPSsrcAttributes 
+            // Loop au videoRemoteSDPSsrcAttributes
             found = false;
             for (index = 0; index < _videoRemoteSdpSsrcAttributes.Count; index++)
             {
