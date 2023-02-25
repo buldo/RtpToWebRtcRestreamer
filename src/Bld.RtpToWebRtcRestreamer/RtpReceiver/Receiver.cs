@@ -11,12 +11,17 @@ internal class Receiver
     private static int _nextIndex;
 
     private readonly IPEndPoint _bindEndPoint;
+    private readonly Action<RTPPacket> _rtpProcessor;
     private readonly VideoStream _videoStream;
     private readonly RTPChannel _channel;
 
-    public Receiver(IPEndPoint bindEndPoint, ILogger<Receiver> logger)
+    public Receiver(
+        IPEndPoint bindEndPoint,
+        ILogger<Receiver> logger,
+        Action<RTPPacket> rtpProcessor)
     {
         _bindEndPoint = bindEndPoint;
+        _rtpProcessor = rtpProcessor;
         var sessionConfig = new RtpSessionConfig
         {
             BindAddress = _bindEndPoint.Address,
@@ -47,5 +52,6 @@ internal class Receiver
     {
         var rtpPacket = new RTPPacket(buffer);
         _videoStream.OnReceiveRTPPacket(rtpPacket, remoteEndPoint);
+        _rtpProcessor(rtpPacket);
     }
 }

@@ -10,7 +10,7 @@
 // History:
 // 05 Apr 2022	Christophe Irles        Created (based on existing code from previous RTPSession class)
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         private readonly RtpSessionConfig RtpSessionConfig;
 
         private SecureContext _secureContext;
-        
+
         MediaStreamTrack _mLocalTrack;
 
         private RTPChannel _rtpChannel;
@@ -65,7 +65,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// Gets fired when an RTCP report is received. This event is for diagnostics only.
         /// </summary>
         public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReportByIndex;
-        
+
         #region PROPERTIES
 
         public Boolean AcceptRtpFromAny { get; set; }
@@ -94,7 +94,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         }
 
         /// <summary>
-        /// In order to detect RTP events from the remote party this property needs to 
+        /// In order to detect RTP events from the remote party this property needs to
         /// be set to the payload ID they are using.
         /// </summary>
         public int RemoteRtpEventPayloadID { get; set; } = RTPSession.DEFAULT_DTMF_EVENT_PAYLOAD_ID;
@@ -118,7 +118,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 _mLocalTrack = value;
                 if (_mLocalTrack != null)
                 {
-                    // Need to create a sending SSRC and set it on the RTCP session. 
+                    // Need to create a sending SSRC and set it on the RTCP session.
                     if (RtcpSession != null)
                     {
                         RtcpSession.Ssrc = _mLocalTrack.Ssrc;
@@ -272,9 +272,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return true;
         }
 
-        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType, Boolean checkDone)
+        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType)
         {
-            if (checkDone || CheckIfCanSendRtpRaw())
+            if (CheckIfCanSendRtpRaw())
             {
                 var protectRtpPacket = _secureContext?.ProtectRtpPacket;
                 var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
@@ -306,10 +306,45 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
                     }
                 }
-                
+
                 RtcpSession?.RecordRtpPacketSend(rtpPacket);
             }
         }
+
+        protected void SendRtpRawFromPacket(RTPPacket packet)
+        {
+            if (CheckIfCanSendRtpRaw()) {
+                var protectRtpPacket = _secureContext?.ProtectRtpPacket;
+                var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
+
+                var rtpPacket = new RTPPacket(packet.Payload.Length + srtpProtectionLength);
+                rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
+                rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
+                rtpPacket.Header.Timestamp = packet.Header.Timestamp;
+                rtpPacket.Header.MarkerBit = packet.Header.MarkerBit;
+                rtpPacket.Header.PayloadType = packet.Header.PayloadType;
+
+                Buffer.BlockCopy(packet.Payload, 0, rtpPacket.Payload, 0, packet.Payload.Length);
+
+                var rtpBuffer = rtpPacket.GetBytes();
+
+                if (protectRtpPacket == null) {
+                    _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
+                }
+                else {
+                    var rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
+                    if (rtperr != 0) {
+                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                    }
+                    else {
+                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                    }
+                }
+
+                RtcpSession?.RecordRtpPacketSend(rtpPacket);
+            }
+        }
+
 
         #endregion SEND PACKET
 
@@ -327,14 +362,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
                     return;
                 }
-                
+
                 return;
             }
-            
+
 
             // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
             // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
-            // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual 
+            // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual
             // intervention to synchronise.
             //if (RemoteDescription != null)
             //{
@@ -362,12 +397,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 RtcpSession?.RecordRtpPacketReceived(rtpPacket);
             }
         }
-        
+
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
             OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
         }
-        
+
         // Submit all previous cached packages to self
         private void DispatchPendingPackages()
         {
@@ -464,7 +499,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         {
             if (LocalTrack != null)
             {
-                
+
                 return LocalTrack.Capabilities.First();
             }
 

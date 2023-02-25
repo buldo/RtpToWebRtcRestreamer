@@ -47,7 +47,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         ///  - The video format of the encoded frame.
         /// </remarks>
         public event Action<int, IPEndPoint, uint, byte[], VideoFormat> OnVideoFrameReceivedByIndex;
-        
+
         /// <summary>
         /// Indicates whether this session is using video.
         /// </summary>
@@ -64,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// process.
         /// </summary>
         private int MaxReconstructedVideoFrameSize { get; } = 1048576;
-        
+
         /// <summary>
         /// Sends a H264 frame, represented by an Access Unit, to the remote party.
         /// </summary>
@@ -86,6 +86,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 {
                     SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast);
                 }
+            }
+        }
+
+        private void SendH264Frame(RTPPacket packet)
+        {
+            if (CheckIfCanSendRtpRaw())
+            {
+                SendRtpRawFromPacket(packet);
             }
         }
 
@@ -113,7 +121,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 var markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
                 Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
 
-                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID);
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
             }
@@ -137,7 +145,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
                     Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
 
-                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
+                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID);
                     //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
                 }
             }
@@ -145,44 +153,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             if (isLastNal)
             {
                 LocalTrack.Timestamp += duration;
-            }
-        }
-
-        /// <summary>
-        /// Sends a VP8 frame as one or more RTP packets.
-        /// </summary>
-        /// <param name="timestamp">The timestamp to place in the RTP header. Needs
-        /// to be based on a 90Khz clock.</param>
-        /// <param name="payloadTypeID">The payload ID to place in the RTP header.</param>
-        /// <param name="buffer">The VP8 encoded payload.</param>
-        private void SendVp8Frame(uint duration, int payloadTypeID, byte[] buffer)
-        {
-            if (CheckIfCanSendRtpRaw())
-            {
-                try
-                {
-                    for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < buffer.Length; index++)
-                    {
-                        var offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                        var payloadLength = (offset + RTPSession.RTP_MAX_PAYLOAD < buffer.Length) ? RTPSession.RTP_MAX_PAYLOAD : buffer.Length - offset;
-
-                        var vp8HeaderBytes = (index == 0) ? new byte[] { 0x10 } : new byte[] { 0x00 };
-                        var payload = new byte[payloadLength + vp8HeaderBytes.Length];
-                        Buffer.BlockCopy(vp8HeaderBytes, 0, payload, 0, vp8HeaderBytes.Length);
-                        Buffer.BlockCopy(buffer, offset, payload, vp8HeaderBytes.Length, payloadLength);
-
-                        var markerBit = ((offset + payloadLength) >= buffer.Length) ? 1 : 0; // Set marker bit for the last packet in the frame.
-
-                        SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID, true);
-                        //logger.LogDebug($"send VP8 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, sample length {buffer.Length}.");
-                    }
-
-                    LocalTrack.Timestamp += duration;
-                }
-                catch (SocketException sockExcp)
-                {
-                    Logger.LogError("SocketException SendVp8Frame. " + sockExcp.Message);
-                }
             }
         }
 
@@ -199,9 +169,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             switch (videoSendingFormat.Name())
             {
-                case "VP8":
-                    SendVp8Frame(durationRtpUnits, payloadID, sample);
-                    break;
                 case "H264":
                     SendH264Frame(durationRtpUnits, payloadID, sample);
                     break;
@@ -209,7 +176,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
             }
         }
-        
+
+        public void SendVideo(RTPPacket packet)
+        {
+            var videoSendingFormat = GetSendingFormat();
+
+            switch (videoSendingFormat.Name()) {
+                case "H264":
+                    SendH264Frame(packet);
+                    break;
+                default:
+                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
+            }
+        }
+
         public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
         {
             if (OnVideoFrameReceivedByIndex == null)
@@ -246,7 +226,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 }
             }
         }
-        
+
         public void CheckVideoFormatsNegotiation()
         {
             if (LocalTrack != null && LocalTrack.Capabilities?.Count() > 0)

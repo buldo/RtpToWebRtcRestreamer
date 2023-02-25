@@ -20,6 +20,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
+using Bld.RtpToWebRtcRestreamer.Common;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
@@ -886,6 +887,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         public void SendVideo(uint durationRtpUnits, byte[] sample)
         {
             VideoStream?.SendVideo(durationRtpUnits, sample);
+        }
+
+        public void SendVideo(RTPPacket packet)
+        {
+            VideoStream?.SendVideo(packet);
         }
 
         /// <summary>

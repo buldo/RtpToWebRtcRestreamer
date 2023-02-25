@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Bld.RtpToWebRtcRestreamer.Common;
 using Bld.RtpToWebRtcRestreamer.RtpReceiver;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
@@ -35,10 +36,15 @@ namespace Bld.RtpToWebRtcRestreamer
                 peer.CreatePeerConnection = CreatePeerConnection;
             });
 
-            _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>());
+            _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>(), RtpProcessor);
             _streamMultiplexer = new StreamMultiplexer(_receiver, _loggerFactory.CreateLogger<StreamMultiplexer>());
 
             _periodicalManagementTask = BackgroundTask();
+        }
+
+        private void RtpProcessor(RTPPacket packet)
+        {
+            _streamMultiplexer.SendVideoPacket(packet);
         }
 
         private int ConnectedClientsCount
