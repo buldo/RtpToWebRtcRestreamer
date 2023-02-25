@@ -2,26 +2,26 @@
 
 internal class RTPHeader
 {
-    public const int MIN_HEADER_LEN = 12;
+    private const int MIN_HEADER_LEN = 12;
 
-    public const int RTP_VERSION = 2;
+    private const int RTP_VERSION = 2;
 
-    public int Version = RTP_VERSION;                       // 2 bits.
-    public int PaddingFlag;                             // 1 bit.
-    public int HeaderExtensionFlag;                     // 1 bit.
-    public int CSRCCount;                               // 4 bits
+    private int Version = RTP_VERSION;                       // 2 bits.
+    private int PaddingFlag;                             // 1 bit.
+    private int HeaderExtensionFlag;                     // 1 bit.
+    private int CSRCCount;                               // 4 bits
     public int MarkerBit;                               // 1 bit.
     public int PayloadType;                             // 7 bits.
     public UInt16 SequenceNumber;                           // 16 bits.
     public uint Timestamp;                                  // 32 bits.
     public uint SyncSource;                                 // 32 bits.
     public int[] CSRCList;                                  // 32 bits.
-    public UInt16 ExtensionProfile;                         // 16 bits.
-    public UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
-    public byte[] ExtensionPayload;
+    private UInt16 ExtensionProfile;                         // 16 bits.
+    private UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
+    private byte[] ExtensionPayload;
 
     public int PayloadSize;
-    public byte PaddingCount;
+    private byte PaddingCount;
     public DateTime ReceivedTime;
     public int Length => MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4));
 

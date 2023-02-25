@@ -97,7 +97,7 @@ internal sealed class RTPChannel : IDisposable
     /// <summary>
     /// Closes the session's RTP and control ports.
     /// </summary>
-    public void Close(string reason)
+    private void Close(string reason)
     {
         if (!_isClosed)
         {

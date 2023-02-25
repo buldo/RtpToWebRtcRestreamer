@@ -62,13 +62,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// </remarks>
     internal class RTCPSenderReport
     {
-        public const int SENDER_PAYLOAD_SIZE = 20;
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;
+        private const int SENDER_PAYLOAD_SIZE = 20;
+        private const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;
 
-        public RTCPHeader Header;
+        private RTCPHeader Header;
         public uint SSRC;
         public ulong NtpTimestamp;
-        public uint RtpTimestamp;
+        private uint RtpTimestamp;
         public uint PacketCount;
         public uint OctetCount;
         public List<ReceptionReportSample> ReceptionReports;

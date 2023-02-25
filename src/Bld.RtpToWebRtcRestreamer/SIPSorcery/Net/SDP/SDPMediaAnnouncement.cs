@@ -49,9 +49,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
         public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
         public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
-        public const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
+        private const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
 
-        public const string m_CRLF = "\r\n";
+        private const string m_CRLF = "\r\n";
 
         private static readonly ILogger logger = Log.Logger;
 
@@ -64,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
         public string IcePwd;                   // If ICE is being used the password for the STUN requests.
         public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
-        public bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
+        private bool IceEndOfCandidates;         // If ICE candidate trickling is being used this needs to be set if all candidates have been gathered.
         public IceRolesEnum? IceRole = null;
         public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
         public int MLineIndex = 0;
@@ -137,8 +137,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// </summary>
         public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
 
-        public List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
-        public List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
+        private List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
+        private List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
         public List<string> IceCandidates;
 
         /// <summary>
@@ -329,7 +329,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             return announcement;
         }
 
-        public string GetFormatListToString()
+        private string GetFormatListToString()
         {
             if (Media == SDPMediaTypesEnum.application)
             {
@@ -357,7 +357,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
         }
 
-        public string GetFormatListAttributesToString()
+        private string GetFormatListAttributesToString()
         {
             if (Media == SDPMediaTypesEnum.application)
             {

@@ -156,7 +156,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <summary>
         /// The SDP offered by the remote call party for this session.
         /// </summary>
-        protected SDP.SDP RemoteDescription { get; set; }
+        protected SDP.SDP RemoteDescription { get; private set; }
 
         /// <summary>
         /// If this session is using a secure context this flag MUST be set to indicate

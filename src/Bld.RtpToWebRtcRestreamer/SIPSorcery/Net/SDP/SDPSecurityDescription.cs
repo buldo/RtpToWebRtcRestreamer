@@ -15,14 +15,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     /// (SDP) Security Descriptions for Media Streams implementation as basically defined in RFC 4568.
     /// <code>
     /// Example 1: Parse crypto attribute
-    /// 
+    ///
     /// string crypto = "a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==";
     /// SDPSecurityDescription localcrypto = SDPSecurityDescription.Parse(crypto);
-    /// 
+    ///
     /// </code>
     /// <code>
     /// Example 2: Parse crypto attribute
-    /// 
+    ///
     /// SDPMediaAnnouncement mediaAudio = new SDPMediaAnnouncement();
     /// //[...]set some SDPMediaAnnouncement properties
     /// SDPSecurityDescription localcrypto = SDPSecurityDescription.CreateNew();
@@ -30,10 +30,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     /// localcrypto.KeyParams.Add(SDPSecurityDescription.KeyParameter.CreateNew(SDPSecurityDescription.CryptoSuites.AES_CM_128_HMAC_SHA1_32));
     /// mediaAudio.SecurityDescriptions.Add(localcrypto);
     /// mediaAudio.ToString();
-    /// 
+    ///
     /// string crypto = "a=crypto:1 AES_256_CM_HMAC_SHA1_80 inline:GTuZoqOsesiK4wfyL7Rsq6uHHwhqVGA+aVuAUnsmWktYacZyJu6/6tUQeUti0Q==";
     /// SDPSecurityDescription desc = SDPSecurityDescription.Parse(crypto);
-    /// 
+    ///
     /// </code>
     /// </summary>
     internal class SDPSecurityDescription
@@ -65,13 +65,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         {
             private const string COLON = ":";
             private const string PIPE = "|";
-            public const string KEY_METHOD = "inline";
+            private const string KEY_METHOD = "inline";
             private byte[] m_key;
             //128 bit for AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_32, F8_128_HMAC_SHA1_80, AEAD_AES_128_GCM
             //192 bit for AES_192_CM_HMAC_SHA1_80, AES_192_CM_HMAC_SHA1_32
-            //256 bit for AEAD_AES_256_GCM, AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32 
+            //256 bit for AEAD_AES_256_GCM, AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32
             //
-            public byte[] Key
+            private byte[] Key
             {
                 get
                 {
@@ -94,10 +94,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             }
             private byte[] m_salt;
             //112 bit for AES_CM_128_HMAC_SHA1_80, AES_CM_128_HMAC_SHA1_32, F8_128_HMAC_SHA1_80
-            //112 bit for AES_192_CM_HMAC_SHA1_80,AES_192_CM_HMAC_SHA1_32 , AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32 
+            //112 bit for AES_192_CM_HMAC_SHA1_80,AES_192_CM_HMAC_SHA1_32 , AES_256_CM_HMAC_SHA1_80, AES_256_CM_HMAC_SHA1_32
             //96 bit for AEAD_AES_128_GCM
             //
-            public byte[] Salt
+            private byte[] Salt
             {
                 get
                 {
@@ -118,7 +118,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     m_salt = value;
                 }
             }
-            public string KeySaltBase64
+            private string KeySaltBase64
             {
                 get
                 {
@@ -133,7 +133,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 }
             }
             private ulong m_lifeTime;
-            public ulong LifeTime
+            private ulong LifeTime
             {
                 get
                 {
@@ -175,7 +175,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 }
             }
             private string m_sLifeTime;
-            public string LifeTimeString
+            private string LifeTimeString
             {
                 get
                 {
@@ -203,13 +203,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     m_sLifeTime = $"2^{(ulong)d}";
                 }
             }
-            public uint MkiValue
+            private uint MkiValue
             {
                 get;
                 set;
             }
             private uint m_mkiLength;
-            public uint MkiLength
+            private uint MkiLength
             {
                 get
                 {
@@ -227,7 +227,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                     }
                 }
             }
-            public KeyParameter(byte[] key, byte[] salt)
+            private KeyParameter(byte[] key, byte[] salt)
             {
                 Key = key;
                 Salt = salt;
@@ -432,7 +432,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         internal class SessionParameter
         {
-            public enum SrtpSessionParams
+            private enum SrtpSessionParams
             {
                 unknown,
                 kdr,
@@ -443,29 +443,29 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 fec_key,
                 wsh
             }
-            public SrtpSessionParams SrtpSessionParam
+            private SrtpSessionParams SrtpSessionParam
             {
                 get;
                 set;
             }
             [SuppressMessage("ReSharper", "UnusedMember.Global")]
-            public enum FecTypes
+            private enum FecTypes
             {
                 unknown,
                 FEC_SRTP,
                 SRTP_FEC
             }
-            public FecTypes FecOrder
+            private FecTypes FecOrder
             {
                 get;
                 set;
             }
-            public const string FEC_KEY_PREFIX = "FEC_KEY=";
-            public const string FEC_ORDER_PREFIX = "FEC_ORDER=";
-            public const string WSH_PREFIX = "WSH=";
-            public const string KDR_PREFIX = "KDR=";
+            private const string FEC_KEY_PREFIX = "FEC_KEY=";
+            private const string FEC_ORDER_PREFIX = "FEC_ORDER=";
+            private const string WSH_PREFIX = "WSH=";
+            private const string KDR_PREFIX = "KDR=";
             private ulong m_kdr;
-            public ulong Kdr
+            private ulong Kdr
             {
                 get
                 {
@@ -507,7 +507,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 }
             }
             private ulong m_wsh = 64;
-            public ulong Wsh
+            private ulong Wsh
             {
                 get
                 {
@@ -524,13 +524,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                 }
             }
 
-            public KeyParameter FecKey
+            private KeyParameter FecKey
             {
                 get;
                 set;
             }
 
-            public SessionParameter(SrtpSessionParams paramType)
+            private SessionParameter(SrtpSessionParams paramType)
             {
                 SrtpSessionParam = paramType;
             }
@@ -631,7 +631,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
 
         private uint m_iTag = 1;
-        public uint Tag
+        private uint Tag
         {
             get
             {
@@ -651,27 +651,27 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         }
 
 
-        public CryptoSuites CryptoSuite
+        private CryptoSuites CryptoSuite
         {
             get;
             set;
         }
 
-        public List<KeyParameter> KeyParams
+        private List<KeyParameter> KeyParams
         {
             get;
             set;
         }
-        public SessionParameter SessionParam
+        private SessionParameter SessionParam
         {
             get;
             set;
         }
-        public SDPSecurityDescription() : this(1, CryptoSuites.AES_CM_128_HMAC_SHA1_80)
+        private SDPSecurityDescription() : this(1, CryptoSuites.AES_CM_128_HMAC_SHA1_80)
         {
 
         }
-        public SDPSecurityDescription(uint tag, CryptoSuites cryptoSuite)
+        private SDPSecurityDescription(uint tag, CryptoSuites cryptoSuite)
         {
             Tag = tag;
             CryptoSuite = cryptoSuite;

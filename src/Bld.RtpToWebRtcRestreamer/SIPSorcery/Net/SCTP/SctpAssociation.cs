@@ -107,7 +107,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// buffer space, in number of bytes, that will be used for the receive buffer
         /// for this association.
         /// </summary>
-        public uint ARwnd { get; private set; }
+        private uint ARwnd { get; set; }
 
         private uint _remoteVerificationTag;
         private uint _remoteInitialTSN;
@@ -117,7 +117,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// will supply this field if it is needed (the UDP encapsulation transport needs it,
         /// the DTSL transport does not).
         /// </summary>
-        public IPEndPoint Destination { get; private set; }
+        private IPEndPoint Destination { get; set; }
 
         /// <summary>
         /// Indicates the current connection state of the association.
@@ -278,7 +278,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <summary>
         /// Initialises the association's properties that record the state of the remote party.
         /// </summary>
-        internal void InitRemoteProperties(
+        private void InitRemoteProperties(
             uint remoteVerificationTag,
             uint remoteInitialTSN,
             uint remoteARwnd)
@@ -528,7 +528,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         /// <param name="chunk">The control chunk to get a packet for.</param>
         /// <returns>A single control chunk SCTP packet.</returns>
-        public SctpPacket GetControlPacket(SctpChunk chunk)
+        private SctpPacket GetControlPacket(SctpChunk chunk)
         {
             var pkt = new SctpPacket(
            _sctpSourcePort,
@@ -573,7 +573,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// the association.
         /// </summary>
         /// <param name="errorCause">The cause of the abort.</param>
-        public void Abort(ISctpErrorCause errorCause)
+        private void Abort(ISctpErrorCause errorCause)
         {
             if (!_wasAborted)
             {
@@ -594,7 +594,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Updates the state of the association.
         /// </summary>
         /// <param name="state">The new association state.</param>
-        internal void SetState(SctpAssociationState state)
+        private void SetState(SctpAssociationState state)
         {
             logger.LogTrace($"SCTP state for association {ID} changed to {state}.");
             State = state;
@@ -634,7 +634,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Sends a SCTP chunk to the remote party.
         /// </summary>
         /// <param name="chunk">The chunk to send.</param>
-        internal void SendChunk(SctpChunk chunk)
+        private void SendChunk(SctpChunk chunk)
         {
             if (!_wasAborted)
             {

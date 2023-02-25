@@ -44,7 +44,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <summary>
         /// The CRC32c checksum of this SCTP packet.
         /// </summary>
-        public uint Checksum { get; private set; }
+        private uint Checksum { get; set; }
 
         /// <summary>
         /// Serialises the header to a pre-allocated buffer.

@@ -5,28 +5,28 @@ internal class RTPEvent
     /// <summary>
     /// The ID for the event. For a DTMF tone this is the digit/letter to represent.
     /// </summary>
-    public byte EventID { get; private set; }
+    private byte EventID { get; set; }
 
     /// <summary>
     /// If true the end of event flag will be set.
     /// </summary>
-    public bool EndOfEvent { get; set; }
+    private bool EndOfEvent { get; set; }
 
     /// <summary>
     /// The volume level to set.
     /// </summary>
-    public ushort Volume { get; private set; }
+    private ushort Volume { get; set; }
 
     /// <summary>
     /// The duration for the full event.
     /// </summary>
-    public ushort TotalDuration { get; private set; }
+    private ushort TotalDuration { get; set; }
 
 
     /// <summary>
     /// The ID of the event payload type. This gets set in the RTP header.
     /// </summary>
-    public int PayloadTypeID { get; private set; }
+    private int PayloadTypeID { get;  set; }
 
     /// <summary>
     /// Create a new RTP event object.

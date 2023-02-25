@@ -60,7 +60,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
         {
         }
 
-        public SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
+        private SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
         {
             this._forwardEngine = forwardEngine;
             this._reverseEngine = reverseEngine;

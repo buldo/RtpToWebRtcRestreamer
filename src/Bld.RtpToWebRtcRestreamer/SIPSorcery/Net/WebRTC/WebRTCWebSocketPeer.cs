@@ -39,7 +39,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// primarily intended for use in testing. In real application scenarios it's 
         /// normally desirable to accept all remote ICE candidates.
         /// </summary>
-        public Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
+        private Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
 
         public Func<Task<RTCPeerConnection>> CreatePeerConnection;
 

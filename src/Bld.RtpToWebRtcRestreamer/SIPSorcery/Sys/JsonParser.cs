@@ -140,7 +140,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
             return splitArray;
         }
 
-        internal static object ParseValue(Type type, string json)
+        private static object ParseValue(Type type, string json)
         {
             if (type == typeof(string))
             {

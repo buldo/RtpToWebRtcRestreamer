@@ -33,7 +33,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
         public RTCPSenderReport SenderReport { get; private set; }
         public RTCPReceiverReport ReceiverReport { get; private set; }
-        public RTCPSDesReport SDesReport { get; private set; }
+        private RTCPSDesReport SDesReport { get; set; }
         public RTCPBye Bye { get; set; }
         public RTCPFeedback Feedback { get; set; }
 

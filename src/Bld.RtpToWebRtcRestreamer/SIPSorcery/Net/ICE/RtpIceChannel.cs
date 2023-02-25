@@ -116,8 +116,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         private const int MAX_CHECKLIST_ENTRIES = 25;       // Maximum number of entries that can be added to the checklist of candidate pairs.
         private const string MDNS_TLD = ".local";           // Top Level Domain name for multicast lookups as per RFC6762.
         private const int CONNECTED_CHECK_PERIOD = 3;       // The period in seconds to send STUN connectivity checks once connected.
-        public const string SDP_MID = "0";
-        public const int SDP_MLINE_INDEX = 0;
+        private const string SDP_MID = "0";
+        private const int SDP_MLINE_INDEX = 0;
 
         /// <summary>
         /// ICE transaction spacing interval in milliseconds.
@@ -132,12 +132,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <summary>
         /// The period in seconds after which a connection will be flagged as disconnected.
         /// </summary>
-        public static int DISCONNECTED_TIMEOUT_PERIOD = 8;
+        private static int DISCONNECTED_TIMEOUT_PERIOD = 8;
 
         /// <summary>
         /// The period in seconds after which a connection will be flagged as failed.
         /// </summary>
-        public static int FAILED_TIMEOUT_PERIOD = 16;
+        private static int FAILED_TIMEOUT_PERIOD = 16;
 
         private readonly IPAddress _bindAddress;
         private readonly RTCIceTransportPolicy _policy;
@@ -169,7 +169,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         }
 
         private ConcurrentBag<RTCIceCandidate> _candidates = new ConcurrentBag<RTCIceCandidate>();
-        internal ConcurrentBag<RTCIceCandidate> _remoteCandidates = new ConcurrentBag<RTCIceCandidate>();
+        private ConcurrentBag<RTCIceCandidate> _remoteCandidates = new ConcurrentBag<RTCIceCandidate>();
 
         /// <summary>
         /// A queue of remote ICE candidates that have been added to the session and that
@@ -180,12 +180,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <summary>
         /// The state of the checklist as the ICE checks are carried out.
         /// </summary>
-        internal ChecklistState _checklistState = ChecklistState.Running;
+        private ChecklistState _checklistState = ChecklistState.Running;
 
         /// <summary>
         /// The checklist of local and remote candidate pairs
         /// </summary>
-        internal List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
+        private List<ChecklistEntry> _checklist = new List<ChecklistEntry>();
 
         /// <summary>
         /// For local candidates this implementation takes a shortcut to reduce complexity.
@@ -199,7 +199,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// will need to be transmitted to the remote peer but they don't need to
         /// be used when populating the checklist.
         /// </summary>
-        internal readonly RTCIceCandidate _localChecklistCandidate;
+        private readonly RTCIceCandidate _localChecklistCandidate;
 
         /// <summary>
         /// If the connectivity checks are successful this will hold the entry that was
@@ -213,7 +213,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <remarks>
         /// As specified in https://tools.ietf.org/html/rfc8445#section-14.
         /// </remarks>
-        internal int RTO
+        private int RTO
         {
             get
             {
@@ -228,8 +228,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
         public readonly string LocalIceUser;
         public readonly string LocalIcePassword;
-        public string RemoteIceUser { get; private set; }
-        public string RemoteIcePassword { get; private set; }
+        private string RemoteIceUser { get; set; }
+        private string RemoteIcePassword { get; set; }
 
         private bool _closed;
         private Timer _connectivityChecksTimer;
@@ -1057,7 +1057,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// </remarks>
         /// <param name="stunMessage">The STUN message received.</param>
         /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
-        public void ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
+        private void ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
         {
             if (_closed)
             {

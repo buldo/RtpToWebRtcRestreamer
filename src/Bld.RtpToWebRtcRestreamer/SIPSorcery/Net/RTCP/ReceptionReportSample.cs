@@ -17,7 +17,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Fraction lost since last SR/RR.
         /// </summary>
-        public byte FractionLost;
+        private byte FractionLost;
 
         /// <summary>
         /// Cumulative number of packets lost (signed!).
@@ -27,7 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Extended last sequence number received.
         /// </summary>
-        public uint ExtendedHighestSequenceNumber;
+        private uint ExtendedHighestSequenceNumber;
 
         /// <summary>
         /// Interarrival jitter.
@@ -37,12 +37,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Last SR packet from this source.
         /// </summary>
-        public uint LastSenderReportTimestamp;
+        private uint LastSenderReportTimestamp;
 
         /// <summary>
         /// Delay since last SR packet.
         /// </summary>
-        public uint DelaySinceLastSenderReport;
+        private uint DelaySinceLastSenderReport;
 
         /// <summary>
         /// Creates a new Reception Report object.

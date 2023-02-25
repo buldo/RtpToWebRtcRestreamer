@@ -24,8 +24,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
     internal class RtpVP8Header
     {
         // Payload Descriptor Fields.
-        public bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
-        public bool IsPictureIDPresent;
+        private bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
+        private bool IsPictureIDPresent;
         
         private int _length;
         public int Length

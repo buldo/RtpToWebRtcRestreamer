@@ -58,7 +58,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         // <summary>
         ///  a=extmap - Mapping for RTP header extensions
         /// </summary>
-        public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; }
+        private Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; }
 
         /// <summary>
         /// Represents the original and default stream status for the track. This is set
@@ -105,7 +105,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <param name="ssrcAttributes">Optional. If the track is being created from an SDP announcement this
         /// parameter contains a list of the SSRC attributes that should then match the RTP header SSRC value
         /// for this track.</param>
-        public MediaStreamTrack(
+        private MediaStreamTrack(
             SDPMediaTypesEnum kind,
             List<SDPAudioVideoMediaFormat> capabilities,
             MediaStreamStatusEnum streamStatus = MediaStreamStatusEnum.SendRecv,

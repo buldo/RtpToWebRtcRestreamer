@@ -28,7 +28,7 @@ internal class NetServices
     /// To date the only case this has cropped up for is Mac OS as per https://github.com/sipsorcery/sipsorcery/issues/207.
     /// </summary>
     private static bool? _supportsDualModeIPv4PacketInfo;
-    public static bool SupportsDualModeIPv4PacketInfo
+    private static bool SupportsDualModeIPv4PacketInfo
     {
         get
         {

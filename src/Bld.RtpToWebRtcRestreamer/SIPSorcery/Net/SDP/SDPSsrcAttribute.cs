@@ -13,7 +13,7 @@
 
         public string Cname { get; set; }
 
-        public string GroupID { get; set; }
+        private string GroupID { get; set; }
 
         /// <summary>
         /// Default constructor.

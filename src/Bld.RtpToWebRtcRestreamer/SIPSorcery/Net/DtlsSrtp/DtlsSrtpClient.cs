@@ -164,7 +164,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
         }
 
-        protected byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
+        private byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
         {
             if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
             {
@@ -219,7 +219,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return ForceUseExtendedMasterSecret;
         }
 
-        protected void PrepareSrtpSharedSecret()
+        private void PrepareSrtpSharedSecret()
         {
             //Set master secret back to security parameters (only works in old bouncy castle versions)
             //mContext.SecurityParameters.MasterSecret = masterSecret;

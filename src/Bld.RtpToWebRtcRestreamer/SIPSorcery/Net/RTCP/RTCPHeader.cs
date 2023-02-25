@@ -28,7 +28,7 @@
 // Packet Type (PT) (8 bits) = Contains the constant 200 to identify this as an RTCP SR packet.
 // Length (16 bits) = The length of this RTCP packet in 32-bit words minus one, including the header and any padding.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -42,13 +42,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     internal class RTCPHeader
     {
         public const int HEADER_BYTES_LENGTH = 4;
-        public const int RTCP_VERSION = 2;
+        private const int RTCP_VERSION = 2;
 
-        public int Version { get; private set; } = RTCP_VERSION;         // 2 bits.
-        public int PaddingFlag { get; private set; } // 1 bit.
+        private int Version { get; set; } = RTCP_VERSION;         // 2 bits.
+        private int PaddingFlag { get; set; } // 1 bit.
         public int ReceptionReportCount { get; private set; } // 5 bits.
         public RTCPReportTypesEnum PacketType { get; private set; }       // 8 bits.
-        public UInt16 Length { get; private set; }                        // 16 bits.
+        private UInt16 Length { get; set; }                        // 16 bits.
 
         /// <summary>
         /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
@@ -73,7 +73,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// RTCP feedback report.
         /// </summary>
         /// <returns>True if the header is for an RTCP feedback report or false if not.</returns>
-        public bool IsFeedbackReport()
+        private bool IsFeedbackReport()
         {
             if (PacketType == RTCPReportTypesEnum.RTPFB ||
                 PacketType == RTCPReportTypesEnum.PSFB)

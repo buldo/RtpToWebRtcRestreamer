@@ -10,11 +10,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 18 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -74,7 +74,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <summary>
         /// The type of the chunk parameter.
         /// </summary>
-        public ushort ParameterType { get; protected set; }
+        public ushort ParameterType { get; private set; }
 
         /// <summary>
         /// The information contained in the parameter.
@@ -88,7 +88,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         public SctpUnrecognisedParameterActions UnrecognisedAction =>
             (SctpUnrecognisedParameterActions) (ParameterType >> 14 & 0x03);
 
-        protected SctpTlvChunkParameter()
+        private SctpTlvChunkParameter()
         { }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// Calculates the length for the chunk parameter.
         /// </summary>
         /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
-        /// <returns>The length of the chunk. This method gets overridden by specialised SCTP parameters 
+        /// <returns>The length of the chunk. This method gets overridden by specialised SCTP parameters
         /// that each have their own fields that determine the length.</returns>
         public ushort GetParameterLength(bool padded)
         {
@@ -120,14 +120,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// </summary>
         /// <param name="buffer">The buffer to write the chunk parameter header to.</param>
         /// <param name="posn">The position in the buffer to write at.</param>
-        protected void WriteParameterHeader(byte[] buffer, int posn)
+        private void WriteParameterHeader(byte[] buffer, int posn)
         {
             NetConvert.ToBuffer(ParameterType, buffer, posn);
             NetConvert.ToBuffer(GetParameterLength(false), buffer, posn + 2);
         }
 
         /// <summary>
-        /// Serialises the chunk parameter to a pre-allocated buffer. This method gets overridden 
+        /// Serialises the chunk parameter to a pre-allocated buffer. This method gets overridden
         /// by specialised SCTP chunk parameters that have their own data and need to be serialised
         /// differently.
         /// </summary>
@@ -164,7 +164,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// </summary>
         /// <param name="buffer">The buffer holding the serialised chunk parameter.</param>
         /// <param name="posn">The position in the buffer that indicates the start of the chunk parameter.</param>
-        public ushort ParseFirstWord(byte[] buffer, int posn)
+        private ushort ParseFirstWord(byte[] buffer, int posn)
         {
             ParameterType = NetConvert.ParseUInt16(buffer, posn);
             var paramLen = NetConvert.ParseUInt16(buffer, posn + 2);

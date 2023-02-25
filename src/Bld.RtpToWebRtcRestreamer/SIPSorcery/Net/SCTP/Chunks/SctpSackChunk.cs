@@ -29,7 +29,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// </summary>
     internal class SctpSackChunk : SctpChunk
     {
-        public const int FIXED_PARAMETERS_LENGTH = 12;
+        private const int FIXED_PARAMETERS_LENGTH = 12;
         private const int GAP_REPORT_LENGTH = 4;
         private const int DUPLICATE_TSN_LENGTH = 4;
 

@@ -192,7 +192,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <param name="buffer">The buffer holding the serialised chunk.</param>
         /// <param name="posn">The position to start parsing at.</param>
         /// <returns>An SCTP chunk instance.</returns>
-        public static SctpChunk ParseBaseChunk(byte[] buffer, int posn)
+        private static SctpChunk ParseBaseChunk(byte[] buffer, int posn)
         {
             var chunk = new SctpChunk();
             var chunkLength = chunk.ParseFirstWord(buffer, posn);

@@ -7,7 +7,7 @@
 //
 // Notes: Design decisions:
 // - No switch from Sender Report to Receiver Report if there are no sends
-//   within the 2 sample period Window. For 2 party sessions the tiny 
+//   within the 2 sample period Window. For 2 party sessions the tiny
 //   bandwidth saving does not justify the complexity.
 // - First report will be sent straight after the first RTP send. The initial
 //   delay is inconsequential for 2 party sessions.
@@ -22,7 +22,7 @@
 // History:
 // 29 Dec 2019	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -35,8 +35,8 @@ using Microsoft.Extensions.Logging;
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 {
     /// <summary>
-    /// Represents an RTCP session intended to be used in conjunction with an 
-    /// RTP session. This class needs to get notified of all RTP sends and receives 
+    /// Represents an RTCP session intended to be used in conjunction with an
+    /// RTP session. This class needs to get notified of all RTP sends and receives
     /// and will take care of RTCP reporting.
     /// </summary>
     /// <remarks>
@@ -77,7 +77,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Timestamp that the RTCP session was created at.
         /// </summary>
-        public DateTime CreatedAt { get; private set; }
+        private DateTime CreatedAt { get; set; }
 
         /// <summary>
         /// Timestamp that the last RTP or RTCP packet for was received at.
@@ -89,22 +89,22 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// occurs if no RTP or RTCP packets have been received during an expected
         /// interval.
         /// </summary>
-        public bool IsTimedOut { get; private set; }
+        private bool IsTimedOut { get; set; }
 
         /// <summary>
         /// Number of RTP packets sent to the remote party.
         /// </summary>
-        public uint PacketsSentCount { get; private set; }
+        private uint PacketsSentCount { get; set; }
 
         /// <summary>
         /// Number of RTP bytes sent to the remote party.
         /// </summary>
-        public uint OctetsSentCount { get; private set; }
+        private uint OctetsSentCount { get; set; }
 
         /// <summary>
         /// The last RTP timestamp sent by us.
         /// </summary>
-        public uint LastRtpTimestampSent { get; private set; }
+        private uint LastRtpTimestampSent { get; set; }
 
         /// <summary>
         /// Number of RTP packets received from the remote party.
@@ -114,7 +114,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <summary>
         /// Number of RTP bytes received from the remote party.
         /// </summary>
-        public uint OctetsReceivedCount { get; private set; }
+        private uint OctetsReceivedCount { get; set; }
 
         /// <summary>
         /// Unique common name field for use in SDES packets.
@@ -125,12 +125,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// Indicates whether the RTCP session has been closed.
         /// An RTCP BYE request will typically trigger an close.
         /// </summary>
-        public bool IsClosed { get; private set; }
+        private bool IsClosed { get; set; }
 
         /// <summary>
         /// Indicates the sample rate for RTP media data.
         /// </summary>
-        public int PayloadSampleRateHz { get; set; } = 0;
+        private int PayloadSampleRateHz { get; set; } = 0;
 
         /// <summary>
         /// Time to schedule the delivery of RTCP reports.
@@ -139,7 +139,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
         private ReceptionReport m_receptionReport;
         private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
-        
+
         /// <summary>
         /// Default constructor.
         /// </summary>

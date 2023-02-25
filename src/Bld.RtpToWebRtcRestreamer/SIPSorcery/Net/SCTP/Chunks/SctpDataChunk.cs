@@ -26,25 +26,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <summary>
         /// The length in bytes of the fixed parameters used by the DATA chunk.
         /// </summary>
-        public const int FIXED_PARAMETERS_LENGTH = 12;
+        private const int FIXED_PARAMETERS_LENGTH = 12;
 
         /// <summary>
         /// The (U)nordered bit, if set to true, indicates that this is an
         /// unordered DATA chunk.
         /// </summary>
-        public bool Unordered { get; set; }
+        public bool Unordered { get; private set; }
 
         /// <summary>
         /// The (B)eginning fragment bit, if set, indicates the first fragment
         /// of a user message.
         /// </summary>
-        public bool Begining { get; set; } = true;
+        public bool Begining { get; private set; } = true;
 
         /// <summary>
         /// The (E)nding fragment bit, if set, indicates the last fragment of
         /// a user message.
         /// </summary>
-        public bool Ending { get; set; } = true;
+        public bool Ending { get; private set; } = true;
 
         /// <summary>
         /// This value represents the Transmission Sequence Number (TSN) for

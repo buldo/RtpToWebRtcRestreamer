@@ -19,7 +19,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
 {
     internal class STUNConnectionIdAttribute : STUNAttribute
     {
-        public readonly uint ConnectionId;
+        private readonly uint ConnectionId;
 
         public STUNConnectionIdAttribute(byte[] attributeValue)
             : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)

@@ -63,7 +63,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// <summary>
         /// The key size when generating random keys for self signed certificates.
         /// </summary>
-        public const int DefaultKeySize = 2048;
+        private const int DefaultKeySize = 2048;
 
         public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, X509CertificateStructure c)
         {
@@ -89,7 +89,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return Fingerprint(certificate);
         }
 
-        public static RTCDtlsFingerprint Fingerprint(X509CertificateStructure c)
+        private static RTCDtlsFingerprint Fingerprint(X509CertificateStructure c)
         {
             var sha256 = DigestUtilities.GetDigest(HashAlgorithmTag.Sha256.ToString());
             var der = c.GetEncoded();
@@ -102,7 +102,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             };
         }
 
-        public static byte[] DigestOf(IDigest dAlg, byte[] input)
+        private static byte[] DigestOf(IDigest dAlg, byte[] input)
         {
             dAlg.BlockUpdate(input, 0, input.Length);
             var result = new byte[dAlg.GetDigestSize()];
@@ -210,7 +210,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
         }
 
-        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        private static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
         {
             var tuple = CreateSelfSignedBouncyCastleCert(subjectName, issuerName, issuerPrivateKey);
             var certificate = tuple.certificate;
@@ -221,7 +221,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return (tlsCertificate, privateKey);
         }
 
-        public static AsymmetricKeyParameter CreatePrivateKeyResource()
+        private static AsymmetricKeyParameter CreatePrivateKeyResource()
         {
             const int keyStrength = DefaultKeySize;
 

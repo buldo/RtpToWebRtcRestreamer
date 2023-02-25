@@ -151,9 +151,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// </summary>
         private RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; set; }
 
-        public bool IsDtlsNegotiationComplete { get; private set; }
+        private bool IsDtlsNegotiationComplete { get; set; }
 
-        public RTCSessionDescription localDescription { get; private set; }
+        private RTCSessionDescription localDescription { get; set; }
 
         private RTCSessionDescription remoteDescription { get; set; }
 
@@ -186,7 +186,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the
         /// remote peer.
         /// </summary>
-        public RTCDtlsFingerprint DtlsCertificateFingerprint { get; private set; }
+        private RTCDtlsFingerprint DtlsCertificateFingerprint { get; set; }
 
         /// <summary>
         /// The SCTP transport over which SCTP data is sent and received.
@@ -195,7 +195,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// WebRTC API definition:
         /// https://www.w3.org/TR/webrtc/#attributes-15
         /// </remarks>
-        public RTCSctpTransport sctp { get; private set; }
+        private RTCSctpTransport sctp { get; set; }
 
         /// <summary>
         /// Informs the application that session negotiation needs to be done (i.e. a createOffer call

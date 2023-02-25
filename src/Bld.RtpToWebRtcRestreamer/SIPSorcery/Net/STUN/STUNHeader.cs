@@ -78,7 +78,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 {
     internal class STUNHeader
     {
-        public const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
+        private const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
         public const int STUN_HEADER_LENGTH = 20;
         public const UInt32 MAGIC_COOKIE = 0x2112A442;
         public const int TRANSACTION_ID_LENGTH = 12;
@@ -110,7 +110,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
             return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
         }
 
-        public static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
+        private static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
         {
             var startIndex = bufferSegment.Offset;
             if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)

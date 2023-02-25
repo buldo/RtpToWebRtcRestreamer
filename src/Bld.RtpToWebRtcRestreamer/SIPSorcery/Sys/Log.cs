@@ -1,8 +1,8 @@
 //----------------------------------------------------------------------------
 // File Name: Log.cs
-// 
-// Description: 
-// Log provides a one stop shop for log settings rather then have configuration 
+//
+// Description:
+// Log provides a one stop shop for log settings rather then have configuration
 // functions in separate classes.
 //
 // Author(s):
@@ -48,7 +48,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
         /// Intended to be called if the application wide logging configuration changes. Will force
         /// the singleton logger to be re-created.
         /// </summary>
-        internal static void Reset()
+        private static void Reset()
         {
             _logger = null;
         }

@@ -26,44 +26,44 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
 {
     internal class SctpDataSender
     {
-        public const ushort DEFAULT_SCTP_MTU = 1300;
+        private const ushort DEFAULT_SCTP_MTU = 1300;
 
-        public const uint CONGESTION_WINDOW_FACTOR = 4380;
+        private const uint CONGESTION_WINDOW_FACTOR = 4380;
 
         /// <summary>
         /// Used to limit the number of packets that are sent at any one time, i.e. when
         /// the transmit timer fires do not send more than this many packets.
         /// </summary>
-        public const int MAX_BURST = 4;
+        private const int MAX_BURST = 4;
 
         /// <summary>
         /// Milliseconds to wait between bursts if no SACK chunks are received in the interim.
         /// Eventually if no SACK chunks are received the congestion or receiver windows
         /// will reach zero and enforce a longer period.
         /// </summary>
-        public const int BURST_PERIOD_MILLISECONDS = 50;
+        private const int BURST_PERIOD_MILLISECONDS = 50;
 
         /// <summary>
         /// Retransmission timeout initial value.
         /// </summary>
-        public const int RTO_INITIAL_SECONDS = 3;
+        private const int RTO_INITIAL_SECONDS = 3;
 
         /// <summary>
         /// The minimum value for the Retransmission timeout.
         /// </summary>
-        public const int RTO_MIN_SECONDS = 1;
+        private const int RTO_MIN_SECONDS = 1;
 
         /// <summary>
         /// The maximum value for the Retransmission timeout.
         /// </summary>
-        public const int RTO_MAX_SECONDS = 60;
+        private const int RTO_MAX_SECONDS = 60;
 
         private static readonly ILogger logger = LogFactory.CreateLogger<SctpDataSender>();
 
         /// <summary>
         /// Callback method that sends data chunks.
         /// </summary>
-        internal Action<SctpDataChunk> _sendDataChunk;
+        private Action<SctpDataChunk> _sendDataChunk;
 
         private readonly string _associationID;
         private readonly ushort _defaultMTU;
@@ -79,7 +79,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Congestion control window (cwnd, in bytes), which is adjusted by
         /// the sender based on observed network conditions.
         /// </summary>
-        internal uint _congestionWindow;
+        private uint _congestionWindow;
 
         /// <summary>
         /// The current Advertised Receiver Window Credit for the remote peer.
@@ -87,7 +87,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// in number of bytes, that will be used for the receive buffer for DATA
         /// chunks sent to it.
         /// </summary>
-        internal uint _receiverWindow;
+        private uint _receiverWindow;
 
         /// <summary>
         /// Slow-start threshold (ssthresh, in bytes), which is used by the
@@ -103,15 +103,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         private uint _initialRemoteARwnd;
 
-        internal int _burstPeriodMilliseconds = BURST_PERIOD_MILLISECONDS;
+        private int _burstPeriodMilliseconds = BURST_PERIOD_MILLISECONDS;
         /// <summary>
         /// Retransmission timeout.
         /// See https://datatracker.ietf.org/doc/html/rfc4960#section-6.3.1
         /// </summary>
-        internal double _rto = RTO_INITIAL_SECONDS * 1000;
-        internal int _rtoInitialMilliseconds = RTO_INITIAL_SECONDS * 1000;
-        internal int _rtoMinimumMilliseconds = RTO_MIN_SECONDS * 1000;
-        internal int _rtoMaximumMilliseconds = RTO_MAX_SECONDS * 1000;
+        private double _rto = RTO_INITIAL_SECONDS * 1000;
+        private int _rtoInitialMilliseconds = RTO_INITIAL_SECONDS * 1000;
+        private int _rtoMinimumMilliseconds = RTO_MIN_SECONDS * 1000;
+        private int _rtoMaximumMilliseconds = RTO_MAX_SECONDS * 1000;
         private bool _hasRoundTripTime;
         private double _smoothedRoundTripTime; // "SRTT"
         private double _roundTripTimeVariation; // "RTTVAR"
@@ -121,7 +121,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <summary>
         /// A count of the bytes currently in-flight to the remote peer.
         /// </summary>
-        internal uint _outstandingBytes =>
+        private uint _outstandingBytes =>
             (uint)(_unconfirmedChunks.Sum(x => x.Value.UserData.Length));
 
         /// <summary>
@@ -149,12 +149,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// Chunks that have been flagged by a gap report from the remote peer as missing
         /// and that need to be re-sent.
         /// </summary>
-        internal ConcurrentDictionary<uint, int> _missingChunks = new ConcurrentDictionary<uint, int>();
+        private ConcurrentDictionary<uint, int> _missingChunks = new ConcurrentDictionary<uint, int>();
 
         /// <summary>
         /// The Transaction Sequence Number (TSN) that will be used in the next DATA chunk sent.
         /// </summary>
-        public uint TSN { get; internal set; }
+        public uint TSN { get; private set; }
 
         public SctpDataSender(
             string associationID,

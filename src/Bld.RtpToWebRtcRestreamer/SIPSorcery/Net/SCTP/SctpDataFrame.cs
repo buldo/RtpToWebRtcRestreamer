@@ -4,7 +4,7 @@
     {
         public static SctpDataFrame Empty = new SctpDataFrame();
 
-        public bool Unordered;
+        private bool Unordered;
         public ushort StreamID;
         public ushort StreamSeqNum;
         public uint PPID;

@@ -34,7 +34,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// </summary>
     internal class SctpInitChunk : SctpChunk
     {
-        public const int FIXED_PARAMETERS_LENGTH = 16;
+        private const int FIXED_PARAMETERS_LENGTH = 16;
 
         // Lengths for the optional parameter values.
         private const ushort PARAMVAL_LENGTH_IPV4 = 4;
@@ -76,7 +76,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// <summary>
         /// Optional list of IP address parameters that can be included in INIT chunks.
         /// </summary>
-        public List<IPAddress> Addresses = new List<IPAddress>();
+        private List<IPAddress> Addresses = new List<IPAddress>();
 
         /// <summary>
         /// The sender of the INIT shall use this parameter to suggest to the
@@ -90,13 +90,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// resolving the name.Using this parameter might make it more likely
         /// for the association to work across a NAT box.
         /// </summary>
-        public string HostnameAddress;
+        private string HostnameAddress;
 
         /// <summary>
         /// The sender of INIT uses this parameter to list all the address types
         /// it can support. Options are IPv4 (5), IPv6 (6) and Hostname (11).
         /// </summary>
-        public List<SctpInitChunkParameterType> SupportedAddressTypes = new List<SctpInitChunkParameterType>();
+        private List<SctpInitChunkParameterType> SupportedAddressTypes = new List<SctpInitChunkParameterType>();
 
         /// <summary>
         /// INIT ACK only. Mandatory. This parameter value MUST contain all the necessary state and
@@ -111,7 +111,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
         /// be reported to the sender. This parameter value field will contain unrecognized parameters 
         /// copied from the  INIT chunk complete with Parameter Type, Length, and Value fields.
         /// </summary>
-        public List<byte[]> UnrecognizedParameters = new List<byte[]>();
+        private List<byte[]> UnrecognizedParameters = new List<byte[]>();
 
         private SctpInitChunk()
         { }

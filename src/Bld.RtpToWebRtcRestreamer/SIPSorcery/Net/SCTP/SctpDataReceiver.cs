@@ -291,7 +291,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// TSNs have not yet been received.
         /// </summary>
         /// <returns>A list of TSN gap blocks. An empty list means there are no gaps.</returns>
-        internal List<SctpTsnGapBlock> GetForwardTSNGaps()
+        private List<SctpTsnGapBlock> GetForwardTSNGaps()
         {
             var gaps = new List<SctpTsnGapBlock>();
 

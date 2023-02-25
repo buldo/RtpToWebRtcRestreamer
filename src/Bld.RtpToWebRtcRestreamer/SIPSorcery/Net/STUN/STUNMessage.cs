@@ -9,7 +9,7 @@
 // History:
 // 26 Nov 2010	Aaron Clauson	Created, Hobart, Australia.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
         /// For parsed STUN messages this indicates whether a valid fingerprint
         /// as attached to the message.
         /// </summary>
-        public bool isFingerprintValid { get; private set; }
+        private bool isFingerprintValid { get; set; }
 
         /// <summary>
         /// For received STUN messages this is the raw buffer.
@@ -41,8 +41,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
 
         public STUNHeader Header = new STUNHeader();
         public List<STUNAttribute> Attributes = new List<STUNAttribute>();
-
-        public STUNMessage()
+        private STUNMessage()
         { }
 
         public STUNMessage(STUNMessageTypesEnum stunMessageType)

@@ -150,7 +150,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// received on. For transports that don't use an IP transport directly this parameter
         /// can be set to null and it will not form part of the COOKIE ECHO checks.</param>
         /// <returns>An SCTP packet with a single INIT ACK chunk.</returns>
-        protected SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
+        private SctpPacket GetInitAck(SctpPacket initPacket, IPEndPoint remoteEP)
         {
             var initChunk = initPacket.Chunks.Single(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
 
@@ -246,7 +246,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// </summary>
         /// <param name="buffer">The buffer holding the state cookie.</param>
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
-        protected string GetCookieHMAC(byte[] buffer)
+        private string GetCookieHMAC(byte[] buffer)
         {
             var cookie = Encoding.UTF8.GetString(buffer).FromJson<SctpTransportCookie>();
             string hmacCalculated;

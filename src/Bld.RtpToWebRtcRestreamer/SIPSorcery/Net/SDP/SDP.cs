@@ -18,7 +18,7 @@
 // Relevant Bits from the RFC:
 // "SDP is intended for describing mulitmedia sessions for the purposes of session
 // announcement, session invitation, and other forms of multimedia session
-// initiation." 
+// initiation."
 //
 // SDP Includes:
 // - Session name and Purpose,
@@ -48,7 +48,7 @@
 // description or end of the whole session description.
 //
 // The sequence CRLF (0x0d0a) is used to end a record, although parsers should be
-// tolerant and also accept records terminated with a single newline character. 
+// tolerant and also accept records terminated with a single newline character.
 //
 // Session description
 // v=  (protocol version)
@@ -82,7 +82,7 @@
 // a=* (zero or more media attribute lines)
 //
 // Example SDP Description:
-// 
+//
 // v=0
 // o=mhandley 2890844526 2890842807 IN IP4 126.16.64.4
 // s=SDP Seminar
@@ -96,8 +96,8 @@
 // m=video 51372 RTP/AVP 31
 // m=application 32416 udp wb
 // a=orient:portrait
-// 
-// License: 
+//
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -113,23 +113,23 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     internal class SDP
     {
-        public const string CRLF = "\r\n";
-        public const decimal SDP_PROTOCOL_VERSION = 0M;
-        public const string GROUP_ATRIBUTE_PREFIX = "group";
+        private const string CRLF = "\r\n";
+        private const decimal SDP_PROTOCOL_VERSION = 0M;
+        private const string GROUP_ATRIBUTE_PREFIX = "group";
         public const string DTLS_FINGERPRINT_ATTRIBUTE_PREFIX = "fingerprint";
         public const string ICE_CANDIDATE_ATTRIBUTE_PREFIX = "candidate";
         public const string ICE_SETUP_ATTRIBUTE_PREFIX = "setup";
-        public const string ADDRESS_TYPE_IPV4 = "IP4";
-        public const string ADDRESS_TYPE_IPV6 = "IP6";
-        public const string DEFAULT_TIMING = "0 0";
+        private const string ADDRESS_TYPE_IPV4 = "IP4";
+        private const string ADDRESS_TYPE_IPV6 = "IP6";
+        private const string DEFAULT_TIMING = "0 0";
         public const string MEDIA_ID_ATTRIBUTE_PREFIX = "mid";
         public const int IGNORE_RTP_PORT_NUMBER = 9;
         public const string TELEPHONE_EVENT_ATTRIBUTE = "telephone-event";
         public const int MEDIA_INDEX_NOT_PRESENT = -1;
-        public const string MEDIA_INDEX_TAG_NOT_PRESENT = "";
-        
+        private const string MEDIA_INDEX_TAG_NOT_PRESENT = "";
+
         // ICE attributes.
-        public const string ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX = "ice-lite";
+        private const string ICE_LITE_IMPLEMENTATION_ATTRIBUTE_PREFIX = "ice-lite";
         public const string ICE_UFRAG_ATTRIBUTE_PREFIX = "ice-ufrag";
         public const string ICE_PWD_ATTRIBUTE_PREFIX = "ice-pwd";
         public const string END_ICE_CANDIDATES_ATTRIBUTE = "end-of-candidates";
@@ -137,31 +137,31 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         private static readonly ILogger logger = Log.Logger;
 
-        public decimal Version = SDP_PROTOCOL_VERSION;
+        private decimal Version = SDP_PROTOCOL_VERSION;
 
         private string m_rawSdp;
 
         // Owner fields.
-        public string Username = "-";       // Username of the session originator.
+        private string Username = "-";       // Username of the session originator.
         public string SessionId = "-";      // Unique Id for the session.
-        public int AnnouncementVersion; // Version number for each announcement, number must be increased for each subsequent SDP modification.
-        public string NetworkType = "IN";   // Type of network, IN = Internet.
-        public string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
-        public string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
-        public string Owner
+        private int AnnouncementVersion; // Version number for each announcement, number must be increased for each subsequent SDP modification.
+        private string NetworkType = "IN";   // Type of network, IN = Internet.
+        private string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
+        private string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
+        private string Owner
         {
             get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + AddressOrHost; }
         }
 
-        public string SessionName = "sipsorcery";            // Common name of the session.
-        public string Timing = DEFAULT_TIMING;
-        public List<string> BandwidthAttributes = new List<string>();
+        private string SessionName = "sipsorcery";            // Common name of the session.
+        private string Timing = DEFAULT_TIMING;
+        private List<string> BandwidthAttributes = new List<string>();
 
         // Optional fields.
-        public string SessionDescription;
-        public string URI;                          // URI for additional information about the session.
-        public string[] OriginatorEmailAddresses;   // Email addresses for the person responsible for the session.
-        public string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
+        private string SessionDescription;
+        private string URI;                          // URI for additional information about the session.
+        private string[] OriginatorEmailAddresses;   // Email addresses for the person responsible for the session.
+        private string[] OriginatorPhoneNumbers;     // Phone numbers for the person responsible for the session.
         public IceImplementationEnum IceImplementation = IceImplementationEnum.full;
         public string IceUfrag;                     // If ICE is being used the username for the STUN requests.
         public string IcePwd;                       // If ICE is being used the password for the STUN requests.
@@ -182,14 +182,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         /// <summary>
         /// The stream status of this session. The default is sendrecv.
-        /// If child media announcements have an explicit status set then 
+        /// If child media announcements have an explicit status set then
         /// they take precedence.
         /// </summary>
-        public MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; }
+        private MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; }
 
-        public List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
+        private List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
 
-        public SDP()
+        private SDP()
         { }
 
         public SDP(IPAddress address)
@@ -735,13 +735,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
                                     var pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                     var pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
                                     activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
-                                    
+
                                     pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
                                     activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
-                                    
+
                                     pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
                                     activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
-                                    
+
                                 }
                                 else
                                 {
@@ -774,7 +774,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             }
         }
 
-        public void AddExtra(string attribute)
+        private void AddExtra(string attribute)
         {
             if (!string.IsNullOrWhiteSpace(attribute))
             {

@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SDPMediaFormat.cs
 //
-// Description: 
+// Description:
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -10,7 +10,7 @@
 // ??	        Aaron Clauson	Created, Hobart, Australia.
 // 18 Oct 2020  Aaron Clauson   Renamed from SDPMediaFormat to SDPAudioVideoMediaFormat.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     /// standard "PCMU", "8" represents "PCMA" etc. For other media types that have variable parameters
     /// additional attributes can be provided.
     /// </summary>
-    /// <remarks>This struct is designed to be immutable. If new information becomes available for a 
+    /// <remarks>This struct is designed to be immutable. If new information becomes available for a
     /// media format, such as when parsing further into an SDP payload, a new media format should be
     /// created.
     /// TODO: With C#9 the struct could become a "record" type.
@@ -32,24 +32,24 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
     internal struct SDPAudioVideoMediaFormat
     {
         public const int DYNAMIC_ID_MIN = 96;
-        public const int DYNAMIC_ID_MAX = 127;
+        private const int DYNAMIC_ID_MAX = 127;
         public const int DEFAULT_AUDIO_CHANNEL_COUNT = 1;
 
-        public static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat { _isEmpty = true };
+        private static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat { _isEmpty = true };
 
         /// <summary>
         /// Indicates whether the format is for audio or video.
         /// </summary>
-        public SDPMediaTypesEnum Kind { get; }
+        private SDPMediaTypesEnum Kind { get; }
 
         /// <summary>
         /// The mandatory ID for the media format. Warning, even though some ID's are normally used to represent
         /// a standard media type, e.g "0" for "PCMU" etc, there is no guarantee that's the case. "0" can be used
         /// for any media format if there is a format attribute describing it. In the absence of a format attribute
         /// then it is required that it represents a standard media type.
-        /// 
+        ///
         /// Note (rj2): FormatID MUST be string (not int), in case ID is 't38' and type is 'image'
-        /// Note to above: The FormatID is always numeric for profile "RTP/AVP" and "RTP/SAVP", see 
+        /// Note to above: The FormatID is always numeric for profile "RTP/AVP" and "RTP/SAVP", see
         /// https://tools.ietf.org/html/rfc4566#section-5.14 and section on "fmt":
         /// "If the <proto> sub-field is "RTP/AVP" or "RTP/SAVP" the <fmt>
         /// sub-fields contain RTP payload type numbers"
@@ -62,10 +62,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// a=rtpmap:101 telephone-event/8000   // "101" is the media format ID.
         /// a=fmtp:101 0-16
         /// </code>
-        /// <code> 
+        /// <code>
         /// // t38 example from https://tools.ietf.org/html/rfc4612.
-        /// m=audio 6800 RTP/AVP 0 98 
-        /// a=rtpmap:98 t38/8000 
+        /// m=audio 6800 RTP/AVP 0 98
+        /// a=rtpmap:98 t38/8000
         /// a=fmtp:98 T38FaxVersion=2;T38FaxRateManagement=transferredTCF
         /// </code>
         /// </summary>
@@ -87,7 +87,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// <code>
         /// // Example
         /// a=rtpmap:0 PCMU/8000
-        /// a=rtpmap:101 telephone-event/8000 
+        /// a=rtpmap:101 telephone-event/8000
         /// a=fmtp:101 0-16                     <-- "101 0-16" is the fmtp attribute.
         /// </code>
         /// </summary>
@@ -98,7 +98,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// <code>
         /// // Example
         /// a=rtpmap:0 PCMU/8000                <-- "PCMU" is the media format name.
-        /// a=rtpmap:101 telephone-event/8000 
+        /// a=rtpmap:101 telephone-event/8000
         /// a=fmtp:101 0-16
         /// </code>
         /// </summary>
@@ -107,7 +107,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         private bool _isEmpty;
 
         /// <summary>
-        /// Creates a new SDP media format for a well known media type. Well known type are those that use 
+        /// Creates a new SDP media format for a well known media type. Well known type are those that use
         /// ID's less than 96 and don't require rtpmap or fmtp attributes.
         /// </summary>
         public SDPAudioVideoMediaFormat(SDPWellKnownMediaFormatsEnum knownFormat)
@@ -132,7 +132,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         }
 
         /// <summary>
-        /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use 
+        /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use
         /// ID's between 96 and 127 inclusive and require an rtpmap attribute and optionally an fmtp attribute.
         /// </summary>
         public SDPAudioVideoMediaFormat(SDPMediaTypesEnum kind, int id, string rtpmap, string fmtp = null)
@@ -155,7 +155,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         }
 
         /// <summary>
-        /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use 
+        /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use
         /// ID's between 96 and 127 inclusive and require an rtpmap attribute and optionally an fmtp attribute.
         /// </summary>
         public SDPAudioVideoMediaFormat(SDPMediaTypesEnum kind, int id, string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT, string fmtp = null)
@@ -180,7 +180,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         }
 
         /// <summary>
-        /// Creates a new SDP media format from a Video Format instance. The Video Format contains the 
+        /// Creates a new SDP media format from a Video Format instance. The Video Format contains the
         /// equivalent information to the SDP format object but has well defined video properties separate
         /// from the SDP serialisation.
         /// </summary>
@@ -308,7 +308,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// <summary>
         /// Parses an rtpmap attribute in the form "name/clock" or "name/clock/channels".
         /// </summary>
-        public static bool TryParseRtpmap(string rtpmap, out string name, out int clockRate, out int channels)
+        private static bool TryParseRtpmap(string rtpmap, out string name, out int clockRate, out int channels)
         {
             name = null;
             clockRate = 0;
@@ -344,7 +344,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         }
 
         /// <summary>
-        /// Attempts to get a common SDP media format that supports telephone events. 
+        /// Attempts to get a common SDP media format that supports telephone events.
         /// If compatible an RTP event format will be returned that matches the local format with the remote format.
         /// </summary>
         /// <param name="a">The first of supported media formats.</param>

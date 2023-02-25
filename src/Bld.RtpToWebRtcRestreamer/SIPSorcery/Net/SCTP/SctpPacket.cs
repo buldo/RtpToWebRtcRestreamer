@@ -34,7 +34,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// The position in a serialised SCTP packet buffer that the checksum 
         /// field starts.
         /// </summary>
-        public const int CHECKSUM_BUFFER_POSITION = 8;
+        private const int CHECKSUM_BUFFER_POSITION = 8;
 
         private static readonly ILogger logger = LogFactory.CreateLogger<SctpPacket>();
 
@@ -53,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// A list of the blobs for chunks that weren't recognised when parsing
         /// a received packet.
         /// </summary>
-        public List<byte[]> UnrecognisedChunks;
+        private List<byte[]> UnrecognisedChunks;
 
         private SctpPacket()
         { }

@@ -30,13 +30,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     /// </remarks>
     internal class SctpShutdownChunk : SctpChunk
     {
-        public const int FIXED_PARAMETERS_LENGTH = 4;
+        private const int FIXED_PARAMETERS_LENGTH = 4;
 
         /// <summary>
         /// This parameter contains the TSN of the last chunk received in
         /// sequence before any gaps.
         /// </summary>
-        public uint? CumulativeTsnAck;
+        private uint? CumulativeTsnAck;
 
         private SctpShutdownChunk() : base(SctpChunkType.SHUTDOWN)
         { }

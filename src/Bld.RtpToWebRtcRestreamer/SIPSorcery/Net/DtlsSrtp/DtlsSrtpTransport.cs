@@ -56,12 +56,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
         /// </summary>
-        public int TimeoutMilliseconds = DefaultTimeoutMilliseconds;
+        private int TimeoutMilliseconds = DefaultTimeoutMilliseconds;
 
         /// <summary>
         /// Sets the period in milliseconds that receive will wait before try retransmission
         /// </summary>
-        public int RetransmissionMilliseconds = DefaultRetransmissionWaitMillis;
+        private int RetransmissionMilliseconds = DefaultRetransmissionWaitMillis;
 
         public Action<byte[]> OnDataReady;
 
@@ -248,42 +248,42 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return _connection.GetRemoteCertificate();
         }
 
-        protected byte[] GetMasterServerKey()
+        private byte[] GetMasterServerKey()
         {
             return _connection.GetSrtpMasterServerKey();
         }
 
-        protected byte[] GetMasterServerSalt()
+        private byte[] GetMasterServerSalt()
         {
             return _connection.GetSrtpMasterServerSalt();
         }
 
-        protected byte[] GetMasterClientKey()
+        private byte[] GetMasterClientKey()
         {
             return _connection.GetSrtpMasterClientKey();
         }
 
-        protected byte[] GetMasterClientSalt()
+        private byte[] GetMasterClientSalt()
         {
             return _connection.GetSrtpMasterClientSalt();
         }
 
-        protected SrtpPolicy GetSrtpPolicy()
+        private SrtpPolicy GetSrtpPolicy()
         {
             return _connection.GetSrtpPolicy();
         }
 
-        protected SrtpPolicy GetSrtcpPolicy()
+        private SrtpPolicy GetSrtcpPolicy()
         {
             return _connection.GetSrtcpPolicy();
         }
 
-        protected IPacketTransformer GenerateRtpEncoder()
+        private IPacketTransformer GenerateRtpEncoder()
         {
             return GenerateTransformer(_connection.IsClient(), true);
         }
 
-        protected IPacketTransformer GenerateRtpDecoder()
+        private IPacketTransformer GenerateRtpDecoder()
         {
             //Generate the reverse result of "GenerateRtpEncoder"
             return GenerateTransformer(!_connection.IsClient(), true);
@@ -294,13 +294,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return GenerateTransformer(_connection.IsClient(), false);
         }
 
-        protected IPacketTransformer GenerateRtcpDecoder()
+        private IPacketTransformer GenerateRtcpDecoder()
         {
             //Generate the reverse result of "GenerateRctpEncoder"
             return GenerateTransformer(!_connection.IsClient(), false);
         }
 
-        protected IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
+        private IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
         {
             SrtpTransformEngine engine;
             if (!isClient)
@@ -320,7 +320,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return engine.GetRtcpTransformer();
         }
 
-        public byte[] UnprotectRTP(byte[] packet, int offset, int length)
+        private byte[] UnprotectRTP(byte[] packet, int offset, int length)
         {
             lock (_srtpDecoder)
             {
@@ -344,7 +344,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return 0; //No Errors
         }
 
-        public byte[] ProtectRTP(byte[] packet, int offset, int length)
+        private byte[] ProtectRTP(byte[] packet, int offset, int length)
         {
             lock (_srtpEncoder)
             {
@@ -368,7 +368,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return 0; //No Errors
         }
 
-        public byte[] UnprotectRtcp(byte[] packet, int offset, int length)
+        private byte[] UnprotectRtcp(byte[] packet, int offset, int length)
         {
             lock (_srtcpDecoder)
             {
@@ -391,7 +391,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return 0; //No Errors
         }
 
-        public byte[] ProtectRtcp(byte[] packet, int offset, int length)
+        private byte[] ProtectRtcp(byte[] packet, int offset, int length)
         {
             lock (_srtcpEncoder)
             {
@@ -547,7 +547,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// </summary>
         /// <param name="currentWaitMillis"></param>
         /// <returns></returns>
-        protected int BackOff(int currentWaitMillis)
+        private int BackOff(int currentWaitMillis)
         {
             return Math.Min(currentWaitMillis * 2, 6000);
         }

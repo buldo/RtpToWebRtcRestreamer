@@ -71,7 +71,7 @@ internal sealed class VideoStream
         }
     }
 
-    public int Index = -1;
+    private int Index = -1;
 
     #region EVENTS
 
@@ -111,22 +111,22 @@ internal sealed class VideoStream
 
     #region PROPERTIES
 
-    public bool AcceptRtpFromAny => true;
+    private bool AcceptRtpFromAny => true;
 
     /// <summary>
     /// The remote video track. Will be null if the remote party is not sending this media
     /// </summary>
-    public MediaStreamTrack? RemoteTrack { get; set; }
+    private MediaStreamTrack? RemoteTrack { get; set; }
 
     /// <summary>
     /// The remote RTP end point this stream is sending media to.
     /// </summary>
-    public IPEndPoint DestinationEndPoint { get; set; }
+    private IPEndPoint DestinationEndPoint { get; set; }
 
 
     #endregion PROPERTIES
 
-    public bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
+    private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
     {
         packet = new RTPPacket(buf);
         packet.Header.ReceivedTime = header.ReceivedTime;

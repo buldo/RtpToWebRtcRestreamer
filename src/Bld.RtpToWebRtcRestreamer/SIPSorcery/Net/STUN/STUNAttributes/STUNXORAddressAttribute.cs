@@ -24,11 +24,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
     /// </summary>
     internal class STUNXORAddressAttribute : STUNAttribute
     {
-        public const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+        private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
 
-        public int Family = 1;      // Ipv4 = 1, IPv6 = 2.
-        public int Port;
-        public IPAddress Address;
+        private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
+        private int Port;
+        private IPAddress Address;
 
         public override UInt16 PaddedLength
         {

@@ -231,7 +231,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
             return nal_units;
         }
 
-        protected void CheckKeyFrame(int nal_type, ref bool? isKeyFrame)
+        private void CheckKeyFrame(int nal_type, ref bool? isKeyFrame)
         {
             if (isKeyFrame == null)
             {

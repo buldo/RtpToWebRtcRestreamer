@@ -35,7 +35,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
     {
         private const ushort ERROR_CAUSE_LENGTH = 4;
 
-        public static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
+        private static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
             new List<SctpErrorCauseCode>
             {
                 SctpErrorCauseCode.OutOfResource,

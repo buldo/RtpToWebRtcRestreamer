@@ -24,11 +24,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 29 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -39,64 +39,59 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// </summary>
     internal class ReceptionReport
     {
-        //private const int MAX_DROPOUT = 3000;
-        //private const int MAX_MISORDER = 100;
-        //private const int MIN_SEQUENTIAL = 2;
-        private const int RTP_SEQ_MOD = 1 << 16;
-        //private const int MAX_POSITIVE_LOSS = 0x7fffff;
-        //private const int MAX_NEGATIVE_LOSS = 0x800000;
-        private const int SEQ_NUM_WRAP_LOW = 256;
-        private const int SEQ_NUM_WRAP_HIGH = 65280;
+        private const int RTPSeqMod = 1 << 16;
+        private const int SeqNumWrapLow = 256;
+        private const int SeqNumWrapHigh = 65280;
 
         /// <summary>
         /// Data source being reported.
         /// </summary>
-        public uint SSRC;
+        private readonly uint _ssrc;
 
         /// <summary>
         /// highest seq. number seen
         /// </summary>
-        private ushort m_max_seq;
+        private ushort _mMaxSeq;
 
         /// <summary>
         /// Increments by UInt16.MaxValue each time the sequence number wraps around.
         /// </summary>
-        private ulong m_cycles;
+        private ulong _mCycles;
 
         /// <summary>
         /// The first sequence number received.
         /// </summary>
-        private uint m_base_seq;
+        private uint _mBaseSeq;
 
         /// <summary>
         /// packets received.
         /// </summary>
-        private uint m_received;
+        private uint _mReceived;
 
         /// <summary>
         /// packet expected at last interval.
         /// </summary>
-        private ulong m_expected_prior;
+        private ulong _mExpectedPrior;
 
         /// <summary>
         /// packet received at last interval.
         /// </summary>
-        private uint m_received_prior;
+        private uint _mReceivedPrior;
 
         /// <summary>
         /// relative trans time for prev pkt.
         /// </summary>
-        private uint m_transit;
+        private uint _mTransit;
 
         /// <summary>
         /// Estimated jitter.
         /// </summary>
-        private uint m_jitter;
+        private uint _mJitter;
 
         /// <summary>
         /// Received last SR packet timestamp.
         /// </summary>
-        private ReceivedSRTimestamp m_receivedLSRTimestamp;
+        private ReceivedSRTimestamp _mReceivedLsrTimestamp;
 
         /// <summary>
         /// Creates a new Reception Report object.
@@ -104,7 +99,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <param name="ssrc">The synchronisation source this reception report is for.</param>
         public ReceptionReport(uint ssrc)
         {
-            SSRC = ssrc;
+            _ssrc = ssrc;
         }
 
         /// <summary>
@@ -113,7 +108,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <param name="srNtpTimestamp">The sender report timestamp.</param>
         internal void RtcpSenderReportReceived(ulong srNtpTimestamp)
         {
-            Interlocked.Exchange(ref m_receivedLSRTimestamp,
+            Interlocked.Exchange(ref _mReceivedLsrTimestamp,
                 new ReceivedSRTimestamp
                 {
                     NTP = (uint)((srNtpTimestamp >> 16) & 0xFFFFFFFF),
@@ -122,7 +117,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         }
 
         /// <summary>
-        /// Carries out the calculations required to measure properties related to the reception of 
+        /// Carries out the calculations required to measure properties related to the reception of
         /// received RTP packets. The algorithms employed are:
         ///  - RFC3550 A.1 RTP Data Header Validity Checks (for sequence number calculations).
         ///  - RFC3550 A.3 Determining Number of Packets Expected and Lost.
@@ -134,60 +129,49 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// For example for 8Khz audio the arrival timestamp needs 8000 ticks per second.</param>
         internal void RtpPacketReceived(ushort seq, uint rtpTimestamp, uint arrivalTimestamp)
         {
-            // Sequence number calculations and cycles as per RFC3550 Appendix A.1.
-            //if (m_received == 0)
-            //{
-            //    init_seq(seq);
-            //    m_max_seq = (ushort)(seq - 1);
-            //    m_probation = MIN_SEQUENTIAL;
-            //}
-            //bool ready = update_seq(seq);
-
-            if (m_received == 0)
+            if (_mReceived == 0)
             {
-                m_base_seq = seq;
+                _mBaseSeq = seq;
             }
 
-            m_received++;
+            _mReceived++;
 
-            if (seq == m_max_seq + 1)
+            if (seq == _mMaxSeq + 1)
             {
                 // Packet is in sequence.
-                m_max_seq = seq;
+                _mMaxSeq = seq;
             }
-            else if (seq == 0 && m_max_seq == ushort.MaxValue)
+            else if (seq == 0 && _mMaxSeq == ushort.MaxValue)
             {
                 // Packet is in sequence and a wrap around has occurred.
-                m_max_seq = seq;
-                m_cycles += RTP_SEQ_MOD;
+                _mMaxSeq = seq;
+                _mCycles += RTPSeqMod;
             }
             else
             {
                 // Out of order, duplicate or skipped sequence number.
-                if (seq > m_max_seq)
+                if (seq > _mMaxSeq)
                 {
                     // Seqnum is greater than expected. RTP packet is dropped or out of order.
-                    m_max_seq = seq;
+                    _mMaxSeq = seq;
                 }
-                else if (seq < SEQ_NUM_WRAP_LOW && m_max_seq > SEQ_NUM_WRAP_HIGH)
+                else if (seq < SeqNumWrapLow && _mMaxSeq > SeqNumWrapHigh)
                 {
                     // Seqnum is out of order and has wrapped.
-                    m_max_seq = seq;
-                    m_cycles += RTP_SEQ_MOD;
+                    _mMaxSeq = seq;
+                    _mCycles += RTPSeqMod;
                 }
             }
 
             // Estimating the Interarrival Jitter as defined in RFC3550 Appendix A.8.
             var transit = arrivalTimestamp - rtpTimestamp;
-            var d = (int)(transit - m_transit);
-            m_transit = transit;
+            var d = (int)(transit - _mTransit);
+            _mTransit = transit;
             if (d < 0)
             {
                 d = -d;
             }
-            m_jitter += (uint)(d - ((m_jitter + 8) >> 4));
-
-            //return ready;
+            _mJitter += (uint)(d - ((_mJitter + 8) >> 4));
         }
 
         /// <summary>
@@ -197,123 +181,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         public ReceptionReportSample GetSample(uint ntpTimestampNow)
         {
             // Determining the number of packets expected and lost in RFC3550 Appendix A.3.
-            var extended_max = m_cycles + m_max_seq;
-            var expected = extended_max - m_base_seq + 1;
+            var extendedMax = _mCycles + _mMaxSeq;
+            var expected = extendedMax - _mBaseSeq + 1;
             //int lost = (m_received == 0) ? 0 : (int)(expected - m_received);
 
-            var expected_interval = expected - m_expected_prior;
-            m_expected_prior = expected;
-            var received_interval = m_received - m_received_prior;
-            m_received_prior = m_received;
-            var lost_interval = (m_received == 0) ? 0 : expected_interval - received_interval;
-            var fraction = (byte)((expected_interval == 0 || lost_interval <= 0) ? 0 : (lost_interval << 8) / expected_interval);
+            var expectedInterval = expected - _mExpectedPrior;
+            _mExpectedPrior = expected;
+            var receivedInterval = _mReceived - _mReceivedPrior;
+            _mReceivedPrior = _mReceived;
+            var lostInterval = (_mReceived == 0) ? 0 : expectedInterval - receivedInterval;
+            var fraction = (byte)((expectedInterval == 0 || lostInterval <= 0) ? 0 : (lostInterval << 8) / expectedInterval);
 
             // In this case, the estimate is sampled for the reception report as:
-            var jitter = m_jitter >> 4;
+            var jitter = _mJitter >> 4;
 
-            var receivedLSRTimestamp = m_receivedLSRTimestamp;
-            var delay = receivedLSRTimestamp == null || receivedLSRTimestamp.ReceivedAt == DateTime.MinValue ?
-                0 : ntpTimestampNow - RTCPSession.DateTimeToNtpTimestamp32(receivedLSRTimestamp.ReceivedAt);
+            var receivedLsrTimestamp = _mReceivedLsrTimestamp;
+            var delay = receivedLsrTimestamp == null || receivedLsrTimestamp.ReceivedAt == DateTime.MinValue ?
+                0 : ntpTimestampNow - RTCPSession.DateTimeToNtpTimestamp32(receivedLsrTimestamp.ReceivedAt);
 
-            return new ReceptionReportSample(SSRC, fraction, (int)lost_interval, m_max_seq, jitter, receivedLSRTimestamp?.NTP ?? 0, delay);
+            return new ReceptionReportSample(_ssrc, fraction, (int)lostInterval, _mMaxSeq, jitter, receivedLsrTimestamp?.NTP ?? 0, delay);
         }
-
-        /// <summary>
-        /// NOTE 20 Dec 2020: This algorigthm. from RFC3550 Appendix A.1 is intended as part of determining when a new
-        /// RTP source should be accepted as valid. The intention is not necessarily to be used to determine when 
-        /// a reception report can be generated, which was wat it was being used for here.
-        /// 
-        /// Initialises the sequence number state for the reception RTP stream.
-        /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
-        /// </summary>
-        /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
-        //void init_seq(ushort seq)
-        //{
-        //    m_base_seq = seq;
-        //    m_max_seq = seq;
-        //    m_bad_seq = RTP_SEQ_MOD + 1;   /* so seq == bad_seq is false */
-        //    m_cycles = 0;
-        //    m_received = 0;
-        //    m_received_prior = 0;
-        //    m_expected_prior = 0;
-        //}
-
-        /// <summary>
-        /// NOTE 20 Dec 2020: This algorigthm. from RFC3550 Appendix A.1 is intended to decide when a new RTP
-        /// source should be accepted as valid. The intention is not necessarily to be used to determine when 
-        /// a reception report can be generated, which was wat it was being used for here.
-        /// 
-        /// Update the sequence number state for the reception RTP stream.
-        /// This method is from RFC3550 Appendix A.1 "RTP Data Header Validity Checks".
-        /// </summary>
-        /// <param name="seq">The sequence number from the received RTP packet that triggered this update.</param>
-        /// <returns>True when the required number of packets have been received and a report can be generated. False
-        /// indicates not yet enough data.</returns>
-        //bool update_seq(ushort seq)
-        //{
-        //    ushort udelta = (ushort)(seq - m_max_seq);
-
-        //    /*
-        //     * Source is not valid until MIN_SEQUENTIAL packets with
-        //     * sequential sequence numbers have been received.
-        //     */
-        //    if (m_probation > 0)
-        //    {
-        //        /* packet is in sequence */
-        //        if (seq == m_max_seq + 1)
-        //        {
-        //            m_probation--;
-        //            m_max_seq = seq;
-        //            if (m_probation == 0)
-        //            {
-        //                init_seq(seq);
-        //                m_received++;
-        //                return false;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            m_probation = MIN_SEQUENTIAL - 1;
-        //            m_max_seq = seq;
-        //        }
-        //        return true;
-        //    }
-        //    else if (udelta < MAX_DROPOUT)
-        //    {
-        //        /* in order, with permissible gap */
-        //        if (seq < m_max_seq)
-        //        {
-        //            /*
-        //             * Sequence number wrapped - count another 64K cycle.
-        //             */
-        //            m_cycles += RTP_SEQ_MOD;
-        //        }
-        //        m_max_seq = seq;
-        //    }
-        //    else if (udelta <= RTP_SEQ_MOD - MAX_MISORDER)
-        //    {
-        //        /* the sequence number made a very large jump */
-        //        if (seq == m_bad_seq)
-        //        {
-        //            /*
-        //             * Two sequential packets -- assume that the other side
-        //             * restarted without telling us so just re-sync
-        //             * (i.e., pretend this was the first packet).
-        //             */
-        //            init_seq(seq);
-        //        }
-        //        else
-        //        {
-        //            m_bad_seq = (uint)((seq + 1) & (RTP_SEQ_MOD - 1));
-        //            return true;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        /* duplicate or reordered packet */
-        //    }
-        //    m_received++;
-        //    return false;
-        //}
     }
 }

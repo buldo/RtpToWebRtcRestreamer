@@ -26,7 +26,7 @@
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //   |    CNAME=1    |     length    | user and domain name        ...
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// 
+//
 //   the CNAME item SHOULD have the format
 //   "user@host", or "host" if a user name is not available as on single-
 //   user systems.For both formats, "host" is either the fully qualified
@@ -42,11 +42,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 28 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -61,12 +61,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// </summary>
     internal class RTCPSDesReport
     {
-        public const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
-        public const int MAX_CNAME_BYTES = 255;
-        public const byte CNAME_ID = 0x01;
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
+        private const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
+        private const int MAX_CNAME_BYTES = 255;
+        private const byte CNAME_ID = 0x01;
+        private const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
 
-        public RTCPHeader Header;
+        private RTCPHeader Header;
         public uint SSRC { get; private set; }
         public string CNAME { get; private set; }
 
@@ -74,7 +74,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// Creates a new RTCP SDES payload that can be included in an RTCP packet.
         /// </summary>
         /// <param name="ssrc">The synchronisation source of the SDES.</param>
-        /// <param name="cname">Canonical End-Point Identifier SDES item. This should be a 
+        /// <param name="cname">Canonical End-Point Identifier SDES item. This should be a
         /// unique string common to all RTP streams in use by the application. Maximum
         /// length is 255 bytes (note bytes not characters).</param>
         public RTCPSDesReport(uint ssrc, string cname)
@@ -127,7 +127,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         }
 
         /// <summary>
-        /// Gets the raw bytes for the SDES item. This packet is ready to be included 
+        /// Gets the raw bytes for the SDES item. This packet is ready to be included
         /// directly in an RTCP packet.
         /// </summary>
         /// <returns>A byte array containing the serialised SDES item.</returns>

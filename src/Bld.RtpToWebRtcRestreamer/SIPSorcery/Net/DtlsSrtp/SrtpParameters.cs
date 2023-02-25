@@ -30,9 +30,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         //	SRTP_AES128_CM_HMAC_SHA1_32 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 32, 80, 112),
         // hrosa - converted lengths to work with bytes, not bits (1 byte = 8 bits)
         public static readonly SrtpParameters SrtpAes128CmHmacSha180 = new SrtpParameters(SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 14);
-        public static readonly SrtpParameters SrtpAes128CmHmacSha132 = new SrtpParameters(SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 14);
-        public static readonly SrtpParameters SrtpNullHmacSha180 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 0);
-        public static readonly SrtpParameters SrtpNullHmacSha132 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 0);
+        private static readonly SrtpParameters SrtpAes128CmHmacSha132 = new SrtpParameters(SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 14);
+        private static readonly SrtpParameters SrtpNullHmacSha180 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 0);
+        private static readonly SrtpParameters SrtpNullHmacSha132 = new SrtpParameters(SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 0);
 
 
         private readonly int _encType;

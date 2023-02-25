@@ -1,7 +1,7 @@
 ﻿//-----------------------------------------------------------------------------
 // Filename: SDPConnectionInformation.cs
 //
-// Description: 
+// Description:
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
@@ -9,7 +9,7 @@
 // History:
 // ??	Aaron Clauson	Created, Hobart, Australia.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -20,20 +20,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 {
     internal class SDPConnectionInformation
     {
-        public const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
-        public const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+        private const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
+        private const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
 
-        public const string m_CRLF = "\r\n";
+        private const string m_CRLF = "\r\n";
 
         /// <summary>
         /// Type of network, IN = Internet.
         /// </summary>
-        public string ConnectionNetworkType = "IN";
+        private string ConnectionNetworkType = "IN";
 
         /// <summary>
         /// Session level address family.
         /// </summary>
-        public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+        private string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
 
         /// <summary>
         /// IP or multicast address for the media connection.

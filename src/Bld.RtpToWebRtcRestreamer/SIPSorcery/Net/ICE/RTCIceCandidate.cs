@@ -25,12 +25,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
     internal class RTCIceCandidate
     {
-        public const string TCP_TYPE_KEY = "tcpType";
-        public const string REMOTE_ADDRESS_KEY = "raddr";
-        public const string REMOTE_PORT_KEY = "rport";
-        public const string CANDIDATE_PREFIX = "candidate";
+        private const string TCP_TYPE_KEY = "tcpType";
+        private const string REMOTE_ADDRESS_KEY = "raddr";
+        private const string REMOTE_PORT_KEY = "rport";
+        private const string CANDIDATE_PREFIX = "candidate";
 
-        public string sdpMid { get; set; }
+        private string sdpMid { get; set; }
 
         public ushort sdpMLineIndex { get; set; }
 
@@ -43,7 +43,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <remarks>
         /// See https://tools.ietf.org/html/rfc8445#section-5.1.1.3.
         /// </remarks>
-        public string foundation { get; private set; }
+        private string foundation { get; set; }
 
         /// <summary>
         ///  Is a positive integer between 1 and 256 (inclusive)
@@ -86,13 +86,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
         /// <summary>
         /// For TCP candidates the role they are fulfilling (client, server or both).
         /// </summary>
-        public RTCIceTcpCandidateType tcpType { get; }
+        private RTCIceTcpCandidateType tcpType { get; }
 
-        public string relatedAddress { get; private set; }
+        private string relatedAddress { get; set; }
 
-        public ushort relatedPort { get; private set; }
+        private ushort relatedPort { get; set; }
 
-        public string usernameFragment { get; }
+        private string usernameFragment { get; }
 
         /// <summary>
         /// This is the end point to use for a remote candidate. The address supplied for an ICE

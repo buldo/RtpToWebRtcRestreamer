@@ -86,11 +86,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             return 0;
         }
 
-        public static bool IPIs6Bone(IPAddress ip) {
+        private static bool IPIs6Bone(IPAddress ip) {
             return IPIsHelper(ip, k6BonePrefix, 16);
         }
 
-        public static bool IPIsSiteLocal(IPAddress ip) {
+        private static bool IPIsSiteLocal(IPAddress ip) {
             try
             {
                 // Can't use the helper because the prefix is 10 bits.
@@ -102,11 +102,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             return false;
         }
 
-        public static bool IPIsV4Compatibility (IPAddress ip) {
+        private static bool IPIsV4Compatibility (IPAddress ip) {
             return IPIsHelper(ip, kV4CompatibilityPrefix, 96);
         }
 
-        public static bool IPIs6To4(IPAddress ip) {
+        private static bool IPIs6To4(IPAddress ip) {
             return IPIsHelper(ip, k6To4Prefix, 16);
         }
 

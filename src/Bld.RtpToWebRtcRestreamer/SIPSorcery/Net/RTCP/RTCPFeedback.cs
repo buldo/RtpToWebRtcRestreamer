@@ -18,11 +18,11 @@
 //
 // Author(s):
 // TeraBitSoftware
-// 
+//
 // History:
 // 29 Jun 2020  TeraBitSoftware     Created.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -36,14 +36,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     {
         private static readonly ILogger logger = Log.Logger;
 
-        public int SENDER_PAYLOAD_SIZE = 20;
-        
-        public RTCPHeader Header;
+        private int SENDER_PAYLOAD_SIZE = 20;
+
+        private RTCPHeader Header;
         public uint SenderSSRC; // Packet Sender
-        public uint MediaSSRC;
-        public ushort PID; // Packet ID (PID): 16 bits to specify a lost packet, the RTP sequence number of the lost packet.
-        public ushort BLP; // bitmask of following lost packets (BLP): 16 bits
-        
+        private uint MediaSSRC;
+        private ushort PID; // Packet ID (PID): 16 bits to specify a lost packet, the RTP sequence number of the lost packet.
+        private ushort BLP; // bitmask of following lost packets (BLP): 16 bits
+
         /// <summary>
         /// Create a new RTCP Report from a serialised byte array.
         /// </summary>
@@ -641,9 +641,9 @@ the FB is less critical when those algorithms are used than if they
    picture will use more bits.
 
    Both MPEG - 4 and H.263 define a binary format for the "payload" of an
-  
+
      RPSI message that includes information such as the temporal ID of the
-  
+
      damaged picture and the size of the damaged region.This bit string
      is typically small (a couple of dozen bits), of variable length, and
    self - contained, i.e., contains all information that is necessary to

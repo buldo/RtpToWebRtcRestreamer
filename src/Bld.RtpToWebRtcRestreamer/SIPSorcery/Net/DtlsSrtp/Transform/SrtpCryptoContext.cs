@@ -430,7 +430,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAescm(RawPacket pkt)
+        private void ProcessPacketAescm(RawPacket pkt)
         {
             long ssrc = pkt.GetSsrc();
             var seqNo = pkt.GetSequenceNumber();
@@ -468,7 +468,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param pkt
          *            the RTP packet to be encrypted / decrypted
          */
-        public void ProcessPacketAesf8(RawPacket pkt)
+        private void ProcessPacketAesf8(RawPacket pkt)
         {
             // 11 bytes of the RTP header are the 11 bytes of the iv
             // the first byte of the RTP header is not used.

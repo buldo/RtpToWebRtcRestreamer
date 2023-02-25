@@ -37,11 +37,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
     /// </summary>
     internal class RTCPBye
     {
-        public const int MAX_REASON_BYTES = 255;
-        public const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
-        public const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
+        private const int MAX_REASON_BYTES = 255;
+        private const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
+        private const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
 
-        public RTCPHeader Header;
+        private RTCPHeader Header;
         public uint SSRC { get; private set; }
         public string Reason { get; private set; }
 
