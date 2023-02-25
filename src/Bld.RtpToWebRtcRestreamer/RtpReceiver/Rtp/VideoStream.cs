@@ -95,34 +95,26 @@ internal sealed class VideoStream
     /// </summary>
     private IPEndPoint DestinationEndPoint { get; set; }
 
-    public void OnReceiveRTPPacket(RTPHeader hdr, IPEndPoint remoteEndPoint, byte[] buffer)
+    public void OnReceiveRTPPacket(RTPPacket rtpPacket, IPEndPoint remoteEndPoint)
     {
         // Set the remote track SSRC so that RTCP reports can match the media type.
         if (RemoteTrack != null && RemoteTrack.Ssrc == 0 && DestinationEndPoint != null)
         {
-            var isValidSource = AdjustRemoteEndPoint(hdr.SyncSource, remoteEndPoint);
+            var isValidSource = AdjustRemoteEndPoint(rtpPacket.Header.SyncSource, remoteEndPoint);
 
             if (isValidSource)
             {
-                _logger.LogDebug($"Set remote track (index={_index}) SSRC to {hdr.SyncSource}.");
-                RemoteTrack.Ssrc = hdr.SyncSource;
+                _logger.LogDebug($"Set remote track (index={_index}) SSRC to {rtpPacket.Header.SyncSource}.");
+                RemoteTrack.Ssrc = rtpPacket.Header.SyncSource;
             }
         }
 
         if (RemoteTrack != null)
         {
-            LogIfWrongSeqNumber($"", hdr, RemoteTrack);
+            LogIfWrongSeqNumber($"", rtpPacket.Header, RemoteTrack);
         }
 
-        var rtpPacket = new RTPPacket(buffer)
-        {
-            Header =
-            {
-                ReceivedTime = hdr.ReceivedTime
-            }
-        };
-
-        var codec = GetFormatForPayloadID(rtpPacket.Header.PayloadType);
+        var codec = GetFormatForPayloadId(rtpPacket.Header.PayloadType);
         if (codec != null)
         {
             ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, codec.Value);
@@ -130,7 +122,7 @@ internal sealed class VideoStream
         }
     }
 
-    private VideoCodecsEnum? GetFormatForPayloadID(int hdrPayloadType)
+    private VideoCodecsEnum? GetFormatForPayloadId(int hdrPayloadType)
     {
         if (hdrPayloadType == 97 || hdrPayloadType == 96)
         {
@@ -145,7 +137,7 @@ internal sealed class VideoStream
         OnRtpPacketReceivedByIndex?.Invoke(_index, ipEndPoint, rtpPacket);
     }
 
-    private void LogIfWrongSeqNumber(string trackType, RTPHeader header, MediaStreamTrack track)
+    private void LogIfWrongSeqNumber(string trackType, SIPSorcery.Net.RTP.RTPHeader header, MediaStreamTrack track)
     {
         if (track.LastRemoteSeqNum != 0 &&
             header.SequenceNumber != (track.LastRemoteSeqNum + 1) &&

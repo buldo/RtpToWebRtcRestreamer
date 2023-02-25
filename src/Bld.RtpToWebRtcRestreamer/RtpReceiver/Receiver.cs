@@ -1,4 +1,6 @@
 ﻿using System.Net;
+
+using Bld.RtpToWebRtcRestreamer.Common;
 using Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 using Microsoft.Extensions.Logging;
 
@@ -38,13 +40,12 @@ internal class Receiver
 
     private void VideoStreamOnOnVideoFrameReceivedByIndex(int arg1, IPEndPoint arg2, uint arg3, byte[] arg4)
     {
-        //Console.WriteLine($"{arg1}::{arg2}::{arg3}::{arg5}");
         OnVideoFrameReceivedByIndex?.Invoke(arg1, arg2, arg3, arg4);
     }
 
     private void OnReceiveRTPPacket(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
-        var hdr = new RTPHeader(buffer);
-        _videoStream.OnReceiveRTPPacket(hdr, remoteEndPoint, buffer);
+        var rtpPacket = new RTPPacket(buffer);
+        _videoStream.OnReceiveRTPPacket(rtpPacket, remoteEndPoint);
     }
 }
