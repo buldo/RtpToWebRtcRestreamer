@@ -37,7 +37,7 @@ namespace Bld.RtpToWebRtcRestreamer
             });
 
             _receiver = new Receiver(rtpListenEndpoint, loggerFactory.CreateLogger<Receiver>(), RtpProcessor);
-            _streamMultiplexer = new StreamMultiplexer(_receiver, _loggerFactory.CreateLogger<StreamMultiplexer>());
+            _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
 
             _periodicalManagementTask = BackgroundTask();
         }
@@ -74,7 +74,7 @@ namespace Bld.RtpToWebRtcRestreamer
 
             var videoTrack = new MediaStreamTrack(
                 new VideoFormat(VideoCodecsEnum.H264, 96),
-                MediaStreamStatusEnum.SendRecv);
+                MediaStreamStatusEnum.SendOnly);
             pc.AddTrack(videoTrack);
 
             pc.onconnectionstatechange += (state) =>

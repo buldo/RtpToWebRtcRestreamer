@@ -9,17 +9,13 @@ namespace Bld.RtpToWebRtcRestreamer
 {
     internal class StreamMultiplexer
     {
-        private readonly Receiver _receiver;
         private readonly ILogger<StreamMultiplexer> _logger;
         private readonly ConcurrentDictionary<RTCPeerConnection, MultiplexedPeer> _peers = new();
 
         public StreamMultiplexer(
-            Receiver receiver,
             ILogger<StreamMultiplexer> logger)
         {
-            _receiver = receiver;
             _logger = logger;
-            _receiver.OnVideoFrameReceivedByIndex += ReceiverOnOnVideoFrameReceivedByIndex;
         }
 
         public int ActiveStreamsCount => _peers.Count(pair =>
@@ -69,14 +65,6 @@ namespace Bld.RtpToWebRtcRestreamer
             foreach (var streamMultiplexer in _peers.Values) {
                 streamMultiplexer.SendVideo(rtpPacket);
             }
-        }
-
-        private void ReceiverOnOnVideoFrameReceivedByIndex(int arg1, IPEndPoint arg2, uint arg3, byte[] frame)
-        {
-            //foreach (var streamMultiplexer in _peers.Values)
-            //{
-            //    streamMultiplexer.SendVideo(frame);
-            //}
         }
 
         public void Cleanup()
