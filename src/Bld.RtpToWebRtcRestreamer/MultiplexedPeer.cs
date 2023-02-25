@@ -13,16 +13,6 @@ namespace Bld.RtpToWebRtcRestreamer
             _peer = peer;
         }
 
-        public void SendVideo(byte[] sample)
-        {
-            if (!_isStarted)
-            {
-                return;
-            }
-
-            _peer.SendVideo(1, sample);
-        }
-
         public void SendVideo(RTPPacket packet)
         {
             if (!_isStarted)

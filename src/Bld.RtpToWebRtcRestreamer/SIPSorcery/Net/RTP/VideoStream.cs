@@ -65,115 +65,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// </summary>
         private int MaxReconstructedVideoFrameSize { get; } = 1048576;
 
-        /// <summary>
-        /// Sends a H264 frame, represented by an Access Unit, to the remote party.
-        /// </summary>
-        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
-        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
-        /// <param name="accessUnit">The encoded H264 access unit to transmit. An access unit can contain one or more
-        /// NAL's.</param>
-        /// <remarks>
-        /// An Access Unit can contain one or more NAL's. The NAL's have to be parsed in order to be able to package
-        /// in RTP packets.
-        ///
-        /// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201602-S!!PDF-E&type=items Annex B for byte stream specification.
-        /// </remarks>
-        private void SendH264Frame(uint duration, int payloadTypeID, byte[] accessUnit)
-        {
-            if (CheckIfCanSendRtpRaw())
-            {
-                foreach (var nal in H264Packetiser.ParseNals(accessUnit))
-                {
-                    SendH264Nal(duration, payloadTypeID, nal.NAL, nal.IsLast);
-                }
-            }
-        }
-
         private void SendH264Frame(RTPPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 SendRtpRawFromPacket(packet);
-            }
-        }
-
-        /// <summary>
-        /// Sends a single H264 NAL to the remote party.
-        /// </summary>
-        /// <param name="duration">The duration in timestamp units of the payload (e.g. 3000 for 30fps).</param>
-        /// <param name="payloadTypeID">The payload type ID  being used for H264 and that will be set on the RTP header.</param>
-        /// <param name="nal">The buffer containing the NAL to send.</param>
-        /// <param name="isLastNal">Should be set for the last NAL in the H264 access unit. Determines when the markbit gets set
-        /// and the timestamp incremented.</param>
-        /// <param name="dstEndPoint">The destination end point to send to.</param>
-        /// <param name="LocalTrack">The video track to send on.</param>
-        private void SendH264Nal(uint duration, int payloadTypeID, byte[] nal, bool isLastNal)
-        {
-            //logger.LogDebug($"Send NAL {nal.Length}, is last {isLastNal}, timestamp {videoTrack.Timestamp}.");
-            //logger.LogDebug($"nri {nalNri:X2}, type {nalType:X2}.");
-
-            var nal0 = nal[0];
-
-            if (nal.Length <= RTPSession.RTP_MAX_PAYLOAD)
-            {
-                // Send as Single-Time Aggregation Packet (STAP-A).
-                var payload = new byte[nal.Length];
-                var markerBit = isLastNal ? 1 : 0;   // There is only ever one packet in a STAP-A.
-                Buffer.BlockCopy(nal, 0, payload, 0, nal.Length);
-
-                SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID);
-                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-                //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, STAP-A {h264RtpHdr.HexStr()}, payload length {payload.Length}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-            }
-            else
-            {
-                nal = nal.Skip(1).ToArray();
-
-                // Send as Fragmentation Unit A (FU-A):
-                for (var index = 0; index * RTPSession.RTP_MAX_PAYLOAD < nal.Length; index++)
-                {
-                    var offset = index * RTPSession.RTP_MAX_PAYLOAD;
-                    var payloadLength = ((index + 1) * RTPSession.RTP_MAX_PAYLOAD < nal.Length) ? RTPSession.RTP_MAX_PAYLOAD : nal.Length - index * RTPSession.RTP_MAX_PAYLOAD;
-
-                    var isFirstPacket = index == 0;
-                    var isFinalPacket = (index + 1) * RTPSession.RTP_MAX_PAYLOAD >= nal.Length;
-                    var markerBit = (isLastNal && isFinalPacket) ? 1 : 0;
-
-                    var h264RtpHdr = H264Packetiser.GetH264RtpHeader(nal0, isFirstPacket, isFinalPacket);
-
-                    var payload = new byte[payloadLength + h264RtpHdr.Length];
-                    Buffer.BlockCopy(h264RtpHdr, 0, payload, 0, h264RtpHdr.Length);
-                    Buffer.BlockCopy(nal, offset, payload, h264RtpHdr.Length, payloadLength);
-
-                    SendRtpRaw(payload, LocalTrack.Timestamp, markerBit, payloadTypeID);
-                    //logger.LogDebug($"send H264 {videoChannel.RTPLocalEndPoint}->{dstEndPoint} timestamp {videoTrack.Timestamp}, FU-A {h264RtpHdr.HexStr()}, payload length {payloadLength}, seqnum {videoTrack.SeqNum}, marker {markerBit}.");
-                }
-            }
-
-            if (isLastNal)
-            {
-                LocalTrack.Timestamp += duration;
-            }
-        }
-
-        /// <summary>
-        /// Sends a video sample to the remote peer.
-        /// </summary>
-        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
-        /// value is added to the previous RTP timestamp when building the RTP header.</param>
-        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
-        public void SendVideo(uint durationRtpUnits, byte[] sample)
-        {
-            var videoSendingFormat = GetSendingFormat();
-            var payloadID = Convert.ToInt32(videoSendingFormat.ID);
-
-            switch (videoSendingFormat.Name())
-            {
-                case "H264":
-                    SendH264Frame(durationRtpUnits, payloadID, sample);
-                    break;
-                default:
-                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
             }
         }
 
@@ -187,43 +83,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
-            }
-        }
-
-        public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
-        {
-            if (OnVideoFrameReceivedByIndex == null)
-            {
-                return;
-            }
-
-            if (_rtpVideoFramer != null)
-            {
-                var frame = _rtpVideoFramer.GotRtpPacket(packet);
-                if (frame != null)
-                {
-                    OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
-                }
-            }
-            else
-            {
-                if (format.ToVideoFormat().Codec == VideoCodecsEnum.VP8 ||
-                    format.ToVideoFormat().Codec == VideoCodecsEnum.H264)
-                {
-                    Logger.LogDebug($"Video depacketisation codec set to {format.ToVideoFormat().Codec} for SSRC {packet.Header.SyncSource}.");
-
-                    _rtpVideoFramer = new RtpVideoFramer(format.ToVideoFormat().Codec, MaxReconstructedVideoFrameSize);
-
-                    var frame = _rtpVideoFramer.GotRtpPacket(packet);
-                    if (frame != null)
-                    {
-                        OnVideoFrameReceivedByIndex?.Invoke(Index, endpoint, packet.Header.Timestamp, frame, format.ToVideoFormat());
-                    }
-                }
-                else
-                {
-                    Logger.LogWarning($"Video depacketisation logic for codec {format.Name()} has not been implemented, PR's welcome!");
-                }
             }
         }
 

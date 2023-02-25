@@ -173,26 +173,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         }
 
         /// <summary>
-        /// Event handler for an RTP packet being received by the RTP session.
-        /// Used for measuring transmission statistics.
-        /// </summary>
-        public void RecordRtpPacketReceived(RTPPacket rtpPacket)
-        {
-            LastActivityAt = DateTime.Now;
-            IsTimedOut = false;
-            PacketsReceivedCount++;
-            OctetsReceivedCount += (uint)rtpPacket.Payload.Length;
-
-            if (m_receptionReport == null)
-            {
-                m_receptionReport = new ReceptionReport(rtpPacket.Header.SyncSource);
-            }
-
-            var arrivalTimestamp = PayloadSampleRateHz == 0 ? DateTimeToNtpTimestamp32(DateTime.Now) : (uint)((DateTime.Now - CreatedAt).TotalSeconds * PayloadSampleRateHz);
-            m_receptionReport.RtpPacketReceived(rtpPacket.Header.SequenceNumber, rtpPacket.Header.Timestamp, arrivalTimestamp);
-        }
-
-        /// <summary>
         /// Event handler for an RTP packet being sent by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>

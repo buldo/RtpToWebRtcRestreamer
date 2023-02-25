@@ -878,17 +878,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Sends a video sample to the remote peer. (on the primary one)
-        /// </summary>
-        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
-        /// value is added to the previous RTP timestamp when building the RTP header.</param>
-        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
-        public void SendVideo(uint durationRtpUnits, byte[] sample)
-        {
-            VideoStream?.SendVideo(durationRtpUnits, sample);
-        }
-
         public void SendVideo(RTPPacket packet)
         {
             VideoStream?.SendVideo(packet);
