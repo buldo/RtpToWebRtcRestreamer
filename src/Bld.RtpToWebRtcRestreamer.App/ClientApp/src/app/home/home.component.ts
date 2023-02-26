@@ -17,9 +17,15 @@ export class HomeComponent implements AfterViewInit {
 
 
   ngAfterViewInit() {
-    this.start()
-      .then(() => console.log("Started"))
-      .catch(reason => console.log("Error", reason));
+    // this.start()
+    //   .then(() => console.log("Started"))
+    //   .catch(reason => console.log("Error", reason));
+  }
+
+  onVideStartClick() {
+    // this.http.post(this.baseUrl + 'api/video/start', null)
+    //   .subscribe(value => this.start());
+    this.start().then(value => console.log("Started"));
   }
 
   async start() {
@@ -28,6 +34,10 @@ export class HomeComponent implements AfterViewInit {
 
     //this.pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_URL }] });
     this.pc = new RTCPeerConnection();
+    // this.pc.addTransceiver('video', { direction: 'recvonly' });
+    // this.pc.addTransceiver('audio', { direction: 'recvonly' });
+    // const offer = await this.pc.createOffer();
+    // await this.pc.setLocalDescription(offer);
 
     this.pc.ontrack = evt => this.video!.nativeElement.srcObject = evt.streams[0];
     this.pc.onicecandidate = evt => evt.candidate && this.ws!.send(JSON.stringify(evt.candidate));

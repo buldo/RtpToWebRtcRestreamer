@@ -1,4 +1,13 @@
 <h1>Hello, world!</h1>
-<div>
-  <video #fpvVideo height="480" width="640" controls autoplay="autoplay"></video>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <video #fpvVideo height="480" width="640" controls controlsList="nodownload noremoteplayback" autoplay></video>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <button (click)="onVideStartClick()" >Start</button>
+    </div>
+  </div>
 </div>
