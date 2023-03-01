@@ -1,39 +1,71 @@
-﻿namespace Bld.Rtp;
+﻿using JetBrains.Annotations;
 
-public class RTPPacket
+namespace Bld.Rtp;
+
+[PublicAPI]
+public class RtpPacket
 {
-    public readonly RTPHeader Header;
-    public readonly byte[] Payload;
+    private byte[]? _dataBuffer;
+    private Memory<byte> _rawPacket;
+    private RtpHeader? _header;
+    private Memory<byte> _payload;
 
-    public RTPPacket(int payloadSize)
+    public bool IsReadyToUse { get; private set; }
+
+    public RtpHeader Header
     {
-        Header = new RTPHeader();
-        Payload = new byte[payloadSize];
+        get
+        {
+            if (!IsReadyToUse)
+            {
+                throw new Exception("RtpPacket has no data");
+            }
+
+            return _header!;
+        }
     }
 
-    public RTPPacket(byte[] packet)
+    public ReadOnlySpan<byte> Payload
     {
-        Header = new RTPHeader(packet);
-        Payload = new byte[Header.PayloadSize];
-        Array.Copy(packet, Header.Length, Payload, 0, Payload.Length);
+        get
+        {
+            if (!IsReadyToUse)
+            {
+                throw new Exception("RtpPacket has no data");
+            }
+
+            return _payload.Span;
+        }
     }
 
-    public RTPPacket(Span<byte> packet)
+    public void ApplyBuffer(byte[] data, int start, int length)
     {
-        Header = new RTPHeader(packet);
-        Payload = packet
-            .Slice(Header.Length, Header.PayloadSize)
-            .ToArray();
+        if (IsReadyToUse)
+        {
+            throw new Exception("RtpPacket already handle data");
+        }
+
+        _dataBuffer = data;
+        _rawPacket = _dataBuffer.AsMemory(start, length);
+
+        _header = RtpHeaderSerializer.Parse(_rawPacket.Span);
+        _payload = _rawPacket[_header.Length..];
+        IsReadyToUse = true;
     }
 
-    public byte[] GetBytes()
+    public byte[] ReleaseBuffer()
     {
-        var header = Header.GetBytes();
-        var packet = new byte[header.Length + Payload.Length];
+        if (!IsReadyToUse)
+        {
+            throw new Exception("RtpPacket has no data");
+        }
 
-        Array.Copy(header, packet, header.Length);
-        Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
-
-        return packet;
+        IsReadyToUse = false;
+        var temp = _dataBuffer!;
+        _dataBuffer = null;
+        _rawPacket = null;
+        _header = null;
+        _payload = null;
+        return temp;
     }
 }
