@@ -61,7 +61,10 @@ export class HomeComponent implements AfterViewInit {
         console.log("remote sdp:\n" + _this.pc!.remoteDescription!.sdp);
         _this.pc!.createAnswer()
           .then((answer) => _this.pc!.setLocalDescription(answer))
-          .then(() => _this.ws!.send(JSON.stringify(_this.pc!.localDescription)));
+          .then(() => {
+            console.log("local sdp:\n" + _this.pc!.localDescription!.sdp);
+            _this.ws!.send(JSON.stringify(_this.pc!.localDescription));
+          });
       }
     };
   };
