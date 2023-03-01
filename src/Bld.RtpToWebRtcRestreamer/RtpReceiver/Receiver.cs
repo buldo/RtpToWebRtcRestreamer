@@ -1,6 +1,5 @@
 ﻿using System.Net;
-
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 using Microsoft.Extensions.Logging;
 
@@ -8,13 +7,13 @@ namespace Bld.RtpToWebRtcRestreamer.RtpReceiver;
 
 internal class Receiver
 {
-    private readonly Action<RTPPacket> _rtpProcessor;
+    private readonly Action<RtpPacket> _rtpProcessor;
     private readonly RTPChannel _channel;
 
     public Receiver(
         IPEndPoint bindEndPoint,
         ILogger<Receiver> logger,
-        Action<RTPPacket> rtpProcessor)
+        Action<RtpPacket> rtpProcessor)
     {
         _rtpProcessor = rtpProcessor;
         _channel = new RTPChannel(bindEndPoint.Address, bindEndPoint.Port, logger);
@@ -26,7 +25,7 @@ internal class Receiver
         _channel.Start();
     }
 
-    private void OnReceiveRTPPacket(RTPPacket packet)
+    private void OnReceiveRTPPacket(RtpPacket packet)
     {
         _rtpProcessor(packet);
     }

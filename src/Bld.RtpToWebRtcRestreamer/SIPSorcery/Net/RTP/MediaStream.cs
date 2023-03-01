@@ -15,7 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
@@ -311,13 +311,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        protected void SendRtpRawFromPacket(RTPPacket packet)
+        protected void SendRtpRawFromPacket(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw()) {
                 var protectRtpPacket = _secureContext?.ProtectRtpPacket;
                 var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
-                var rtpPacket = new RTPPacket(packet.Payload.Length + srtpProtectionLength);
+                var rtpPacket = new RtpPacket(packet.Payload.Length + srtpProtectionLength);
                 rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
                 rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
                 rtpPacket.Header.Timestamp = packet.Header.Timestamp;

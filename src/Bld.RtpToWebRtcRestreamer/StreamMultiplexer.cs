@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using System.Net;
-using Bld.RtpToWebRtcRestreamer.Common;
-using Bld.RtpToWebRtcRestreamer.RtpReceiver;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
 
@@ -60,7 +58,7 @@ namespace Bld.RtpToWebRtcRestreamer
             }
         }
 
-        public void SendVideoPacket(RTPPacket rtpPacket)
+        public void SendVideoPacket(RtpPacket rtpPacket)
         {
             foreach (var streamMultiplexer in _peers.Values) {
                 streamMultiplexer.SendVideo(rtpPacket);

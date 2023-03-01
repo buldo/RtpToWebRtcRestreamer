@@ -11,11 +11,11 @@
 // History:
 // 04 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
@@ -42,14 +42,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
             _codec = codec;
             _maxFrameSize = maxFrameSize;
             _currVideoFrame = new byte[maxFrameSize];
-            
+
             if (_codec == VideoCodecsEnum.H264)
             {
                 _h264Depacketiser = new H264Depacketiser();
             }
         }
 
-        public byte[] GotRtpPacket(RTPPacket rtpPacket)
+        public byte[] GotRtpPacket(RtpPacket rtpPacket)
         {
             var payload = rtpPacket.Payload;
 

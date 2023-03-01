@@ -1,12 +1,12 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
 
-internal delegate void PacketReceivedDelegate(UdpReceiver receiver, RTPPacket packet);
+internal delegate void PacketReceivedDelegate(UdpReceiver receiver, RtpPacket packet);
 
 /// <summary>
 /// A basic UDP socket manager. The RTP channel may need both an RTP and Control socket. This class encapsulates
@@ -116,7 +116,7 @@ internal sealed class UdpReceiver
 
                 if (bytesRead > 0)
                 {
-                    var packet = new RTPPacket(_recvBuffer.AsSpan(0, bytesRead));
+                    var packet = new RtpPacket(_recvBuffer.AsSpan(0, bytesRead));
                     CallOnPacketReceivedCallback(packet);
                 }
             }
@@ -135,7 +135,7 @@ internal sealed class UdpReceiver
 
                     if (bytesReadSync > 0)
                     {
-                        var packet = new RTPPacket(_recvBuffer.AsSpan(0, bytesReadSync));
+                        var packet = new RtpPacket(_recvBuffer.AsSpan(0, bytesReadSync));
                         CallOnPacketReceivedCallback(packet);
                     }
                     else

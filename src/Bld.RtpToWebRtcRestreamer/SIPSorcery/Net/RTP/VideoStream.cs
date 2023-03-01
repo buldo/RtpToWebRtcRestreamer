@@ -15,8 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
-using System.Net.Sockets;
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
@@ -89,7 +88,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        private void SendH264Frame(RTPPacket packet)
+        private void SendH264Frame(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -177,7 +176,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             var videoSendingFormat = GetSendingFormat();
 
@@ -190,7 +189,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        public void ProcessVideoRtpFrame(IPEndPoint endpoint, RTPPacket packet, SDPAudioVideoMediaFormat format)
+        public void ProcessVideoRtpFrame(IPEndPoint endpoint, RtpPacket packet, SDPAudioVideoMediaFormat format)
         {
             if (OnVideoFrameReceivedByIndex == null)
             {

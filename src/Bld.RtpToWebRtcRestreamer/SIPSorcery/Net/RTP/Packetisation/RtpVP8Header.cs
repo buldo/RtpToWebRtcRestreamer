@@ -11,7 +11,7 @@
 // 11 Nov 2014	Aaron Clauson	Created, Hobart, Australia.
 // 11 Aug 2019  Aaron Clauson   Added full license header.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -26,13 +26,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
         // Payload Descriptor Fields.
         private bool ExtendedControlBitsPresent;     // Indicated whether extended control bits are present.
         private bool IsPictureIDPresent;
-        
+
         private int _length;
         public int Length
         {
             get { return _length; }
         }
-        
+
         public static RtpVP8Header GetVP8Header(byte[] rtpPayload)
         {
             var vp8Header = new RtpVP8Header();
@@ -62,7 +62,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP.Packetisation
                     vp8Header._length = 3;
                 }
             }
-            
+
             return vp8Header;
         }
     }

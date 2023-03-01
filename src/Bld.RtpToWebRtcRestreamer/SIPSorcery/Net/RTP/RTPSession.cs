@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
@@ -889,7 +889,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             VideoStream?.SendVideo(durationRtpUnits, sample);
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             VideoStream?.SendVideo(packet);
         }
@@ -954,7 +954,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
 
             // Quick sanity check on whether this is not an RTP or RTCP packet.
-            if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+            if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
                 if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {

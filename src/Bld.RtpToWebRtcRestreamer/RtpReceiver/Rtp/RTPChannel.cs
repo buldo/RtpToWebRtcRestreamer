@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpReceiver.Rtp;
@@ -34,7 +34,7 @@ internal sealed class RTPChannel : IDisposable
     }
 
 
-    public event Action<RTPPacket> OnRtpDataReceived;
+    public event Action<RtpPacket> OnRtpDataReceived;
 
     /// <summary>
     /// Starts listening on the RTP and control ports.
@@ -76,7 +76,7 @@ internal sealed class RTPChannel : IDisposable
     /// <summary>
     /// Event handler for packets received on the RTP UDP socket.
     /// </summary>
-    private void OnRTPPacketReceived(UdpReceiver receiver, RTPPacket packet)
+    private void OnRTPPacketReceived(UdpReceiver receiver, RtpPacket packet)
     {
         OnRtpDataReceived?.Invoke(packet);
     }

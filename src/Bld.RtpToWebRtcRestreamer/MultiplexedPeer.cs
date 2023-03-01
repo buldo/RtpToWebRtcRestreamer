@@ -1,4 +1,4 @@
-﻿using Bld.RtpToWebRtcRestreamer.Common;
+﻿using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 
 namespace Bld.RtpToWebRtcRestreamer
@@ -23,7 +23,7 @@ namespace Bld.RtpToWebRtcRestreamer
             _peer.SendVideo(1, sample);
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             if (!_isStarted)
             {
