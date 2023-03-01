@@ -9,28 +9,27 @@ namespace Bld.Rtp.UdpSource
     public class PooledUdpSource
     {
         private const int MAX_UDP_SIZE = 0x10000;
-        private readonly Action<RtpPacket> _receiveHandler;
         private readonly ILogger _logger;
         private readonly ArrayPool<byte> _receiveBuffersPool = ArrayPool<byte>.Shared;
         private readonly ObjectPool<RtpPacket> _packetsPool =
             new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 60);
         private readonly UdpClient _client;
 
+        private Action<RtpPacket>? _receiveHandler;
         private Task? _receiveTask;
         private CancellationTokenSource? _cts;
 
         public PooledUdpSource(
             IPEndPoint listenEndPoint,
-            Action<RtpPacket> receiveHandler,
             ILogger<PooledUdpSource> logger)
         {
-            _receiveHandler = receiveHandler;
             _logger = logger;
             _client = new(listenEndPoint);
         }
 
-        public void Start()
+        public void Start(Action<RtpPacket> receiveHandler)
         {
+            _receiveHandler = receiveHandler;
             _cts = new();
             _receiveTask = Task.Run(async () => await ReceiveRoutine(_cts.Token), _cts.Token);
         }

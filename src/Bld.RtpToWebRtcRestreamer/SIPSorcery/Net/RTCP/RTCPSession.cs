@@ -26,7 +26,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Bld.RtpToWebRtcRestreamer.Common;
+using Bld.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
@@ -176,7 +176,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// Event handler for an RTP packet being received by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>
-        public void RecordRtpPacketReceived(RTPPacket rtpPacket)
+        public void RecordRtpPacketReceived(RtpPacket rtpPacket)
         {
             LastActivityAt = DateTime.Now;
             IsTimedOut = false;
@@ -196,7 +196,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// Event handler for an RTP packet being sent by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>
-        public void RecordRtpPacketSend(RTPPacket rtpPacket)
+        public void RecordRtpPacketSend(RtpPacket rtpPacket)
         {
             PacketsSentCount++;
             OctetsSentCount += (uint)rtpPacket.Payload.Length;

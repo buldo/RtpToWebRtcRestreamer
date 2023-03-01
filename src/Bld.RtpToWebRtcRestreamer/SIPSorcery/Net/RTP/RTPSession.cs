@@ -801,8 +801,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 MultiplexRtpChannel = rtpChannel;
             }
 
-            rtpChannel.OnRTPDataReceived += OnReceive;
-            rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
+            //rtpChannel.OnRTPDataReceived += OnReceive;
+            //rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
             rtpChannel.OnClosed += OnRTPChannelClosed;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
@@ -878,17 +878,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Sends a video sample to the remote peer. (on the primary one)
-        /// </summary>
-        /// <param name="durationRtpUnits">The duration in RTP timestamp units of the video sample. This
-        /// value is added to the previous RTP timestamp when building the RTP header.</param>
-        /// <param name="sample">The video sample to set as the RTP packet payload.</param>
-        public void SendVideo(uint durationRtpUnits, byte[] sample)
-        {
-            VideoStream?.SendVideo(durationRtpUnits, sample);
-        }
-
         public void SendVideo(RtpPacket packet)
         {
             VideoStream?.SendVideo(packet);
@@ -914,8 +903,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         if (audioStream.HasRtpChannel())
                         {
                             var rtpChannel = audioStream.GetRTPChannel();
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
+                            //rtpChannel.OnRTPDataReceived -= OnReceive;
+                            //rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
                             rtpChannel.Close(reason);
                         }
@@ -932,8 +921,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         if (videoStream.HasRtpChannel())
                         {
                             var rtpChannel = videoStream.GetRTPChannel();
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
+                            //rtpChannel.OnRTPDataReceived -= OnReceive;
+                            //rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
                             rtpChannel.Close(reason);
                         }
@@ -942,130 +931,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
                 OnRtpClosed?.Invoke(reason);
             }
-        }
-
-        protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
-            {
-                // Required for matching existing RTP end points (typically set from SDP) and
-                // whether or not the destination end point should be switched.
-                remoteEndPoint.Address = remoteEndPoint.Address.MapToIPv4();
-            }
-
-            // Quick sanity check on whether this is not an RTP or RTCP packet.
-            if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
-            {
-                if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
-                {
-                    Logger.LogWarning("RTP or RTCP packet received before secure context ready.");
-                }
-                else
-                {
-                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
-                    {
-                        // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
-                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
-                        {
-                            OnReceiveRTCPPacket(remoteEndPoint, buffer);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
-        {
-            //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
-
-            #region RTCP packet.
-
-            // Get the SSRC in order to be able to figure out which media type
-            // This will let us choose the apropriate unprotect methods
-            uint ssrc;
-            if (BitConverter.IsLittleEndian)
-            {
-                ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(buffer, 4));
-            }
-            else
-            {
-                ssrc = BitConverter.ToUInt32(buffer, 4);
-            }
-
-            var mediaStream = GetMediaStream(ssrc);
-            if (mediaStream != null)
-            {
-                var secureContext = mediaStream.GetSecurityContext();
-                if (secureContext != null)
-                {
-                    var res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out var outBufLen);
-                    if (res != 0)
-                    {
-                        Logger.LogWarning($"SRTCP unprotect failed for {mediaStream.MediaType} track, result {res}.");
-                        return;
-                    }
-
-                    buffer = buffer.Take(outBufLen).ToArray();
-                }
-            }
-            else
-            {
-                Logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
-            }
-
-            var rtcpPkt = new RTCPCompoundPacket(buffer);
-            mediaStream = GetMediaStream(rtcpPkt);
-            if (rtcpPkt.Bye != null)
-            {
-                Logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
-
-                // In some cases, such as a SIP re-INVITE, it's possible the RTP session
-                // will keep going with a new remote SSRC.
-                // We close peer connection only if there is no more local/remote tracks on the primary stream
-                if (_mPrimaryStream.LocalTrack == null)
-                {
-                    OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
-                }
-            }
-            else if (!IsClosed)
-            {
-                if (mediaStream?.RtcpSession != null)
-                {
-                    if (mediaStream.RtcpSession.LastActivityAt == DateTime.MinValue)
-                    {
-                        // On the first received RTCP report for a session check whether the remote end point matches the
-                        // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
-                        // Take the risk and switch the remote control end point to the one we are receiving from.
-                        if ((mediaStream.ControlDestinationEndPoint == null ||
-                             !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
-                             mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port))
-                        {
-                            Logger.LogDebug($"{mediaStream.MediaType} control end point switched from {mediaStream.ControlDestinationEndPoint} to {remoteEndPoint}.");
-                            mediaStream.ControlDestinationEndPoint = remoteEndPoint;
-                        }
-                    }
-
-                    mediaStream.RtcpSession.ReportReceived(rtcpPkt);
-                    mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
-                }
-                else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)
-                {
-                    // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
-                }
-                else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 || VideoStream?.RtcpSession?.PacketsReceivedCount > 0)
-                {
-                    // Only give this warning if we've received at least one RTP packet.
-                    //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
-                    //logger.LogTrace(rtcpPkt.GetDebugSummary());
-                }
-            }
-
-            #endregion
         }
 
         private MediaStream GetMediaStream(uint ssrc)

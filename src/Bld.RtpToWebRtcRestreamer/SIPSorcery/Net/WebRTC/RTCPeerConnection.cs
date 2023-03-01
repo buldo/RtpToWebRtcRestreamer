@@ -434,7 +434,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 MultiplexRtpChannel = rtpIceChannel;
             }
 
-            rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+            //rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
 
             // Start the RTP, and if required the Control, socket receivers and the RTCP session.
             rtpIceChannel.Start();
@@ -933,57 +933,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             }
 
             return offerSdp;
-        }
-
-        /// <summary>
-        /// From RFC5764:
-        ///             +----------------+
-        ///             | 127 < B< 192  -+--> forward to RTP
-        ///             |                |
-        /// packet -->  |  19 < B< 64   -+--> forward to DTLS
-        ///             |                |
-        ///             |       B< 2    -+--> forward to STUN
-        ///             +----------------+
-        /// </summary>
-        /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
-        /// <param name="remoteEP">The remote end point the packet was received from.</param>
-        /// <param name="buffer">The data received.</param>
-        private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
-        {
-            //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
-
-            // By this point the RTP ICE channel has already processed any STUN packets which means
-            // it's only necessary to separate RTP/RTCP from DTLS.
-            // Because DTLS packets can be fragmented and RTP/RTCP should never be use the RTP/RTCP
-            // prefix to distinguish.
-
-            if (buffer?.Length > 0)
-            {
-                try
-                {
-                    if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
-                    {
-                        // RTP/RTCP packet.
-                        OnReceive(localPort, remoteEP, buffer);
-                    }
-                    else
-                    {
-                        if (_dtlsHandle != null)
-                        {
-                            //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                            _dtlsHandle.WriteToRecvStream(buffer);
-                        }
-                        else
-                        {
-                            Logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
-                        }
-                    }
-                }
-                catch (Exception excp)
-                {
-                    Logger.LogError($"Exception RTCPeerConnection.OnRTPDataReceived {excp.Message}");
-                }
-            }
         }
 
         /// <summary>

@@ -28,13 +28,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     {
         protected class PendingPackages
         {
-            public readonly RTPHeader hdr;
+            public readonly RtpHeader hdr;
             public readonly int localPort;
             public readonly IPEndPoint remoteEndPoint;
             public readonly byte[] buffer;
             public readonly VideoStream videoStream;
 
-            public PendingPackages(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream)
+            public PendingPackages(RtpHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer,
+                VideoStream videoStream)
             {
                 this.hdr = hdr;
                 this.localPort = localPort;
@@ -76,16 +77,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// </summary>
         public bool IsClosed
         {
-            get
-            {
-                return _isClosed;
-            }
+            get { return _isClosed; }
             set
             {
                 if (_isClosed == value)
                 {
                     return;
                 }
+
                 _isClosed = value;
 
                 //Clear previous buffer
@@ -109,10 +108,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// </summary>
         public MediaStreamTrack LocalTrack
         {
-            get
-            {
-                return _mLocalTrack;
-            }
+            get { return _mLocalTrack; }
             set
             {
                 _mLocalTrack = value;
@@ -162,7 +158,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         #region SECURITY CONTEXT
 
-        public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+        public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp,
+            ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
         {
             if (_secureContext != null)
             {
@@ -170,8 +167,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
 
             _secureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
-
-            DispatchPendingPackages();
         }
 
         public SecureContext GetSecurityContext()
@@ -197,27 +192,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
                 logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
             }
-            return (false, buffer);
-        }
 
-        private bool EnsureBufferUnprotected(byte[] buf, RTPHeader header, out RTPPacket packet)
-        {
-            if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
-            {
-                var (succeeded, newBuffer) = UnprotectBuffer(buf);
-                if (!succeeded)
-                {
-                    packet = null;
-                    return false;
-                }
-                packet = new RTPPacket(newBuffer);
-            }
-            else
-            {
-                packet = new RTPPacket(buf);
-            }
-            packet.Header.ReceivedTime = header.ReceivedTime;
-            return true;
+            return (false, buffer);
         }
 
         #endregion SECURITY CONTEXT
@@ -253,42 +229,48 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             if (LocalTrack == null)
             {
-                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local track.");
+                logger.LogWarning(
+                    $"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local track.");
                 return false;
             }
 
-            if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
+            if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) ||
+                (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
             {
-                logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
+                logger.LogWarning(
+                    $"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
                 return false;
             }
 
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.ProtectRtpPacket == null)
+            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) &&
+                _secureContext?.ProtectRtpPacket == null)
             {
-                logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+                logger.LogWarning(
+                    "SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
                 return false;
             }
 
             return true;
         }
 
-        protected void SendRtpRaw(byte[] data, uint timestamp, int markerBit, int payloadType)
+        protected void SendRtpRawFromPacket(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
                 var protectRtpPacket = _secureContext?.ProtectRtpPacket;
                 var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
 
-                var rtpPacket = new RTPPacket(data.Length + srtpProtectionLength);
-                rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-                rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
-                rtpPacket.Header.Timestamp = timestamp;
-                rtpPacket.Header.MarkerBit = markerBit;
-                rtpPacket.Header.PayloadType = payloadType;
+                var newHeader = packet.Header with
+                {
+                    SyncSource = LocalTrack.Ssrc,
+                    SequenceNumber = LocalTrack.GetNextSeqNum(),
+                    Timestamp = packet.Header.Timestamp,
+                    MarkerBit = packet.Header.MarkerBit,
+                    PayloadType = packet.Header.PayloadType
+                };
 
-                Buffer.BlockCopy(data, 0, rtpPacket.Payload, 0, data.Length);
-
-                var rtpBuffer = rtpPacket.GetBytes();
+                var rtpBuffer = new byte[packet.Payload.Length + srtpProtectionLength + newHeader.Length];
+                RtpPacketWriter.WriteToBuffer(rtpBuffer, newHeader, packet.Payload);
 
                 if (protectRtpPacket == null)
                 {
@@ -296,52 +278,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 }
                 else
                 {
-                    var rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
+                    var rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength,
+                        out var outBufLen);
                     if (rtperr != 0)
                     {
                         logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
                     }
                     else
                     {
-                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
+                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint,
+                            rtpBuffer.Take(outBufLen).ToArray());
                     }
                 }
 
-                RtcpSession?.RecordRtpPacketSend(rtpPacket);
-            }
-        }
-
-        protected void SendRtpRawFromPacket(RtpPacket packet)
-        {
-            if (CheckIfCanSendRtpRaw()) {
-                var protectRtpPacket = _secureContext?.ProtectRtpPacket;
-                var srtpProtectionLength = (protectRtpPacket != null) ? RTPSession.SRTP_MAX_PREFIX_LENGTH : 0;
-
-                var rtpPacket = new RtpPacket(packet.Payload.Length + srtpProtectionLength);
-                rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-                rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
-                rtpPacket.Header.Timestamp = packet.Header.Timestamp;
-                rtpPacket.Header.MarkerBit = packet.Header.MarkerBit;
-                rtpPacket.Header.PayloadType = packet.Header.PayloadType;
-
-                Buffer.BlockCopy(packet.Payload, 0, rtpPacket.Payload, 0, packet.Payload.Length);
-
-                var rtpBuffer = rtpPacket.GetBytes();
-
-                if (protectRtpPacket == null) {
-                    _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer);
-                }
-                else {
-                    var rtperr = protectRtpPacket(rtpBuffer, rtpBuffer.Length - srtpProtectionLength, out var outBufLen);
-                    if (rtperr != 0) {
-                        logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
-                    }
-                    else {
-                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, rtpBuffer.Take(outBufLen).ToArray());
-                    }
-                }
-
-                RtcpSession?.RecordRtpPacketSend(rtpPacket);
+                RtcpSession?.RecordRtpPacketSend(packet);
             }
         }
 
@@ -350,87 +300,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         #region RECEIVE PACKET
 
-        private void OnReceiveRTPPacket(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
-        {
-            RTPPacket rtpPacket;
-            if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
-            {
-                if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
-                {
-                    // Cache pending packages to use it later to prevent missing frames
-                    // when DTLS was not completed yet as a Server bt already completed as a client
-                    AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
-                    return;
-                }
-
-                return;
-            }
-
-
-            // Note AC 24 Dec 2020: The problem with waiting until the remote description is set is that the remote peer often starts sending
-            // RTP packets at the same time it signals its SDP offer or answer. Generally this is not a problem for audio but for video streams
-            // the first RTP packet(s) are the key frame and if they are ignored the video stream will take additional time or manual
-            // intervention to synchronise.
-            //if (RemoteDescription != null)
-            //{
-
-            // Don't hand RTP packets to the application until the remote description has been set. Without it
-            // things like the common codec, DTMF support etc. are not known.
-
-            //SDPMediaTypesEnum mediaType = (rtpMediaType.HasValue) ? rtpMediaType.Value : DEFAULT_MEDIA_TYPE;
-
-            // For video RTP packets an attempt will be made to collate into frames. It's up to the application
-            // whether it wants to subscribe to frames of RTP packets.
-
-            rtpPacket = null;
-            if (!EnsureBufferUnprotected(buffer, hdr, out rtpPacket))
-            {
-                return;
-            }
-
-            // When receiving an Payload from other peer, it will be related to our LocalDescription,
-            // not to RemoteDescription (as proved by Azure WebRTC Implementation)
-            var format = LocalTrack?.GetFormatForPayloadID(hdr.PayloadType);
-            if ((rtpPacket != null) && (format != null))
-            {
-                videoStream?.ProcessVideoRtpFrame(remoteEndPoint, rtpPacket, format.Value);
-                RtcpSession?.RecordRtpPacketReceived(rtpPacket);
-            }
-        }
-
         public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
         {
             OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
         }
 
-        // Submit all previous cached packages to self
-        private void DispatchPendingPackages()
-        {
-            PendingPackages[] pendingPackagesArray = null;
-
-            var isContextValid = _secureContext != null && !IsClosed;
-
-            lock (_pendingPackagesLock)
-            {
-                if (isContextValid)
-                {
-                    pendingPackagesArray = _pendingPackagesBuffer.ToArray();
-                }
-                _pendingPackagesBuffer.Clear();
-            }
-            if (isContextValid)
-            {
-                foreach (var pendingPackage in pendingPackagesArray)
-                {
-                    if (pendingPackage != null)
-                    {
-                        OnReceiveRTPPacket(pendingPackage.hdr, pendingPackage.localPort, pendingPackage.remoteEndPoint, pendingPackage.buffer, pendingPackage.videoStream);
-                    }
-                }
-            }
-        }
-
-        // Clear previous buffer
         private void ClearPendingPackages()
         {
             lock (_pendingPackagesLock)
@@ -441,7 +315,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
         // Cache pending packages to use it later to prevent missing frames
         // when DTLS was not completed yet as a Server but already completed as a client
-        private void AddPendingPackage(RTPHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer,
+        private void AddPendingPackage(RtpHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer,
             VideoStream videoStream = null)
         {
             const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
@@ -451,11 +325,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 lock (_pendingPackagesLock)
                 {
                     //ensure buffer max size
-                    while (_pendingPackagesBuffer.Count > 0 && _pendingPackagesBuffer.Count >= MAX_PENDING_PACKAGES_BUFFER_SIZE)
+                    while (_pendingPackagesBuffer.Count > 0 &&
+                           _pendingPackagesBuffer.Count >= MAX_PENDING_PACKAGES_BUFFER_SIZE)
                     {
                         _pendingPackagesBuffer.RemoveAt(0);
                     }
-                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
+
+                    _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer,
+                        videoStream));
                 }
             }
         }
@@ -476,6 +353,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 RtcpSession = new RTCPSession(MediaType, 0);
                 return true;
             }
+
             return false;
         }
 
@@ -503,7 +381,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 return LocalTrack.Capabilities.First();
             }
 
-            throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
+            throw new ApplicationException(
+                $"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
         }
 
         protected MediaStream(RtpSessionConfig config, int index)

@@ -17,7 +17,8 @@ namespace Bld.RtpToWebRtcRestreamer
         }
 
         public int ActiveStreamsCount => _peers.Count(pair =>
-            pair.Key.connectionState is not (RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected or RTCPeerConnectionState.closed));
+            pair.Key.connectionState is not (RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected
+                or RTCPeerConnectionState.closed));
 
         public void RegisterPeer(RTCPeerConnection peer)
         {
@@ -60,7 +61,8 @@ namespace Bld.RtpToWebRtcRestreamer
 
         public void SendVideoPacket(RtpPacket rtpPacket)
         {
-            foreach (var streamMultiplexer in _peers.Values) {
+            foreach (var streamMultiplexer in _peers.Values)
+            {
                 streamMultiplexer.SendVideo(rtpPacket);
             }
         }
