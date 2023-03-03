@@ -274,7 +274,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
                 if (protectRtpPacket == null)
                 {
-                    _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, localBuffer);
+                    _rtpChannel.Send(DestinationEndPoint, localBuffer);
                 }
                 else
                 {
@@ -285,7 +285,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     }
                     else
                     {
-                        _rtpChannel.Send(RTPChannelSocketsEnum.RTP, DestinationEndPoint, localBuffer.AsSpan(0,outBufLen).ToArray());
+                        _rtpChannel.Send(DestinationEndPoint, localBuffer.AsSpan(0,outBufLen).ToArray());
                     }
                 }
 

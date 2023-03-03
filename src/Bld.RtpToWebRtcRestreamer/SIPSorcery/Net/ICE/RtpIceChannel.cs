@@ -979,7 +979,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             else
             {
                 var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-                var sendResult = Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunReqBytes);
+                var sendResult = Send(remoteEndPoint, stunReqBytes);
 
                 if (sendResult != SocketError.Success)
                 {
@@ -1224,7 +1224,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 
                 var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                 stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
             }
             else
             {
@@ -1236,7 +1236,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                     logger.LogWarning($"ICE RTP channel STUN binding request from {remoteEndPoint} failed an integrity check, rejecting.");
                     var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                     stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                    Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                    Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                 }
                 else
                 {
@@ -1287,7 +1287,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                         logger.LogWarning("ICE RTP channel STUN request matched a remote candidate but NOT a checklist entry.");
                         var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                         stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                        Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                        Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                     }
                     else
                     {
@@ -1323,7 +1323,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                         }
                         else
                         {
-                            Send(RTPChannelSocketsEnum.RTP, remoteEndPoint, stunRespBytes);
+                            Send(remoteEndPoint, stunRespBytes);
                         }
                     }
                 }

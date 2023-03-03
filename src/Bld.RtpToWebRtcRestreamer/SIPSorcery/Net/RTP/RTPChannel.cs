@@ -199,7 +199,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <param name="buffer">The data to send.</param>
         /// <returns>The result of initiating the send. This result does not reflect anything about
         /// whether the remote party received the packet or not.</returns>
-        public SocketError Send(RTPChannelSocketsEnum sendOn, IPEndPoint dstEndPoint, byte[] buffer)
+        public SocketError Send(IPEndPoint dstEndPoint, byte[] buffer)
         {
             if (m_isClosed)
             {
@@ -225,11 +225,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             try
             {
                 var sendSocket = RtpSocket;
-                if (sendOn == RTPChannelSocketsEnum.Control)
-                {
-                    sendSocket = m_controlSocket ?? throw new ApplicationException("RTPChannel was asked to send on the control socket but none exists.");
-                }
-
+                
                 //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
                 if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
                 {

@@ -1210,7 +1210,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             dtlsHandle.OnDataReady += buf =>
             {
                 //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-                rtpChannel.Send(RTPChannelSocketsEnum.RTP, PrimaryStream.DestinationEndPoint, buf);
+                rtpChannel.Send(PrimaryStream.DestinationEndPoint, buf);
             };
 
             var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
