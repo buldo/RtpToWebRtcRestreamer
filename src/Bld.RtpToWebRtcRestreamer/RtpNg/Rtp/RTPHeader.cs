@@ -3,7 +3,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp
 {
-    internal class RTPHeader
+    internal class RtpHeader
     {
         public const int MIN_HEADER_LEN = 12;
 
@@ -30,7 +30,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp
             get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
         }
 
-        public RTPHeader()
+        public RtpHeader()
         {
             SequenceNumber = Crypto.GetRandomUInt16();
             SyncSource = Crypto.GetRandomUInt();
@@ -41,7 +41,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp
         /// Extract and load the RTP header from an RTP packet.
         /// </summary>
         /// <param name="packet"></param>
-        public RTPHeader(ReadOnlySpan<byte> packet)
+        public RtpHeader(ReadOnlySpan<byte> packet)
         {
             if (packet.Length < MIN_HEADER_LEN)
             {
@@ -93,25 +93,30 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp
         {
             var header = new byte[Length];
 
+            WriteTo(header);
+
+            return header;
+        }
+
+        public void WriteTo(Span<byte> header)
+        {
             var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
 
-            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(0, 2), firstWord);
-            BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(2, 2), SequenceNumber);
-            BinaryPrimitives.TryWriteUInt32BigEndian(header.AsSpan(4, 4), Timestamp);
-            BinaryPrimitives.TryWriteUInt32BigEndian(header.AsSpan(8, 4), SyncSource);
+            BinaryPrimitives.WriteUInt16BigEndian(header.Slice(0, 2), firstWord);
+            BinaryPrimitives.WriteUInt16BigEndian(header.Slice(2, 2), SequenceNumber);
+            BinaryPrimitives.TryWriteUInt32BigEndian(header.Slice(4, 4), Timestamp);
+            BinaryPrimitives.TryWriteUInt32BigEndian(header.Slice(8, 4), SyncSource);
 
             if (HeaderExtensionFlag == 1)
             {
-                BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(12 + 4 * CSRCCount, 2), ExtensionProfile);
-                BinaryPrimitives.WriteUInt16BigEndian(header.AsSpan(14 + 4 * CSRCCount, 2), ExtensionLength);
+                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(12 + 4 * CSRCCount, 2), ExtensionProfile);
+                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(14 + 4 * CSRCCount, 2), ExtensionLength);
             }
 
             if (ExtensionLength > 0 && ExtensionPayload != null)
             {
-                Buffer.BlockCopy(ExtensionPayload, 0, header, 16 + 4 * CSRCCount, ExtensionLength * 4);
+                ExtensionPayload.AsSpan().CopyTo(header.Slice(16 + 4 * CSRCCount, ExtensionLength * 4));
             }
-
-            return header;
         }
     }
 }

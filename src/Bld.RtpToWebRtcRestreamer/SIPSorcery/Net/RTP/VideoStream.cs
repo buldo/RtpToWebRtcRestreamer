@@ -38,7 +38,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        private void SendH264Frame(RTPPacket packet)
+        private void SendH264Frame(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -46,7 +46,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             var videoSendingFormat = GetSendingFormat();
 

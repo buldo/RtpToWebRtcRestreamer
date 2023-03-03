@@ -165,7 +165,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// Event handler for an RTP packet being sent by the RTP session.
         /// Used for measuring transmission statistics.
         /// </summary>
-        public void RecordRtpPacketSend(RTPPacket rtpPacket)
+        public void RecordRtpPacketSend(RtpPacket rtpPacket)
         {
             PacketsSentCount++;
             OctetsSentCount += (uint)rtpPacket.Payload.Length;

@@ -13,7 +13,7 @@ namespace Bld.RtpToWebRtcRestreamer
             _peer = peer;
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             if (!_isStarted)
             {

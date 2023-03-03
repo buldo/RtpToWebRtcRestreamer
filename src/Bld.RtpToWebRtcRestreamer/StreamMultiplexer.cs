@@ -58,7 +58,7 @@ namespace Bld.RtpToWebRtcRestreamer
             }
         }
 
-        public void SendVideoPacket(RTPPacket rtpPacket)
+        public void SendVideoPacket(RtpPacket rtpPacket)
         {
             foreach (var streamMultiplexer in _peers.Values) {
                 streamMultiplexer.SendVideo(rtpPacket);

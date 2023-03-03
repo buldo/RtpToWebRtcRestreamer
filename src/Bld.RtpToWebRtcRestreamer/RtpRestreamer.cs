@@ -15,7 +15,7 @@ namespace Bld.RtpToWebRtcRestreamer
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger<RtpRestreamer> _logger;
         private readonly WebSocketServer _webSocketServer;
-        private readonly RtpReceiver _receiver;
+        private readonly PooledUdpSource _receiver;
         private readonly StreamMultiplexer _streamMultiplexer;
         private readonly Task _periodicalManagementTask;
         private int _connectedClientsCount;
@@ -35,15 +35,16 @@ namespace Bld.RtpToWebRtcRestreamer
                 peer.CreatePeerConnection = CreatePeerConnection;
             });
 
-            _receiver = new RtpReceiver(rtpListenEndpoint, RtpProcessor);
+            _receiver = new(rtpListenEndpoint, _loggerFactory.CreateLogger<PooledUdpSource>());
             _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
 
             _periodicalManagementTask = BackgroundTask();
         }
 
-        private void RtpProcessor(RTPPacket packet)
+        private void RtpProcessor(RtpPacket packet)
         {
             _streamMultiplexer.SendVideoPacket(packet);
+            _receiver.ReusePacket(packet);
         }
 
         private int ConnectedClientsCount
@@ -63,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer
         public void Start()
         {
             _webSocketServer.Start();
-            _receiver.Start();
+            _receiver.Start(RtpProcessor);
         }
 
         private async Task<RTCPeerConnection> CreatePeerConnection()

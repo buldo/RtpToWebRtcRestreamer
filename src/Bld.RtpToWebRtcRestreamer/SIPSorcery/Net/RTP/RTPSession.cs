@@ -875,7 +875,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return Task.CompletedTask;
         }
 
-        public void SendVideo(RTPPacket packet)
+        public void SendVideo(RtpPacket packet)
         {
             VideoStream?.SendVideo(packet);
         }
@@ -940,7 +940,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
 
             // Quick sanity check on whether this is not an RTP or RTCP packet.
-            if (buffer?.Length > RTPHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+            if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
             {
                 if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
                 {

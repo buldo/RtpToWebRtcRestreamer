@@ -1,33 +1,79 @@
-namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp
+#nullable enable
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
+
+internal class RtpPacket
 {
-    internal class RTPPacket
+    private byte[]? _dataBuffer;
+    private Memory<byte> _rawPacket;
+    private RtpHeader? _header;
+    private Memory<byte> _payload;
+
+    public bool IsReadyToUse { get; private set; }
+
+    public RtpHeader Header
     {
-        public readonly RTPHeader Header;
-        public readonly byte[] Payload;
-
-        public RTPPacket(int payloadSize)
+        get
         {
-            Header = new RTPHeader();
-            Payload = new byte[payloadSize];
+            if (!IsReadyToUse)
+            {
+                throw new Exception("RtpPacket has no data");
+            }
+
+            return _header!;
+        }
+    }
+
+    public ReadOnlySpan<byte> Payload
+    {
+        get
+        {
+            if (!IsReadyToUse)
+            {
+                throw new Exception("RtpPacket has no data");
+            }
+
+            return _payload.Span;
+        }
+    }
+
+    public void ApplyBuffer(byte[] data, int start, int length)
+    {
+        if (IsReadyToUse)
+        {
+            throw new Exception("RtpPacket already handle data");
         }
 
-        public RTPPacket(Span<byte> packet)
+        _dataBuffer = data;
+        _rawPacket = _dataBuffer.AsMemory(start, length);
+
+        _header = new RtpHeader(_rawPacket.Span);
+        _payload = _rawPacket[_header.Length..];
+        IsReadyToUse = true;
+    }
+
+    public byte[] ReleaseBuffer()
+    {
+        if (!IsReadyToUse)
         {
-            Header = new RTPHeader(packet);
-            Payload = packet
-                .Slice(Header.Length, Header.PayloadSize)
-                .ToArray();
+            throw new Exception("RtpPacket has no data");
         }
 
-        public byte[] GetBytes()
-        {
-            var header = Header.GetBytes();
-            var packet = new byte[header.Length + Payload.Length];
+        IsReadyToUse = false;
+        var temp = _dataBuffer!;
+        _dataBuffer = null;
+        _rawPacket = null;
+        _header = null;
+        _payload = null;
+        return temp;
+    }
 
-            Array.Copy(header, packet, header.Length);
-            Array.Copy(Payload, 0, packet, header.Length, Payload.Length);
+    public void ApplyPayload(ReadOnlySpan<byte> newPayload)
+    {
+        newPayload.CopyTo(_payload.Span);
+    }
 
-            return packet;
-        }
+    public void ApplyHeaderChanges()
+    {
+        Header.WriteTo(_dataBuffer);
     }
 }
