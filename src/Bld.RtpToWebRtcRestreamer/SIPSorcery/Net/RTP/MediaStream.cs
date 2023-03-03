@@ -30,28 +30,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 internal class MediaStream
 {
     private readonly ArrayPool<byte> _sendBuffersPool = ArrayPool<byte>.Shared;
+
     private readonly ObjectPool<RtpPacket> _packetsPool =
         new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
-    private class PendingPackages
-    {
-        public readonly RtpHeader hdr;
-        public readonly int localPort;
-        public readonly IPEndPoint remoteEndPoint;
-        public readonly byte[] buffer;
-        public readonly VideoStream videoStream;
-
-        public PendingPackages(RtpHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream)
-        {
-            this.hdr = hdr;
-            this.localPort = localPort;
-            this.remoteEndPoint = remoteEndPoint;
-            this.buffer = buffer;
-            this.videoStream = videoStream;
-        }
-    }
-
-    private readonly object _pendingPackagesLock = new object();
-    private readonly List<PendingPackages> _pendingPackagesBuffer = new();
 
     private static readonly ILogger logger = Log.Logger;
 
@@ -62,8 +43,6 @@ internal class MediaStream
     MediaStreamTrack _mLocalTrack;
 
     private RTPChannel _rtpChannel;
-
-    private bool _isClosed;
 
     protected int Index = -1;
 
@@ -78,24 +57,7 @@ internal class MediaStream
     /// Indicates whether the session has been closed. Once a session is closed it cannot
     /// be restarted.
     /// </summary>
-    public bool IsClosed
-    {
-        get
-        {
-            return _isClosed;
-        }
-        set
-        {
-            if (_isClosed == value)
-            {
-                return;
-            }
-            _isClosed = value;
-
-            //Clear previous buffer
-            ClearPendingPackages();
-        }
-    }
+    public bool IsClosed { get; set; }
 
     /// <summary>
     /// In order to detect RTP events from the remote party this property needs to
@@ -170,8 +132,6 @@ internal class MediaStream
         }
 
         _secureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
-
-        DispatchPendingPackages();
     }
 
     public SecureContext GetSecurityContext()
@@ -198,20 +158,6 @@ internal class MediaStream
             logger.LogWarning($"SRTP unprotect failed for {MediaType}, result {res}.");
         }
         return (false, buffer);
-    }
-
-    private bool EnsureBufferUnprotected(byte[] buf)
-    {
-        if (RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation)
-        {
-            var (succeeded, _) = UnprotectBuffer(buf);
-            if (!succeeded)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public void AddRtpChannel(RTPChannel rtpChannel)
@@ -301,79 +247,9 @@ internal class MediaStream
         }
     }
 
-    private void OnReceiveRTPPacket(RtpHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer, VideoStream videoStream = null)
-    {
-        if (RemoteRtpEventPayloadID != 0 && hdr.PayloadType == RemoteRtpEventPayloadID)
-        {
-            if (!EnsureBufferUnprotected(buffer))
-            {
-                // Cache pending packages to use it later to prevent missing frames
-                // when DTLS was not completed yet as a Server bt already completed as a client
-                AddPendingPackage(hdr, localPort, remoteEndPoint, buffer, videoStream);
-            }
-        }
-    }
-
     public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
     {
         OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
-    }
-
-    // Submit all previous cached packages to self
-    private void DispatchPendingPackages()
-    {
-        PendingPackages[] pendingPackagesArray = null;
-
-        var isContextValid = _secureContext != null && !IsClosed;
-
-        lock (_pendingPackagesLock)
-        {
-            if (isContextValid)
-            {
-                pendingPackagesArray = _pendingPackagesBuffer.ToArray();
-            }
-            _pendingPackagesBuffer.Clear();
-        }
-        if (isContextValid)
-        {
-            foreach (var pendingPackage in pendingPackagesArray)
-            {
-                if (pendingPackage != null)
-                {
-                    OnReceiveRTPPacket(pendingPackage.hdr, pendingPackage.localPort, pendingPackage.remoteEndPoint, pendingPackage.buffer, pendingPackage.videoStream);
-                }
-            }
-        }
-    }
-
-    // Clear previous buffer
-    private void ClearPendingPackages()
-    {
-        lock (_pendingPackagesLock)
-        {
-            _pendingPackagesBuffer.Clear();
-        }
-    }
-
-    // Cache pending packages to use it later to prevent missing frames
-    // when DTLS was not completed yet as a Server but already completed as a client
-    private void AddPendingPackage(RtpHeader hdr, int localPort, IPEndPoint remoteEndPoint, byte[] buffer,
-        VideoStream videoStream = null)
-    {
-        const int MAX_PENDING_PACKAGES_BUFFER_SIZE = 32;
-
-        if (_secureContext == null && !IsClosed)
-        {
-            lock (_pendingPackagesLock)
-            {
-                //ensure buffer max size
-                while (_pendingPackagesBuffer.Count > 0 && _pendingPackagesBuffer.Count >= MAX_PENDING_PACKAGES_BUFFER_SIZE)
-                {
-                    _pendingPackagesBuffer.RemoveAt(0);
-                }
-                _pendingPackagesBuffer.Add(new PendingPackages(hdr, localPort, remoteEndPoint, buffer, videoStream));
-            }
-        }
     }
 
     /// <summary>
