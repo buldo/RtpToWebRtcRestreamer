@@ -9,7 +9,6 @@ using Microsoft.Extensions.ObjectPool;
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 internal class PooledUdpSource
 {
-    private const int MAX_UDP_SIZE = 0x10000;
     private readonly ILogger _logger;
     private readonly ArrayPool<byte> _receiveBuffersPool = ArrayPool<byte>.Shared;
     private readonly ObjectPool<RtpPacket> _packetsPool =
@@ -55,7 +54,7 @@ internal class PooledUdpSource
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            var buffer = _receiveBuffersPool.Rent(MAX_UDP_SIZE);
+            var buffer = _receiveBuffersPool.Rent(Constants.MAX_UDP_SIZE);
             try
             {
                 var read = await _client.Client.ReceiveAsync(buffer, SocketFlags.None, cancellationToken);
