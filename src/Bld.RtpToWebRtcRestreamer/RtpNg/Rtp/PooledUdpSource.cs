@@ -16,7 +16,7 @@ internal class PooledUdpSource
         new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
     private readonly UdpClient _client;
 
-    private Action<RtpPacket>? _receiveHandler;
+    private Func<RtpPacket, Task>? _receiveHandler;
     private Task? _receiveTask;
     private CancellationTokenSource? _cts;
 
@@ -28,7 +28,7 @@ internal class PooledUdpSource
         _client = new(listenEndPoint);
     }
 
-    public void Start(Action<RtpPacket> receiveHandler)
+    public void Start(Func<RtpPacket, Task> receiveHandler)
     {
         _receiveHandler = receiveHandler;
         _cts = new();
@@ -63,7 +63,10 @@ internal class PooledUdpSource
                 {
                     var packet = _packetsPool.Get();
                     packet.ApplyBuffer(buffer, 0, read);
-                    _receiveHandler(packet);
+                    if (_receiveHandler != null)
+                    {
+                        await _receiveHandler(packet);
+                    }
                 }
                 else
                 {

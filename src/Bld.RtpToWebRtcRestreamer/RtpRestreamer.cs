@@ -41,9 +41,9 @@ namespace Bld.RtpToWebRtcRestreamer
             _periodicalManagementTask = BackgroundTask();
         }
 
-        private void RtpProcessor(RtpPacket packet)
+        private async Task RtpProcessorAsync(RtpPacket packet)
         {
-            _streamMultiplexer.SendVideoPacket(packet);
+            await _streamMultiplexer.SendVideoPacketAsync(packet);
             _receiver.ReusePacket(packet);
         }
 
@@ -64,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer
         public void Start()
         {
             _webSocketServer.Start();
-            _receiver.Start(RtpProcessor);
+            _receiver.Start(RtpProcessorAsync);
         }
 
         private async Task<RTCPeerConnection> CreatePeerConnection()

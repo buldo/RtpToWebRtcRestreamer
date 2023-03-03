@@ -58,10 +58,10 @@ namespace Bld.RtpToWebRtcRestreamer
             }
         }
 
-        public void SendVideoPacket(RtpPacket rtpPacket)
+        public async Task SendVideoPacketAsync(RtpPacket rtpPacket)
         {
             foreach (var streamMultiplexer in _peers.Values) {
-                streamMultiplexer.SendVideo(rtpPacket);
+                await streamMultiplexer.SendVideoAsync(rtpPacket);
             }
         }
 

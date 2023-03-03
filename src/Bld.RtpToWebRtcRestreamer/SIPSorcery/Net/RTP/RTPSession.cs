@@ -875,9 +875,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return Task.CompletedTask;
         }
 
-        public void SendVideo(RtpPacket packet)
+        public async Task SendVideoAsync(RtpPacket packet)
         {
-            VideoStream?.SendVideo(packet);
+            var vs = VideoStream;
+            if (vs != null)
+            {
+                await vs.SendVideoAsync(packet);
+            }
         }
 
         /// <summary>

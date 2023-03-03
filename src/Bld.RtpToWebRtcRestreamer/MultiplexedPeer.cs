@@ -13,14 +13,14 @@ namespace Bld.RtpToWebRtcRestreamer
             _peer = peer;
         }
 
-        public void SendVideo(RtpPacket packet)
+        public async Task SendVideoAsync(RtpPacket packet)
         {
             if (!_isStarted)
             {
                 return;
             }
 
-            _peer.SendVideo(packet);
+            await _peer.SendVideoAsync(packet);
         }
 
         public void Start()

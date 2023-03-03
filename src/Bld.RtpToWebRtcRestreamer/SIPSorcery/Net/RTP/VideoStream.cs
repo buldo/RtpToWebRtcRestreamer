@@ -38,21 +38,21 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        private void SendH264Frame(RtpPacket packet)
+        private async Task SendH264FrameAsync(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
-                SendRtpRawFromPacket(packet);
+                await SendRtpRawFromPacketAsync(packet);
             }
         }
 
-        public void SendVideo(RtpPacket packet)
+        public async Task SendVideoAsync(RtpPacket packet)
         {
             var videoSendingFormat = GetSendingFormat();
 
             switch (videoSendingFormat.Name()) {
                 case "H264":
-                    SendH264Frame(packet);
+                    await SendH264FrameAsync(packet);
                     break;
                 default:
                     throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");

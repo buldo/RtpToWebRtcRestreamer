@@ -252,7 +252,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             return true;
         }
 
-        protected void SendRtpRawFromPacket(RtpPacket packet)
+        protected async Task SendRtpRawFromPacketAsync(RtpPacket packet)
         {
             if (CheckIfCanSendRtpRaw())
             {
@@ -285,7 +285,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     }
                     else
                     {
-                        _rtpChannel.Send(DestinationEndPoint, localBuffer.AsSpan(0,outBufLen).ToArray());
+                        await _rtpChannel.SendAsync(DestinationEndPoint, localBuffer.AsMemory(0,outBufLen));
                     }
                 }
 
