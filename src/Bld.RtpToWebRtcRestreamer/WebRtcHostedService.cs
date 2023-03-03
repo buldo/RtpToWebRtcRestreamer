@@ -22,6 +22,7 @@ internal class WebRtcHostedService : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        StartStreamer();
         return Task.CompletedTask;
     }
 

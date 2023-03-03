@@ -17,7 +17,8 @@ namespace Bld.RtpToWebRtcRestreamer
             };
 
             services.AddSingleton(config);
-            services.AddHostedService<WebRtcHostedService>();
+            services.AddSingleton<WebRtcHostedService>();
+            services.AddHostedService<WebRtcHostedService>(provider => provider.GetRequiredService<WebRtcHostedService>());
             services.AddSingleton<IRtpRestreamerControl, RtpRestreamerControl>();
         }
     }
