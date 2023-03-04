@@ -34,10 +34,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     {
         private static readonly ILogger logger = Log.Logger;
         private UdpReceiver m_rtpReceiver;
-        private readonly Socket m_controlSocket;
-        private UdpReceiver m_controlReceiver;
         private bool m_rtpReceiverStarted;
-        private bool m_controlReceiverStarted;
         private bool m_isClosed;
 
         protected Socket RtpSocket { get; private set; }
@@ -51,16 +48,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// The local end point the RTP socket is listening on.
         /// </summary>
         protected IPEndPoint RTPLocalEndPoint { get; private set; }
-
-        /// <summary>
-        /// The local port we are listening for RTCP packets on.
-        /// </summary>
-        private int ControlPort { get; set; }
-
-        /// <summary>
-        /// The local end point the control socket is listening on.
-        /// </summary>
-        private IPEndPoint ControlLocalEndPoint { get; set; }
 
         /// <summary>
         /// Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
@@ -80,38 +67,23 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         }
 
         public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action<int, IPEndPoint, byte[]> OnControlDataReceived;
         public event Action<string> OnClosed;
 
         /// <summary>
         /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
         /// They do not start receiving until the Start method is called.
         /// </summary>
-        /// <param name="createControlSocket">Set to true if a separate RTCP control socket should be created. If RTP and
         /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
         /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
         /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
         /// and fallback to the IPv4 any address.</param>
         /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
-        public RTPChannel(bool createControlSocket, IPAddress bindAddress, int bindPort = 0)
+        protected RTPChannel(IPAddress bindAddress, int bindPort = 0)
         {
-            NetServices.CreateRtpSocket(createControlSocket, bindAddress, bindPort, out var rtpSocket, out m_controlSocket);
-
-            if (rtpSocket == null)
-            {
-                throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-            }
-
-            if (createControlSocket && m_controlSocket == null)
-            {
-                throw new ApplicationException("The RTP channel was not able to create a Control socket.");
-            }
-
-            RtpSocket = rtpSocket;
+            NetServices.CreateRtpSocket(bindAddress, bindPort, out var rtpSocket);
+            RtpSocket = rtpSocket ?? throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;
-            ControlLocalEndPoint = (m_controlSocket != null) ? m_controlSocket.LocalEndPoint as IPEndPoint : null;
-            ControlPort = (m_controlSocket != null) ? ControlLocalEndPoint.Port : 0;
         }
 
         /// <summary>
@@ -120,7 +92,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         public void Start()
         {
             StartRtpReceiver();
-            StartControlReceiver();
         }
 
         /// <summary>
@@ -141,23 +112,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-
-        /// <summary>
-        /// Starts the UDP receiver that listens for RTCP (control) packets.
-        /// </summary>
-        private void StartControlReceiver()
-        {
-            if(!m_controlReceiverStarted && m_controlSocket != null)
-            {
-                m_controlReceiverStarted = true;
-
-                m_controlReceiver = new UdpReceiver(m_controlSocket);
-                m_controlReceiver.OnPacketReceived += OnControlPacketReceived;
-                m_controlReceiver.OnClosed += Close;
-                m_controlReceiver.BeginReceiveFrom();
-            }
-        }
-
         /// <summary>
         /// Closes the session's RTP and control ports.
         /// </summary>
@@ -169,18 +123,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 {
                     var closeReason = reason ?? "normal";
 
-                    if (m_controlReceiver == null)
-                    {
-                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
-                    }
-                    else
-                    {
-                        logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}, Control receiver on port {ControlPort}. Reason: {closeReason}.");
-                    }
+                    logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
 
                     m_isClosed = true;
                     m_rtpReceiver?.Close(null);
-                    m_controlReceiver?.Close(null);
 
                     OnClosed?.Invoke(closeReason);
                 }
@@ -356,18 +302,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             {
                 OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
             }
-        }
-
-        /// <summary>
-        /// Event handler for packets received on the control UDP socket.
-        /// </summary>
-        /// <param name="receiver">The UDP receiver the packet was received on.</param>
-        /// <param name="localPort">The local port it was received on.</param>
-        /// <param name="remoteEndPoint">The remote end point of the sender.</param>
-        /// <param name="packet">The raw packet received which should always be an RTCP packet.</param>
-        private void OnControlPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
-        {
-            OnControlDataReceived?.Invoke(localPort, remoteEndPoint, packet);
         }
 
         public void Dispose()

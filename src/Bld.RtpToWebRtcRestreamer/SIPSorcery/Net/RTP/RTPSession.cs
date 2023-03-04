@@ -54,7 +54,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
     ///   e. Optionally perform any additional set up, such as negotiating SRTP keying material,
     ///   f. Call Start to commence RTCP reporting.
     /// </remarks>
-    internal class RTPSession : IDisposable
+    internal abstract class RTPSession : IDisposable
     {
         /// <summary>
         /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
@@ -756,38 +756,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// </summary>
         /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
-        protected virtual RTPChannel CreateRtpChannel()
-        {
-            if (RtpSessionConfig.IsMediaMultiplexed)
-            {
-                if (MultiplexRtpChannel != null)
-                {
-                    return MultiplexRtpChannel;
-                }
-            }
-
-            // If RTCP is multiplexed we don't need a control socket.
-            var bindPort = (RtpSessionConfig.BindPort == 0) ? 0 : RtpSessionConfig.BindPort + MRtpChannelsCount * 2;
-            var rtpChannel = new RTPChannel(!RtpSessionConfig.IsRtcpMultiplexed, RtpSessionConfig.BindAddress, bindPort);
-
-
-            if (RtpSessionConfig.IsMediaMultiplexed)
-            {
-                MultiplexRtpChannel = rtpChannel;
-            }
-
-            rtpChannel.OnRTPDataReceived += OnReceive;
-            rtpChannel.OnControlDataReceived += OnReceive; // RTCP packets could come on RTP or control socket.
-            rtpChannel.OnClosed += OnRTPChannelClosed;
-
-            // Start the RTP, and if required the Control, socket receivers and the RTCP session.
-            rtpChannel.Start();
-
-
-            MRtpChannelsCount++;
-
-            return rtpChannel;
-        }
+        protected abstract RTPChannel CreateRtpChannel();
 
         /// <summary>
         /// Gets the media streams available in this session. Will only be audio, video or both.
@@ -883,7 +852,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         {
                             var rtpChannel = audioStream.RTPChannel;
                             rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
                             rtpChannel.Close(reason);
                         }
@@ -901,7 +869,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                         {
                             var rtpChannel = videoStream.RTPChannel;
                             rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
                             rtpChannel.Close(reason);
                         }

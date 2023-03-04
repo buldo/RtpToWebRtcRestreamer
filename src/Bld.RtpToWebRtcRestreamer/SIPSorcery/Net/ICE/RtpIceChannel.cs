@@ -266,7 +266,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
             bool includeAllInterfaceAddresses = false,
             int bindPort = 0) :
-            base(false, null, bindPort)
+            base(null, bindPort)
         {
             _bindAddress = null;
             Component = RTCIceComponent.rtp;
