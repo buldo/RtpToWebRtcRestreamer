@@ -1,4 +1,5 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+﻿using System.Text.Json;
+using Bld.RtpToWebRtcRestreamer.RtpNg;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
@@ -27,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             //    $"  \"sdp\": \"{sdp.Replace(SDP.CRLF, @"\\n").Replace("\"", "\\\"")}\"" +
             //    "}";
 
-            return JSONWriter.ToJson(this);
+            return JsonSerializer.Serialize(this, Constants.JsonSerializerOptions);
         }
 
         public static bool TryParse(string json, out RTCSessionDescriptionInit init)
@@ -39,7 +40,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 return false;
             }
 
-            init = JSONParser.FromJson<RTCSessionDescriptionInit>(json);
+            init = JsonSerializer.Deserialize<RTCSessionDescriptionInit>(json, Constants.JsonSerializerOptions);
 
             // To qualify as parsed all required fields must be set.
             return init != null &&

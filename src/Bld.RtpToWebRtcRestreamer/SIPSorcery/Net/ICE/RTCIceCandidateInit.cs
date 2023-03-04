@@ -1,4 +1,5 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+﻿using System.Text.Json;
+using Bld.RtpToWebRtcRestreamer.RtpNg;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
 {
@@ -24,7 +25,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
             //     $"  \"candidate\": \"{candidate}\"" +
             //     "}";
 
-            return JSONWriter.ToJson(this);
+            return JsonSerializer.Serialize(this, Constants.JsonSerializerOptions);
         }
 
         public static bool TryParse(string json, out RTCIceCandidateInit init)
@@ -38,7 +39,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
                 return false;
             }
 
-            init = JSONParser.FromJson<RTCIceCandidateInit>(json);
+            init = JsonSerializer.Deserialize<RTCIceCandidateInit>(json, Constants.JsonSerializerOptions);
 
             // To qualify as parsed all required fields must be set.
             return init != null &&

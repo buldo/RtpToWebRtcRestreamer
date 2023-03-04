@@ -19,7 +19,7 @@
 
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
+using System.Text.Json;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
@@ -168,8 +168,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 remoteEP != null ? remoteEP.ToString() : string.Empty,
                 (int)(initChunk.CookiePreservative / 1000));
 
-            var json = cookie.ToJson();
-            var jsonBuffer = Encoding.UTF8.GetBytes(json);
+            var jsonBuffer = JsonSerializer.SerializeToUtf8Bytes(cookie);
 
             using (var hmac = new HMACSHA256(_hmacKey))
             {
@@ -177,8 +176,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
                 cookie.HMAC = result.HexStr();
             }
 
-            var jsonWithHMAC = cookie.ToJson();
-            var jsonBufferWithHMAC = Encoding.UTF8.GetBytes(jsonWithHMAC);
+            var jsonBufferWithHMAC = JsonSerializer.SerializeToUtf8Bytes(cookie);
 
             var initAckChunk = new SctpInitChunk(
                 SctpChunkType.INIT_ACK,
@@ -207,9 +205,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         {
             var cookieEcho = sctpPacket.Chunks.Single(x => x.KnownType == SctpChunkType.COOKIE_ECHO);
             var cookieBuffer = cookieEcho.ChunkValue;
-            var cookie = Encoding.UTF8.GetString(cookieBuffer).FromJson<SctpTransportCookie>();
+            var cookie = JsonSerializer.Deserialize<SctpTransportCookie>(cookieBuffer);
 
-            logger.LogDebug($"Cookie: {cookie.ToJson()}");
+            logger.LogDebug($"Cookie: {JsonSerializer.Serialize(cookie)}");
 
             var calculatedHMAC = GetCookieHMAC(cookieBuffer);
             if (calculatedHMAC != cookie.HMAC)
@@ -248,11 +246,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
         /// <returns>True if the cookie is determined as valid, false if not.</returns>
         private string GetCookieHMAC(byte[] buffer)
         {
-            var cookie = Encoding.UTF8.GetString(buffer).FromJson<SctpTransportCookie>();
+            var cookie = JsonSerializer.Deserialize<SctpTransportCookie>(buffer);
             string hmacCalculated;
             cookie.HMAC = string.Empty;
 
-            var cookiePreImage = Encoding.UTF8.GetBytes(cookie.ToJson());
+            var cookiePreImage = JsonSerializer.SerializeToUtf8Bytes(cookie);
 
             using (var hmac = new HMACSHA256(_hmacKey))
             {
