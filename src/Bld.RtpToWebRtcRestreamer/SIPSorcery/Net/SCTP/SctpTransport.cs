@@ -22,7 +22,6 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto;
 using Microsoft.Extensions.Logging;
 using SIPSorcery;
 

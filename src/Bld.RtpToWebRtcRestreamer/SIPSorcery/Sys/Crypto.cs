@@ -1,4 +1,4 @@
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
 {
     public static class Crypto
     {
@@ -23,7 +23,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
         public static int GetRandomInt(int length)
         {
             var randomStart = 1000000000;
-            var randomEnd = Int32.MaxValue;
+            var randomEnd = int.MaxValue;
 
             if (length > 0 && length < DEFAULT_RANDOM_LENGTH)
             {
@@ -34,20 +34,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
             return Random.Shared.Next(randomStart, randomEnd);
         }
 
-        public static UInt16 GetRandomUInt16()
+        public static ushort GetRandomUInt16()
         {
             var uint16Buffer = new byte[2];
             Random.Shared.NextBytes(uint16Buffer);
             return BitConverter.ToUInt16(uint16Buffer, 0);
         }
 
-        public static UInt32 GetRandomUInt(bool noZero = false)
+        public static uint GetRandomUInt(bool noZero = false)
         {
             var uint32Buffer = new byte[4];
             Random.Shared.NextBytes(uint32Buffer);
             var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
 
-            if(noZero && randomUint == 0)
+            if (noZero && randomUint == 0)
             {
                 Random.Shared.NextBytes(uint32Buffer);
                 randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
@@ -56,7 +56,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Crypto
             return randomUint;
         }
 
-        public static UInt64 GetRandomULong()
+        public static ulong GetRandomULong()
         {
             var uint64Buffer = new byte[8];
             Random.Shared.NextBytes(uint64Buffer);
