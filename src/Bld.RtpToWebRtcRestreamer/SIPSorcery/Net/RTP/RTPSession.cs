@@ -210,14 +210,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         }
 
         /// <summary>
-        /// If set to true RTP will be accepted from ANY remote end point. If false
-        /// certain rules are used to determine whether RTP should be accepted for
-        /// a particular audio or video stream. It is recommended to leave the
-        /// value to false unless a specific need exists.
-        /// </summary>
-        private bool AcceptRtpFromAny { get; } = false;
-
-        /// <summary>
         /// Gets fired when the RTP session and underlying channel are closed.
         /// </summary>
         public event Action<string> OnRtpClosed;
@@ -453,18 +445,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                     //Keep same order of LocalTrack priority to prevent incorrect sending format
                     SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
-                    if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
-                    {
-                        // Check whether RTP events can be supported and adjust our parameters to match the remote party if we can.
-                        var commonEventFormat =
-                            SDPAudioVideoMediaFormat.GetCommonRtpEventFormat(announcement.MediaFormats.Values.ToList(),
-                                currentMediaStream.LocalTrack.Capabilities);
-                        if (!commonEventFormat.IsEmpty())
-                        {
-                            currentMediaStream.RemoteRtpEventPayloadID = commonEventFormat.ID;
-                        }
-                    }
-
                     var remoteRtpEp = GetAnnouncementRTPDestination(announcement, connectionAddress);
                     SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteRtpEp);
                     IPEndPoint remoteRtcpEp = null;
@@ -592,7 +572,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         private void InitMediaStream(MediaStream currentMediaStream)
         {
             var rtpChannel = CreateRtpChannel();
-            currentMediaStream.AddRtpChannel(rtpChannel);
+            currentMediaStream.RTPChannel = rtpChannel;
             CreateRtcpSession(currentMediaStream);
         }
 
@@ -681,7 +661,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             // Get primary AudioStream
             if ((_mPrimaryStream != null) && (mediaStream != null))
             {
-                var secureContext = _mPrimaryStream.GetSecurityContext();
+                var secureContext = _mPrimaryStream.SecurityContext;
                 if (secureContext != null)
                 {
                     mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.UnprotectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
@@ -706,7 +686,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             // We need to create new AudioStream
             var newAudioStream = GetOrCreateAudioStream(index);
-            newAudioStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             // If it's not the first one we need to init it
             if (index != 0)
@@ -733,7 +712,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
             // We need to create new VideoStream and Init it
             var newVideoStream = GetOrCreateVideoStream(index);
-            newVideoStream.AcceptRtpFromAny = AcceptRtpFromAny;
 
             InitIPEndPointAndSecurityContext(newVideoStream);
             return newVideoStream;
@@ -880,7 +858,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             var vs = VideoStream;
             if (vs != null)
             {
-                await vs.SendVideoAsync(packet);
+                await vs.SendRtpRawFromPacketAsync(packet);
             }
         }
 
@@ -903,7 +881,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
                         if (audioStream.HasRtpChannel())
                         {
-                            var rtpChannel = audioStream.GetRTPChannel();
+                            var rtpChannel = audioStream.RTPChannel;
                             rtpChannel.OnRTPDataReceived -= OnReceive;
                             rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
@@ -921,7 +899,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 
                         if (videoStream.HasRtpChannel())
                         {
-                            var rtpChannel = videoStream.GetRTPChannel();
+                            var rtpChannel = videoStream.RTPChannel;
                             rtpChannel.OnRTPDataReceived -= OnReceive;
                             rtpChannel.OnControlDataReceived -= OnReceive;
                             rtpChannel.OnClosed -= OnRTPChannelClosed;
@@ -990,7 +968,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             var mediaStream = GetMediaStream(ssrc);
             if (mediaStream != null)
             {
-                var secureContext = mediaStream.GetSecurityContext();
+                var secureContext = mediaStream.SecurityContext;
                 if (secureContext != null)
                 {
                     var res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out var outBufLen);

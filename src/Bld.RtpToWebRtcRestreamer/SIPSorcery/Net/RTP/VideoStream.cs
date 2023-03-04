@@ -1,27 +1,15 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: VideoStream.cs
-//
-// Description: Define a Video media stream (which inherits MediaStream) to focus an Video specific treatment
-// The goal is to simplify RTPSession class
-//
-// Author(s):
-// Christophe Irles
-//
-// History:
-// 05 Apr 2022	Christophe Irles        Created (based on existing code from previous RTPSession class)
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using SIPSorceryMedia.Abstractions;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
 {
     internal class VideoStream : MediaStream
     {
+        public VideoStream(RtpSessionConfig config, int index) : base(config, index)
+        {
+            MediaType = SDPMediaTypesEnum.video;
+        }
+
         /// <summary>
         /// Gets fired when the remote SDP is received and the set of common video formats is set.
         /// </summary>
@@ -38,27 +26,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             }
         }
 
-        private async Task SendH264FrameAsync(RtpPacket packet)
-        {
-            if (CheckIfCanSendRtpRaw())
-            {
-                await SendRtpRawFromPacketAsync(packet);
-            }
-        }
-
-        public async Task SendVideoAsync(RtpPacket packet)
-        {
-            var videoSendingFormat = GetSendingFormat();
-
-            switch (videoSendingFormat.Name()) {
-                case "H264":
-                    await SendH264FrameAsync(packet);
-                    break;
-                default:
-                    throw new ApplicationException($"Unsupported video format selected {videoSendingFormat.Name()}.");
-            }
-        }
-
         public void CheckVideoFormatsNegotiation()
         {
             if (LocalTrack != null && LocalTrack.Capabilities?.Count() > 0)
@@ -68,11 +35,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                             LocalTrack.Capabilities
                             .Select(x => x.ToVideoFormat()).ToList());
             }
-        }
-
-        public VideoStream(RtpSessionConfig config, int index) : base(config, index)
-        {
-            MediaType = SDPMediaTypesEnum.video;
         }
     }
 }

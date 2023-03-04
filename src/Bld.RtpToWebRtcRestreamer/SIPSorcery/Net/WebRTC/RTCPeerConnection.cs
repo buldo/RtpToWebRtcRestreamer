@@ -752,7 +752,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// </summary>
         private RtpIceChannel GetRtpChannel()
         {
-            return PrimaryStream.GetRTPChannel() as RtpIceChannel;
+            return PrimaryStream.RTPChannel as RtpIceChannel;
         }
 
         /// <summary>
@@ -1205,7 +1205,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             Logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-            var rtpChannel = PrimaryStream.GetRTPChannel();
+            var rtpChannel = PrimaryStream.RTPChannel;
 
             dtlsHandle.OnDataReady += buf =>
             {
