@@ -1,7 +1,8 @@
 ﻿#nullable enable
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using SIPSorcery;
 
 namespace Bld.RtpToWebRtcRestreamer;
 
@@ -18,6 +19,7 @@ internal class WebRtcHostedService : IHostedService
     {
         _configuration = configuration;
         _loggerFactory = loggerFactory;
+        LogFactory.Set(loggerFactory);
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
