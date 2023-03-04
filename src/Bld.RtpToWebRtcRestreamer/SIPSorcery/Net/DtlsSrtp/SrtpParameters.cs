@@ -17,7 +17,7 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {

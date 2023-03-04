@@ -44,7 +44,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
@@ -1225,7 +1225,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             Logger.LogDebug($"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
             var expectedFp = RemotePeerDtlsFingerprint;
-            var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate().GetCertificateAt(0));
+            var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate());
 
             if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
             {

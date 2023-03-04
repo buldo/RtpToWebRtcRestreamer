@@ -21,8 +21,7 @@ using System.Net.Sockets;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
-using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
@@ -125,8 +124,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 _waitMillis = RetransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
-                var secureRandom = new SecureRandom();
-                var clientProtocol = new DtlsClientProtocol(secureRandom);
+                var clientProtocol = new DtlsClientProtocol();
                 try
                 {
                     var client = (DtlsSrtpClient)_connection;
@@ -190,8 +188,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 _waitMillis = RetransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
-                var secureRandom = new SecureRandom();
-                var serverProtocol = new DtlsServerProtocol(secureRandom);
+                var serverProtocol = new DtlsServerProtocol();
                 try
                 {
                     var server = (DtlsSrtpServer)_connection;
@@ -440,7 +437,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             }
         }
 
-        private int Read(byte[] buffer, int timeout)
+        private int Read(Span<byte> buffer, int timeout)
         {
             try
             {
@@ -452,7 +449,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
                 if (_chunks.TryTake(out var item, timeout))
                 {
-                    Buffer.BlockCopy(item, 0, buffer, 0, item.Length);
+                    item.AsSpan().CopyTo(buffer);
                     return item.Length;
                 }
             }
@@ -463,6 +460,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         }
 
         public int Receive(byte[] buf, int off, int len, int waitMillis)
+        {
+            return Receive(buf.AsSpan(off, len), waitMillis);
+        }
+
+        public int Receive(Span<byte> buffer, int waitMillis)
         {
             if (!_handshakeComplete)
             {
@@ -485,7 +487,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 if (!_isClosed)
                 {
                     waitMillis = Math.Min(waitMillis, millisecondsRemaining);
-                    var receiveLen = Read(buf, waitMillis);
+                    var receiveLen = Read(buffer, waitMillis);
 
                     //Handle DTLS 1.3 Retransmission time (100 to 6000 ms)
                     //https://tools.ietf.org/id/draft-ietf-tls-dtls13-31.html#rfc.section.5.7
@@ -507,7 +509,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             if (!_isClosed)
             {
-                return Read(buf, waitMillis);
+                return Read(buffer, waitMillis);
             }
 
             //throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.NotConnected);
@@ -516,15 +518,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public void Send(byte[] buf, int off, int len)
         {
-            if (len != buf.Length)
-            {
-                // Only create a new buffer and copy bytes if the length is different
-                var tempBuf = new byte[len];
-                Buffer.BlockCopy(buf, off, tempBuf, 0, len);
-                buf = tempBuf;
-            }
+            Send(buf.AsSpan(off, len));
+        }
 
-            OnDataReady?.Invoke(buf);
+        public void Send(ReadOnlySpan<byte> buffer)
+        {
+            OnDataReady?.Invoke(buffer.ToArray());
         }
 
         public void Close()

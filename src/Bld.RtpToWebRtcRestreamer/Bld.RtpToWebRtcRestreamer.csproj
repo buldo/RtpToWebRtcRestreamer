@@ -9,10 +9,10 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+      <PackageReference Include="BouncyCastle.Cryptography" Version="2.1.1" />
       <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
-      <PackageReference Include="NetCoreServer" Version="7.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
 
-      <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
       <PackageReference Include="SIPSorcery.WebSocketSharp" Version="0.0.1" />
       <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
       <PackageReference Include="System.Text.Json" Version="7.0.2" />

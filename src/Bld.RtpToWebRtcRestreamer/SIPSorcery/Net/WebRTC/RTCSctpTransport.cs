@@ -11,7 +11,7 @@
 // History:
 // 22 Mar 2021	Aaron Clauson	Created.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Tls;
+using Org.BouncyCastle.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
@@ -29,9 +29,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
     /// Represents an SCTP transport that uses a DTLS transport.
     /// </summary>
     /// <remarks>
-    /// DTLS encapsulation of SCTP: 
+    /// DTLS encapsulation of SCTP:
     /// https://tools.ietf.org/html/rfc8261
-    /// 
+    ///
     /// WebRTC API RTCSctpTransport Interface definition:
     /// https://www.w3.org/TR/webrtc/#webidl-1410933428
     /// </remarks>
@@ -62,7 +62,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         public override bool IsPortAgnostic => true;
 
         /// <summary>
-        /// The transport over which all SCTP packets for data channels 
+        /// The transport over which all SCTP packets for data channels
         /// will be sent and received.
         /// </summary>
         private DatagramTransport transport { get; set; }

@@ -13,13 +13,13 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 {
@@ -32,13 +32,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         internal TlsClientContext TlsContext
         {
-            get { return mContext; }
+            get { return m_context; }
         }
 
         public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
         //Received from server
-        public Certificate ServerCertificate { get; internal set; }
+        public TlsServerCertificate ServerCertificate { get; internal set; }
 
         private RTCDtlsFingerprint Fingerprint { get; }
 
@@ -69,6 +69,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         }
 
         private DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
+        :base(new BcTlsCrypto())
         {
             if (certificateChain == null && privateKey == null)
             {
@@ -92,17 +93,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             MCertificateChain = certificateChain;
         }
 
-        public override IDictionary GetClientExtensions()
+        public override IDictionary<int, byte[]> GetClientExtensions()
         {
             var clientExtensions = base.GetClientExtensions();
-            if (TlsSRTPUtils.GetUseSrtpExtension(clientExtensions) == null)
+            if (TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions) == null)
             {
                 if (clientExtensions == null)
                 {
-                    clientExtensions = new Hashtable();
+                    clientExtensions = new Dictionary<int, byte[]>();
                 }
 
-                TlsSRTPUtils.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
+                TlsSrtpUtilities.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
             }
             return clientExtensions;
         }
@@ -147,8 +148,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             base.NotifyHandshakeComplete();
 
             //Copy master Secret (will be inaccessible after this call)
-            _masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
-            Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, _masterSecret, 0, _masterSecret.Length);
+            _masterSecret = new byte[m_context.SecurityParameters.MasterSecret != null ? m_context.SecurityParameters.MasterSecret.Length : 0];
+            Buffer.BlockCopy(m_context.SecurityParameters.MasterSecret.Extract(), 0, _masterSecret, 0, _masterSecret.Length);
 
             //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
             PrepareSrtpSharedSecret();
@@ -171,7 +172,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
             }
 
-            var sp = mContext.SecurityParameters;
+            var sp = m_context.SecurityParameters;
             if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
             {
                 /*
@@ -211,7 +212,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 throw new InvalidOperationException("error in calculation of seed for export");
             }
 
-            return TlsUtilities.PRF(mContext, sp.MasterSecret, asciiLabel, seed, length);
+            return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
         }
 
         public override bool RequiresExtendedMasterSecret()
@@ -273,14 +274,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
         }
 
-        public override ProtocolVersion ClientVersion
+        protected override ProtocolVersion[] GetSupportedVersions()
         {
-            get { return ProtocolVersion.DTLSv12; }
-        }
-
-        public override ProtocolVersion MinimumVersion
-        {
-            get { return ProtocolVersion.DTLSv10; }
+            return ProtocolVersion.TLSv13.DownTo(ProtocolVersion.TLSv10);
         }
 
         public override TlsSession GetSessionToResume()
@@ -288,7 +284,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return null;
         }
 
-        public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
+        public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
         {
             string description = null;
             if (message != null)
@@ -315,7 +311,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public Certificate GetRemoteCertificate()
         {
-            return ServerCertificate;
+            return ServerCertificate.Certificate;
         }
     }
 }

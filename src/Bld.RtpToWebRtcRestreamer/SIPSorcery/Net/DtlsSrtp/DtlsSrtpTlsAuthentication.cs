@@ -1,4 +1,4 @@
-﻿using Org.BouncyCastle.Crypto.Tls;
+﻿using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Utilities;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
@@ -15,9 +15,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             _mContext = client.TlsContext;
         }
 
-        public void NotifyServerCertificate(Certificate serverCertificate)
+        public void NotifyServerCertificate(TlsServerCertificate serverCertificate)
         {
             //Console.WriteLine("DTLS client received server certificate chain of length " + chain.Length);
+
             _mClient.ServerCertificate = serverCertificate;
         }
 
