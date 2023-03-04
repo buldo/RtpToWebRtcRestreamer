@@ -412,7 +412,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         /// Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
         /// packets) for use with this session.
         /// </summary>
-        /// <param name="mediaType">The type of media the RTP channel is for. Must be audio or video.</param>
         /// <returns>A new RTPChannel instance.</returns>
         protected override RTPChannel CreateRtpChannel()
         {

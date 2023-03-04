@@ -80,7 +80,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
         protected RTPChannel(IPAddress bindAddress, int bindPort = 0)
         {
-            NetServices.CreateRtpSocket(bindAddress, bindPort, out var rtpSocket);
+            NetServices.CreateRtpSocket(new IPEndPoint(bindAddress, bindPort), out var rtpSocket);
             RtpSocket = rtpSocket ?? throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
             RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
             RTPPort = RTPLocalEndPoint.Port;

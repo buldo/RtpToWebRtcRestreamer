@@ -1,20 +1,4 @@
-// ============================================================================
-// FileName: NetServices.cs
-//
-// Description:
-// Contains wrappers to access the functionality of the underlying operating
-// system.
-//
-// Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
-//
-// History:
-// 26 Dec 2005	Aaron Clauson	Created, Dublin, Ireland.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// ============================================================================
-
+#nullable enable
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -36,12 +20,6 @@ public static class NetServices
     /// The maximum number of re-attempts that will be made when trying to bind a UDP socket.
     /// </summary>
     private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;
-
-    /// <summary>
-    /// IP address to use when getting default IP address from OS.
-    /// No connection is established.
-    /// </summary>
-    private const string INTERNET_IPADDRESS = "8.8.8.8";
 
     /// <summary>
     /// Port to use when doing a Udp.Connect to determine local IP
@@ -68,46 +46,18 @@ public static class NetServices
     private static readonly ConcurrentDictionary<IPAddress, Tuple<IPAddress, DateTime>> LocalAddressTable = new();
 
     /// <summary>
-    /// Doing the same check as here https://github.com/dotnet/corefx/blob/e99ec129cfd594d53f4390bf97d1d736cff6f860/src/System.Net.Sockets/src/System/Net/Sockets/SocketPal.Unix.cs#L19.
-    /// Which is checking if a dual mode socket can use the *ReceiveFrom* methods in order to
-    /// be able to get the remote destination end point.
-    /// To date the only case this has cropped up for is Mac OS as per https://github.com/sipsorcery/sipsorcery/issues/207.
-    /// </summary>
-    private static bool? _supportsDualModeIPv4PacketInfo;
-
-    private static bool SupportsDualModeIPv4PacketInfo
-    {
-        get
-        {
-            if (!_supportsDualModeIPv4PacketInfo.HasValue)
-            {
-                try
-                {
-                    _supportsDualModeIPv4PacketInfo = DoCheckSupportsDualModeIPv4PacketInfo();
-                }
-                catch
-                {
-                    _supportsDualModeIPv4PacketInfo = false;
-                }
-            }
-
-            return _supportsDualModeIPv4PacketInfo.Value;
-        }
-    }
-
-    /// <summary>
     /// Checks whether an IP address can be used on the underlying System.
     /// </summary>
     /// <param name="bindAddress">The bind address to use.</param>
     private static void CheckBindAddressAndThrow(IPAddress bindAddress)
     {
-        if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetworkV6 && !Socket.OSSupportsIPv6)
+        if (bindAddress is { AddressFamily: AddressFamily.InterNetworkV6 } && !Socket.OSSupportsIPv6)
         {
             throw new ApplicationException(
                 "A UDP socket cannot be created on an IPv6 address due to lack of OS support.");
         }
 
-        if (bindAddress != null && bindAddress.AddressFamily == AddressFamily.InterNetwork && !Socket.OSSupportsIPv4)
+        if (bindAddress is { AddressFamily: AddressFamily.InterNetwork } && !Socket.OSSupportsIPv4)
         {
             throw new ApplicationException(
                 "A UDP socket cannot be created on an IPv4 address due to lack of OS support.");
@@ -119,28 +69,15 @@ public static class NetServices
     /// set to accommodate a Windows 10 .Net Core socket bug where the same port can be bound to two different
     /// sockets, see https://github.com/dotnet/runtime/issues/36618.
     /// </summary>
-    /// <param name="port">The port to attempt to bind on. Set to 0 to request the underlying OS to select a port.</param>
-    /// <param name="bindAddress">Optional. If specified the socket will attempt to bind using this specific address.
-    /// If not specified the broadest possible address will be chosen. Either IPAddress.Any or IPAddress.IPv6Any.</param>
-    /// <param name="protocolType">Optional. If specified the socket procotol</param>
-    /// <param name="useDualMode">If true then IPv6 sockets will be created as dual mode IPv4/IPv6 on supporting systems.</param>
     /// <returns>A bound socket if successful or throws an ApplicationException if unable to bind.</returns>
-    private static Socket CreateBoundSocket(
-        int port,
-        IPAddress bindAddress,
-        ProtocolType protocolType,
-        bool useDualMode = true)
+    private static Socket CreateBoundSocket(IPEndPoint ipEndPoint)
     {
-        bindAddress ??= (Socket.OSSupportsIPv6 && SupportsDualModeIPv4PacketInfo) ? IPAddress.IPv6Any : IPAddress.Any;
+        logger.LogDebug($"CreateBoundSocket attempting to create and bind socket(s) on {ipEndPoint} using protocol {ProtocolType.Udp}.");
 
-        var logEp = new IPEndPoint(bindAddress, port);
-        logger.LogDebug(
-            $"CreateBoundSocket attempting to create and bind socket(s) on {logEp} using protocol {protocolType}.");
-
-        CheckBindAddressAndThrow(bindAddress);
+        CheckBindAddressAndThrow(ipEndPoint.Address);
 
         var bindAttempts = 0;
-        var addressFamily = bindAddress.AddressFamily;
+        var addressFamily = ipEndPoint.AddressFamily;
         var success = false;
         Socket socket = null;
 
@@ -148,8 +85,8 @@ public static class NetServices
         {
             try
             {
-                socket = CreateSocket(addressFamily, protocolType, useDualMode);
-                BindSocket(socket, bindAddress, port);
+                socket = CreateSocket(addressFamily);
+                BindSocket(socket, ipEndPoint);
 
                 if (addressFamily == AddressFamily.InterNetworkV6)
                 {
@@ -188,7 +125,7 @@ public static class NetServices
             catch (Exception excp)
             {
                 logger.LogError(
-                    $"Exception in NetServices.CreateBoundSocket attempting the initial socket bind on address {bindAddress}. {excp}");
+                    $"Exception in NetServices.CreateBoundSocket attempting the initial socket bind on address {ipEndPoint}. {excp}");
                 throw;
             }
             finally
@@ -199,7 +136,7 @@ public static class NetServices
                 }
             }
 
-            if (success || port != 0)
+            if (success || ipEndPoint.Port != 0)
             {
                 // If the bind was requested on a specific port there is no need to try again.
                 break;
@@ -213,10 +150,10 @@ public static class NetServices
             return socket;
         }
 
-        throw new ApplicationException($"Unable to bind socket using end point {logEp}.");
+        throw new ApplicationException($"Unable to bind socket using end point {ipEndPoint}.");
     }
 
-    private static void BindSocket(Socket socket, IPAddress bindAddress, int port)
+    private static void BindSocket(Socket socket, IPEndPoint ipEndpoint)
     {
         // Nasty code warning. On Windows Subsystem for Linux (WSL) on Windows 10
         // the OS lets a socket bind on an IPv6 dual mode port even if there
@@ -224,9 +161,9 @@ public static class NetServices
         // a test IPv4 socket bind is carried out.
         // This happen even if the exclusive address socket option is set.
         // See https://github.com/dotnet/runtime/issues/36618.
-        if (port != 0 &&
+        if (ipEndpoint.Port != 0 &&
             socket.AddressFamily == AddressFamily.InterNetworkV6 &&
-            socket.DualMode && IPAddress.IPv6Any.Equals(bindAddress) &&
+            socket.DualMode && IPAddress.IPv6Any.Equals(ipEndpoint.Address) &&
             Environment.OSVersion.Platform == PlatformID.Unix &&
             RuntimeInformation.OSDescription.Contains("Microsoft"))
         {
@@ -234,35 +171,25 @@ public static class NetServices
             // to check the port isn't already in use.
             if (Socket.OSSupportsIPv4)
             {
-                logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{port}.");
+                logger.LogDebug($"WSL detected, carrying out bind check on 0.0.0.0:{ipEndpoint.Port}.");
 
-                using (var testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
-                {
-                    testSocket.Bind(new IPEndPoint(IPAddress.Any, port));
-                    testSocket.Close();
-                }
+                using var testSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                testSocket.Bind(new IPEndPoint(IPAddress.Any, ipEndpoint.Port));
+                testSocket.Close();
             }
         }
 
-        socket.Bind(new IPEndPoint(bindAddress, port));
+        socket.Bind(ipEndpoint);
     }
 
-    private static Socket CreateSocket(AddressFamily addressFamily, ProtocolType protocol, bool useDualMode = true)
+    private static Socket CreateSocket(AddressFamily addressFamily)
     {
-        var sock = new Socket(addressFamily, protocol == ProtocolType.Tcp ? SocketType.Stream : SocketType.Dgram,
-            protocol);
+        var sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
         sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ExclusiveAddressUse, true);
 
         if (addressFamily == AddressFamily.InterNetworkV6)
         {
-            if (!useDualMode)
-            {
-                sock.DualMode = false;
-            }
-            else
-            {
-                sock.DualMode = SupportsDualModeIPv4PacketInfo;
-            }
+            sock.DualMode = false;
         }
 
         return sock;
@@ -273,27 +200,13 @@ public static class NetServices
     /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
     /// either IPv4 or IPv6 packets.
     /// </summary>
-    /// and RTCP are being multiplexed on the same connection.</param>
-    /// <param name="bindAddress">Optional. If null The RTP and control sockets will be created as IPv4 and IPv6 dual mode
-    /// sockets which means they can send and receive either IPv4 or IPv6 packets. If the bind address is specified an attempt
-    /// will be made to bind the RTP and optionally control listeners on it.</param>
-    /// <param name="bindPort">Optional. If 0 the choice of port will be left up to the Operating System. If specified
-    /// a single attempt will be made to bind on the port.</param>
-    /// <param name="rtpSocket">An output parameter that will contain the allocated RTP socket.</param>
     public static void CreateRtpSocket(
-        IPAddress bindAddress,
-        int bindPort,
-        out Socket rtpSocket)
+        IPEndPoint ipEndPoint,
+        out Socket? rtpSocket)
     {
-        if (bindAddress == null)
-        {
-            bindAddress = (Socket.OSSupportsIPv6 && SupportsDualModeIPv4PacketInfo) ? IPAddress.IPv6Any : IPAddress.Any;
-        }
+        CheckBindAddressAndThrow(ipEndPoint.Address);
 
-        CheckBindAddressAndThrow(bindAddress);
-
-        var bindEP = new IPEndPoint(bindAddress, bindPort);
-        logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {bindEP}.");
+        logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {ipEndPoint}.");
 
         rtpSocket = null;
         var bindAttempts = 0;
@@ -302,7 +215,7 @@ public static class NetServices
         {
             try
             {
-                rtpSocket = CreateBoundSocket(bindPort, bindAddress, ProtocolType.Udp);
+                rtpSocket = CreateBoundSocket(ipEndPoint);
                 rtpSocket.ReceiveBufferSize = RTP_RECEIVE_BUFFER_SIZE;
                 rtpSocket.SendBufferSize = RTP_SEND_BUFFER_SIZE;
             }
@@ -310,7 +223,7 @@ public static class NetServices
             {
             }
 
-            if (rtpSocket != null || bindPort != 0)
+            if (rtpSocket != null || ipEndPoint.Port != 0)
             {
                 // If a specific bind port was specified only a single attempt to create the socket is made.
                 break;
@@ -321,7 +234,7 @@ public static class NetServices
             rtpSocket = null;
 
             logger.LogWarning(
-                $"CreateRtpSocket failed to create and bind RTP socket(s) on {bindEP}, bind attempt {bindAttempts}.");
+                $"CreateRtpSocket failed to create and bind RTP socket(s) on {ipEndPoint}, bind attempt {bindAttempts}.");
         }
 
         if (rtpSocket != null)
@@ -338,69 +251,8 @@ public static class NetServices
         }
         else
         {
-            throw new ApplicationException($"Failed to create and bind RTP socket using bind address {bindAddress}.");
+            throw new ApplicationException($"Failed to create and bind RTP socket using bind address {ipEndPoint}.");
         }
-    }
-
-    /// <summary>
-    /// Dual mode sockets are created by default if an IPv6 bind address was specified.
-    /// Dual mode needs to be disabled for Mac OS sockets as they don't support the use
-    /// of dual mode and the receive methods that return packet information. Packet info
-    /// is needed to get the remote recipient.
-    /// </summary>
-    /// <returns>True if the underlying OS supports dual mode IPv6 sockets WITH the socket ReceiveFrom methods
-    /// which are required to get the remote end point. False if not</returns>
-    private static bool DoCheckSupportsDualModeIPv4PacketInfo()
-    {
-        bool hasDualModeReceiveSupport;
-
-        if (!Socket.OSSupportsIPv6)
-        {
-            hasDualModeReceiveSupport = false;
-        }
-        else
-        {
-            var testSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            testSocket.DualMode = true;
-
-            try
-            {
-                testSocket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
-                testSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 1);
-                var buf = new byte[1];
-                EndPoint remoteEP = new IPEndPoint(IPAddress.IPv6Any, 0);
-
-                testSocket.BeginReceiveFrom(buf, 0, buf.Length, SocketFlags.None, ref remoteEP, ar =>
-                {
-                    try
-                    {
-                        testSocket.EndReceiveFrom(ar, ref remoteEP);
-                    }
-                    catch
-                    {
-                    }
-                }, null);
-                hasDualModeReceiveSupport = true;
-            }
-            catch (PlatformNotSupportedException platExcp)
-            {
-                logger.LogWarning(platExcp,
-                    $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with a platform exception {platExcp.Message}");
-                hasDualModeReceiveSupport = false;
-            }
-            catch (Exception excp)
-            {
-                logger.LogWarning(excp,
-                    $"A socket 'receive from' attempt on a dual mode socket failed (dual mode RTP sockets will not be used) with {excp.Message}");
-                hasDualModeReceiveSupport = false;
-            }
-            finally
-            {
-                testSocket.Close();
-            }
-        }
-
-        return hasDualModeReceiveSupport;
     }
 
     /// <summary>
@@ -410,9 +262,9 @@ public static class NetServices
     /// </summary>
     /// <param name="destination">The remote destination to find a local IP address for.</param>
     /// <returns>The local IP address to use to connect to the remote end point.</returns>
-    private static IPAddress GetLocalAddressForRemote(IPAddress destination)
+    private static IPAddress? GetLocalAddressForRemote(IPAddress destination)
     {
-        if (destination == null || IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
+        if (IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
         {
             return null;
         }
@@ -427,7 +279,7 @@ public static class NetServices
             return cachedAddress.Item1;
         }
 
-        IPAddress localAddress = null;
+        IPAddress? localAddress = null;
 
         if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
         {
@@ -489,7 +341,7 @@ public static class NetServices
     /// <returns>A list of local IP addresses on the identified interface(s).</returns>
     public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
     {
-        var localAddress = GetLocalAddressForRemote(destination ?? IPAddress.Parse(INTERNET_IPADDRESS));
+        var localAddress = GetLocalAddressForRemote(destination);
         var localAddresses = new List<IPAddress>();
 
         var adapters = NetworkInterface.GetAllNetworkInterfaces();
