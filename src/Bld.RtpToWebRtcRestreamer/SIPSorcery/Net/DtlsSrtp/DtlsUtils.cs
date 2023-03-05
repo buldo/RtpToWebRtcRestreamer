@@ -68,7 +68,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// </summary>
         private const int DefaultKeySize = 2048;
 
-        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, Certificate c)
+        public static RTCDtlsFingerprint Fingerprint(string hashAlgorithm, Certificate certificate)
         {
             if (!IsHashSupported(hashAlgorithm))
             {
@@ -76,7 +76,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             }
 
             var digestAlgorithm = DigestUtilities.GetDigest(hashAlgorithm);
-            var der = c.GetCertificateRequestContext();
+            var der = certificate.GetCertificateEntryAt(0).Certificate.GetEncoded();
             var hash = DigestOf(digestAlgorithm, der);
 
             return new RTCDtlsFingerprint

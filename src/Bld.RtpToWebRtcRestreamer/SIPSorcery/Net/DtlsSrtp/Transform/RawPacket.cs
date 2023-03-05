@@ -61,6 +61,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         private MemoryStream _buffer;
 
+        private Memory<byte> _data;
+
         /// <summary>
         /// Invoked
         /// </summary>
@@ -71,6 +73,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
 
         public void Wrap(byte[] data, int offset, int length)
         {
+            _data = data.AsMemory(offset, length);
             _buffer.Position = 0;
             _buffer.Write(data, offset, length);
             _buffer.SetLength(length - offset);

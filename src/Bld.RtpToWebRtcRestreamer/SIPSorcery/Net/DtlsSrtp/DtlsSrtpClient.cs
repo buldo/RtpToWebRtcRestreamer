@@ -276,7 +276,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         protected override ProtocolVersion[] GetSupportedVersions()
         {
-            return ProtocolVersion.TLSv13.DownTo(ProtocolVersion.TLSv10);
+            return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv10);
         }
 
         public override TlsSession GetSessionToResume()

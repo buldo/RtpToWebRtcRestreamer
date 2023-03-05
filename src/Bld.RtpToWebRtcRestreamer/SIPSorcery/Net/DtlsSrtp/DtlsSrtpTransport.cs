@@ -55,12 +55,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// Sets the period in milliseconds that the handshake attempt will timeout
         /// after.
         /// </summary>
-        private int TimeoutMilliseconds = DefaultTimeoutMilliseconds;
+        private readonly int _timeoutMilliseconds = DefaultTimeoutMilliseconds;
 
         /// <summary>
         /// Sets the period in milliseconds that receive will wait before try retransmission
         /// </summary>
-        private int RetransmissionMilliseconds = DefaultRetransmissionWaitMillis;
+        private readonly int _retransmissionMilliseconds = DefaultRetransmissionWaitMillis;
 
         public Action<byte[]> OnDataReady;
 
@@ -121,7 +121,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             if (!_handshaking && !_handshakeComplete)
             {
-                _waitMillis = RetransmissionMilliseconds;
+                _waitMillis = _retransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
                 var clientProtocol = new DtlsClientProtocol();
@@ -185,10 +185,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
             if (!_handshaking && !_handshakeComplete)
             {
-                _waitMillis = RetransmissionMilliseconds;
+                _waitMillis = _retransmissionMilliseconds;
                 _startTime = DateTime.Now;
                 _handshaking = true;
-                var serverProtocol = new DtlsServerProtocol();
+                var serverProtocol = new DtlsServerProtocol()
+                {
+                    VerifyRequests = false
+                };
                 try
                 {
                     var server = (DtlsSrtpServer)_connection;
@@ -416,7 +419,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// </summary>
         private int GetMillisecondsRemaining()
         {
-            return TimeoutMilliseconds - (int)(DateTime.Now - _startTime).TotalMilliseconds;
+            return _timeoutMilliseconds - (int)(DateTime.Now - _startTime).TotalMilliseconds;
         }
 
         public int GetReceiveLimit()
@@ -480,7 +483,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
                 if (millisecondsRemaining <= 0)
                 {
-                    Logger.LogWarning($"DTLS transport timed out after {TimeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient() ? "server" : "client")}.");
+                    Logger.LogWarning($"DTLS transport timed out after {_timeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient() ? "server" : "client")}.");
                     throw new TimeoutException();
                 }
 
@@ -497,7 +500,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                     }
                     else
                     {
-                        _waitMillis = RetransmissionMilliseconds;
+                        _waitMillis = _retransmissionMilliseconds;
                     }
 
                     return receiveLen;
