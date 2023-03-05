@@ -64,7 +64,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <param name="receptionReports">A list of the reception reports to include. Can be empty.</param>
         public RTCPReceiverReport(uint ssrc, List<ReceptionReportSample> receptionReports)
         {
-            Header = new RTCPHeader(RTCPReportTypesEnum.RR, receptionReports != null ? receptionReports.Count : 0);
+            Header = new RTCPHeader(RtcpReportTypes.RR, receptionReports != null ? receptionReports.Count : 0);
             SSRC = ssrc;
             ReceptionReports = receptionReports;
         }

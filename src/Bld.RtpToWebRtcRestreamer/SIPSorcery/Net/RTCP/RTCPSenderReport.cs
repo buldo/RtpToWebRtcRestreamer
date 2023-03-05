@@ -75,7 +75,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
         public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
         {
-            Header = new RTCPHeader(RTCPReportTypesEnum.SR, (receptionReports != null) ? receptionReports.Count : 0);
+            Header = new RTCPHeader(RtcpReportTypes.SR, (receptionReports != null) ? receptionReports.Count : 0);
             SSRC = ssrc;
             NtpTimestamp = ntpTimestamp;
             RtpTimestamp = rtpTimestamp;

@@ -84,7 +84,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 throw new ArgumentNullException("cname");
             }
 
-            Header = new RTCPHeader(RTCPReportTypesEnum.SDES, 1);
+            Header = new RTCPHeader(RtcpReportTypes.SDES, 1);
             SSRC = ssrc;
             CNAME = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
 

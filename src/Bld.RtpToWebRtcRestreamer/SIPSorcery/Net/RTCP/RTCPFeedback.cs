@@ -66,11 +66,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
             switch (Header)
             {
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     SENDER_PAYLOAD_SIZE = 8;
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                case var x when x.PacketType == RtcpReportTypes.RTPFB:
                     SENDER_PAYLOAD_SIZE = 12;
                     if (BitConverter.IsLittleEndian)
                     {
@@ -84,7 +84,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                     }
                     break;
 
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var x when x.PacketType == RtcpReportTypes.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     SENDER_PAYLOAD_SIZE = 8;
                     break;
 
@@ -126,10 +126,10 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
             switch (Header)
             {
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+                case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
                     // PLI feedback reports do no have any additional parameters.
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.RTPFB:
+                case var x when x.PacketType == RtcpReportTypes.RTPFB:
                     if (BitConverter.IsLittleEndian)
                     {
                         Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PID)), 0, buffer, payloadIndex + 8, 2);
@@ -142,9 +142,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                     }
                     break;
 
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
+                case var x when x.PacketType == RtcpReportTypes.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.PLI:
                     break;
-                case var x when x.PacketType == RTCPReportTypesEnum.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
+                case var x when x.PacketType == RtcpReportTypes.PSFB && x.PayloadFeedbackMessageType == PSFBFeedbackTypesEnum.AFB:
                     // Application feedback reports do no have any additional parameters?
                     break;
                 default:

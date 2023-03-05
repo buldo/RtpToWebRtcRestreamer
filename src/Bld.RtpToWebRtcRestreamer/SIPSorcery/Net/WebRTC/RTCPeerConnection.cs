@@ -345,13 +345,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                     SetGlobalDestination(connectedEP, connectedEP);
                     Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
-                    _dtlsHandle = new DtlsSrtpTransport(
-                                IceRole == IceRolesEnum.active ?
-                                new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
-                                { ForceUseExtendedMasterSecret = true } :
-                                new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
-                                    { ForceUseExtendedMasterSecret = true }
-                                );
+                    if(IceRole == IceRolesEnum.active)
+                    {
+                        _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) { ForceUseExtendedMasterSecret = true });
+                    }
+                    else
+                    {
+                        _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey) { ForceUseExtendedMasterSecret = true });
+                    }
 
                     _dtlsHandle.OnAlert += OnDtlsAlert;
 

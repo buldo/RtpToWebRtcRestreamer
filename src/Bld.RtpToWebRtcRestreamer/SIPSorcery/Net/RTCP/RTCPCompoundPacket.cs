@@ -70,27 +70,27 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                 var packetTypeID = buffer[1];
                 switch (packetTypeID)
                 {
-                    case (byte)RTCPReportTypesEnum.SR:
+                    case (byte)RtcpReportTypes.SR:
                         SenderReport = new RTCPSenderReport(buffer);
                         var srLength = (SenderReport != null) ? SenderReport.GetBytes().Length : Int32.MaxValue;
                         offset += srLength;
                         break;
-                    case (byte)RTCPReportTypesEnum.RR:
+                    case (byte)RtcpReportTypes.RR:
                         ReceiverReport = new RTCPReceiverReport(buffer);
                         var rrLength = (ReceiverReport != null) ? ReceiverReport.GetBytes().Length : Int32.MaxValue;
                         offset += rrLength;
                         break;
-                    case (byte)RTCPReportTypesEnum.SDES:
+                    case (byte)RtcpReportTypes.SDES:
                         SDesReport = new RTCPSDesReport(buffer);
                         var sdesLength = (SDesReport != null) ? SDesReport.GetBytes().Length : Int32.MaxValue;
                         offset += sdesLength;
                         break;
-                    case (byte)RTCPReportTypesEnum.BYE:
+                    case (byte)RtcpReportTypes.BYE:
                         Bye = new RTCPBye(buffer);
                         var byeLength = (Bye != null) ? Bye.GetBytes().Length : Int32.MaxValue;
                         offset += byeLength;
                         break;
-                    case (byte)RTCPReportTypesEnum.RTPFB:
+                    case (byte)RtcpReportTypes.RTPFB:
                         // TODO: Interpret Generic RTP feedback reports.
                         Feedback = new RTCPFeedback(buffer);
                         var rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
@@ -98,7 +98,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
                         //var rtpfbHeader = new RTCPHeader(buffer);
                         //offset += rtpfbHeader.Length * 4 + 4;
                         break;
-                    case (byte)RTCPReportTypesEnum.PSFB:
+                    case (byte)RtcpReportTypes.PSFB:
                         // TODO: Interpret Payload specific feedback reports.
                         Feedback = new RTCPFeedback(buffer);
                         var psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;

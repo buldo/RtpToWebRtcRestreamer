@@ -71,6 +71,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
             _buffer = new MemoryStream(RTPPacketMaxSize);
         }
 
+        public Memory<byte> GetMemory() => _data;
+
         public void Wrap(byte[] data, int offset, int length)
         {
             _data = data.AsMemory(offset, length);

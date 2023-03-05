@@ -28,39 +28,55 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
 internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 {
+    private static readonly int[] DefaultCipherSuites = new int[]
+    {
+        /*
+         * TLS 1.3
+         */
+        //CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+        //CipherSuite.TLS_AES_256_GCM_SHA384,
+        //CipherSuite.TLS_AES_128_GCM_SHA256,
+
+        /*
+         * pre-TLS 1.3
+         */
+        CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+        //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+        //CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+        //CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+        //CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+        //CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+        CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+    };
+
     private static readonly ILogger Logger = Log.Logger;
 
     readonly Certificate _mCertificateChain;
     readonly AsymmetricKeyParameter _mPrivateKey;
 
-    //private AlgorithmCertificate algorithmCertificate;
-
-    public bool ForceUseExtendedMasterSecret { get; set; } = true;
-
-    private Certificate ClientCertificate { get; set; }
-
-    // the server response to the client handshake request
-    // http://tools.ietf.org/html/rfc5764#section-4.1.1
     private UseSrtpData _serverSrtpData;
 
-    // Asymmetric shared keys derived from the DTLS handshake and used for the SRTP encryption/
     private byte[] _srtpMasterClientKey;
     private byte[] _srtpMasterServerKey;
     private byte[] _srtpMasterClientSalt;
     private byte[] _srtpMasterServerSalt;
-    byte[] _masterSecret;
 
     // Policies
     private SrtpPolicy _srtpPolicy;
     private SrtpPolicy _srtcpPolicy;
-
-    /// <summary>
-    /// Parameters:
-    ///  - alert level,
-    ///  - alert type,
-    ///  - alert description.
-    /// </summary>
-    public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
     public DtlsSrtpServer(Certificate certificateChain, AsymmetricKeyParameter privateKey) : base(new BcTlsCrypto())
     {
@@ -73,9 +89,20 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         _mCertificateChain = certificateChain;
     }
 
+    public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
+    public bool ForceUseExtendedMasterSecret { get; set; } = true;
+
+    private Certificate ClientCertificate { get; set; }
+
+    protected override int[] GetSupportedCipherSuites()
+    {
+        return TlsUtilities.GetSupportedCipherSuites(Crypto, DefaultCipherSuites);
+    }
+
     protected override ProtocolVersion[] GetSupportedVersions()
     {
-        return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv10);
+        return ProtocolVersion.DTLSv12.DownTo(ProtocolVersion.DTLSv10);
     }
 
     public override int GetSelectedCipherSuite()
@@ -163,8 +190,8 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
                 case SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32:
                 case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_80:
                 case SrtpProtectionProfile.SRTP_NULL_HMAC_SHA1_32:
-                case SrtpProtectionProfile.SRTP_AEAD_AES_128_GCM:
-                case SrtpProtectionProfile.SRTP_AEAD_AES_256_GCM:
+                //case SrtpProtectionProfile.SRTP_AEAD_AES_128_GCM:
+                //case SrtpProtectionProfile.SRTP_AEAD_AES_256_GCM:
                     chosenProfile = profile;
                     break;
             }
@@ -224,20 +251,20 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     {
         return new int[]
         {
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+            //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+            //CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
             CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
-            CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+            //CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,

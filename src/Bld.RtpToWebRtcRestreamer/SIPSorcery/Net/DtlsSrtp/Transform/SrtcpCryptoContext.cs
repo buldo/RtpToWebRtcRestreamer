@@ -55,6 +55,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
+using System.Buffers.Binary;
+
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
@@ -276,6 +280,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          */
         public bool ReverseTransformPacket(RawPacket pkt)
         {
+            if (_policy.IsAesGcm)
+            {
+                return AesGcmReverseTransformPacket(pkt);
+            }
+
             var decrypt = false;
             var tagLength = _policy.AuthTagLength;
             var indexEflag = pkt.GetSrtcpIndex(tagLength);
@@ -331,6 +340,86 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
                     ProcessPacketAesf8(pkt, index);
                 }
             }
+            Update(index);
+            return true;
+        }
+
+
+
+        class AesGcmRawPacket
+        {
+            private readonly Memory<byte> _data;
+
+            public AesGcmRawPacket(Memory<byte> data)
+            {
+                _data = data;
+
+                FullLength = data.Length;
+                PacketType = (RtcpReportTypes)_data.Span[1];
+                Length = BinaryPrimitives.ReadUInt16BigEndian(_data.Span.Slice(2, 2));
+            }
+
+            public int FullLength { get; }
+
+            public RtcpReportTypes PacketType { get; }
+
+            public int Length { get; }
+        }
+
+        private bool AesGcmReverseTransformPacket(RawPacket pkt)
+        {
+            var packet = new AesGcmRawPacket(pkt.GetMemory());
+
+            Console.WriteLine($"Full: {packet.FullLength}; Len: {packet.Length}; Diff:{packet.FullLength- packet.Length}; PacketType: {packet.PacketType}");
+
+            var tagLength = _policy.AuthTagLength;
+            var indexEflag = pkt.GetSrtcpIndex(tagLength);
+
+            var index = (int)(indexEflag & ~0x80000000);
+
+            /* Replay control */
+            if (!CheckReplay(index))
+            {
+                return false;
+            }
+
+            /* Authenticate the packet */
+            if (_policy.AuthType != SrtpPolicy.NullAuthentication)
+            {
+                // get original authentication data and store in tempStore
+                pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, _tempStore);
+
+                // Shrink packet to remove the authentication tag and index
+                // because this is part of authenticated data
+                pkt.Shrink(tagLength + 4);
+
+                // compute, then save authentication in tagStore
+                AuthenticatePacket(pkt, indexEflag);
+
+                for (var i = 0; i < tagLength; i++)
+                {
+                    if ((_tempStore[i] & 0xff) == (_tagStore[i] & 0xff))
+                    {
+                        continue;
+                    }
+
+                    return false;
+                }
+            }
+
+
+            /* Decrypt the packet using Counter Mode encryption */
+            if (_policy.EncType == SrtpPolicy.AescmEncryption || _policy.EncType == SrtpPolicy.TwofishEncryption)
+            {
+                ProcessPacketAescm(pkt, index);
+            }
+
+            /* Decrypt the packet using F8 Mode encryption */
+            else if (_policy.EncType == SrtpPolicy.Aesf8Encryption || _policy.EncType == SrtpPolicy.Twofishf8Encryption)
+            {
+                ProcessPacketAesf8(pkt, index);
+            }
+
             Update(index);
             return true;
         }

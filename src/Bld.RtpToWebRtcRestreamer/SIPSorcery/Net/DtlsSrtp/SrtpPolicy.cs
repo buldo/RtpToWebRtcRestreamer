@@ -51,19 +51,19 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         public const int Hmacsha1Authentication = 1;
         public const int SkeinAuthentication = 2;
 
-        private readonly int _encType;
-        private readonly int _encKeyLength;
-        private readonly int _authType;
-        private readonly int _authKeyLength;
-        private readonly int _authTagLength;
-        private readonly int _saltKeyLength;
+        public int AuthKeyLength { get; }
 
-        public int AuthKeyLength => _authKeyLength;
-        public int AuthTagLength => _authTagLength;
-        public int AuthType => _authType;
-        public int EncKeyLength => _encKeyLength;
-        public int EncType => _encType;
-        public int SaltKeyLength => _saltKeyLength;
+        public int AuthTagLength { get; }
+
+        public int AuthType { get; }
+
+        public int EncKeyLength { get; }
+
+        public int EncType { get; }
+
+        public int SaltKeyLength { get; }
+
+        public bool IsAesGcm { get; }
 
         /**
          * Construct a SRTPPolicy object based on given parameters.
@@ -82,14 +82,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                           int authType,
                           int authKeyLength,
                           int authTagLength,
-                          int saltKeyLength)
+                          int saltKeyLength,
+                          bool isAesGcm)
         {
-            _encType = encType;
-            _encKeyLength = encKeyLength;
-            _authType = authType;
-            _authKeyLength = authKeyLength;
-            _authTagLength = authTagLength;
-            _saltKeyLength = saltKeyLength;
+            EncType = encType;
+            EncKeyLength = encKeyLength;
+            AuthType = authType;
+            AuthKeyLength = authKeyLength;
+            AuthTagLength = authTagLength;
+            SaltKeyLength = saltKeyLength;
+            IsAesGcm = isAesGcm;
         }
     }
 }

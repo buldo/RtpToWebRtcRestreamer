@@ -47,7 +47,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         private int Version { get; set; } = RTCP_VERSION;         // 2 bits.
         private int PaddingFlag { get; set; } // 1 bit.
         public int ReceptionReportCount { get; private set; } // 5 bits.
-        public RTCPReportTypesEnum PacketType { get; private set; }       // 8 bits.
+        public RtcpReportTypes PacketType { get; private set; }       // 8 bits.
         private UInt16 Length { get; set; }                        // 16 bits.
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// </summary>
         public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; private set; } = PSFBFeedbackTypesEnum.unassigned;
 
-        public RTCPHeader(RTCPReportTypesEnum packetType, int reportCount)
+        public RTCPHeader(RtcpReportTypes packetType, int reportCount)
         {
             PacketType = packetType;
             ReceptionReportCount = reportCount;
@@ -75,8 +75,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// <returns>True if the header is for an RTCP feedback report or false if not.</returns>
         private bool IsFeedbackReport()
         {
-            if (PacketType == RTCPReportTypesEnum.RTPFB ||
-                PacketType == RTCPReportTypesEnum.PSFB)
+            if (PacketType == RtcpReportTypes.RTPFB ||
+                PacketType == RtcpReportTypes.PSFB)
             {
                 return true;
             }
@@ -109,11 +109,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
             Version = Convert.ToInt32(firstWord >> 14);
             PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
-            PacketType = (RTCPReportTypesEnum)(firstWord & 0x00ff);
+            PacketType = (RtcpReportTypes)(firstWord & 0x00ff);
 
             if (IsFeedbackReport())
             {
-                if (PacketType == RTCPReportTypesEnum.RTPFB)
+                if (PacketType == RtcpReportTypes.RTPFB)
                 {
                     FeedbackMessageType = (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
                 }
@@ -145,7 +145,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
 
             if (IsFeedbackReport())
             {
-                if (PacketType == RTCPReportTypesEnum.RTPFB)
+                if (PacketType == RtcpReportTypes.RTPFB)
                 {
                     firstWord += (uint)FeedbackMessageType << 24;
                 }

@@ -63,31 +63,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         /// </summary>
         public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey) :
-            this(certificateChain, privateKey, null)
-        {
-        }
-
-        private DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
-        :base(new BcTlsCrypto())
+        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey)
+        : base(new BcTlsCrypto())
         {
             if (certificateChain == null && privateKey == null)
             {
                 (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, m_context.Crypto);
             }
 
-            if (clientSrtpData == null)
-            {
-                var random = new SecureRandom();
-                int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() + SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
-                random.NextBytes(mki); // Reusing our secure random for generating the key.
-                _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
-            }
-            else
-            {
-                _clientSrtpData = clientSrtpData;
-            }
+            var random = new SecureRandom();
+            int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
+            var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() +
+                                SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
+            random.NextBytes(mki); // Reusing our secure random for generating the key.
+            _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
 
             MPrivateKey = privateKey;
             MCertificateChain = certificateChain;
@@ -276,7 +265,32 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         protected override ProtocolVersion[] GetSupportedVersions()
         {
-            return ProtocolVersion.DTLSv13.DownTo(ProtocolVersion.DTLSv10);
+            return ProtocolVersion.DTLSv12.DownTo(ProtocolVersion.DTLSv10);
+        }
+
+        public override int[] GetCipherSuites()
+        {
+            return new int[]
+            {
+                //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+                //CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+                CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+                //CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+                //CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+                CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+                CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+                CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+            };
         }
 
         public override TlsSession GetSessionToResume()

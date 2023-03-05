@@ -30,17 +30,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         //	SRTP_AES128_CM_HMAC_SHA1_32 (SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_32, SRTPPolicy.AESCM_ENCRYPTION, 128, SRTPPolicy.HMACSHA1_AUTHENTICATION, 160, 32, 80, 112),
         // hrosa - converted lengths to work with bytes, not bits (1 byte = 8 bits)
         public static readonly SrtpParameters SrtpAes128CmHmacSha180 = new (
-            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 14);
+            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 14, false);
         private static readonly SrtpParameters SrtpAes128CmHmacSha132 = new (
-            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 14);
+            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 14,false);
         private static readonly SrtpParameters SrtpNullHmacSha180 = new (
-            SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 0);
+            SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 10, 10, 0, false);
         private static readonly SrtpParameters SrtpNullHmacSha132 = new (
-            SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 0);
+            SrtpPolicy.NullEncryption, 0, SrtpPolicy.Hmacsha1Authentication, 20, 4, 10, 0, false);
         private static readonly SrtpParameters SrtpAeadAes128Gcm = new (
-            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 16, 16, 14);
+            SrtpPolicy.AescmEncryption, 16, SrtpPolicy.Hmacsha1Authentication, 20, 16, 16, 14, true);
         private static readonly SrtpParameters SrtpAeadAes256Gcm = new (
-            SrtpPolicy.AescmEncryption, 32, SrtpPolicy.Hmacsha1Authentication, 20, 16, 16, 14);
+            SrtpPolicy.AescmEncryption, 32, SrtpPolicy.Hmacsha1Authentication, 20, 16, 16, 14, true);
 
         private readonly int _encType;
         private readonly int _encKeyLength;
@@ -49,8 +49,17 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         private readonly int _authTagLength;
         private readonly int _rtcpAuthTagLength;
         private readonly int _saltLength;
+        private readonly bool _isAesGcm;
 
-        private SrtpParameters(int newEncType, int newEncKeyLength, int newAuthType, int newAuthKeyLength, int newAuthTagLength, int newRtcpAuthTagLength, int newSaltLength)
+        private SrtpParameters(
+            int newEncType,
+            int newEncKeyLength,
+            int newAuthType,
+            int newAuthKeyLength,
+            int newAuthTagLength,
+            int newRtcpAuthTagLength,
+            int newSaltLength,
+            bool isAesGcm)
         {
             _encType = newEncType;
             _encKeyLength = newEncKeyLength;
@@ -59,6 +68,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             _authTagLength = newAuthTagLength;
             _rtcpAuthTagLength = newRtcpAuthTagLength;
             _saltLength = newSaltLength;
+            _isAesGcm = isAesGcm;
         }
 
         public int GetCipherKeyLength()
@@ -94,13 +104,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         public SrtpPolicy GetSrtpPolicy()
         {
-            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _authTagLength, _saltLength);
+            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _authTagLength, _saltLength, _isAesGcm);
             return sp;
         }
 
         public SrtpPolicy GetSrtcpPolicy()
         {
-            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _rtcpAuthTagLength, _saltLength);
+            var sp = new SrtpPolicy(_encType, _encKeyLength, _authType, _authKeyLength, _rtcpAuthTagLength, _saltLength, _isAesGcm);
             return sp;
         }
 

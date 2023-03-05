@@ -53,7 +53,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
         /// (note bytes not characters).</param>
         public RTCPBye(uint ssrc, string reason)
         {
-            Header = new RTCPHeader(RTCPReportTypesEnum.BYE, 1);
+            Header = new RTCPHeader(RtcpReportTypes.BYE, 1);
             SSRC = ssrc;
 
             if (reason != null)

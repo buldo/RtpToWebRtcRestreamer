@@ -897,15 +897,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 }
                 else
                 {
-                    if (Enum.IsDefined(typeof(RTCPReportTypesEnum), buffer[1]))
+                    if (Enum.IsDefined(typeof(RtcpReportTypes), buffer[1]))
                     {
                         // Only call OnReceiveRTCPPacket for supported RTCPCompoundPacket types
-                        if (buffer[1] == (byte)RTCPReportTypesEnum.SR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RR ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.SDES ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.BYE ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.PSFB ||
-                            buffer[1] == (byte)RTCPReportTypesEnum.RTPFB)
+                        if (buffer[1] == (byte)RtcpReportTypes.SR ||
+                            buffer[1] == (byte)RtcpReportTypes.RR ||
+                            buffer[1] == (byte)RtcpReportTypes.SDES ||
+                            buffer[1] == (byte)RtcpReportTypes.BYE ||
+                            buffer[1] == (byte)RtcpReportTypes.PSFB ||
+                            buffer[1] == (byte)RtcpReportTypes.RTPFB)
                         {
                             OnReceiveRTCPPacket(remoteEndPoint, buffer);
                         }
