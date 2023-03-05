@@ -782,7 +782,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public override string ToString()
         {
-            return NewSdpWriter.GetSdpString(this);
+            //return NewSdpWriter.GetSdpString(this);
 
             var sdp =
                 "v=" + SDP_PROTOCOL_VERSION + CRLF +

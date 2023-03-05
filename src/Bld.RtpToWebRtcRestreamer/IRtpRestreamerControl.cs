@@ -2,7 +2,7 @@
 
 public interface IRtpRestreamerControl
 {
-    Task<string> AppendClient(string sdpOffer);
+    Task<string> AppendClient();
 
     void Start();
 

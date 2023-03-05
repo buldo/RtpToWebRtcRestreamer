@@ -135,16 +135,11 @@ namespace Bld.RtpToWebRtcRestreamer
             throw new NotImplementedException();
         }
 
-        public async Task<string> AppendClient(string sdpOffer)
+        public async Task<string> AppendClient()
         {
             var newPeer = await CreatePeerConnection();
-            newPeer.setRemoteDescription(new RTCSessionDescriptionInit()
-            {
-                sdp = sdpOffer,
-                type = RTCSdpType.offer
-            });
 
-            var answer = newPeer.createAnswer();
+            var answer = newPeer.createOffer();
             _peers.Add(newPeer);
 
             return answer.sdp;

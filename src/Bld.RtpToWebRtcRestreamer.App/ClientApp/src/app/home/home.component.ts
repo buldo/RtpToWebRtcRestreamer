@@ -30,6 +30,7 @@ export class HomeComponent implements AfterViewInit {
     this.player = new WebRTCPlayer({
       video: this.video!.nativeElement,
       type: 'whep',
+      debug: true,
       statsTypeFilter: '^candidate-*|^inbound-rtp'
     });
 

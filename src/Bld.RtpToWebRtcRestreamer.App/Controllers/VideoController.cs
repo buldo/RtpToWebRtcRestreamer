@@ -28,11 +28,30 @@ namespace Bld.RtpToWebRtcRestreamer.App.Controllers
         {
             using var streamReader = new StreamReader(Request.Body, Encoding.UTF8);
             var sdpString = await streamReader.ReadToEndAsync();
+            if (!string.IsNullOrWhiteSpace(sdpString))
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
 
-            var answer = await _control.AppendClient(sdpString);
+            var answer = await _control.AppendClient();
 
             Response.StatusCode = StatusCodes.Status201Created;
+            Response.Headers.Location = "api/video/sdp";
             await Response.WriteAsync(answer, Encoding.UTF8);
+        }
+
+        [HttpPatch("sdp")]
+        [Produces("application/sdp")]
+        [Consumes("application/sdp")]
+        public async Task Patch()
+        {
+            using var streamReader = new StreamReader(Request.Body, Encoding.UTF8);
+            var sdpString = await streamReader.ReadToEndAsync();
+
+            var answer = await _control.AppendClient();
+
+            Response.StatusCode = StatusCodes.Status200OK;
         }
     }
 }
