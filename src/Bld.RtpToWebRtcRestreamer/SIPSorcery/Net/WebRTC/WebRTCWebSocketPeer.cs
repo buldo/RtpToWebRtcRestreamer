@@ -2,7 +2,7 @@
 // Filename: WebRTCWebSocketPeer.cs
 //
 // Description: This class is NOT a required component for using WebRTC. It is a
-// convenience class provided to assist when using a web socket server for the 
+// convenience class provided to assist when using a web socket server for the
 // WebRTC signalling.
 //
 // Author(s):
@@ -11,7 +11,7 @@
 // History:
 // 12 Sep 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
     /// <summary>
     /// This class is NOT a required component for using WebRTC. It is a convenience
-    /// class provided to assist when using a web socket server for the  WebRTC 
+    /// class provided to assist when using a web socket server for the  WebRTC
     /// signalling.
     /// </summary>
     internal class WebRTCWebSocketPeer : WebSocketBehavior
@@ -35,8 +35,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         private RTCPeerConnection _pc;
 
         /// <summary>
-        /// Optional filter that can be applied to remote ICE candidates. The filter is 
-        /// primarily intended for use in testing. In real application scenarios it's 
+        /// Optional filter that can be applied to remote ICE candidates. The filter is
+        /// primarily intended for use in testing. In real application scenarios it's
         /// normally desirable to accept all remote ICE candidates.
         /// </summary>
         private Func<RTCIceCandidateInit, bool> FilterRemoteICECandidates { get; set; }
@@ -123,6 +123,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 logger.LogDebug(offerSdp.sdp);
 
                 Context.WebSocket.Send(offerSdp.toJSON());
+                Thread.Sleep(TimeSpan.FromSeconds(3));
+                Context.WebSocket.Send( _pc.RtpIceChannel.Candidates.FirstOrDefault()?.toJSON());
             }
         }
     }

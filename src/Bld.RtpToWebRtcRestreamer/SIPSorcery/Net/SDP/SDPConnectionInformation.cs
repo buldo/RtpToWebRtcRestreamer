@@ -28,12 +28,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         /// <summary>
         /// Type of network, IN = Internet.
         /// </summary>
-        private string ConnectionNetworkType = "IN";
+        public string ConnectionNetworkType = "IN";
 
         /// <summary>
         /// Session level address family.
         /// </summary>
-        private string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+        public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
 
         /// <summary>
         /// IP or multicast address for the media connection.

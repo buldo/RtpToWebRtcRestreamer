@@ -323,7 +323,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
             return announcement;
         }
 
-        private string GetFormatListToString()
+        public string GetFormatListToString()
         {
             if (Media == SDPMediaTypesEnum.application)
             {

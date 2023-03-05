@@ -106,6 +106,7 @@ using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -148,13 +149,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
         private string NetworkType = "IN";   // Type of network, IN = Internet.
         private string AddressType = ADDRESS_TYPE_IPV4;  // Address type, typically IP4 or IP6.
         private string AddressOrHost;         // IP Address or Host of the machine that created the session, either FQDN or dotted quad or textual for IPv6.
-        private string Owner
+        public string Owner
         {
             get { return Username + " " + SessionId + " " + AnnouncementVersion + " " + NetworkType + " " + AddressType + " " + AddressOrHost; }
         }
 
-        private string SessionName = "sipsorcery";            // Common name of the session.
-        private string Timing = DEFAULT_TIMING;
+        public string SessionName = "sipsorcery";            // Common name of the session.
+        public string Timing = DEFAULT_TIMING;
         private List<string> BandwidthAttributes = new List<string>();
 
         // Optional fields.
@@ -781,6 +782,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
 
         public override string ToString()
         {
+            return NewSdpWriter.GetSdpString(this);
+
             var sdp =
                 "v=" + SDP_PROTOCOL_VERSION + CRLF +
                 "o=" + Owner + CRLF +

@@ -125,7 +125,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
         private string LocalSdpSessionID { get; }
 
-        private readonly RtpIceChannel _rtpIceChannel;
+        public RtpIceChannel RtpIceChannel { get; }
 
         readonly RTCDataChannelCollection dataChannels;
         private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
@@ -165,7 +165,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             get
             {
-                return _rtpIceChannel != null ? _rtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
+                return RtpIceChannel != null ? RtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
             }
         }
 
@@ -217,7 +217,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 _onIceCandidate += value;
                 if (notifyIce)
                 {
-                    foreach (var ice in _rtpIceChannel.Candidates)
+                    foreach (var ice in RtpIceChannel.Candidates)
                     {
                         _onIceCandidate?.Invoke(ice);
                     }
@@ -281,12 +281,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             // be used to multiplex all required media streams.
             AddSingleTrack(false);
 
-            _rtpIceChannel = GetRtpChannel();
+            RtpIceChannel = GetRtpChannel();
 
-            _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
-            _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
-            _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
-            _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
+            RtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
+            RtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
+            RtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
+            RtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
             OnRtpClosed += Close;
             OnRtcpBye += Close;
@@ -294,7 +294,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             //Cancel Negotiation Task Event to Prevent Duplicated Calls
             onnegotiationneeded += CancelOnNegotiationNeededTask;
 
-            sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
+            sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, RtpIceChannel.RTPPort);
 
             onnegotiationneeded?.Invoke();
 
@@ -302,7 +302,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             // This job was moved to a background thread as it was observed that interacting with the OS network
             // calls and/or initialising DNS was taking up to 600ms, see
             // https://github.com/sipsorcery-org/sipsorcery/issues/456.
-            _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
+            _iceGatheringTask = Task.Run(RtpIceChannel.StartGathering);
         }
 
         /// <summary>
@@ -313,15 +313,15 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             oniceconnectionstatechange?.Invoke(iceConnectionState);
 
-            if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
+            if (iceState == RTCIceConnectionState.connected && RtpIceChannel.NominatedEntry != null)
             {
                 if (_dtlsHandle != null)
                 {
-                    if (PrimaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                        PrimaryStream.DestinationEndPoint?.Port != _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    if (PrimaryStream.DestinationEndPoint?.Address.Equals(RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
+                        PrimaryStream.DestinationEndPoint?.Port != RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                     {
                         // Already connected and this event is due to change in the nominated remote candidate.
-                        var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                        var connectedEP = RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                         SetGlobalDestination(connectedEP, connectedEP);
                         Logger.LogInformation($"ICE changing connected remote end point to {connectedEP}.");
@@ -340,7 +340,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                     connectionState = RTCPeerConnectionState.connecting;
                     onconnectionstatechange?.Invoke(connectionState);
 
-                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    var connectedEP = RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                     SetGlobalDestination(connectedEP, connectedEP);
                     Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
@@ -460,7 +460,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             if (init.type == RTCSdpType.offer)
             {
-                _rtpIceChannel.IsController = true;
+                RtpIceChannel.IsController = true;
             }
 
             if (signalingState == RTCSignalingState.have_remote_offer)
@@ -556,11 +556,11 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 }
 
                 if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
-                    _rtpIceChannel.IsController = true;
+                    RtpIceChannel.IsController = true;
                 }
                 if (init.type == RTCSdpType.answer)
                 {
-                    _rtpIceChannel.IsController = true;
+                    RtpIceChannel.IsController = true;
                     IceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
                 }
                 //As Chrome does not support changing IceRole while renegotiating we need to keep same previous IceRole if we already negotiated before
@@ -572,7 +572,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
                 if (remoteIceUser != null && remoteIcePassword != null)
                 {
-                    _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                    RtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
                 }
 
                 if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
@@ -639,7 +639,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                 // Trigger the ICE candidate events for any non-host candidates, host candidates are always included in the
                 // SDP offer/answer. The reason for the trigger is that ICE candidates cannot be sent to the remote peer
                 // until it is ready to receive them which is indicated by the remote offer being received.
-                foreach (var nonHostCand in _rtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
+                foreach (var nonHostCand in RtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
                 {
                     _onIceCandidate?.Invoke(nonHostCand);
                 }
@@ -658,7 +658,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             {
                 Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-                _rtpIceChannel?.Close();
+                RtpIceChannel?.Close();
                 _dtlsHandle?.Close();
 
                 if (sctp != null && sctp.state == RTCSctpTransportState.Connected)
@@ -790,12 +790,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             // Local function to add ICE candidates to one of the media announcements.
             void AddIceCandidates(SDPMediaAnnouncement announcement)
             {
-                if (_rtpIceChannel.Candidates?.Count > 0)
+                if (RtpIceChannel.Candidates?.Count > 0)
                 {
                     announcement.IceCandidates = new List<string>();
 
                     // Add ICE candidates.
-                    foreach (var iceCandidate in _rtpIceChannel.Candidates)
+                    foreach (var iceCandidate in RtpIceChannel.Candidates)
                     {
                         announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
@@ -805,7 +805,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                         announcement.IceCandidates.Add(iceCandidate.ToString());
                     }
 
-                    if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
+                    if (RtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
                     {
                         announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
                     }
@@ -860,8 +860,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                     announcement.MediaID = midTag;
                     announcement.MLineIndex = mindex;
 
-                    announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                    announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                    announcement.IceUfrag = RtpIceChannel.LocalIceUser;
+                    announcement.IcePwd = RtpIceChannel.LocalIcePassword;
                     announcement.IceOptions = ICE_OPTIONS;
                     announcement.IceRole = IceRole;
                     announcement.DtlsFingerprint = dtlsFingerprint;
@@ -888,7 +888,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 
             if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
             {
-                (int mindex, string midTag) = RemoteDescription == null ? (mediaIndex, mediaIndex.ToString()) : RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
+                int mindex;
+                string midTag;
+                if (RemoteDescription == null)
+                {
+                    (mindex, midTag) = (mediaIndex, mediaIndex.ToString());
+                }
+                else
+                {
+                    (mindex,midTag) = RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
+                }
 
                 if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
                 {
@@ -907,8 +916,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
                     dataChannelAnnouncement.MaxMessageSize = sctp.maxMessageSize;
                     dataChannelAnnouncement.MLineIndex = mindex;
                     dataChannelAnnouncement.MediaID = midTag;
-                    dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                    dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                    dataChannelAnnouncement.IceUfrag = RtpIceChannel.LocalIceUser;
+                    dataChannelAnnouncement.IcePwd = RtpIceChannel.LocalIcePassword;
                     dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
                     dataChannelAnnouncement.IceRole = IceRole;
                     dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
@@ -995,9 +1004,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
         {
             var candidate = new RTCIceCandidate(candidateInit);
 
-            if (_rtpIceChannel.Component == candidate.component)
+            if (RtpIceChannel.Component == candidate.component)
             {
-                _rtpIceChannel.AddRemoteCandidate(candidate);
+                RtpIceChannel.AddRemoteCandidate(candidate);
             }
             else
             {
