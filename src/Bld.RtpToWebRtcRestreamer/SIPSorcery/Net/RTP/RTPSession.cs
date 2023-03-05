@@ -417,7 +417,8 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
                 var currentAudioStreamCount = 0;
                 var currentVideoStreamCount = 0;
 
-                foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
+                //foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
+                foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.video))
                 {
                     MediaStream currentMediaStream;
                     if (announcement.Media == SDPMediaTypesEnum.audio)
@@ -576,6 +577,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
             CreateRtcpSession(currentMediaStream);
         }
 
+#nullable enable
         /// <summary>
         /// Adds a media track to this session. A media track represents an audio or video
         /// stream and can be a local (which means we're sending) or remote (which means
@@ -584,14 +586,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
         /// <param name="track">The media track to add to the session.</param>
         public void AddTrack(MediaStreamTrack track)
         {
-            if (track == null)
-            {
-                return;
-            }
-
-             AddLocalTrack(track);
+            AddLocalTrack(track);
         }
-
+#nullable restore
         /// <summary>
         /// Adds a local media stream to this session. Local media tracks should be added by the
         /// application to control what session description offers and answers can be made as

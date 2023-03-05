@@ -18,6 +18,8 @@ namespace Bld.RtpToWebRtcRestreamer
         private readonly PooledUdpSource _receiver;
         private readonly StreamMultiplexer _streamMultiplexer;
         private readonly Task _periodicalManagementTask;
+        private readonly List<RTCPeerConnection> _peers = new();
+
         private int _connectedClientsCount;
 
         public RtpRestreamer(
@@ -74,7 +76,10 @@ namespace Bld.RtpToWebRtcRestreamer
 
             var videoTrack = new MediaStreamTrack(
                 new VideoFormat(VideoCodecsEnum.H264, 96),
-                MediaStreamStatusEnum.SendOnly);
+                MediaStreamStatusEnum.SendOnly)
+            {
+                StreamStatus = MediaStreamStatusEnum.SendOnly
+            };
             pc.AddTrack(videoTrack);
 
             pc.onconnectionstatechange += (state) =>
@@ -128,6 +133,21 @@ namespace Bld.RtpToWebRtcRestreamer
         public void Stop()
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<string> AppendClient(string sdpOffer)
+        {
+            var newPeer = await CreatePeerConnection();
+            newPeer.setRemoteDescription(new RTCSessionDescriptionInit()
+            {
+                sdp = sdpOffer,
+                type = RTCSdpType.offer
+            });
+
+            var answer = newPeer.createAnswer();
+            _peers.Add(newPeer);
+
+            return answer.sdp;
         }
     }
 }

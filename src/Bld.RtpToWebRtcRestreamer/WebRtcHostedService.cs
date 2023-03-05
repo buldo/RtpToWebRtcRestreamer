@@ -35,10 +35,10 @@ internal class WebRtcHostedService : IHostedService
 
     private void RtpRestreamerOnConnectedClientsChanged(object? sender, ConnectedClientsChangedEventArgs e)
     {
-        if (e.NewCount == 0)
-        {
-            _rtpRestreamer?.Stop();
-        }
+        //if (e.NewCount == 0)
+        //{
+        //    _rtpRestreamer?.Stop();
+        //}
     }
 
     public void StartStreamer()
@@ -62,5 +62,10 @@ internal class WebRtcHostedService : IHostedService
     public void StopStreamer()
     {
         _rtpRestreamer?.Stop();
+    }
+
+    public async Task<string> AppendClient(string sdpOffer)
+    {
+        return await _rtpRestreamer.AppendClient(sdpOffer);
     }
 }

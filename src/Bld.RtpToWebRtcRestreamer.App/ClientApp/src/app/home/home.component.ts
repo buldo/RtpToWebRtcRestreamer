@@ -33,7 +33,7 @@ export class HomeComponent implements AfterViewInit {
       statsTypeFilter: '^candidate-*|^inbound-rtp'
     });
 
-    await this.player.load(new URL(this.baseUrl+'api/video'));
+    await this.player.load(new URL(this.baseUrl+'api/video/sdp'));
     this.player.on('no-media', () => {
       console.log('media timeout occured');
     });
