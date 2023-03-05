@@ -68,7 +68,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
         {
             if (certificateChain == null && privateKey == null)
             {
-                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, m_context.Crypto);
             }
 
             _cipherSuites = base.GetCipherSuites();
@@ -79,7 +79,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
 
         protected override ProtocolVersion[] GetSupportedVersions()
         {
-            return ProtocolVersion.TLSv13.DownTo(ProtocolVersion.TLSv12);
+            return ProtocolVersion.TLSv13.DownTo(ProtocolVersion.TLSv10);
         }
 
         public override int GetSelectedCipherSuite()

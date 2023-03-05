@@ -56,6 +56,7 @@ using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using Org.BouncyCastle.Utilities;
+using Org.BouncyCastle.Utilities.IO.Pem;
 using Org.BouncyCastle.X509;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
@@ -215,19 +216,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
             return (certificate, subjectKeyPair.Private);
         }
 
-        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert()
+        public static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(
+            ProtocolVersion protocolVersion,
+            TlsCrypto tlsCrypto)
         {
-            return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null);
+            return CreateSelfSignedTlsCert("CN=localhost", "CN=root", null, protocolVersion, tlsCrypto);
         }
 
-        private static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(string subjectName, string issuerName, AsymmetricKeyParameter issuerPrivateKey)
+        private static (Certificate certificate, AsymmetricKeyParameter privateKey) CreateSelfSignedTlsCert(
+            string subjectName,
+            string issuerName,
+            AsymmetricKeyParameter issuerPrivateKey,
+            ProtocolVersion protocolVersion,
+            TlsCrypto tlsCrypto)
         {
             var tuple = CreateSelfSignedBouncyCastleCert(subjectName, issuerName, issuerPrivateKey);
             var certificate = tuple.certificate;
             var privateKey = tuple.privateKey;
-            TlsCertificate[] chain = new[] { certificate. };
-            var tlsCertificate = new Certificate(chain);
-
+            var tlsCertificate = LoadCertificateChain(protocolVersion, tlsCrypto,
+                new List<byte[]>() { certificate.GetEncoded() });
             return (tlsCertificate, privateKey);
         }
 
@@ -290,6 +297,45 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
                 default:
                     return false;
             }
+        }
+
+        internal static Certificate LoadCertificateChain(
+            ProtocolVersion protocolVersion,
+            TlsCrypto crypto,
+            List<byte[]> resources)
+        {
+            if (TlsUtilities.IsTlsV13(protocolVersion))
+            {
+                CertificateEntry[] certificateEntryList = new CertificateEntry[resources.Count];
+                for (int i = 0; i < resources.Count; ++i)
+                {
+                    TlsCertificate certificate = LoadCertificateResource(crypto, resources[i]);
+
+                    // TODO[tls13] Add possibility of specifying e.g. CertificateStatus
+                    IDictionary<int, byte[]> extensions = null;
+
+                    certificateEntryList[i] = new CertificateEntry(certificate, extensions);
+                }
+
+                // TODO[tls13] Support for non-empty request context
+                byte[] certificateRequestContext = TlsUtilities.EmptyBytes;
+
+                return new Certificate(certificateRequestContext, certificateEntryList);
+            }
+            else
+            {
+                TlsCertificate[] chain = new TlsCertificate[resources.Count];
+                for (int i = 0; i < resources.Count; ++i)
+                {
+                    chain[i] = LoadCertificateResource(crypto, resources[i]);
+                }
+                return new Certificate(chain);
+            }
+        }
+
+        private static TlsCertificate LoadCertificateResource(TlsCrypto crypto, byte[] resource)
+        {
+            return crypto.CreateCertificate(resource);
         }
     }
 }

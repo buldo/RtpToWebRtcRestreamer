@@ -45,6 +45,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
 {
@@ -270,7 +271,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
             dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
 
             // No certificate was provided so create a new self signed one.
-            (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+            (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert( ProtocolVersion.DTLSv12 , new BcTlsCrypto());
 
             DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
