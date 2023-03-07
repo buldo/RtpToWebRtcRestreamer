@@ -1,4 +1,4 @@
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// The different types of RTCP packets as defined in RFC3550.
