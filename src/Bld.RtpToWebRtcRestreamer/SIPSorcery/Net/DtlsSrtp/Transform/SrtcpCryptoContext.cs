@@ -1,65 +1,4 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: SrtpCryptoContext.cs
-//
-// Description: SRTPCryptoContext class is the core class of SRTP implementation.
-// There can be multiple SRTP sources in one SRTP session.And each SRTP stream
-// has a corresponding SRTPCryptoContext object, identified by SSRC.In this way,
-// different sources can be protected independently.
-//
-// Derived From:
-// https://github.com/jitsi/jitsi-srtp/blob/master/src/main/java/org/jitsi/srtp/SrtpCryptoContext.java
-//
-// Author(s):
-// Rafael Soares (raf.csoares@kyubinteractive.com)
-//
-// History:
-// 01 Jul 2020	Rafael Soares   Created.
-//
-// License:
-// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// Original Source: Apache License: see below
-//-----------------------------------------------------------------------------
-
-/*
- * Copyright @ 2015 - present 8x8, Inc
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Some of the code in this class is derived from ccRtp's SRTP implementation,
- * which has the following copyright notice:
- *
- * Copyright (C) 2004-2006 the Minisip Team
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-*/
-
-using System.Buffers.Binary;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
-
-using Org.BouncyCastle.Crypto;
+﻿using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Macs;
@@ -70,47 +9,76 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
 internal class SrtcpCryptoContext
 {
-    /** The replay check windows size */
-    private const long ReplayWindowSize = 64;
+    /// <summary>
+    /// The replay check windows size
+    /// </summary>
+    private const long REPLAY_WINDOW_SIZE = 64;
 
-    /** Index received so far */
+    /// <summary>
+    /// Index received so far
+    /// </summary>
     private int _receivedIndex;
 
-    /** Index sent so far */
+    /// <summary>
+    /// Index sent so far
+    /// </summary>
     private int _sentIndex;
 
-    /** Bit mask for replay check */
+    /// <summary>
+    /// Bit mask for replay check
+    /// </summary>
     private long _replayWindow;
 
-    /** Master encryption key */
+    /// <summary>
+    /// Master encryption key
+    /// </summary>
     private readonly byte[] _masterKey;
 
-    /** Master salting key */
+    /// <summary>
+    /// Master salting key
+    /// </summary>
     private readonly byte[] _masterSalt;
 
-    /** Derived session encryption key */
+    /// <summary>
+    /// Derived session encryption key
+    /// </summary>
     private readonly byte[] _encKey;
 
-    /** Derived session authentication key */
+    /// <summary>
+    /// Derived session authentication key
+    /// </summary>
     private readonly byte[] _authKey;
 
-    /** Derived session salting key */
+    /// <summary>
+    /// Derived session salting key
+    /// </summary>
     private readonly byte[] _saltKey;
 
-    /** Encryption / Authentication policy for this session */
+    /// <summary>
+    /// Encryption / Authentication policy for this session
+    /// </summary>
     private readonly SrtpPolicy _policy;
 
-    /**
-         * The HMAC object we used to do packet authentication
-         */
-    private readonly IMac _mac;             // used for various HMAC computations
+    /// <summary>
+    /// The HMAC object we used to do packet authentication
+    /// used for various HMAC computations
+    /// </summary>
+    private readonly IMac _mac;
 
-    // The symmetric cipher engines we need here
+    /// <summary>
+    /// The symmetric cipher engines we need here
+    /// </summary>
     private readonly IBlockCipher _cipher;
-    private readonly IBlockCipher _cipherF8; // used inside F8 mode only
 
-    // implements the counter cipher mode for RTP according to RFC 3711
-    private readonly SrtpCipherCtr _cipherCtr = new SrtpCipherCtr();
+    /// <summary>
+    /// Used inside F8 mode only
+    /// </summary>
+    private readonly IBlockCipher _cipherF8;
+
+    /// <summary>
+    /// Implements the counter cipher mode for RTP according to RFC 3711
+    /// </summary>
+    private readonly SrtpCipherCtr _cipherCtr = new();
 
     // Here some fields that a allocated here or in constructor. The methods
     // use these fields to avoid too many new operations
@@ -470,7 +438,7 @@ internal class SrtcpCryptoContext
             return true;
         }
 
-        if (-delta > ReplayWindowSize)
+        if (-delta > REPLAY_WINDOW_SIZE)
         {
             /* Packet too old */
             return false;

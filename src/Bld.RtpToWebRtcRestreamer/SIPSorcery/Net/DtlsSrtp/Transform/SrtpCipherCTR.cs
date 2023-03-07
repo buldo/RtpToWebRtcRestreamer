@@ -36,68 +36,66 @@
 /**
  * SRTPCipherF8 implements SRTP F8 Mode AES Encryption (AES-f8).
  * F8 Mode AES Encryption algorithm is defined in RFC3711, section 4.1.2.
- * 
+ *
  * Other than Null Cipher, RFC3711 defined two encryption algorithms:
  * Counter Mode AES Encryption and F8 Mode AES encryption. Both encryption
  * algorithms are capable to encrypt / decrypt arbitrary length data, and the
- * size of packet data is not required to be a multiple of the AES block 
+ * size of packet data is not required to be a multiple of the AES block
  * size (128bit). So, no padding is needed.
- * 
+ *
  * Please note: these two encryption algorithms are specially defined by SRTP.
- * They are not common AES encryption modes, so you will not be able to find a 
- * replacement implementation in common cryptographic libraries. 
- * 
+ * They are not common AES encryption modes, so you will not be able to find a
+ * replacement implementation in common cryptographic libraries.
+ *
  * As defined by RFC3711: F8 mode encryption is optional.
  *
  *                        mandatory to impl     optional      default
  * -------------------------------------------------------------------------
  *   encryption           AES-CM, NULL          AES-f8        AES-CM
  *   message integrity    HMAC-SHA1                -          HMAC-SHA1
- *   key derivation       (PRF) AES-CM             -          AES-CM 
+ *   key derivation       (PRF) AES-CM             -          AES-CM
  *
  * We use AESCipher to handle basic AES encryption / decryption.
- * 
+ *
  * @author Bing SU (nova.su@gmail.com)
  * @author Werner Dittmann <werner.dittmann@t-online.de>
  */
+
+using System.Buffers;
 
 using Org.BouncyCastle.Crypto;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
-/**
-     * SRTPCipherCTR implements SRTP Counter Mode AES Encryption (AES-CM).
-     * Counter Mode AES Encryption algorithm is defined in RFC3711, section 4.1.1.
-     * 
-     * Other than Null Cipher, RFC3711 defined two two encryption algorithms:
-     * Counter Mode AES Encryption and F8 Mode AES encryption. Both encryption
-     * algorithms are capable to encrypt / decrypt arbitrary length data, and the
-     * size of packet data is not required to be a multiple of the AES block 
-     * size (128bit). So, no padding is needed.
-     * 
-     * Please note: these two encryption algorithms are specially defined by SRTP.
-     * They are not common AES encryption modes, so you will not be able to find a 
-     * replacement implementation in common cryptographic libraries. 
-     *
-     * As defined by RFC3711: Counter Mode Encryption is mandatory..
-     *
-     *                        mandatory to impl     optional      default
-     * -------------------------------------------------------------------------
-     *   encryption           AES-CM, NULL          AES-f8        AES-CM
-     *   message integrity    HMAC-SHA1                -          HMAC-SHA1
-     *   key derivation       (PRF) AES-CM             -          AES-CM 
-     *
-     * We use AESCipher to handle basic AES encryption / decryption.
-     * 
-     * @author Werner Dittmann (Werner.Dittmann@t-online.de)
-     * @author Bing SU (nova.su@gmail.com)
-     */
+/// <summary>
+/// SRTPCipherCTR implements SRTP Counter Mode AES Encryption(AES-CM).
+/// Counter Mode AES Encryption algorithm is defined in RFC3711, section 4.1.1.
+///
+/// Other than Null Cipher, RFC3711 defined two two encryption algorithms:
+/// Counter Mode AES Encryption and F8 Mode AES encryption.Both encryption
+/// algorithms are capable to encrypt / decrypt arbitrary length data, and the
+/// size of packet data is not required to be a multiple of the AES block
+/// size (128bit). So, no padding is needed.
+///
+/// Please note: these two encryption algorithms are specially defined by SRTP.
+/// They are not common AES encryption modes, so you will not be able to find a
+/// replacement implementation in common cryptographic libraries.
+///
+/// As defined by RFC3711: Counter Mode Encryption is mandatory..
+///
+/// mandatory to impl     optional      default
+/// -------------------------------------------------------------------------
+/// encryption          AES-CM,   NULL AES-f8 AES-CM
+/// message integrity   HMAC-SHA1 -    HMAC-SHA1
+/// key derivation(PRF) AES-CM    -    AES-CM
+///
+/// We use AESCipher to handle basic AES encryption / decryption.
+/// </summary>
 internal class SrtpCipherCtr
 {
-    private const int Blklen = 16;
-    private const int MaxBufferLength = 10 * 1024;
-    private readonly byte[] _cipherInBlock = new byte[Blklen];
-    private readonly byte[] _tmpCipherBlock = new byte[Blklen];
+    private const int BLOCK_LENGTH = 16;
+    private const int MAX_BUFFER_LENGTH = 10 * 1024;
+    private readonly ArrayPool<byte> _bytesPool = ArrayPool<byte>.Shared;
     private byte[] _streamBuf = new byte[1024];
 
     public void Process(IBlockCipher cipher, MemoryStream data, int off, int len, byte[] iv)
@@ -109,7 +107,7 @@ internal class SrtpCipherCtr
         if (len > _streamBuf.Length)
         {
             cipherStream = new byte[len];
-            if (cipherStream.Length <= MaxBufferLength)
+            if (cipherStream.Length <= MAX_BUFFER_LENGTH)
             {
                 _streamBuf = cipherStream;
             }
@@ -129,36 +127,44 @@ internal class SrtpCipherCtr
         }
     }
 
-    /**
-         * Computes the cipher stream for AES CM mode. See section 4.1.1 in RFC3711
-         * for detailed description.
-         * 
-         * @param out
-         *            byte array holding the output cipher stream
-         * @param length
-         *            length of the cipher stream to produce, in bytes
-         * @param iv
-         *            initialization vector used to generate this cipher stream
-         */
-    public void GetCipherStream(IBlockCipher aesCipher, byte[] @out, int length, byte[] iv)
+    /// <summary>
+    /// Computes the cipher strea for AES CM mode. See section 4.1.1 in RFC3711 for detailed description.
+    /// </summary>
+    /// <param name="aesCipher"></param>
+    /// <param name="output">byte array holding the output cipher stream</param>
+    /// <param name="length">length of the cipher stream to produce, in bytes</param>
+    /// <param name="iv">initialization vector used to generate this cipher stream</param>
+    public void GetCipherStream(IBlockCipher aesCipher, Span<byte> output, int length, ReadOnlySpan<byte> iv)
     {
-        Array.Copy(iv, 0, _cipherInBlock, 0, 14);
-
-        int ctr;
-        for (ctr = 0; ctr < length / Blklen; ctr++)
+        var cipherInBlockArray = _bytesPool.Rent(BLOCK_LENGTH);
+        var cipherInBlock = cipherInBlockArray.AsSpan(0, BLOCK_LENGTH);
+        var tmpCipherBlockArray = _bytesPool.Rent(BLOCK_LENGTH);
+        var tmpCipherBlock = tmpCipherBlockArray.AsSpan(0, BLOCK_LENGTH);
+        try
         {
-            // compute the cipher stream
-            _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-            _cipherInBlock[15] = (byte)((ctr & 0x00FF));
+            iv[0..14].CopyTo(cipherInBlock[0..14]);
 
-            aesCipher.ProcessBlock(_cipherInBlock, 0, @out, ctr * Blklen);
+            int ctr;
+            for (ctr = 0; ctr < length / BLOCK_LENGTH; ctr++)
+            {
+                // compute the cipher stream
+                cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
+                cipherInBlock[15] = (byte)((ctr & 0x00FF));
+
+                aesCipher.ProcessBlock(cipherInBlock, output[(ctr * BLOCK_LENGTH)..]);
+            }
+
+            // Treat the last bytes:
+            cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
+            cipherInBlock[15] = (byte)((ctr & 0x00FF));
+
+            aesCipher.ProcessBlock(cipherInBlock, tmpCipherBlock);
+            tmpCipherBlock[0..(length % BLOCK_LENGTH)].CopyTo(output.Slice(ctr * BLOCK_LENGTH, length % BLOCK_LENGTH));
         }
-
-        // Treat the last bytes:
-        _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-        _cipherInBlock[15] = (byte)((ctr & 0x00FF));
-
-        aesCipher.ProcessBlock(_cipherInBlock, 0, _tmpCipherBlock, 0);
-        Array.Copy(_tmpCipherBlock, 0, @out, ctr * Blklen, length % Blklen);
+        finally
+        {
+            _bytesPool.Return(cipherInBlockArray);
+            _bytesPool.Return(tmpCipherBlockArray);
+        }
     }
 }
