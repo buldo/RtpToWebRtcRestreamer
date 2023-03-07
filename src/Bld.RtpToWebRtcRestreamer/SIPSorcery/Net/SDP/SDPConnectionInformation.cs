@@ -16,52 +16,51 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+internal class SDPConnectionInformation
 {
-    internal class SDPConnectionInformation
+    private const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
+    private const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+
+    private const string m_CRLF = "\r\n";
+
+    /// <summary>
+    /// Type of network, IN = Internet.
+    /// </summary>
+    public string ConnectionNetworkType = "IN";
+
+    /// <summary>
+    /// Session level address family.
+    /// </summary>
+    public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+
+    /// <summary>
+    /// IP or multicast address for the media connection.
+    /// </summary>
+    public string ConnectionAddress;
+
+    private SDPConnectionInformation()
+    { }
+
+    public SDPConnectionInformation(IPAddress connectionAddress)
     {
-        private const string CONNECTION_ADDRESS_TYPE_IPV4 = "IP4";
-        private const string CONNECTION_ADDRESS_TYPE_IPV6 = "IP6";
+        ConnectionAddress = connectionAddress.ToString();
+        ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
+    }
 
-        private const string m_CRLF = "\r\n";
+    public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
+    {
+        var connectionInfo = new SDPConnectionInformation();
+        var connectionFields = connectionLine.Substring(2).Trim().Split(' ');
+        connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
+        connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
+        connectionInfo.ConnectionAddress = connectionFields[2].Trim();
+        return connectionInfo;
+    }
 
-        /// <summary>
-        /// Type of network, IN = Internet.
-        /// </summary>
-        public string ConnectionNetworkType = "IN";
-
-        /// <summary>
-        /// Session level address family.
-        /// </summary>
-        public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
-
-        /// <summary>
-        /// IP or multicast address for the media connection.
-        /// </summary>
-        public string ConnectionAddress;
-
-        private SDPConnectionInformation()
-        { }
-
-        public SDPConnectionInformation(IPAddress connectionAddress)
-        {
-            ConnectionAddress = connectionAddress.ToString();
-            ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
-        }
-
-        public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
-        {
-            var connectionInfo = new SDPConnectionInformation();
-            var connectionFields = connectionLine.Substring(2).Trim().Split(' ');
-            connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
-            connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
-            connectionInfo.ConnectionAddress = connectionFields[2].Trim();
-            return connectionInfo;
-        }
-
-        public override string ToString()
-        {
-            return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
-        }
+    public override string ToString()
+    {
+        return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
     }
 }

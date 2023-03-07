@@ -74,71 +74,70 @@
 using System.Text;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN;
+
+internal class STUNHeader
 {
-    internal class STUNHeader
+    private const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
+    public const int STUN_HEADER_LENGTH = 20;
+    public const UInt32 MAGIC_COOKIE = 0x2112A442;
+    public const int TRANSACTION_ID_LENGTH = 12;
+
+    public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
+    public STUNClassTypesEnum MessageClass
     {
-        private const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
-        public const int STUN_HEADER_LENGTH = 20;
-        public const UInt32 MAGIC_COOKIE = 0x2112A442;
-        public const int TRANSACTION_ID_LENGTH = 12;
-
-        public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
-        public STUNClassTypesEnum MessageClass
+        get
         {
-            get
-            {
-                var @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
-                return (STUNClassTypesEnum)@class;
-            }
+            var @class = ((ushort)MessageType >> 8 & 0x01) * 2 | ((ushort)MessageType >> 4 & 0x01);
+            return (STUNClassTypesEnum)@class;
+        }
+    }
+
+    public UInt16 MessageLength;
+    public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
+
+    public STUNHeader()
+    { }
+
+    public STUNHeader(STUNMessageTypesEnum messageType)
+    {
+        MessageType = messageType;
+        TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
+    }
+
+    public static STUNHeader ParseSTUNHeader(byte[] buffer)
+    {
+        return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
+    }
+
+    private static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
+    {
+        var startIndex = bufferSegment.Offset;
+        if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
+        {
+            throw new ApplicationException("The STUN header did not begin with 0x00.");
         }
 
-        public UInt16 MessageLength;
-        public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
-
-        public STUNHeader()
-        { }
-
-        public STUNHeader(STUNMessageTypesEnum messageType)
+        if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
         {
-            MessageType = messageType;
-            TransactionId = Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, TRANSACTION_ID_LENGTH));
-        }
+            var stunHeader = new STUNHeader();
 
-        public static STUNHeader ParseSTUNHeader(byte[] buffer)
-        {
-            return ParseSTUNHeader(new ArraySegment<byte>(buffer, 0, buffer.Length));
-        }
+            var stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
+            var stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
 
-        private static STUNHeader ParseSTUNHeader(ArraySegment<byte> bufferSegment)
-        {
-            var startIndex = bufferSegment.Offset;
-            if ((bufferSegment.Array[startIndex] & STUN_INITIAL_BYTE_MASK) != 0)
+            if (BitConverter.IsLittleEndian)
             {
-                throw new ApplicationException("The STUN header did not begin with 0x00.");
-            }
-
-            if (bufferSegment != null && bufferSegment.Count > 0 && bufferSegment.Count >= STUN_HEADER_LENGTH)
-            {
-                var stunHeader = new STUNHeader();
-
-                var stunTypeValue = BitConverter.ToUInt16(bufferSegment.Array, startIndex);
-                var stunMessageLength = BitConverter.ToUInt16(bufferSegment.Array, startIndex + 2);;
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
-                    stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
-                }
-
-                stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
-                stunHeader.MessageLength = stunMessageLength;
-                Buffer.BlockCopy(bufferSegment.Array, startIndex + 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
-
-                return stunHeader;
+                stunTypeValue = NetConvert.DoReverseEndian(stunTypeValue);
+                stunMessageLength = NetConvert.DoReverseEndian(stunMessageLength);
             }
 
-            return null;
+            stunHeader.MessageType = STUNMessageTypes.GetSTUNMessageTypeForId(stunTypeValue);
+            stunHeader.MessageLength = stunMessageLength;
+            Buffer.BlockCopy(bufferSegment.Array, startIndex + 8, stunHeader.TransactionId, 0, TRANSACTION_ID_LENGTH);
+
+            return stunHeader;
         }
+
+        return null;
     }
 }

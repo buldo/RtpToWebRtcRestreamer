@@ -17,77 +17,76 @@
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+
+/// <summary>
+/// A WebRTC data channel is generic transport service
+/// that allows peers to exchange generic data in a peer
+/// to peer manner.
+/// </summary>
+internal class RTCDataChannel
 {
-    /// <summary>
-    /// A WebRTC data channel is generic transport service
-    /// that allows peers to exchange generic data in a peer
-    /// to peer manner.
-    /// </summary>
-    internal class RTCDataChannel
+    private static readonly ILogger logger = Log.Logger;
+
+    public string label { get; set; }
+
+    public bool negotiated { get; set; }
+
+    public ushort? id { get; set; }
+
+    public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
+
+    public bool IsOpened { get; internal set; }
+
+    private readonly RTCSctpTransport _transport;
+
+    public event Action<string> onerror;
+    public event Action onclose;
+
+    public RTCDataChannel(RTCSctpTransport transport)
     {
-        private static readonly ILogger logger = Log.Logger;
+        _transport = transport;
+    }
 
-        public string label { get; set; }
+    internal void GotAck()
+    {
+        logger.LogDebug($"Data channel for label {label} now open.");
+        IsOpened = true;
+        readyState = RTCDataChannelState.open;
+    }
 
-        public bool negotiated { get; set; }
-
-        public ushort? id { get; set; }
-
-        public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
-
-        public bool IsOpened { get; internal set; }
-
-        private readonly RTCSctpTransport _transport;
-
-        public event Action<string> onerror;
-        public event Action onclose;
-
-        public RTCDataChannel(RTCSctpTransport transport)
+    /// <summary>
+    /// Sends an OPEN Data Channel Establishment Protocol (DCEP) message
+    /// to open a data channel on the remote peer for send/receive.
+    /// </summary>
+    internal void SendDcepOpen()
+    {
+        var dcepOpen = new DataChannelOpenMessage
         {
-            _transport = transport;
+            MessageType = (byte)DataChannelMessageTypes.OPEN,
+            ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
+            Label = label
+        };
+
+        lock (this)
+        {
+            _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
+                dcepOpen.GetBytes());
         }
+    }
 
-        internal void GotAck()
+    /// <summary>
+    /// Sends an ACK response for a Data Channel Establishment Protocol (DCEP)
+    /// control message.
+    /// </summary>
+    internal void SendDcepAck()
+    {
+        lock (this)
         {
-            logger.LogDebug($"Data channel for label {label} now open.");
-            IsOpened = true;
-            readyState = RTCDataChannelState.open;
-        }
-
-        /// <summary>
-        /// Sends an OPEN Data Channel Establishment Protocol (DCEP) message
-        /// to open a data channel on the remote peer for send/receive.
-        /// </summary>
-        internal void SendDcepOpen()
-        {
-            var dcepOpen = new DataChannelOpenMessage
-            {
-                MessageType = (byte)DataChannelMessageTypes.OPEN,
-                ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
-                Label = label
-            };
-
-            lock (this)
-            {
-                _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                       (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
-                       dcepOpen.GetBytes());
-            }
-        }
-
-        /// <summary>
-        /// Sends an ACK response for a Data Channel Establishment Protocol (DCEP)
-        /// control message.
-        /// </summary>
-        internal void SendDcepAck()
-        {
-            lock (this)
-            {
-                _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                       (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
-                       new[] { (byte)DataChannelMessageTypes.ACK });
-            }
+            _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
+                (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
+                new[] { (byte)DataChannelMessageTypes.ACK });
         }
     }
 }

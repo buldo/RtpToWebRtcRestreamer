@@ -63,9 +63,9 @@
 
 using Org.BouncyCastle.Crypto;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
-{
-    /**
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
+
+/**
      * SRTPCipherCTR implements SRTP Counter Mode AES Encryption (AES-CM).
      * Counter Mode AES Encryption algorithm is defined in RFC3711, section 4.1.1.
      * 
@@ -92,44 +92,44 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
      * @author Werner Dittmann (Werner.Dittmann@t-online.de)
      * @author Bing SU (nova.su@gmail.com)
      */
-    internal class SrtpCipherCtr
+internal class SrtpCipherCtr
+{
+    private const int Blklen = 16;
+    private const int MaxBufferLength = 10 * 1024;
+    private readonly byte[] _cipherInBlock = new byte[Blklen];
+    private readonly byte[] _tmpCipherBlock = new byte[Blklen];
+    private byte[] _streamBuf = new byte[1024];
+
+    public void Process(IBlockCipher cipher, MemoryStream data, int off, int len, byte[] iv)
     {
-        private const int Blklen = 16;
-        private const int MaxBufferLength = 10 * 1024;
-        private readonly byte[] _cipherInBlock = new byte[Blklen];
-        private readonly byte[] _tmpCipherBlock = new byte[Blklen];
-        private byte[] _streamBuf = new byte[1024];
-
-        public void Process(IBlockCipher cipher, MemoryStream data, int off, int len, byte[] iv)
+        // if data fits in inner buffer - use it. Otherwise allocate bigger
+        // buffer store it to use it for later processing - up to a defined
+        // maximum size.
+        byte[] cipherStream;
+        if (len > _streamBuf.Length)
         {
-            // if data fits in inner buffer - use it. Otherwise allocate bigger
-            // buffer store it to use it for later processing - up to a defined
-            // maximum size.
-            byte[] cipherStream;
-            if (len > _streamBuf.Length)
+            cipherStream = new byte[len];
+            if (cipherStream.Length <= MaxBufferLength)
             {
-                cipherStream = new byte[len];
-                if (cipherStream.Length <= MaxBufferLength)
-                {
-                    _streamBuf = cipherStream;
-                }
-            }
-            else
-            {
-                cipherStream = _streamBuf;
-            }
-
-            GetCipherStream(cipher, cipherStream, len, iv);
-            for (var i = 0; i < len; i++)
-            {
-                data.Position = i + off;
-                var byteToWrite = data.ReadByte();
-                data.Position = i + off;
-                data.WriteByte((byte)(byteToWrite ^ cipherStream[i]));
+                _streamBuf = cipherStream;
             }
         }
+        else
+        {
+            cipherStream = _streamBuf;
+        }
 
-        /**
+        GetCipherStream(cipher, cipherStream, len, iv);
+        for (var i = 0; i < len; i++)
+        {
+            data.Position = i + off;
+            var byteToWrite = data.ReadByte();
+            data.Position = i + off;
+            data.WriteByte((byte)(byteToWrite ^ cipherStream[i]));
+        }
+    }
+
+    /**
          * Computes the cipher stream for AES CM mode. See section 4.1.1 in RFC3711
          * for detailed description.
          * 
@@ -140,27 +140,25 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param iv
          *            initialization vector used to generate this cipher stream
          */
-        public void GetCipherStream(IBlockCipher aesCipher, byte[] @out, int length, byte[] iv)
+    public void GetCipherStream(IBlockCipher aesCipher, byte[] @out, int length, byte[] iv)
+    {
+        Array.Copy(iv, 0, _cipherInBlock, 0, 14);
+
+        int ctr;
+        for (ctr = 0; ctr < length / Blklen; ctr++)
         {
-            Array.Copy(iv, 0, _cipherInBlock, 0, 14);
-
-            int ctr;
-            for (ctr = 0; ctr < length / Blklen; ctr++)
-            {
-                // compute the cipher stream
-                _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-                _cipherInBlock[15] = (byte)((ctr & 0x00FF));
-
-                aesCipher.ProcessBlock(_cipherInBlock, 0, @out, ctr * Blklen);
-            }
-
-            // Treat the last bytes:
+            // compute the cipher stream
             _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
             _cipherInBlock[15] = (byte)((ctr & 0x00FF));
 
-            aesCipher.ProcessBlock(_cipherInBlock, 0, _tmpCipherBlock, 0);
-            Array.Copy(_tmpCipherBlock, 0, @out, ctr * Blklen, length % Blklen);
+            aesCipher.ProcessBlock(_cipherInBlock, 0, @out, ctr * Blklen);
         }
+
+        // Treat the last bytes:
+        _cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
+        _cipherInBlock[15] = (byte)((ctr & 0x00FF));
+
+        aesCipher.ProcessBlock(_cipherInBlock, 0, _tmpCipherBlock, 0);
+        Array.Copy(_tmpCipherBlock, 0, @out, ctr * Blklen, length % Blklen);
     }
 }
-

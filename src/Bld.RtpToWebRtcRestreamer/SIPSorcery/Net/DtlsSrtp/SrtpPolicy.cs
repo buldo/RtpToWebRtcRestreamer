@@ -32,40 +32,40 @@
  * limitations under the License.
  */
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+
+/// <summary>
+/// SrtpPolicy holds the SRTP encryption / authentication policy of a SRTP
+/// session.
+///
+/// @author Bing SU (nova.su @gmail.com)
+/// </summary>
+internal class SrtpPolicy
 {
-    /// <summary>
-    /// SrtpPolicy holds the SRTP encryption / authentication policy of a SRTP
-    /// session.
-    ///
-    /// @author Bing SU (nova.su @gmail.com)
-    /// </summary>
-    internal class SrtpPolicy
-    {
-        public const int NullEncryption = 0;
-        public const int AescmEncryption = 1;
-        public const int TwofishEncryption = 3;
-        public const int Aesf8Encryption = 2;
-        public const int Twofishf8Encryption = 4;
-        public const int NullAuthentication = 0;
-        public const int Hmacsha1Authentication = 1;
-        public const int SkeinAuthentication = 2;
+    public const int NullEncryption = 0;
+    public const int AescmEncryption = 1;
+    public const int TwofishEncryption = 3;
+    public const int Aesf8Encryption = 2;
+    public const int Twofishf8Encryption = 4;
+    public const int NullAuthentication = 0;
+    public const int Hmacsha1Authentication = 1;
+    public const int SkeinAuthentication = 2;
 
-        public int AuthKeyLength { get; }
+    public int AuthKeyLength { get; }
 
-        public int AuthTagLength { get; }
+    public int AuthTagLength { get; }
 
-        public int AuthType { get; }
+    public int AuthType { get; }
 
-        public int EncKeyLength { get; }
+    public int EncKeyLength { get; }
 
-        public int EncType { get; }
+    public int EncType { get; }
 
-        public int SaltKeyLength { get; }
+    public int SaltKeyLength { get; }
 
-        public bool IsAesGcm { get; }
+    public bool IsAesGcm { get; }
 
-        /**
+    /**
          * Construct a SRTPPolicy object based on given parameters.
          * This class acts as a storage class, so all the parameters are passed in
          * through this constructor.
@@ -77,21 +77,20 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
          * @param authTagLength SRTP authentication tag length
          * @param saltKeyLength SRTP salt key length
          */
-        public SrtpPolicy(int encType,
-                          int encKeyLength,
-                          int authType,
-                          int authKeyLength,
-                          int authTagLength,
-                          int saltKeyLength,
-                          bool isAesGcm)
-        {
-            EncType = encType;
-            EncKeyLength = encKeyLength;
-            AuthType = authType;
-            AuthKeyLength = authKeyLength;
-            AuthTagLength = authTagLength;
-            SaltKeyLength = saltKeyLength;
-            IsAesGcm = isAesGcm;
-        }
+    public SrtpPolicy(int encType,
+        int encKeyLength,
+        int authType,
+        int authKeyLength,
+        int authTagLength,
+        int saltKeyLength,
+        bool isAesGcm)
+    {
+        EncType = encType;
+        EncKeyLength = encKeyLength;
+        AuthType = authType;
+        AuthKeyLength = authKeyLength;
+        AuthTagLength = authTagLength;
+        SaltKeyLength = saltKeyLength;
+        IsAesGcm = isAesGcm;
     }
 }

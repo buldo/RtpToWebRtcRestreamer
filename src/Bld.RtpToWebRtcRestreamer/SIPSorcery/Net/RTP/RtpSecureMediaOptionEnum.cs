@@ -1,20 +1,19 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+
+internal enum RtpSecureMediaOptionEnum
 {
-    internal enum RtpSecureMediaOptionEnum
-    {
-        /// <summary>
-        /// Secure media not used.
-        /// </summary>
-        None,
+    /// <summary>
+    /// Secure media not used.
+    /// </summary>
+    None,
 
-        /// <summary>
-        /// Secure media controled by DtlsSrtp for WebRTC.
-        /// </summary>
-        DtlsSrtp,
+    /// <summary>
+    /// Secure media controled by DtlsSrtp for WebRTC.
+    /// </summary>
+    DtlsSrtp,
 
-        /// <summary>
-        /// Secure media negotiated with SDP crypto attributes.
-        /// </summary>
-        SdpCryptoNegotiation,
-    }
+    /// <summary>
+    /// Secure media negotiated with SDP crypto attributes.
+    /// </summary>
+    SdpCryptoNegotiation,
 }

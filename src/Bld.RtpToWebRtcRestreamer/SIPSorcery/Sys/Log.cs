@@ -19,38 +19,37 @@
 using Microsoft.Extensions.Logging;
 using SIPSorcery;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+
+internal static class Log
 {
-    internal static class Log
+    private const string LOG_CATEGORY = "sipsorcery";
+
+    static Log()
     {
-        private const string LOG_CATEGORY = "sipsorcery";
+        LogFactory.Instance.OnFactorySet += Reset;
+    }
 
-        static Log()
+    private static ILogger _logger;
+    internal static ILogger Logger
+    {
+        get
         {
-            LogFactory.Instance.OnFactorySet += Reset;
-        }
-
-        private static ILogger _logger;
-        internal static ILogger Logger
-        {
-            get
+            if (_logger == null)
             {
-                if (_logger == null)
-                {
-                    _logger = LogFactory.CreateLogger(LOG_CATEGORY);
-                }
-
-                return _logger;
+                _logger = LogFactory.CreateLogger(LOG_CATEGORY);
             }
-        }
 
-        /// <summary>
-        /// Intended to be called if the application wide logging configuration changes. Will force
-        /// the singleton logger to be re-created.
-        /// </summary>
-        private static void Reset()
-        {
-            _logger = null;
+            return _logger;
         }
+    }
+
+    /// <summary>
+    /// Intended to be called if the application wide logging configuration changes. Will force
+    /// the singleton logger to be re-created.
+    /// </summary>
+    private static void Reset()
+    {
+        _logger = null;
     }
 }

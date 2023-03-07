@@ -23,290 +23,289 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+
+/// <summary>
+/// A communications channel for transmitting and receiving Real-time Protocol (RTP) and
+/// Real-time Control Protocol (RTCP) packets. This class performs the socket management
+/// functions.
+/// </summary>
+internal class RTPChannel : IDisposable
 {
+    private static readonly ILogger logger = Log.Logger;
+    private UdpReceiver m_rtpReceiver;
+    private bool m_rtpReceiverStarted;
+    private bool m_isClosed;
+
+    protected Socket RtpSocket { get; private set; }
+
     /// <summary>
-    /// A communications channel for transmitting and receiving Real-time Protocol (RTP) and
-    /// Real-time Control Protocol (RTCP) packets. This class performs the socket management
-    /// functions.
+    /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
     /// </summary>
-    internal class RTPChannel : IDisposable
+    public int RTPPort { get; private set; }
+
+    /// <summary>
+    /// The local end point the RTP socket is listening on.
+    /// </summary>
+    protected IPEndPoint RTPLocalEndPoint { get; private set; }
+
+    /// <summary>
+    /// Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
+    /// socket exists it will be the same.
+    /// </summary>
+    protected bool IsDualMode
     {
-        private static readonly ILogger logger = Log.Logger;
-        private UdpReceiver m_rtpReceiver;
-        private bool m_rtpReceiverStarted;
-        private bool m_isClosed;
-
-        protected Socket RtpSocket { get; private set; }
-
-        /// <summary>
-        /// The local port we are listening for RTP (and whatever else is multiplexed) packets on.
-        /// </summary>
-        public int RTPPort { get; private set; }
-
-        /// <summary>
-        /// The local end point the RTP socket is listening on.
-        /// </summary>
-        protected IPEndPoint RTPLocalEndPoint { get; private set; }
-
-        /// <summary>
-        /// Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
-        /// socket exists it will be the same.
-        /// </summary>
-        protected bool IsDualMode
+        get
         {
-            get
+            if (RtpSocket != null && RtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
             {
-                if (RtpSocket != null && RtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
-                {
-                    return RtpSocket.DualMode;
-                }
+                return RtpSocket.DualMode;
+            }
 
-                return false;
+            return false;
+        }
+    }
+
+    public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
+    public event Action<string> OnClosed;
+
+    /// <summary>
+    /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
+    /// They do not start receiving until the Start method is called.
+    /// </summary>
+    /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
+    /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
+    /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
+    /// and fallback to the IPv4 any address.</param>
+    /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
+    protected RTPChannel(IPAddress bindAddress, int bindPort = 0)
+    {
+        NetServices.CreateRtpSocket(new IPEndPoint(bindAddress, bindPort), out var rtpSocket);
+        RtpSocket = rtpSocket ?? throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
+        RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
+        RTPPort = RTPLocalEndPoint.Port;
+    }
+
+    /// <summary>
+    /// Starts listening on the RTP and control ports.
+    /// </summary>
+    public void Start()
+    {
+        StartRtpReceiver();
+    }
+
+    /// <summary>
+    /// Starts the UDP receiver that listens for RTP packets.
+    /// </summary>
+    private void StartRtpReceiver()
+    {
+        if(!m_rtpReceiverStarted)
+        {
+            m_rtpReceiverStarted = true;
+
+            logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
+
+            m_rtpReceiver = new UdpReceiver(RtpSocket);
+            m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
+            m_rtpReceiver.OnClosed += Close;
+            m_rtpReceiver.BeginReceiveFrom();
+        }
+    }
+
+    /// <summary>
+    /// Closes the session's RTP and control ports.
+    /// </summary>
+    public void Close(string reason)
+    {
+        if (!m_isClosed)
+        {
+            try
+            {
+                var closeReason = reason ?? "normal";
+
+                logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
+
+                m_isClosed = true;
+                m_rtpReceiver?.Close(null);
+
+                OnClosed?.Invoke(closeReason);
+            }
+            catch (Exception excp)
+            {
+                logger.LogError("Exception RTPChannel.Close. " + excp);
             }
         }
+    }
 
-        public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
-        public event Action<string> OnClosed;
-
-        /// <summary>
-        /// Creates a new RTP channel. The RTP and optionally RTCP sockets will be bound in the constructor.
-        /// They do not start receiving until the Start method is called.
-        /// </summary>
-        /// RTCP are being multiplexed (as they are for WebRTC) there's no need to a separate control socket.</param>
-        /// <param name="bindAddress">Optional. An IP address belonging to a local interface that will be used to bind
-        /// the RTP and control sockets to. If left empty then the IPv6 any address will be used if IPv6 is supported
-        /// and fallback to the IPv4 any address.</param>
-        /// <param name="bindPort">Optional. The specific port to attempt to bind the RTP port on.</param>
-        protected RTPChannel(IPAddress bindAddress, int bindPort = 0)
+    /// <summary>
+    /// The send method for the RTP channel.
+    /// </summary>
+    /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
+    /// <param name="dstEndPoint">The destination end point to send to.</param>
+    /// <param name="buffer">The data to send.</param>
+    /// <returns>The result of initiating the send. This result does not reflect anything about
+    /// whether the remote party received the packet or not.</returns>
+    public SocketError Send(IPEndPoint dstEndPoint, byte[] buffer)
+    {
+        if (m_isClosed)
         {
-            NetServices.CreateRtpSocket(new IPEndPoint(bindAddress, bindPort), out var rtpSocket);
-            RtpSocket = rtpSocket ?? throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-            RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
-            RTPPort = RTPLocalEndPoint.Port;
+            return SocketError.Disconnecting;
         }
 
-        /// <summary>
-        /// Starts listening on the RTP and control ports.
-        /// </summary>
-        public void Start()
+        if (dstEndPoint == null)
         {
-            StartRtpReceiver();
+            throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
         }
 
-        /// <summary>
-        /// Starts the UDP receiver that listens for RTP packets.
-        /// </summary>
-        private void StartRtpReceiver()
+        if (buffer == null || buffer.Length == 0)
         {
-            if(!m_rtpReceiverStarted)
+            throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
+        }
+
+        if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
+        {
+            logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
+            return SocketError.DestinationAddressRequired;
+        }
+
+        try
+        {
+            var sendSocket = RtpSocket;
+
+            //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
+            if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
             {
-                m_rtpReceiverStarted = true;
+                dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
+            }
 
-                logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
-
-                m_rtpReceiver = new UdpReceiver(RtpSocket);
-                m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
-                m_rtpReceiver.OnClosed += Close;
+            //Fix ReceiveFrom logic if any previous exception happens
+            if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
+            {
                 m_rtpReceiver.BeginReceiveFrom();
             }
-        }
 
-        /// <summary>
-        /// Closes the session's RTP and control ports.
-        /// </summary>
-        public void Close(string reason)
+            sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
+
+            return SocketError.Success;
+        }
+        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
         {
-            if (!m_isClosed)
-            {
-                try
-                {
-                    var closeReason = reason ?? "normal";
-
-                    logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
-
-                    m_isClosed = true;
-                    m_rtpReceiver?.Close(null);
-
-                    OnClosed?.Invoke(closeReason);
-                }
-                catch (Exception excp)
-                {
-                    logger.LogError("Exception RTPChannel.Close. " + excp);
-                }
-            }
+            return SocketError.Disconnecting;
         }
-
-        /// <summary>
-        /// The send method for the RTP channel.
-        /// </summary>
-        /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
-        /// <param name="dstEndPoint">The destination end point to send to.</param>
-        /// <param name="buffer">The data to send.</param>
-        /// <returns>The result of initiating the send. This result does not reflect anything about
-        /// whether the remote party received the packet or not.</returns>
-        public SocketError Send(IPEndPoint dstEndPoint, byte[] buffer)
+        catch (SocketException sockExcp)
         {
-            if (m_isClosed)
-            {
-                return SocketError.Disconnecting;
-            }
-
-            if (dstEndPoint == null)
-            {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
-            }
-
-            if (buffer == null || buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
-            }
-
-            if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-            {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-                return SocketError.DestinationAddressRequired;
-            }
-
-            try
-            {
-                var sendSocket = RtpSocket;
-
-                //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-                {
-                    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-                }
-
-                //Fix ReceiveFrom logic if any previous exception happens
-                if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
-                {
-                    m_rtpReceiver.BeginReceiveFrom();
-                }
-
-                sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-
-                return SocketError.Success;
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            {
-                return SocketError.Disconnecting;
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel.Send. {excp}");
-                return SocketError.Fault;
-            }
+            return sockExcp.SocketErrorCode;
         }
-
-        public async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, Memory<byte> buffer)
+        catch (Exception excp)
         {
-            if (m_isClosed)
-            {
-                return SocketError.Disconnecting;
-            }
-
-            if (dstEndPoint == null)
-            {
-                throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
-            }
-
-            if (buffer.Length == 0)
-            {
-                throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
-            }
-
-            if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-            {
-                logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-                return SocketError.DestinationAddressRequired;
-            }
-
-            try
-            {
-                //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-                //if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-                //{
-                //    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-                //}
-
-                //Fix ReceiveFrom logic if any previous exception happens
-                //if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
-                //{
-                //    m_rtpReceiver.BeginReceiveFrom();
-                //}
-
-                await RtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
-
-                return SocketError.Success;
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            {
-                return SocketError.Disconnecting;
-            }
-            catch (SocketException sockExcp)
-            {
-                return sockExcp.SocketErrorCode;
-            }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel.Send. {excp}");
-                return SocketError.Fault;
-            }
+            logger.LogError($"Exception RTPChannel.Send. {excp}");
+            return SocketError.Fault;
         }
+    }
 
-
-
-        /// <summary>
-        /// Ends an async send on one of the channel's sockets.
-        /// </summary>
-        /// <param name="ar">The async result to complete the send with.</param>
-        private void EndSendTo(IAsyncResult ar)
+    public async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, Memory<byte> buffer)
+    {
+        if (m_isClosed)
         {
-            try
-            {
-                var sendSocket = (Socket)ar.AsyncState;
-                sendSocket.EndSendTo(ar);
-            }
-            catch (SocketException sockExcp)
-            {
-                // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-                // normal RTP operation. For example:
-                // - the RTP connection may start sending before the remote socket starts listening,
-                // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-                //   or new socket during the transition.
-                logger.LogWarning(sockExcp, $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
-            }
-            catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-            { }
-            catch (Exception excp)
-            {
-                logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
-            }
+            return SocketError.Disconnecting;
         }
 
-        /// <summary>
-        /// Event handler for packets received on the RTP UDP socket.
-        /// </summary>
-        /// <param name="receiver">The UDP receiver the packet was received on.</param>
-        /// <param name="localPort">The local port it was received on.</param>
-        /// <param name="remoteEndPoint">The remote end point of the sender.</param>
-        /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-        protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+        if (dstEndPoint == null)
         {
-            if (packet?.Length > 0)
-            {
-                OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
-            }
+            throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
         }
 
-        public void Dispose()
+        if (buffer.Length == 0)
         {
-            Close(null);
+            throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
         }
+
+        if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
+        {
+            logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
+            return SocketError.DestinationAddressRequired;
+        }
+
+        try
+        {
+            //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
+            //if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
+            //{
+            //    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
+            //}
+
+            //Fix ReceiveFrom logic if any previous exception happens
+            //if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
+            //{
+            //    m_rtpReceiver.BeginReceiveFrom();
+            //}
+
+            await RtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
+
+            return SocketError.Success;
+        }
+        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+        {
+            return SocketError.Disconnecting;
+        }
+        catch (SocketException sockExcp)
+        {
+            return sockExcp.SocketErrorCode;
+        }
+        catch (Exception excp)
+        {
+            logger.LogError($"Exception RTPChannel.Send. {excp}");
+            return SocketError.Fault;
+        }
+    }
+
+
+
+    /// <summary>
+    /// Ends an async send on one of the channel's sockets.
+    /// </summary>
+    /// <param name="ar">The async result to complete the send with.</param>
+    private void EndSendTo(IAsyncResult ar)
+    {
+        try
+        {
+            var sendSocket = (Socket)ar.AsyncState;
+            sendSocket.EndSendTo(ar);
+        }
+        catch (SocketException sockExcp)
+        {
+            // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
+            // normal RTP operation. For example:
+            // - the RTP connection may start sending before the remote socket starts listening,
+            // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
+            //   or new socket during the transition.
+            logger.LogWarning(sockExcp, $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
+        }
+        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+        { }
+        catch (Exception excp)
+        {
+            logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Event handler for packets received on the RTP UDP socket.
+    /// </summary>
+    /// <param name="receiver">The UDP receiver the packet was received on.</param>
+    /// <param name="localPort">The local port it was received on.</param>
+    /// <param name="remoteEndPoint">The remote end point of the sender.</param>
+    /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
+    protected virtual void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    {
+        if (packet?.Length > 0)
+        {
+            OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+        }
+    }
+
+    public void Dispose()
+    {
+        Close(null);
     }
 }

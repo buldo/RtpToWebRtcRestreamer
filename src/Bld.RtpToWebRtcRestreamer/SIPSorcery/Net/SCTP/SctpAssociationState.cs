@@ -1,14 +1,13 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
+
+public enum SctpAssociationState
 {
-    public enum SctpAssociationState
-    {
-        Closed,
-        CookieWait,
-        CookieEchoed,
-        Established,
-        ShutdownPending,
-        ShutdownSent,
-        ShutdownReceived,
-        ShutdownAckSent
-    }
+    Closed,
+    CookieWait,
+    CookieEchoed,
+    Established,
+    ShutdownPending,
+    ShutdownSent,
+    ShutdownReceived,
+    ShutdownAckSent
 }

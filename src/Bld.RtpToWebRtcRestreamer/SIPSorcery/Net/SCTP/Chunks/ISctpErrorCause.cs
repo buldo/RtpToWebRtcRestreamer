@@ -1,9 +1,8 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
+
+internal interface ISctpErrorCause
 {
-    internal interface ISctpErrorCause
-    {
-        SctpErrorCauseCode CauseCode { get; }
-        ushort GetErrorCauseLength(bool padded);
-        int WriteTo(byte[] buffer, int posn);
-    }
+    SctpErrorCauseCode CauseCode { get; }
+    ushort GetErrorCauseLength(bool padded);
+    int WriteTo(byte[] buffer, int posn);
 }

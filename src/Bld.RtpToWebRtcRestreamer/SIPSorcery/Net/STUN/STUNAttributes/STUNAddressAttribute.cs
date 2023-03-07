@@ -16,69 +16,68 @@
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
+
+internal class STUNAddressAttribute : STUNAttribute
 {
-    internal class STUNAddressAttribute : STUNAttribute
+    private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+
+    private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
+    private int Port;
+    private IPAddress Address;
+
+    public override UInt16 PaddedLength
     {
-        private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+        get { return ADDRESS_ATTRIBUTE_LENGTH; }
+    }
 
-        private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
-        private int Port;
-        private IPAddress Address;
-
-        public override UInt16 PaddedLength
+    public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+        : base(attributeType, attributeValue)
+    {
+        if (BitConverter.IsLittleEndian)
         {
-            get { return ADDRESS_ATTRIBUTE_LENGTH; }
+            Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
+        }
+        else
+        {
+            Port = BitConverter.ToUInt16(attributeValue, 2);
         }
 
-        public STUNAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
-            : base(attributeType, attributeValue)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2);
-            }
+        Address = new IPAddress(new[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+    }
 
-            Address = new IPAddress(new[] { attributeValue[4], attributeValue[5], attributeValue[6], attributeValue[7] });
+    public override int ToByteBuffer(byte[] buffer, int startIndex)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
+        }
+        else
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
         }
 
-        public override int ToByteBuffer(byte[] buffer, int startIndex)
+        buffer[startIndex + 5] = (byte)Family;
+
+        if (BitConverter.IsLittleEndian)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
-            }
-
-            buffer[startIndex + 5] = (byte)Family;
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Port))), 0, buffer, startIndex + 6, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Port)), 0, buffer, startIndex + 6, 2);
-            }
-            Buffer.BlockCopy(Address.GetAddressBytes(), 0, buffer, startIndex + 8, 4);
-
-            return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Convert.ToUInt16(Port))), 0, buffer, startIndex + 6, 2);
         }
-
-        public override string ToString()
+        else
         {
-            var attrDescrStr = "STUN Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
-
-            return attrDescrStr;
+            Buffer.BlockCopy(BitConverter.GetBytes(Convert.ToUInt16(Port)), 0, buffer, startIndex + 6, 2);
         }
+        Buffer.BlockCopy(Address.GetAddressBytes(), 0, buffer, startIndex + 8, 4);
+
+        return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+    }
+
+    public override string ToString()
+    {
+        var attrDescrStr = "STUN Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
+
+        return attrDescrStr;
     }
 }

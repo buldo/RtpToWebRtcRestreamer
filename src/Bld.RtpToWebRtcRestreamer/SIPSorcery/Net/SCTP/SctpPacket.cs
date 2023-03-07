@@ -22,185 +22,184 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
+
+/// <summary>
+/// An SCTP packet is composed of a common header and chunks. A chunk
+/// contains either control information or user data.
+/// </summary>
+internal class SctpPacket
 {
     /// <summary>
-    /// An SCTP packet is composed of a common header and chunks. A chunk
-    /// contains either control information or user data.
+    /// The position in a serialised SCTP packet buffer that the checksum 
+    /// field starts.
     /// </summary>
-    internal class SctpPacket
+    private const int CHECKSUM_BUFFER_POSITION = 8;
+
+    private static readonly ILogger logger = LogFactory.CreateLogger<SctpPacket>();
+
+    /// <summary>
+    /// The common header for the SCTP packet.
+    /// </summary>
+    public SctpHeader Header;
+
+    /// <summary>
+    /// The list of one or recognised chunks after parsing with <see cref="GetChunks"/> 
+    /// or chunks that have been manually added for an outgoing SCTP packet.
+    /// </summary>
+    public List<SctpChunk> Chunks;
+
+    /// <summary>
+    /// A list of the blobs for chunks that weren't recognised when parsing
+    /// a received packet.
+    /// </summary>
+    private List<byte[]> UnrecognisedChunks;
+
+    private SctpPacket()
+    { }
+
+    /// <summary>
+    /// Creates a new SCTP packet instance.
+    /// </summary>
+    /// <param name="sourcePort">The source port value to place in the packet header.</param>
+    /// <param name="destinationPort">The destination port value to place in the packet header.</param>
+    /// <param name="verificationTag">The verification tag value to place in the packet header.</param>
+    public SctpPacket(
+        ushort sourcePort,
+        ushort destinationPort,
+        uint verificationTag)
     {
-        /// <summary>
-        /// The position in a serialised SCTP packet buffer that the checksum 
-        /// field starts.
-        /// </summary>
-        private const int CHECKSUM_BUFFER_POSITION = 8;
-
-        private static readonly ILogger logger = LogFactory.CreateLogger<SctpPacket>();
-
-        /// <summary>
-        /// The common header for the SCTP packet.
-        /// </summary>
-        public SctpHeader Header;
-
-        /// <summary>
-        /// The list of one or recognised chunks after parsing with <see cref="GetChunks"/> 
-        /// or chunks that have been manually added for an outgoing SCTP packet.
-        /// </summary>
-        public List<SctpChunk> Chunks;
-
-        /// <summary>
-        /// A list of the blobs for chunks that weren't recognised when parsing
-        /// a received packet.
-        /// </summary>
-        private List<byte[]> UnrecognisedChunks;
-
-        private SctpPacket()
-        { }
-
-        /// <summary>
-        /// Creates a new SCTP packet instance.
-        /// </summary>
-        /// <param name="sourcePort">The source port value to place in the packet header.</param>
-        /// <param name="destinationPort">The destination port value to place in the packet header.</param>
-        /// <param name="verificationTag">The verification tag value to place in the packet header.</param>
-        public SctpPacket(
-            ushort sourcePort,
-            ushort destinationPort,
-            uint verificationTag)
+        Header = new SctpHeader
         {
-            Header = new SctpHeader
-            {
-                SourcePort = sourcePort,
-                DestinationPort = destinationPort,
-                VerificationTag = verificationTag
-            };
+            SourcePort = sourcePort,
+            DestinationPort = destinationPort,
+            VerificationTag = verificationTag
+        };
 
-            Chunks = new List<SctpChunk>();
-            UnrecognisedChunks = new List<byte[]>();
+        Chunks = new List<SctpChunk>();
+        UnrecognisedChunks = new List<byte[]>();
+    }
+
+    /// <summary>
+    /// Serialises an SCTP packet to a byte array.
+    /// </summary>
+    /// <returns>The byte array containing the serialised SCTP packet.</returns>
+    public byte[] GetBytes()
+    {
+        var chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
+        var buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
+
+        Header.WriteToBuffer(buffer, 0);
+
+        var writePosn = SctpHeader.SCTP_HEADER_LENGTH;
+        foreach (var chunk in Chunks)
+        {
+            writePosn += chunk.WriteTo(buffer, writePosn);
         }
 
-        /// <summary>
-        /// Serialises an SCTP packet to a byte array.
-        /// </summary>
-        /// <returns>The byte array containing the serialised SCTP packet.</returns>
-        public byte[] GetBytes()
+        NetConvert.ToBuffer(0U, buffer, CHECKSUM_BUFFER_POSITION);
+        var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
+        NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
+
+        return buffer;
+    }
+
+    /// <summary>
+    /// Adds a new chunk to send with an outgoing packet.
+    /// </summary>
+    /// <param name="chunk">The chunk to add.</param>
+    public void AddChunk(SctpChunk chunk)
+    {
+        Chunks.Add(chunk);
+    }
+
+    /// <summary>
+    /// Parses an SCTP packet from a serialised buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer holding the serialised packet.</param>
+    /// <param name="offset">The position in the buffer of the packet.</param>
+    /// <param name="length">The length of the serialised packet in the buffer.</param>
+    public static SctpPacket Parse(byte[] buffer, int offset, int length)
+    {
+        var pkt = new SctpPacket();
+        pkt.Header = SctpHeader.Parse(buffer, offset);
+        (pkt.Chunks, pkt.UnrecognisedChunks) = ParseChunks(buffer, offset, length);
+
+        return pkt;
+    }
+
+    /// <summary>
+    /// Parses the chunks from a serialised SCTP packet.
+    /// </summary>
+    /// <param name="buffer">The buffer holding the serialised packet.</param>
+    /// <param name="offset">The position in the buffer of the packet.</param>
+    /// <param name="length">The length of the serialised packet in the buffer.</param>
+    /// <returns>The lsit of parsed chunks and a list of unrecognised chunks that were not de-serialised.</returns>
+    private static (List<SctpChunk> chunks, List<byte[]> unrecognisedChunks) ParseChunks(byte[] buffer, int offset, int length)
+    {
+        var chunks = new List<SctpChunk>();
+        var unrecognisedChunks = new List<byte[]>();
+
+        var posn = offset + SctpHeader.SCTP_HEADER_LENGTH;
+
+        var stop = false;
+
+        while (posn < length)
         {
-            var chunksLength = Chunks.Sum(x => x.GetChunkLength(true));
-            var buffer = new byte[SctpHeader.SCTP_HEADER_LENGTH + chunksLength];
+            var chunkType = buffer[posn];
 
-            Header.WriteToBuffer(buffer, 0);
-
-            var writePosn = SctpHeader.SCTP_HEADER_LENGTH;
-            foreach (var chunk in Chunks)
+            if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
             {
-                writePosn += chunk.WriteTo(buffer, writePosn);
+                var chunk = SctpChunk.Parse(buffer, posn);
+                chunks.Add(chunk);
+            }
+            else
+            {
+                switch (SctpChunk.GetUnrecognisedChunkAction(chunkType))
+                {
+                    case SctpUnrecognisedChunkActions.Stop:
+                        stop = true;
+                        break;
+                    case SctpUnrecognisedChunkActions.StopAndReport:
+                        stop = true;
+                        unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
+                        break;
+                    case SctpUnrecognisedChunkActions.Skip:
+                        break;
+                    case SctpUnrecognisedChunkActions.SkipAndReport:
+                        unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
+                        break;
+                }
             }
 
-            NetConvert.ToBuffer(0U, buffer, CHECKSUM_BUFFER_POSITION);
-            var checksum = CRC32C.Calculate(buffer, 0, buffer.Length);
-            NetConvert.ToBuffer(NetConvert.EndianFlip(checksum), buffer, CHECKSUM_BUFFER_POSITION);
-
-            return buffer;
-        }
-
-        /// <summary>
-        /// Adds a new chunk to send with an outgoing packet.
-        /// </summary>
-        /// <param name="chunk">The chunk to add.</param>
-        public void AddChunk(SctpChunk chunk)
-        {
-            Chunks.Add(chunk);
-        }
-
-        /// <summary>
-        /// Parses an SCTP packet from a serialised buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="offset">The position in the buffer of the packet.</param>
-        /// <param name="length">The length of the serialised packet in the buffer.</param>
-        public static SctpPacket Parse(byte[] buffer, int offset, int length)
-        {
-            var pkt = new SctpPacket();
-            pkt.Header = SctpHeader.Parse(buffer, offset);
-            (pkt.Chunks, pkt.UnrecognisedChunks) = ParseChunks(buffer, offset, length);
-
-            return pkt;
-        }
-
-        /// <summary>
-        /// Parses the chunks from a serialised SCTP packet.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="offset">The position in the buffer of the packet.</param>
-        /// <param name="length">The length of the serialised packet in the buffer.</param>
-        /// <returns>The lsit of parsed chunks and a list of unrecognised chunks that were not de-serialised.</returns>
-        private static (List<SctpChunk> chunks, List<byte[]> unrecognisedChunks) ParseChunks(byte[] buffer, int offset, int length)
-        {
-            var chunks = new List<SctpChunk>();
-            var unrecognisedChunks = new List<byte[]>();
-
-            var posn = offset + SctpHeader.SCTP_HEADER_LENGTH;
-
-            var stop = false;
-
-            while (posn < length)
+            if (stop)
             {
-                var chunkType = buffer[posn];
-
-                if (Enum.IsDefined(typeof(SctpChunkType), chunkType))
-                {
-                    var chunk = SctpChunk.Parse(buffer, posn);
-                    chunks.Add(chunk);
-                }
-                else
-                {
-                    switch (SctpChunk.GetUnrecognisedChunkAction(chunkType))
-                    {
-                        case SctpUnrecognisedChunkActions.Stop:
-                            stop = true;
-                            break;
-                        case SctpUnrecognisedChunkActions.StopAndReport:
-                            stop = true;
-                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
-                            break;
-                        case SctpUnrecognisedChunkActions.Skip:
-                            break;
-                        case SctpUnrecognisedChunkActions.SkipAndReport:
-                            unrecognisedChunks.Add(SctpChunk.CopyUnrecognisedChunk(buffer, posn));
-                            break;
-                    }
-                }
-
-                if (stop)
-                {
-                    logger.LogWarning($"SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.");
-                    break;
-                }
-
-                posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
+                logger.LogWarning($"SCTP unrecognised chunk type {chunkType} indicated no further chunks should be processed.");
+                break;
             }
 
-            return (chunks, unrecognisedChunks);
+            posn += (int)SctpChunk.GetChunkLengthFromHeader(buffer, posn, true);
         }
 
-        /// <summary>
-        /// Verifies whether the checksum for a serialised SCTP packet is valid.
-        /// </summary>
-        /// <param name="buffer">The buffer holding the serialised packet.</param>
-        /// <param name="posn">The start position in the buffer.</param>
-        /// <param name="length">The length of the packet in the buffer.</param>
-        /// <returns>True if the checksum was valid, false if not.</returns>
-        public static bool VerifyChecksum(byte[] buffer, int posn, int length)
-        {
-            var origChecksum = NetConvert.ParseUInt32(buffer, posn + CHECKSUM_BUFFER_POSITION);
-            NetConvert.ToBuffer(0U, buffer, posn + CHECKSUM_BUFFER_POSITION);
-            var calcChecksum = CRC32C.Calculate(buffer, posn, length);
+        return (chunks, unrecognisedChunks);
+    }
 
-            // Put the original checksum back.
-            NetConvert.ToBuffer(origChecksum, buffer, posn + CHECKSUM_BUFFER_POSITION);
+    /// <summary>
+    /// Verifies whether the checksum for a serialised SCTP packet is valid.
+    /// </summary>
+    /// <param name="buffer">The buffer holding the serialised packet.</param>
+    /// <param name="posn">The start position in the buffer.</param>
+    /// <param name="length">The length of the packet in the buffer.</param>
+    /// <returns>True if the checksum was valid, false if not.</returns>
+    public static bool VerifyChecksum(byte[] buffer, int posn, int length)
+    {
+        var origChecksum = NetConvert.ParseUInt32(buffer, posn + CHECKSUM_BUFFER_POSITION);
+        NetConvert.ToBuffer(0U, buffer, posn + CHECKSUM_BUFFER_POSITION);
+        var calcChecksum = CRC32C.Calculate(buffer, posn, length);
 
-            return origChecksum == NetConvert.EndianFlip(calcChecksum);
-        }
+        // Put the original checksum back.
+        NetConvert.ToBuffer(origChecksum, buffer, posn + CHECKSUM_BUFFER_POSITION);
+
+        return origChecksum == NetConvert.EndianFlip(calcChecksum);
     }
 }

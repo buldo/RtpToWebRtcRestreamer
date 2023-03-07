@@ -1,8 +1,7 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+
+internal enum RTPChannelSocketsEnum
 {
-    internal enum RTPChannelSocketsEnum
-    {
-        RTP = 0,
-        Control = 1
-    }
+    RTP = 0,
+    Control = 1
 }

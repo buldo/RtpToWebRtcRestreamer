@@ -20,48 +20,47 @@
 
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
+
+/// <summary>
+/// This structure captures all SCTP errors that don't have an additional 
+/// parameter.
+/// </summary>
+/// <remarks>
+/// Out of Resource: https://tools.ietf.org/html/rfc4960#section-3.3.10.4
+/// Invalid Mandatory Parameter: https://tools.ietf.org/html/rfc4960#section-3.3.10.7
+/// Cookie Received While Shutting Down: https://tools.ietf.org/html/rfc4960#section-3.3.10.10
+/// </remarks>
+internal struct SctpCauseOnlyError : ISctpErrorCause
 {
-    /// <summary>
-    /// This structure captures all SCTP errors that don't have an additional 
-    /// parameter.
-    /// </summary>
-    /// <remarks>
-    /// Out of Resource: https://tools.ietf.org/html/rfc4960#section-3.3.10.4
-    /// Invalid Mandatory Parameter: https://tools.ietf.org/html/rfc4960#section-3.3.10.7
-    /// Cookie Received While Shutting Down: https://tools.ietf.org/html/rfc4960#section-3.3.10.10
-    /// </remarks>
-    internal struct SctpCauseOnlyError : ISctpErrorCause
+    private const ushort ERROR_CAUSE_LENGTH = 4;
+
+    private static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
+        new List<SctpErrorCauseCode>
+        {
+            SctpErrorCauseCode.OutOfResource,
+            SctpErrorCauseCode.InvalidMandatoryParameter,
+            SctpErrorCauseCode.CookieReceivedWhileShuttingDown
+        };
+
+    public SctpErrorCauseCode CauseCode { get; private set; }
+
+    public SctpCauseOnlyError(SctpErrorCauseCode causeCode)
     {
-        private const ushort ERROR_CAUSE_LENGTH = 4;
-
-        private static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
-            new List<SctpErrorCauseCode>
-            {
-                SctpErrorCauseCode.OutOfResource,
-                SctpErrorCauseCode.InvalidMandatoryParameter,
-                SctpErrorCauseCode.CookieReceivedWhileShuttingDown
-            };
-
-        public SctpErrorCauseCode CauseCode { get; private set; }
-
-        public SctpCauseOnlyError(SctpErrorCauseCode causeCode)
+        if (!SupportedErrorCauses.Contains(causeCode))
         {
-            if (!SupportedErrorCauses.Contains(causeCode))
-            {
-                throw new ApplicationException($"SCTP error struct should not be used for {causeCode}, use the specific error type.");
-            }
-
-            CauseCode = causeCode;
+            throw new ApplicationException($"SCTP error struct should not be used for {causeCode}, use the specific error type.");
         }
 
-        public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+        CauseCode = causeCode;
+    }
 
-        public int WriteTo(byte[] buffer, int posn)
-        {
-            NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
-            NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
-            return ERROR_CAUSE_LENGTH;
-        }
+    public ushort GetErrorCauseLength(bool padded) => ERROR_CAUSE_LENGTH;
+
+    public int WriteTo(byte[] buffer, int posn)
+    {
+        NetConvert.ToBuffer((ushort)CauseCode, buffer, posn);
+        NetConvert.ToBuffer(ERROR_CAUSE_LENGTH, buffer, posn + 2);
+        return ERROR_CAUSE_LENGTH;
     }
 }

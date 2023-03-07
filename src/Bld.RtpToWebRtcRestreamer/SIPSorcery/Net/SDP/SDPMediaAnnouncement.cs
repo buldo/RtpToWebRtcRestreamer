@@ -34,412 +34,411 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+internal class SDPMediaAnnouncement
 {
-    internal class SDPMediaAnnouncement
+    public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
+    public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
+    public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
+    public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
+    public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
+    public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
+    public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
+    public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
+    public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
+    public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
+    public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
+    private const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
+
+    private const string m_CRLF = "\r\n";
+
+    private static readonly ILogger logger = Log.Logger;
+
+    public SDPConnectionInformation Connection;
+
+    // Media Announcement fields.
+    public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
+    public int Port;                        // For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
+    public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
+    public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
+    public string IcePwd;                   // If ICE is being used the password for the STUN requests.
+    public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
+    public IceRolesEnum? IceRole = null;
+    public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
+    public int MLineIndex = 0;
+
+    /// <summary>
+    /// If being used in a bundle this the ID for the announcement.
+    /// Example: a=mid:audio or a=mid:video.
+    /// </summary>
+    public string MediaID;
+
+    /// <summary>
+    /// The "ssrc" attributes group ID as specified in RFC5576.
+    /// </summary>
+    public string SsrcGroupID;
+
+    /// <summary>
+    /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+    /// use in WebRTC data channels.
+    /// </summary>
+    public string SctpMap;
+
+    /// <summary>
+    /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+    /// use in WebRTC data channels.
+    /// </summary>
+    public ushort? SctpPort = null;
+
+    /// <summary>
+    /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
+    /// use in WebRTC data channels.
+    /// </summary>
+    public long MaxMessageSize = 0;
+
+    /// <summary>
+    /// If the RFC5576 is being used this is the list of "ssrc" attributes
+    /// supplied.
+    /// </summary>
+    public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
+
+    /// <summary>
+    /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
+    /// </summary>
+    public uint TIASBandwidth = 0;
+
+    public List<string> BandwidthAttributes = new List<string>();
+
+    /// <summary>
+    /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
+    /// </summary>
+    public string MediaDescription;
+
+    /// <summary>
+    ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+    /// </summary>
+    public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+
+    /// <summary>
+    ///  a=extmap - Mapping for RTP header extensions
+    /// </summary>
+    public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
+
+    /// <summary>
+    ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
+    /// </summary>
+    public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
+
+    /// <summary>
+    /// List of media formats for "application media announcements. Application media announcements have different
+    /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
+    /// </summary>
+    public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
+
+    private List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
+    private List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
+    public List<string> IceCandidates;
+
+    /// <summary>
+    /// The stream status of this media announcement.
+    /// </summary>
+    public MediaStreamStatusEnum? MediaStreamStatus { get; set; }
+
+    public SDPMediaAnnouncement()
+    { }
+
+    public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPAudioVideoMediaFormat> mediaFormats)
     {
-        public const string MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX = "a=extmap:";
-        public const string MEDIA_FORMAT_ATTRIBUE_PREFIX = "a=rtpmap:";
-        public const string MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX = "a=fmtp:";
-        public const string MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX = "a=ssrc:";
-        public const string MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX = "a=ssrc-group:";
-        public const string MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX = "a=sctpmap:";
-        public const string MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX = "a=sctp-port:";
-        public const string MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX = "a=max-message-size:";
-        public const string MEDIA_FORMAT_PATH_MSRP_PREFIX = "a=path:msrp:";
-        public const string MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX = "a=accept-types:";
-        public const string TIAS_BANDWIDTH_ATTRIBUE_PREFIX = "b=TIAS:";
-        private const MediaStreamStatusEnum DEFAULT_STREAM_STATUS = MediaStreamStatusEnum.SendRecv;
+        Media = mediaType;
+        Port = port;
+        MediaStreamStatus = DEFAULT_STREAM_STATUS;
 
-        private const string m_CRLF = "\r\n";
-
-        private static readonly ILogger logger = Log.Logger;
-
-        public SDPConnectionInformation Connection;
-
-        // Media Announcement fields.
-        public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
-        public int Port;                        // For UDP transports should be in the range 1024 to 65535 and for RTP compliance should be even (only even ports used for data).
-        public string Transport = "RTP/AVP";    // Defined types RTP/AVP (RTP Audio Visual Profile) and udp.
-        public string IceUfrag;                 // If ICE is being used the username for the STUN requests.
-        public string IcePwd;                   // If ICE is being used the password for the STUN requests.
-        public string IceOptions;               // Optional attribute to specify support ICE options, e.g. "trickle".
-        public IceRolesEnum? IceRole = null;
-        public string DtlsFingerprint;          // If DTLS handshake is being used this is the fingerprint or our DTLS certificate.
-        public int MLineIndex = 0;
-
-        /// <summary>
-        /// If being used in a bundle this the ID for the announcement.
-        /// Example: a=mid:audio or a=mid:video.
-        /// </summary>
-        public string MediaID;
-
-        /// <summary>
-        /// The "ssrc" attributes group ID as specified in RFC5576.
-        /// </summary>
-        public string SsrcGroupID;
-
-        /// <summary>
-        /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
-        /// use in WebRTC data channels.
-        /// </summary>
-        public string SctpMap;
-
-        /// <summary>
-        /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
-        /// use in WebRTC data channels.
-        /// </summary>
-        public ushort? SctpPort = null;
-
-        /// <summary>
-        /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
-        /// use in WebRTC data channels.
-        /// </summary>
-        public long MaxMessageSize = 0;
-
-        /// <summary>
-        /// If the RFC5576 is being used this is the list of "ssrc" attributes
-        /// supplied.
-        /// </summary>
-        public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
-
-        /// <summary>
-        /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
-        /// </summary>
-        public uint TIASBandwidth = 0;
-
-        public List<string> BandwidthAttributes = new List<string>();
-
-        /// <summary>
-        /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
-        /// </summary>
-        public string MediaDescription;
-
-        /// <summary>
-        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-        /// </summary>
-        public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
-
-        /// <summary>
-        ///  a=extmap - Mapping for RTP header extensions
-        /// </summary>
-        public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
-
-        /// <summary>
-        ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
-        /// </summary>
-        public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
-
-        /// <summary>
-        /// List of media formats for "application media announcements. Application media announcements have different
-        /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
-        /// </summary>
-        public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
-
-        private List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
-        private List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
-        public List<string> IceCandidates;
-
-        /// <summary>
-        /// The stream status of this media announcement.
-        /// </summary>
-        public MediaStreamStatusEnum? MediaStreamStatus { get; set; }
-
-        public SDPMediaAnnouncement()
-        { }
-
-        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPAudioVideoMediaFormat> mediaFormats)
+        if (mediaFormats != null)
         {
-            Media = mediaType;
-            Port = port;
-            MediaStreamStatus = DEFAULT_STREAM_STATUS;
-
-            if (mediaFormats != null)
+            foreach (var fmt in mediaFormats)
             {
-                foreach (var fmt in mediaFormats)
+                if (!MediaFormats.ContainsKey(fmt.ID))
                 {
-                    if (!MediaFormats.ContainsKey(fmt.ID))
-                    {
-                        MediaFormats.Add(fmt.ID, fmt);
-                    }
+                    MediaFormats.Add(fmt.ID, fmt);
                 }
             }
         }
+    }
 
-        public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPApplicationMediaFormat> appMediaFormats)
+    public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPApplicationMediaFormat> appMediaFormats)
+    {
+        Media = mediaType;
+        Port = port;
+
+        if (appMediaFormats != null)
         {
-            Media = mediaType;
-            Port = port;
-
-            if (appMediaFormats != null)
+            foreach (var fmt in appMediaFormats)
             {
-                foreach (var fmt in appMediaFormats)
+                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
                 {
-                    if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
-                    {
-                        ApplicationMediaFormats.Add(fmt.ID, fmt);
-                    }
+                    ApplicationMediaFormats.Add(fmt.ID, fmt);
                 }
             }
         }
+    }
 
-        public void ParseMediaFormats(string formatList)
+    public void ParseMediaFormats(string formatList)
+    {
+        if (!String.IsNullOrWhiteSpace(formatList))
         {
-            if (!String.IsNullOrWhiteSpace(formatList))
+            var formatIDs = Regex.Split(formatList, @"\s");
+            foreach (var formatID in formatIDs)
             {
-                var formatIDs = Regex.Split(formatList, @"\s");
-                foreach (var formatID in formatIDs)
+                if (Media == SDPMediaTypesEnum.application)
                 {
-                    if (Media == SDPMediaTypesEnum.application)
+                    ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
+                }
+                else if (Media == SDPMediaTypesEnum.message)
+                {
+                    //TODO
+                }
+                else
+                {
+                    if (Int32.TryParse(formatID, out var id)
+                        && !MediaFormats.ContainsKey(id)
+                        && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                     {
-                        ApplicationMediaFormats.Add(formatID, new SDPApplicationMediaFormat(formatID));
-                    }
-                    else if (Media == SDPMediaTypesEnum.message)
-                    {
-                        //TODO
-                    }
-                    else
-                    {
-                        if (Int32.TryParse(formatID, out var id)
-                            && !MediaFormats.ContainsKey(id)
-                            && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
+                        if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
+                            Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
                         {
-                            if (Enum.IsDefined(typeof(SDPWellKnownMediaFormatsEnum), id) &&
-                                Enum.TryParse<SDPWellKnownMediaFormatsEnum>(formatID, out var wellKnown))
-                            {
-                                MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
-                            }
-                            else
-                            {
-                                logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
-                            }
+                            MediaFormats.Add(id, new SDPAudioVideoMediaFormat(wellKnown));
+                        }
+                        else
+                        {
+                            logger.LogWarning($"Excluding unrecognised well known media format ID {id}.");
                         }
                     }
                 }
             }
         }
+    }
 
-        public override string ToString()
+    public override string ToString()
+    {
+        var announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
+
+        announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
+
+        announcement += (Connection == null) ? null : Connection.ToString();
+
+        if (TIASBandwidth > 0)
         {
-            var announcement = "m=" + Media + " " + Port + " " + Transport + " " + GetFormatListToString() + m_CRLF;
-
-            announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
-
-            announcement += (Connection == null) ? null : Connection.ToString();
-
-            if (TIASBandwidth > 0)
-            {
-                announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
-            }
-
-            foreach (var bandwidthAttribute in BandwidthAttributes)
-            {
-                announcement += "b=" + bandwidthAttribute + m_CRLF;
-            }
-
-            announcement += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + m_CRLF : null;
-            announcement += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + m_CRLF : null;
-            announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
-            announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null;
-
-            if (IceCandidates?.Count() > 0)
-            {
-                foreach (var candidate in IceCandidates)
-                {
-                    announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
-                }
-            }
-
-            if (IceOptions != null)
-            {
-                announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
-            }
-
-            announcement += !string.IsNullOrWhiteSpace(MediaID) ? "a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":" + MediaID + m_CRLF : null;
-
-            announcement += GetFormatListAttributesToString();
-
-            announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
-            foreach (var extra in ExtraMediaAttributes)
-            {
-                announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
-            }
-
-            foreach (var desc in SecurityDescriptions)
-            {
-                announcement += desc + m_CRLF;
-            }
-
-            if (MediaStreamStatus != null)
-            {
-                announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value) + m_CRLF;
-            }
-
-            if (SsrcGroupID != null && SsrcAttributes.Count > 0)
-            {
-                announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
-                foreach (var ssrcAttr in SsrcAttributes)
-                {
-                    announcement += $" {ssrcAttr.SSRC}";
-                }
-                announcement += m_CRLF;
-            }
-
-            if (SsrcAttributes.Count > 0)
-            {
-                foreach (var ssrcAttr in SsrcAttributes)
-                {
-                    if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
-                    {
-                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC} {SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX}:{ssrcAttr.Cname}" + m_CRLF;
-                    }
-                    else
-                    {
-                        announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC}" + m_CRLF;
-                    }
-                }
-            }
-
-            // If the "sctpmap" attribute is set, use it instead of the separate "sctpport" and "max-message-size"
-            // attributes. They both contain the same information. The "sctpmap" is the legacy attribute and if
-            // an application sets it then it's likely to be for a specific reason.
-            if (SctpMap != null)
-            {
-                announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
-            }
-            else
-            {
-                if (SctpPort != null)
-                {
-                    announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
-                }
-
-                if (MaxMessageSize != 0)
-                {
-                    announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
-                }
-            }
-
-            return announcement;
+            announcement += TIAS_BANDWIDTH_ATTRIBUE_PREFIX + TIASBandwidth + m_CRLF;
         }
 
-        public string GetFormatListToString()
+        foreach (var bandwidthAttribute in BandwidthAttributes)
         {
-            if (Media == SDPMediaTypesEnum.application)
+            announcement += "b=" + bandwidthAttribute + m_CRLF;
+        }
+
+        announcement += !string.IsNullOrWhiteSpace(IceUfrag) ? "a=" + SDP.ICE_UFRAG_ATTRIBUTE_PREFIX + ":" + IceUfrag + m_CRLF : null;
+        announcement += !string.IsNullOrWhiteSpace(IcePwd) ? "a=" + SDP.ICE_PWD_ATTRIBUTE_PREFIX + ":" + IcePwd + m_CRLF : null;
+        announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
+        announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null;
+
+        if (IceCandidates?.Count() > 0)
+        {
+            foreach (var candidate in IceCandidates)
+            {
+                announcement += $"a={SDP.ICE_CANDIDATE_ATTRIBUTE_PREFIX}:{candidate}{m_CRLF}";
+            }
+        }
+
+        if (IceOptions != null)
+        {
+            announcement += $"a={SDP.ICE_OPTIONS}:" + IceOptions + m_CRLF;
+        }
+
+        announcement += !string.IsNullOrWhiteSpace(MediaID) ? "a=" + SDP.MEDIA_ID_ATTRIBUTE_PREFIX + ":" + MediaID + m_CRLF : null;
+
+        announcement += GetFormatListAttributesToString();
+
+        announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
+        foreach (var extra in ExtraMediaAttributes)
+        {
+            announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
+        }
+
+        foreach (var desc in SecurityDescriptions)
+        {
+            announcement += desc + m_CRLF;
+        }
+
+        if (MediaStreamStatus != null)
+        {
+            announcement += MediaStreamStatusType.GetAttributeForMediaStreamStatus(MediaStreamStatus.Value) + m_CRLF;
+        }
+
+        if (SsrcGroupID != null && SsrcAttributes.Count > 0)
+        {
+            announcement += MEDIA_FORMAT_SSRC_GROUP_ATTRIBUE_PREFIX + SsrcGroupID;
+            foreach (var ssrcAttr in SsrcAttributes)
+            {
+                announcement += $" {ssrcAttr.SSRC}";
+            }
+            announcement += m_CRLF;
+        }
+
+        if (SsrcAttributes.Count > 0)
+        {
+            foreach (var ssrcAttr in SsrcAttributes)
+            {
+                if (!string.IsNullOrWhiteSpace(ssrcAttr.Cname))
+                {
+                    announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC} {SDPSsrcAttribute.MEDIA_CNAME_ATTRIBUE_PREFIX}:{ssrcAttr.Cname}" + m_CRLF;
+                }
+                else
+                {
+                    announcement += $"{MEDIA_FORMAT_SSRC_ATTRIBUE_PREFIX}{ssrcAttr.SSRC}" + m_CRLF;
+                }
+            }
+        }
+
+        // If the "sctpmap" attribute is set, use it instead of the separate "sctpport" and "max-message-size"
+        // attributes. They both contain the same information. The "sctpmap" is the legacy attribute and if
+        // an application sets it then it's likely to be for a specific reason.
+        if (SctpMap != null)
+        {
+            announcement += $"{MEDIA_FORMAT_SCTP_MAP_ATTRIBUE_PREFIX}{SctpMap}" + m_CRLF;
+        }
+        else
+        {
+            if (SctpPort != null)
+            {
+                announcement += $"{MEDIA_FORMAT_SCTP_PORT_ATTRIBUE_PREFIX}{SctpPort}" + m_CRLF;
+            }
+
+            if (MaxMessageSize != 0)
+            {
+                announcement += $"{MEDIA_FORMAT_MAX_MESSAGE_SIZE_ATTRIBUE_PREFIX}{MaxMessageSize}" + m_CRLF;
+            }
+        }
+
+        return announcement;
+    }
+
+    public string GetFormatListToString()
+    {
+        if (Media == SDPMediaTypesEnum.application)
+        {
+            var sb = new StringBuilder();
+            foreach (var appFormat in ApplicationMediaFormats)
+            {
+                sb.Append(appFormat.Key);
+                sb.Append(" ");
+            }
+
+            return sb.ToString().Trim();
+        }
+
+        if (Media == SDPMediaTypesEnum.message)
+        {
+            return "*";
+        }
+
+        string mediaFormatList = null;
+        foreach (var mediaFormat in MediaFormats)
+        {
+            mediaFormatList += mediaFormat.Key + " ";
+        }
+
+        return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+    }
+
+    private string GetFormatListAttributesToString()
+    {
+        if (Media == SDPMediaTypesEnum.application)
+        {
+            if (ApplicationMediaFormats.Count > 0)
             {
                 var sb = new StringBuilder();
                 foreach (var appFormat in ApplicationMediaFormats)
                 {
-                    sb.Append(appFormat.Key);
-                    sb.Append(" ");
-                }
-
-                return sb.ToString().Trim();
-            }
-
-            if (Media == SDPMediaTypesEnum.message)
-            {
-                return "*";
-            }
-
-            string mediaFormatList = null;
-            foreach (var mediaFormat in MediaFormats)
-            {
-                mediaFormatList += mediaFormat.Key + " ";
-            }
-
-            return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
-        }
-
-        private string GetFormatListAttributesToString()
-        {
-            if (Media == SDPMediaTypesEnum.application)
-            {
-                if (ApplicationMediaFormats.Count > 0)
-                {
-                    var sb = new StringBuilder();
-                    foreach (var appFormat in ApplicationMediaFormats)
+                    if (appFormat.Value.Rtpmap != null)
                     {
-                        if (appFormat.Value.Rtpmap != null)
-                        {
-                            sb.Append($"{MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
-                        }
-
-                        if (appFormat.Value.Fmtp != null)
-                        {
-                            sb.Append($"{MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
-                        }
+                        sb.Append($"{MEDIA_FORMAT_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Rtpmap}{m_CRLF}");
                     }
 
-                    return sb.ToString();
-                }
-
-                return null;
-            }
-
-            if (Media == SDPMediaTypesEnum.message)
-            {
-                var sb = new StringBuilder();
-
-                var mediaFormat = MessageMediaFormat;
-                var acceptTypes = mediaFormat.AcceptTypes;
-                if (acceptTypes != null && acceptTypes.Count >0)
-                {
-                    sb.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
-                    foreach (var type in acceptTypes)
+                    if (appFormat.Value.Fmtp != null)
                     {
-                        sb.Append($"{type} ");
+                        sb.Append($"{MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX}{appFormat.Key} {appFormat.Value.Fmtp}{m_CRLF}");
                     }
-
-                    sb.Append($"{m_CRLF}");
-                }
-
-                if (mediaFormat.Endpoint != null )
-                {
-                    sb.Append($"{MEDIA_FORMAT_PATH_MSRP_PREFIX}//{Connection.ConnectionAddress}:{Port}/{mediaFormat.Endpoint}{m_CRLF}");
                 }
 
                 return sb.ToString();
             }
 
-            string formatAttributes = null;
+            return null;
+        }
 
-            if (MediaFormats != null)
+        if (Media == SDPMediaTypesEnum.message)
+        {
+            var sb = new StringBuilder();
+
+            var mediaFormat = MessageMediaFormat;
+            var acceptTypes = mediaFormat.AcceptTypes;
+            if (acceptTypes != null && acceptTypes.Count >0)
             {
-                foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
+                sb.Append(MEDIA_FORMAT_PATH_ACCEPT_TYPES_PREFIX);
+                foreach (var type in acceptTypes)
                 {
-                    if (mediaFormat.Rtpmap == null)
-                    {
-                        // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
-                        // stacks don't work without it.
-                        formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
-                    }
-                    else
-                    {
-                        formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
-                    }
+                    sb.Append($"{type} ");
+                }
 
-                    if (mediaFormat.Fmtp != null)
-                    {
-                        formatAttributes += MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
-                    }
+                sb.Append($"{m_CRLF}");
+            }
+
+            if (mediaFormat.Endpoint != null )
+            {
+                sb.Append($"{MEDIA_FORMAT_PATH_MSRP_PREFIX}//{Connection.ConnectionAddress}:{Port}/{mediaFormat.Endpoint}{m_CRLF}");
+            }
+
+            return sb.ToString();
+        }
+
+        string formatAttributes = null;
+
+        if (MediaFormats != null)
+        {
+            foreach (var mediaFormat in MediaFormats.Select(y => y.Value))
+            {
+                if (mediaFormat.Rtpmap == null)
+                {
+                    // Well known media formats are not required to add an rtpmap but we do so any way as some SIP
+                    // stacks don't work without it.
+                    formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Name() + "/" + mediaFormat.ClockRate() + m_CRLF;
+                }
+                else
+                {
+                    formatAttributes += MEDIA_FORMAT_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Rtpmap + m_CRLF;
+                }
+
+                if (mediaFormat.Fmtp != null)
+                {
+                    formatAttributes += MEDIA_FORMAT_PARAMETERS_ATTRIBUE_PREFIX + mediaFormat.ID + " " + mediaFormat.Fmtp + m_CRLF;
                 }
             }
-
-            return formatAttributes;
         }
 
-        public void AddExtra(string attribute)
+        return formatAttributes;
+    }
+
+    public void AddExtra(string attribute)
+    {
+        if (!string.IsNullOrWhiteSpace(attribute))
         {
-            if (!string.IsNullOrWhiteSpace(attribute))
-            {
-                ExtraMediaAttributes.Add(attribute);
-            }
+            ExtraMediaAttributes.Add(attribute);
         }
+    }
 
-        public void AddCryptoLine(string crypto)
-        {
-            SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
-        }
+    public void AddCryptoLine(string crypto)
+    {
+        SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
     }
 }

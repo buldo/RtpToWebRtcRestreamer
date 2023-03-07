@@ -31,268 +31,267 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+
+/// <summary>
+/// Represents an RTCP session intended to be used in conjunction with an
+/// RTP session. This class needs to get notified of all RTP sends and receives
+/// and will take care of RTCP reporting.
+/// </summary>
+/// <remarks>
+/// RTCP Design Decisions:
+/// - Minimum Report Period set to 5s as per RFC3550: 6.2 RTCP Transmission Interval (page 24).
+/// - Delay for initial report transmission set to 2.5s (0.5 * minimum report period) as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+/// - Randomisation factor to apply to report intervals to attempt to ensure RTCP reports amongst participants don't become synchronised
+///   [0.5 * interval, 1.5 * interval] as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
+/// - Timeout period during which if no RTP or RTCP packets received a participant is assumed to have dropped
+///   5 x minimum report period as per RFC3550: 6.2.1 (page 27) and 6.3.5 (page 31).
+/// - All RTCP composite reports must satisfy (this includes when a BYE is sent):
+///   - First RTCP packet must be a SR or RR,
+///   - Must contain an SDES packet.
+/// </remarks>
+internal class RTCPSession
 {
+    private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
+    private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
+    private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
+    private const int NO_ACTIVITY_TIMEOUT_FACTOR = 6;
+    private const int NO_ACTIVITY_TIMEOUT_MILLISECONDS = NO_ACTIVITY_TIMEOUT_FACTOR * RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS;
+
+    private static readonly ILogger logger = Log.Logger;
+
+    private static readonly DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
+    private static readonly DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     /// <summary>
-    /// Represents an RTCP session intended to be used in conjunction with an
-    /// RTP session. This class needs to get notified of all RTP sends and receives
-    /// and will take care of RTCP reporting.
+    /// The media type this report session is measuring.
     /// </summary>
-    /// <remarks>
-    /// RTCP Design Decisions:
-    /// - Minimum Report Period set to 5s as per RFC3550: 6.2 RTCP Transmission Interval (page 24).
-    /// - Delay for initial report transmission set to 2.5s (0.5 * minimum report period) as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
-    /// - Randomisation factor to apply to report intervals to attempt to ensure RTCP reports amongst participants don't become synchronised
-    ///   [0.5 * interval, 1.5 * interval] as per RFC3550: 6.2 RTCP Transmission Interval (page 26).
-    /// - Timeout period during which if no RTP or RTCP packets received a participant is assumed to have dropped
-    ///   5 x minimum report period as per RFC3550: 6.2.1 (page 27) and 6.3.5 (page 31).
-    /// - All RTCP composite reports must satisfy (this includes when a BYE is sent):
-    ///   - First RTCP packet must be a SR or RR,
-    ///   - Must contain an SDES packet.
-    /// </remarks>
-    internal class RTCPSession
+    private SDPMediaTypesEnum MediaType { get; set; }
+
+    /// <summary>
+    /// The SSRC number of the RTP packets we are sending.
+    /// </summary>
+    public uint Ssrc { get; internal set; }
+
+    /// <summary>
+    /// Timestamp that the RTCP session was created at.
+    /// </summary>
+    private DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Timestamp that the last RTP or RTCP packet for was received at.
+    /// </summary>
+    public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
+
+    /// <summary>
+    /// Indicates whether the session is currently in a timed out state. This
+    /// occurs if no RTP or RTCP packets have been received during an expected
+    /// interval.
+    /// </summary>
+    private bool IsTimedOut { get; set; }
+
+    /// <summary>
+    /// Number of RTP packets sent to the remote party.
+    /// </summary>
+    private uint PacketsSentCount { get; set; }
+
+    /// <summary>
+    /// Number of RTP bytes sent to the remote party.
+    /// </summary>
+    private uint OctetsSentCount { get; set; }
+
+    /// <summary>
+    /// The last RTP timestamp sent by us.
+    /// </summary>
+    private uint LastRtpTimestampSent { get; set; }
+
+    /// <summary>
+    /// Number of RTP packets received from the remote party.
+    /// </summary>
+    public uint PacketsReceivedCount { get; private set; }
+
+    /// <summary>
+    /// Unique common name field for use in SDES packets.
+    /// </summary>
+    public string Cname { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the RTCP session has been closed.
+    /// An RTCP BYE request will typically trigger an close.
+    /// </summary>
+    private bool IsClosed { get; set; }
+
+    /// <summary>
+    /// Time to schedule the delivery of RTCP reports.
+    /// </summary>
+    private Timer m_rtcpReportTimer;
+
+    private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
+
+    /// <summary>
+    /// Default constructor.
+    /// </summary>
+    /// <param name="mediaType">The media type this reporting session will be measuring.</param>
+    /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
+    public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc)
     {
-        private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
-        private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
-        private const float RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR = 1.5F;
-        private const int NO_ACTIVITY_TIMEOUT_FACTOR = 6;
-        private const int NO_ACTIVITY_TIMEOUT_MILLISECONDS = NO_ACTIVITY_TIMEOUT_FACTOR * RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS;
+        MediaType = mediaType;
+        Ssrc = ssrc;
+        CreatedAt = DateTime.Now;
+        Cname = Guid.NewGuid().ToString();
+    }
 
-        private static readonly ILogger logger = Log.Logger;
+    public void Start()
+    {
+        // Schedule an immediate sender report.
+        var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+        m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
+    }
 
-        private static readonly DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
-        private static readonly DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        /// <summary>
-        /// The media type this report session is measuring.
-        /// </summary>
-        private SDPMediaTypesEnum MediaType { get; set; }
-
-        /// <summary>
-        /// The SSRC number of the RTP packets we are sending.
-        /// </summary>
-        public uint Ssrc { get; internal set; }
-
-        /// <summary>
-        /// Timestamp that the RTCP session was created at.
-        /// </summary>
-        private DateTime CreatedAt { get; set; }
-
-        /// <summary>
-        /// Timestamp that the last RTP or RTCP packet for was received at.
-        /// </summary>
-        public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
-
-        /// <summary>
-        /// Indicates whether the session is currently in a timed out state. This
-        /// occurs if no RTP or RTCP packets have been received during an expected
-        /// interval.
-        /// </summary>
-        private bool IsTimedOut { get; set; }
-
-        /// <summary>
-        /// Number of RTP packets sent to the remote party.
-        /// </summary>
-        private uint PacketsSentCount { get; set; }
-
-        /// <summary>
-        /// Number of RTP bytes sent to the remote party.
-        /// </summary>
-        private uint OctetsSentCount { get; set; }
-
-        /// <summary>
-        /// The last RTP timestamp sent by us.
-        /// </summary>
-        private uint LastRtpTimestampSent { get; set; }
-
-        /// <summary>
-        /// Number of RTP packets received from the remote party.
-        /// </summary>
-        public uint PacketsReceivedCount { get; private set; }
-
-        /// <summary>
-        /// Unique common name field for use in SDES packets.
-        /// </summary>
-        public string Cname { get; private set; }
-
-        /// <summary>
-        /// Indicates whether the RTCP session has been closed.
-        /// An RTCP BYE request will typically trigger an close.
-        /// </summary>
-        private bool IsClosed { get; set; }
-
-        /// <summary>
-        /// Time to schedule the delivery of RTCP reports.
-        /// </summary>
-        private Timer m_rtcpReportTimer;
-
-        private uint m_previousPacketsSentCount;    // Used to track whether we have sent any packets since the last report was sent.
-
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        /// <param name="mediaType">The media type this reporting session will be measuring.</param>
-        /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
-        public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc)
+    public void Close(string reason)
+    {
+        if (!IsClosed)
         {
-            MediaType = mediaType;
-            Ssrc = ssrc;
-            CreatedAt = DateTime.Now;
-            Cname = Guid.NewGuid().ToString();
-        }
+            IsClosed = true;
+            m_rtcpReportTimer?.Dispose();
 
-        public void Start()
+            var byeReport = GetRtcpReport();
+            byeReport.Bye = new RTCPBye(Ssrc, reason);
+        }
+    }
+
+    /// <summary>
+    /// Event handler for an RTP packet being sent by the RTP session.
+    /// Used for measuring transmission statistics.
+    /// </summary>
+    public void RecordRtpPacketSend(RtpPacket rtpPacket)
+    {
+        PacketsSentCount++;
+        OctetsSentCount += (uint)rtpPacket.Payload.Length;
+        LastRtpTimestampSent = rtpPacket.Header.Timestamp;
+    }
+
+    /// <summary>
+    /// Event handler for an RTCP packet being received from the remote party.
+    /// </summary>
+    public void ReportReceived()
+    {
+        try
         {
-            // Schedule an immediate sender report.
-            var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
-            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
+            LastActivityAt = DateTime.Now;
+            IsTimedOut = false;
         }
+        catch (Exception exception)
+        {
+            logger.LogError($"Exception RTCPSession.ReportReceived. {exception.Message}");
+        }
+    }
 
-        public void Close(string reason)
+    /// <summary>
+    /// Callback function for the RTCP report timer.
+    /// </summary>
+    /// <param name="stateInfo">Not used.</param>
+    private void SendReportTimerCallback(Object stateInfo)
+    {
+        try
         {
             if (!IsClosed)
             {
-                IsClosed = true;
-                m_rtcpReportTimer?.Dispose();
-
-                var byeReport = GetRtcpReport();
-                byeReport.Bye = new RTCPBye(Ssrc, reason);
-            }
-        }
-
-        /// <summary>
-        /// Event handler for an RTP packet being sent by the RTP session.
-        /// Used for measuring transmission statistics.
-        /// </summary>
-        public void RecordRtpPacketSend(RtpPacket rtpPacket)
-        {
-            PacketsSentCount++;
-            OctetsSentCount += (uint)rtpPacket.Payload.Length;
-            LastRtpTimestampSent = rtpPacket.Header.Timestamp;
-        }
-
-        /// <summary>
-        /// Event handler for an RTCP packet being received from the remote party.
-        /// </summary>
-        public void ReportReceived()
-        {
-            try
-            {
-                LastActivityAt = DateTime.Now;
-                IsTimedOut = false;
-            }
-            catch (Exception exception)
-            {
-                logger.LogError($"Exception RTCPSession.ReportReceived. {exception.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Callback function for the RTCP report timer.
-        /// </summary>
-        /// <param name="stateInfo">Not used.</param>
-        private void SendReportTimerCallback(Object stateInfo)
-        {
-            try
-            {
-                if (!IsClosed)
+                lock (m_rtcpReportTimer)
                 {
-                    lock (m_rtcpReportTimer)
+                    if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
+                        (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS))
                     {
-                        if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
-                            (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS))
+                        if (!IsTimedOut)
                         {
-                            if (!IsTimedOut)
-                            {
-                                logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
-                                IsTimedOut = true;
-                            }
+                            logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
+                            IsTimedOut = true;
                         }
+                    }
 
-                        //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
+                    //logger.LogDebug($"SendRtcpSenderReport ssrc {Ssrc}, last seqnum {LastSeqNum}, pkts {PacketsSentCount}, bytes {OctetsSentCount} ");
 
-                        m_previousPacketsSentCount = PacketsSentCount;
+                    m_previousPacketsSentCount = PacketsSentCount;
 
-                        var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
-                        if (m_rtcpReportTimer == null)
-                        {
-                            m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
-                        }
-                        else
-                        {
-                            m_rtcpReportTimer?.Change(interval, Timeout.Infinite);
-                        }
+                    var interval = GetNextRtcpInterval(RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS);
+                    if (m_rtcpReportTimer == null)
+                    {
+                        m_rtcpReportTimer = new Timer(SendReportTimerCallback, null, interval, Timeout.Infinite);
+                    }
+                    else
+                    {
+                        m_rtcpReportTimer?.Change(interval, Timeout.Infinite);
                     }
                 }
             }
-            catch (ObjectDisposedException) // The RTP socket can disappear between the null check and the report send.
-            {
-                m_rtcpReportTimer?.Dispose();
-            }
-            catch (Exception excp)
-            {
-                // RTCP reports are not critical enough to bubble the exception up to the application.
-                logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
-                m_rtcpReportTimer?.Dispose();
-            }
         }
-
-        /// <summary>
-        /// Gets the RTCP compound packet containing the RTCP reports we send.
-        /// </summary>
-        /// <returns>An RTCP compound packet.</returns>
-        private RTCPCompoundPacket GetRtcpReport()
+        catch (ObjectDisposedException) // The RTP socket can disappear between the null check and the report send.
         {
-            var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-            var sdesReport = new RTCPSDesReport(Ssrc, Cname);
-
-            if (PacketsSentCount > m_previousPacketsSentCount)
-            {
-                // If we have sent a packet since the last report then we send an RTCP Sender Report.
-                // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-                var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
-                return new RTCPCompoundPacket(senderReport, sdesReport);
-            }
-
-            var receiverReport = new RTCPReceiverReport(Ssrc, null);
-            return new RTCPCompoundPacket(receiverReport, sdesReport);
+            m_rtcpReportTimer?.Dispose();
         }
-
-        /// <summary>
-        /// Gets a pseudo-randomised interval for the next RTCP report period.
-        /// </summary>
-        /// <param name="baseInterval">The base report interval to randomise.</param>
-        /// <returns>A value in milliseconds to use for the next RTCP report interval.</returns>
-        private int GetNextRtcpInterval(int baseInterval)
+        catch (Exception excp)
         {
-            int maxValue = (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval);
-            return Random.Shared.Next((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval), maxValue);
+            // RTCP reports are not critical enough to bubble the exception up to the application.
+            logger.LogError($"Exception SendReportTimerCallback. {excp.Message}");
+            m_rtcpReportTimer?.Dispose();
         }
+    }
 
-        /// <summary>
-        /// Converts specified DateTime value to long NTP time.
-        /// </summary>
-        /// <param name="value">DateTime value to convert. This value must be in local time.</param>
-        /// <returns>Returns NTP value.</returns>
-        /// <notes>
-        /// Wallclock time (absolute date and time) is represented using the
-        /// timestamp format of the Network Time Protocol (NPT), which is in
-        /// seconds relative to 0h UTC on 1 January 1900 [4].  The full
-        /// resolution NPT timestamp is a 64-bit unsigned fixed-point number with
-        /// the integer part in the first 32 bits and the fractional part in the
-        /// last 32 bits. In some fields where a more compact representation is
-        /// appropriate, only the middle 32 bits are used; that is, the low 16
-        /// bits of the integer part and the high 16 bits of the fractional part.
-        /// The high 16 bits of the integer part must be determined independently.
-        /// </notes>
-        private static ulong DateTimeToNtpTimestamp(DateTime value)
+    /// <summary>
+    /// Gets the RTCP compound packet containing the RTCP reports we send.
+    /// </summary>
+    /// <returns>An RTCP compound packet.</returns>
+    private RTCPCompoundPacket GetRtcpReport()
+    {
+        var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
+        var sdesReport = new RTCPSDesReport(Ssrc, Cname);
+
+        if (PacketsSentCount > m_previousPacketsSentCount)
         {
-            var baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
-
-            var elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
-
-            var seconds = elapsedTime.TotalSeconds;
-            return ((ulong)seconds << 32) | (ulong)((seconds - (ulong)seconds) * ((ulong)1 << 32));
+            // If we have sent a packet since the last report then we send an RTCP Sender Report.
+            // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
+            var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
+            return new RTCPCompoundPacket(senderReport, sdesReport);
         }
+
+        var receiverReport = new RTCPReceiverReport(Ssrc, null);
+        return new RTCPCompoundPacket(receiverReport, sdesReport);
+    }
+
+    /// <summary>
+    /// Gets a pseudo-randomised interval for the next RTCP report period.
+    /// </summary>
+    /// <param name="baseInterval">The base report interval to randomise.</param>
+    /// <returns>A value in milliseconds to use for the next RTCP report interval.</returns>
+    private int GetNextRtcpInterval(int baseInterval)
+    {
+        int maxValue = (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval);
+        return Random.Shared.Next((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval), maxValue);
+    }
+
+    /// <summary>
+    /// Converts specified DateTime value to long NTP time.
+    /// </summary>
+    /// <param name="value">DateTime value to convert. This value must be in local time.</param>
+    /// <returns>Returns NTP value.</returns>
+    /// <notes>
+    /// Wallclock time (absolute date and time) is represented using the
+    /// timestamp format of the Network Time Protocol (NPT), which is in
+    /// seconds relative to 0h UTC on 1 January 1900 [4].  The full
+    /// resolution NPT timestamp is a 64-bit unsigned fixed-point number with
+    /// the integer part in the first 32 bits and the fractional part in the
+    /// last 32 bits. In some fields where a more compact representation is
+    /// appropriate, only the middle 32 bits are used; that is, the low 16
+    /// bits of the integer part and the high 16 bits of the fractional part.
+    /// The high 16 bits of the integer part must be determined independently.
+    /// </notes>
+    private static ulong DateTimeToNtpTimestamp(DateTime value)
+    {
+        var baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
+
+        var elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
+
+        var seconds = elapsedTime.TotalSeconds;
+        return ((ulong)seconds << 32) | (ulong)((seconds - (ulong)seconds) * ((ulong)1 << 32));
     }
 }

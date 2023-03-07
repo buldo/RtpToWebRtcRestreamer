@@ -19,11 +19,11 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
+
+internal interface IPacketTransformer
 {
-    internal interface IPacketTransformer
-    {
-        /**
+    /**
          * Transforms a specific non-secure packet.
          *
          * @param pkt
@@ -35,9 +35,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @return The transformed packet. Returns null if the packet cannot be
          *         transformed.
          */
-        byte[] Transform(byte[] pkt, int offset, int length);
+    byte[] Transform(byte[] pkt, int offset, int length);
 
-        /**
+    /**
          * Reverse-transforms a specific packet (i.e. transforms a transformed
          * packet back).
          *
@@ -49,6 +49,5 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *            the length of data in the packet
          * @return The restored packet. Returns null if packet cannot be restored.
          */
-        byte[] ReverseTransform(byte[] pkt, int offset, int length);
-    }
+    byte[] ReverseTransform(byte[] pkt, int offset, int length);
 }

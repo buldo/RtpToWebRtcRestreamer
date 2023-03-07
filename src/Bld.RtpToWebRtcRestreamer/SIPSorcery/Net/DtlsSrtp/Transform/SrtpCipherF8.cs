@@ -65,97 +65,97 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
+
+internal static class SrtpCipherF8
 {
-    internal static class SrtpCipherF8
-    {
-        /**
+    /**
          * AES block size, just a short name.
          */
-        private const int Blklen = 16;
+    private const int Blklen = 16;
 
-        /**
+    /**
          * F8 mode encryption context, see RFC3711 section 4.1.2 for detailed
          * description.
          */
-        private class F8Context
+    private class F8Context
+    {
+        public byte[] S;
+        public byte[] IvAccent;
+        public long J;
+    }
+
+    public static void DeriveForIv(IBlockCipher f8Cipher, byte[] key, byte[] salt)
+    {
+        /*
+         * Get memory for the special key. This is the key to compute the
+         * derived IV (IV').
+         */
+        var saltMask = new byte[key.Length];
+        var maskedKey = new byte[key.Length];
+
+        /*
+         * First copy the salt into the mask field, then fill with 0x55 to get a
+         * full key.
+         */
+        Array.Copy(salt, 0, saltMask, 0, salt.Length);
+        for (var i = salt.Length; i < saltMask.Length; ++i)
         {
-            public byte[] S;
-            public byte[] IvAccent;
-            public long J;
+            saltMask[i] = 0x55;
         }
 
-        public static void DeriveForIv(IBlockCipher f8Cipher, byte[] key, byte[] salt)
+        /*
+         * XOR the original key with the above created mask to get the special
+         * key.
+         */
+        for (var i = 0; i < key.Length; i++)
         {
-            /*
-             * Get memory for the special key. This is the key to compute the
-             * derived IV (IV').
-             */
-            var saltMask = new byte[key.Length];
-            var maskedKey = new byte[key.Length];
-
-            /*
-             * First copy the salt into the mask field, then fill with 0x55 to get a
-             * full key.
-             */
-            Array.Copy(salt, 0, saltMask, 0, salt.Length);
-            for (var i = salt.Length; i < saltMask.Length; ++i)
-            {
-                saltMask[i] = 0x55;
-            }
-
-            /*
-             * XOR the original key with the above created mask to get the special
-             * key.
-             */
-            for (var i = 0; i < key.Length; i++)
-            {
-                maskedKey[i] = (byte)(key[i] ^ saltMask[i]);
-            }
-
-            /*
-             * Prepare the f8Cipher with the special key to compute IV'
-             */
-            var encryptionKey = new KeyParameter(maskedKey);
-            f8Cipher.Init(true, encryptionKey);
+            maskedKey[i] = (byte)(key[i] ^ saltMask[i]);
         }
 
-        public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,
-                byte[] iv, IBlockCipher f8Cipher)
+        /*
+         * Prepare the f8Cipher with the special key to compute IV'
+         */
+        var encryptionKey = new KeyParameter(maskedKey);
+        f8Cipher.Init(true, encryptionKey);
+    }
+
+    public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,
+        byte[] iv, IBlockCipher f8Cipher)
+    {
+        var f8Ctx = new F8Context();
+
+        /*
+         * Get memory for the derived IV (IV')
+         */
+        f8Ctx.IvAccent = new byte[Blklen];
+
+        /*
+         * Use the derived IV encryption setup to encrypt the original IV to produce IV'.
+         */
+        f8Cipher.ProcessBlock(iv, 0, f8Ctx.IvAccent, 0);
+
+        f8Ctx.J = 0; // initialize the counter
+        f8Ctx.S = new byte[Blklen]; // get the key stream buffer
+
+        Arrays.Fill(f8Ctx.S, 0);
+
+        var inLen = len;
+
+        while (inLen >= Blklen)
         {
-            var f8Ctx = new F8Context();
-
-            /*
-             * Get memory for the derived IV (IV')
-             */
-            f8Ctx.IvAccent = new byte[Blklen];
-
-            /*
-             * Use the derived IV encryption setup to encrypt the original IV to produce IV'.
-             */
-            f8Cipher.ProcessBlock(iv, 0, f8Ctx.IvAccent, 0);
-
-            f8Ctx.J = 0; // initialize the counter
-            f8Ctx.S = new byte[Blklen]; // get the key stream buffer
-
-            Arrays.Fill(f8Ctx.S, 0);
-
-            var inLen = len;
-
-            while (inLen >= Blklen)
-            {
-                ProcessBlock(cipher, f8Ctx, data, off, data, off, Blklen);
-                inLen -= Blklen;
-                off += Blklen;
-            }
-
-            if (inLen > 0)
-            {
-                ProcessBlock(cipher, f8Ctx, data, off, data, off, inLen);
-            }
+            ProcessBlock(cipher, f8Ctx, data, off, data, off, Blklen);
+            inLen -= Blklen;
+            off += Blklen;
         }
 
-        /**
+        if (inLen > 0)
+        {
+            ProcessBlock(cipher, f8Ctx, data, off, data, off, inLen);
+        }
+    }
+
+    /**
          * Encrypt / Decrypt a block using F8 Mode AES algorithm, read len bytes
          * data from in at inOff and write the output into out at outOff
          * 
@@ -172,44 +172,43 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param len
          *            length of the input data
          */
-        private static void ProcessBlock(IBlockCipher cipher, F8Context f8Ctx,
-                MemoryStream @in, int inOff, MemoryStream @out, int outOff, int len)
+    private static void ProcessBlock(IBlockCipher cipher, F8Context f8Ctx,
+        MemoryStream @in, int inOff, MemoryStream @out, int outOff, int len)
+    {
+        /*
+         * XOR the previous key stream with IV'
+         * ( S(-1) xor IV' )
+         */
+        for (var i = 0; i < Blklen; i++)
         {
-            /*
-             * XOR the previous key stream with IV'
-             * ( S(-1) xor IV' )
-             */
-            for (var i = 0; i < Blklen; i++)
-            {
-                f8Ctx.S[i] ^= f8Ctx.IvAccent[i];
-            }
+            f8Ctx.S[i] ^= f8Ctx.IvAccent[i];
+        }
 
-            /*
-             * Now XOR (S(n-1) xor IV') with the current counter, then increment 
-             * the counter
-             */
-            f8Ctx.S[12] ^= (byte)(f8Ctx.J >> 24);
-            f8Ctx.S[13] ^= (byte)(f8Ctx.J >> 16);
-            f8Ctx.S[14] ^= (byte)(f8Ctx.J >> 8);
-            f8Ctx.S[15] ^= (byte)(f8Ctx.J);
-            f8Ctx.J++;
+        /*
+         * Now XOR (S(n-1) xor IV') with the current counter, then increment 
+         * the counter
+         */
+        f8Ctx.S[12] ^= (byte)(f8Ctx.J >> 24);
+        f8Ctx.S[13] ^= (byte)(f8Ctx.J >> 16);
+        f8Ctx.S[14] ^= (byte)(f8Ctx.J >> 8);
+        f8Ctx.S[15] ^= (byte)(f8Ctx.J);
+        f8Ctx.J++;
 
-            /*
-             * Now compute the new key stream using AES encrypt
-             */
-            cipher.ProcessBlock(f8Ctx.S, 0, f8Ctx.S, 0);
+        /*
+         * Now compute the new key stream using AES encrypt
+         */
+        cipher.ProcessBlock(f8Ctx.S, 0, f8Ctx.S, 0);
 
-            /*
-             * As the last step XOR the plain text with the key stream to produce
-             * the cipher text.
-             */
-            for (var i = 0; i < len; i++)
-            {
-                @in.Position = inOff + i;
-                var inByte = @in.ReadByte();
-                @out.Position = outOff + i;
-                @out.WriteByte((byte)(inByte ^ f8Ctx.S[i]));
-            }
+        /*
+         * As the last step XOR the plain text with the key stream to produce
+         * the cipher text.
+         */
+        for (var i = 0; i < len; i++)
+        {
+            @in.Position = inOff + i;
+            var inByte = @in.ReadByte();
+            @out.Position = outOff + i;
+            @out.WriteByte((byte)(inByte ^ f8Ctx.S[i]));
         }
     }
 }

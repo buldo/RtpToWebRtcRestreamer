@@ -40,215 +40,215 @@
 *
 */
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
-{
-    internal class RawPacket
-    {
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
-        public const int RTPPacketMaxSize = 8192;
-        /**
+internal class RawPacket
+{
+
+    public const int RTPPacketMaxSize = 8192;
+    /**
          * The size of the extension header as defined by RFC 3550.
          */
-        private const int ExtHeaderSize = 4;
+    private const int ExtHeaderSize = 4;
 
-        /**
+    /**
          * The size of the fixed part of the RTP header as defined by RFC 3550.
          */
-        private const int FixedHeaderSize = 12;
+    private const int FixedHeaderSize = 12;
 
-        /**
+    /**
          * Byte array storing the content of this Packet
          */
-        private MemoryStream _buffer;
+    private MemoryStream _buffer;
 
-        private Memory<byte> _data;
+    private Memory<byte> _data;
 
-        /// <summary>
-        /// Invoked
-        /// </summary>
-        public RawPacket()
-        {
-            _buffer = new MemoryStream(RTPPacketMaxSize);
-        }
+    /// <summary>
+    /// Invoked
+    /// </summary>
+    public RawPacket()
+    {
+        _buffer = new MemoryStream(RTPPacketMaxSize);
+    }
 
-        public Memory<byte> GetMemory() => _data;
+    public Memory<byte> GetMemory() => _data;
 
-        public void Wrap(byte[] data, int offset, int length)
-        {
-            _data = data.AsMemory(offset, length);
-            _buffer.Position = 0;
-            _buffer.Write(data, offset, length);
-            _buffer.SetLength(length - offset);
-            _buffer.Position = 0;
-        }
+    public void Wrap(byte[] data, int offset, int length)
+    {
+        _data = data.AsMemory(offset, length);
+        _buffer.Position = 0;
+        _buffer.Write(data, offset, length);
+        _buffer.SetLength(length - offset);
+        _buffer.Position = 0;
+    }
 
-        public byte[] GetData()
-        {
-            _buffer.Position = 0;
-            var data = new byte[_buffer.Length];
-            _buffer.Read(data, 0, data.Length);
-            return data;
-        }
+    public byte[] GetData()
+    {
+        _buffer.Position = 0;
+        var data = new byte[_buffer.Length];
+        _buffer.Read(data, 0, data.Length);
+        return data;
+    }
 
-        /**
+    /**
          * Append a byte array to the end of the packet. This may change the data
          * buffer of this packet.
          *
          * @param data byte array to append
          * @param len the number of bytes to append
          */
-        public void Append(byte[] data, int len)
+    public void Append(byte[] data, int len)
+    {
+        if (data == null || len <= 0 || len > data.Length)
         {
-            if (data == null || len <= 0 || len > data.Length)
-            {
-                throw new Exception("Invalid combination of parameters data and length to append()");
-            }
-
-            var oldLimit = _buffer.Length;
-            // grow buffer if necessary
-            Grow(len);
-            // set positing to begin writing immediately after the last byte of the current buffer
-            _buffer.Position = oldLimit;
-            // set the buffer limit to exactly the old size plus the new appendix length
-            _buffer.SetLength(oldLimit + len);
-            // append data
-            _buffer.Write(data, 0, len);
+            throw new Exception("Invalid combination of parameters data and length to append()");
         }
 
-        /**
+        var oldLimit = _buffer.Length;
+        // grow buffer if necessary
+        Grow(len);
+        // set positing to begin writing immediately after the last byte of the current buffer
+        _buffer.Position = oldLimit;
+        // set the buffer limit to exactly the old size plus the new appendix length
+        _buffer.SetLength(oldLimit + len);
+        // append data
+        _buffer.Write(data, 0, len);
+    }
+
+    /**
          * Get buffer containing the content of this packet
          *
          * @return buffer containing the content of this packet
          */
-        public MemoryStream GetBuffer()
-        {
-            return _buffer;
-        }
+    public MemoryStream GetBuffer()
+    {
+        return _buffer;
+    }
 
-        /**
+    /**
          * Returns <tt>true</tt> if the extension bit of this packet has been set
          * and <tt>false</tt> otherwise.
          *
          * @return  <tt>true</tt> if the extension bit of this packet has been set
          * and <tt>false</tt> otherwise.
          */
-        private bool GetExtensionBit()
-        {
-            _buffer.Position = 0;
-            return (_buffer.ReadByte() & 0x10) == 0x10;
-        }
+    private bool GetExtensionBit()
+    {
+        _buffer.Position = 0;
+        return (_buffer.ReadByte() & 0x10) == 0x10;
+    }
 
-        /**
+    /**
          * Returns the length of the extensions currently added to this packet.
          *
          * @return the length of the extensions currently added to this packet.
          */
-        private int GetExtensionLength()
+    private int GetExtensionLength()
+    {
+        var length = 0;
+        if (GetExtensionBit())
         {
-            var length = 0;
-            if (GetExtensionBit())
-            {
-                // the extension length comes after the RTP header, the CSRC list,
-                // and after two bytes in the extension header called "defined by profile"
-                var extLenIndex = FixedHeaderSize + GetCsrcCount() * 4 + 2;
-                _buffer.Position = extLenIndex;
-                var byteLength = (_buffer.ReadByte() << 8);
-                var byteLength2 = _buffer.ReadByte();
+            // the extension length comes after the RTP header, the CSRC list,
+            // and after two bytes in the extension header called "defined by profile"
+            var extLenIndex = FixedHeaderSize + GetCsrcCount() * 4 + 2;
+            _buffer.Position = extLenIndex;
+            var byteLength = (_buffer.ReadByte() << 8);
+            var byteLength2 = _buffer.ReadByte();
 
-                length = (byteLength | byteLength2 * 4);
-            }
-            return length;
+            length = (byteLength | byteLength2 * 4);
         }
+        return length;
+    }
 
-        /**
+    /**
          * Returns the number of CSRC identifiers currently included in this packet.
          *
          * @return the CSRC count for this <tt>RawPacket</tt>.
          */
-        private int GetCsrcCount()
-        {
-            _buffer.Position = 0;
-            return (_buffer.ReadByte() & 0x0f);
-        }
+    private int GetCsrcCount()
+    {
+        _buffer.Position = 0;
+        return (_buffer.ReadByte() & 0x0f);
+    }
 
-        /**
+    /**
          * Get RTP header length from a RTP packet
          *
          * @return RTP header length from source RTP packet
          */
-        public int GetHeaderLength()
+    public int GetHeaderLength()
+    {
+        var length = FixedHeaderSize + 4 * GetCsrcCount();
+        if (GetExtensionBit())
         {
-            var length = FixedHeaderSize + 4 * GetCsrcCount();
-            if (GetExtensionBit())
-            {
-                length += ExtHeaderSize + GetExtensionLength();
-            }
-            return length;
+            length += ExtHeaderSize + GetExtensionLength();
         }
+        return length;
+    }
 
-        /**
+    /**
          * Get the length of this packet's data
          *
          * @return length of this packet's data
          */
-        public int GetLength()
-        {
-            return (int)_buffer.Length;
-        }
+    public int GetLength()
+    {
+        return (int)_buffer.Length;
+    }
 
-        /**
+    /**
          * Get RTP payload length from a RTP packet
          *
          * @return RTP payload length from source RTP packet
          */
-        public int GetPayloadLength()
-        {
-            return GetLength() - GetHeaderLength();
-        }
+    public int GetPayloadLength()
+    {
+        return GetLength() - GetHeaderLength();
+    }
 
-        /**
+    /**
          * Get RTCP SSRC from a RTCP packet
          *
          * @return RTP SSRC from source RTP packet
          */
-        public int GetRtcpssrc()
-        {
-            return ReadInt(4);
-        }
+    public int GetRtcpssrc()
+    {
+        return ReadInt(4);
+    }
 
-        /**
+    /**
          * Get RTP sequence number from a RTP packet
          *
          * @return RTP sequence num from source packet
          */
-        public int GetSequenceNumber()
-        {
-            return ReadUnsignedShortAsInt(2);
-        }
+    public int GetSequenceNumber()
+    {
+        return ReadUnsignedShortAsInt(2);
+    }
 
-        /**
+    /**
          * Get SRTCP sequence number from a SRTCP packet
          *
          * @param authTagLen authentication tag length
          * @return SRTCP sequence num from source packet
          */
-        public int GetSrtcpIndex(int authTagLen)
-        {
-            var offset = GetLength() - (4 + authTagLen);
-            return ReadInt(offset);
-        }
+    public int GetSrtcpIndex(int authTagLen)
+    {
+        var offset = GetLength() - (4 + authTagLen);
+        return ReadInt(offset);
+    }
 
-        /**
+    /**
          * Get RTP SSRC from a RTP packet
          *
          * @return RTP SSRC from source RTP packet
          */
-        public int GetSsrc()
-        {
-            return ReadInt(8);
-        }
+    public int GetSsrc()
+    {
+        return ReadInt(8);
+    }
 
-        /**
+    /**
          * Grow the internal packet buffer.
          *
          * This will change the data buffer of this packet but not the
@@ -257,46 +257,46 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          *
          * @param delta number of bytes to grow
          */
-        private void Grow(int delta)
+    private void Grow(int delta)
+    {
+        if (delta == 0)
         {
-            if (delta == 0)
-            {
-                return;
-            }
-
-            var newLen = _buffer.Length + delta;
-            if (newLen <= _buffer.Capacity)
-            {
-                // there is more room in the underlying reserved buffer memory
-                _buffer.SetLength(newLen);
-                return;
-            }
-
-            // create a new bigger buffer
-            var newBuffer = new MemoryStream();
-            _buffer.Position = 0;
-            newBuffer.Write(_buffer.GetBuffer(), 0, (int)_buffer.Length);
-            newBuffer.SetLength(newLen);
-            // switch to new buffer
-            _buffer = newBuffer;
+            return;
         }
 
-        /**
+        var newLen = _buffer.Length + delta;
+        if (newLen <= _buffer.Capacity)
+        {
+            // there is more room in the underlying reserved buffer memory
+            _buffer.SetLength(newLen);
+            return;
+        }
+
+        // create a new bigger buffer
+        var newBuffer = new MemoryStream();
+        _buffer.Position = 0;
+        newBuffer.Write(_buffer.GetBuffer(), 0, (int)_buffer.Length);
+        newBuffer.SetLength(newLen);
+        // switch to new buffer
+        _buffer = newBuffer;
+    }
+
+    /**
          * Read a integer from this packet at specified offset
          *
          * @param off start offset of the integer to be read
          * @return the integer to be read
          */
-        private int ReadInt(int off)
-        {
-            _buffer.Position = off;
-            return ((_buffer.ReadByte() & 0xff) << 24) |
-                    ((_buffer.ReadByte() & 0xff) << 16) |
-                    ((_buffer.ReadByte() & 0xff) << 8) |
-                    ((_buffer.ReadByte() & 0xff));
-        }
+    private int ReadInt(int off)
+    {
+        _buffer.Position = off;
+        return ((_buffer.ReadByte() & 0xff) << 24) |
+               ((_buffer.ReadByte() & 0xff) << 16) |
+               ((_buffer.ReadByte() & 0xff) << 8) |
+               ((_buffer.ReadByte() & 0xff));
+    }
 
-        /**
+    /**
          * Read a byte region from specified offset in the RTP packet and with
          * specified length into a given buffer
          *
@@ -307,45 +307,44 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param outBuff
          *            output buffer
          */
-        public void ReadRegionToBuff(int off, int len, byte[] outBuff)
-        {
-            _buffer.Position = off;
-            _buffer.Read(outBuff, 0, len);
-        }
+    public void ReadRegionToBuff(int off, int len, byte[] outBuff)
+    {
+        _buffer.Position = off;
+        _buffer.Read(outBuff, 0, len);
+    }
 
-        /**
+    /**
          * Read an unsigned short at specified offset as a int
          *
          * @param off start offset of the unsigned short
          * @return the int value of the unsigned short at offset
          */
-        private int ReadUnsignedShortAsInt(int off)
-        {
-            _buffer.Position = off;
-            var b1 = (0x000000FF & (_buffer.ReadByte()));
-            var b2 = (0x000000FF & (_buffer.ReadByte()));
-            var val = b1 << 8 | b2;
-            return val;
-        }
+    private int ReadUnsignedShortAsInt(int off)
+    {
+        _buffer.Position = off;
+        var b1 = (0x000000FF & (_buffer.ReadByte()));
+        var b2 = (0x000000FF & (_buffer.ReadByte()));
+        var val = b1 << 8 | b2;
+        return val;
+    }
 
-        /**
+    /**
          * Shrink the buffer of this packet by specified length
          *
          * @param len length to shrink
          */
-        public void Shrink(int delta)
+    public void Shrink(int delta)
+    {
+        if (delta <= 0)
         {
-            if (delta <= 0)
-            {
-                return;
-            }
-
-            var newLimit = _buffer.Length - delta;
-            if (newLimit <= 0)
-            {
-                newLimit = 0;
-            }
-            _buffer.SetLength(newLimit);
+            return;
         }
+
+        var newLimit = _buffer.Length - delta;
+        if (newLimit <= 0)
+        {
+            newLimit = 0;
+        }
+        _buffer.SetLength(newLimit);
     }
 }

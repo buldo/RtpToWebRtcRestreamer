@@ -1,9 +1,8 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+
+public enum RTCSctpTransportState
 {
-    public enum RTCSctpTransportState
-    {
-        Connecting,
-        Connected,
-        Closed
-    }
+    Connecting,
+    Connected,
+    Closed
 }

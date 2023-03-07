@@ -20,23 +20,23 @@
 // Original Source: AGPL-3.0 License
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
+
+internal class SrtpTransformEngine
 {
-    internal class SrtpTransformEngine
-    {
-        /**
+    /**
 	    * The default SRTPCryptoContext, which will be used to derivate other
 	    * contexts.
 	    */
-        private SrtpCryptoContext _defaultContext;
+    private SrtpCryptoContext _defaultContext;
 
-        /**
+    /**
          * The default SRTPCryptoContext, which will be used to derive other
          * contexts.
          */
-        private SrtcpCryptoContext _defaultContextControl;
+    private SrtcpCryptoContext _defaultContextControl;
 
-        /**
+    /**
          * Construct a SRTPTransformEngine based on given master encryption key,
          * master salt key and SRTP/SRTCP policy.
          *
@@ -49,51 +49,50 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform
          * @param srtcpPolicy
          *            SRTCP policy
          */
-        public SrtpTransformEngine(byte[] masterKey, byte[] masterSalt, SrtpPolicy srtpPolicy, SrtpPolicy srtcpPolicy)
-        {
-            _defaultContext = new SrtpCryptoContext(0, 0, masterKey, masterSalt, srtpPolicy);
-            _defaultContextControl = new SrtcpCryptoContext(masterKey, masterSalt, srtcpPolicy);
-        }
+    public SrtpTransformEngine(byte[] masterKey, byte[] masterSalt, SrtpPolicy srtpPolicy, SrtpPolicy srtcpPolicy)
+    {
+        _defaultContext = new SrtpCryptoContext(0, 0, masterKey, masterSalt, srtpPolicy);
+        _defaultContextControl = new SrtcpCryptoContext(masterKey, masterSalt, srtcpPolicy);
+    }
 
-        /**
+    /**
          * Gets the <tt>PacketTransformer</tt> for RTCP packets.
          *
          * @return the <tt>PacketTransformer</tt> for RTCP packets
          */
-        public IPacketTransformer GetRtcpTransformer()
-        {
-            return new SrtcpTransformer(this);
-        }
+    public IPacketTransformer GetRtcpTransformer()
+    {
+        return new SrtcpTransformer(this);
+    }
 
-        /*
-         * (non-Javadoc)
-         *
-         * @see net.java.sip.communicator.impl.media.transform.
-         * TransformEngine#getRTPTransformer()
-         */
-        public IPacketTransformer GetRTPTransformer()
-        {
-            return new SrtpTransformer(this);
-        }
+    /*
+     * (non-Javadoc)
+     *
+     * @see net.java.sip.communicator.impl.media.transform.
+     * TransformEngine#getRTPTransformer()
+     */
+    public IPacketTransformer GetRTPTransformer()
+    {
+        return new SrtpTransformer(this);
+    }
 
-        /**
+    /**
          * Get the default SRTPCryptoContext
          *
          * @return the default SRTPCryptoContext
          */
-        public SrtpCryptoContext GetDefaultContext()
-        {
-            return _defaultContext;
-        }
+    public SrtpCryptoContext GetDefaultContext()
+    {
+        return _defaultContext;
+    }
 
-        /**
+    /**
          * Get the default SRTPCryptoContext
          *
          * @return the default SRTPCryptoContext
          */
-        public SrtcpCryptoContext GetDefaultContextControl()
-        {
-            return _defaultContextControl;
-        }
+    public SrtcpCryptoContext GetDefaultContextControl()
+    {
+        return _defaultContextControl;
     }
 }

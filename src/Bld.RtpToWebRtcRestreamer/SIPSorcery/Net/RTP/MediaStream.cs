@@ -27,7 +27,7 @@ using Microsoft.Extensions.ObjectPool;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
-internal class MediaStream
+internal abstract class MediaStream
 {
     private static readonly ILogger Logger = Log.Logger;
 
@@ -39,12 +39,12 @@ internal class MediaStream
     private SecureContext _secureContext;
     private MediaStreamTrack _mLocalTrack;
 
-    protected readonly int Index;
+    private readonly int _index;
 
     protected MediaStream(RtpSessionConfig config, int index)
     {
         _rtpSessionConfig = config;
-        Index = index;
+        _index = index;
     }
 
     /// <summary>
@@ -81,22 +81,6 @@ internal class MediaStream
                 if (RtcpSession != null)
                 {
                     RtcpSession.Ssrc = _mLocalTrack.Ssrc;
-                }
-
-                if (MediaType == SDPMediaTypesEnum.audio)
-                {
-                    if (_mLocalTrack.Capabilities != null && !_mLocalTrack.NoDtmfSupport &&
-                        !_mLocalTrack.Capabilities.Any(x => x.ID == RTPSession.DTMF_EVENT_PAYLOAD_ID))
-                    {
-                        var rtpEventFormat = new SDPAudioVideoMediaFormat(
-                            SDPMediaTypesEnum.audio,
-                            RTPSession.DTMF_EVENT_PAYLOAD_ID,
-                            SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE,
-                            RTPSession.DEFAULT_AUDIO_CLOCK_RATE,
-                            SDPAudioVideoMediaFormat.DEFAULT_AUDIO_CHANNEL_COUNT,
-                            "0-16");
-                        _mLocalTrack.Capabilities.Add(rtpEventFormat);
-                    }
                 }
             }
         }
@@ -143,7 +127,7 @@ internal class MediaStream
 
     public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
     {
-        OnReceiveReportByIndex?.Invoke(Index, ipEndPoint, MediaType, rtcpPCompoundPacket);
+        OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, MediaType, rtcpPCompoundPacket);
     }
 
     /// <summary>
@@ -171,40 +155,6 @@ internal class MediaStream
     {
         DestinationEndPoint = rtpEndPoint;
         ControlDestinationEndPoint = rtcpEndPoint;
-    }
-
-    protected bool CheckIfCanSendRtpRaw()
-    {
-        if (IsClosed)
-        {
-            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an closed RTP session.");
-            return false;
-        }
-
-        if (LocalTrack == null)
-        {
-            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local track.");
-            return false;
-        }
-
-        if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
-        {
-            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
-            return false;
-        }
-
-        if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.ProtectRtpPacket == null)
-        {
-            Logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
-            return false;
-        }
-
-        if (_secureContext == null)
-        {
-            return false;
-        }
-
-        return true;
     }
 
     public async Task SendRtpRawFromPacketAsync(RtpPacket packet)
@@ -242,18 +192,37 @@ internal class MediaStream
         }
     }
 
-    /// <summary>
-    /// Attempts to get the highest priority sending format for the remote call party.
-    /// </summary>
-    /// <returns>The first compatible media format found for the specified media type.</returns>
-    protected SDPAudioVideoMediaFormat GetSendingFormat()
+    private bool CheckIfCanSendRtpRaw()
     {
-        if (LocalTrack != null)
+        if (IsClosed)
         {
-
-            return LocalTrack.Capabilities[0];
+            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an closed RTP session.");
+            return false;
         }
 
-        throw new ApplicationException($"Cannot get the {MediaType} sending format, missing either local or remote {MediaType} track.");
+        if (LocalTrack == null)
+        {
+            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session without a local track.");
+            return false;
+        }
+
+        if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
+        {
+            Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
+            return false;
+        }
+
+        if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.ProtectRtpPacket == null)
+        {
+            Logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
+            return false;
+        }
+
+        if (_secureContext == null)
+        {
+            return false;
+        }
+
+        return true;
     }
 }

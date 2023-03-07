@@ -34,141 +34,140 @@
 
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+
+/// <summary>
+/// RTCP Header as defined in RFC3550.
+/// </summary>
+internal class RTCPHeader
 {
+    public const int HEADER_BYTES_LENGTH = 4;
+    private const int RTCP_VERSION = 2;
+
+    private int Version { get; set; } = RTCP_VERSION;         // 2 bits.
+    private int PaddingFlag { get; set; } // 1 bit.
+    public int ReceptionReportCount { get; private set; } // 5 bits.
+    public RtcpReportTypes PacketType { get; private set; }       // 8 bits.
+    private UInt16 Length { get; set; }                        // 16 bits.
+
     /// <summary>
-    /// RTCP Header as defined in RFC3550.
+    /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
+    /// When used this field gets set in place of the Reception Report Counter field.
     /// </summary>
-    internal class RTCPHeader
+    public RTCPFeedbackTypesEnum FeedbackMessageType { get; private set; } = RTCPFeedbackTypesEnum.unassigned;
+
+    /// <summary>
+    /// The Payload Feedback Message Type is used for RFC4585 payload layer feedback reports.
+    /// When used this field gets set in place of the Reception Report Counter field.
+    /// </summary>
+    public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; private set; } = PSFBFeedbackTypesEnum.unassigned;
+
+    public RTCPHeader(RtcpReportTypes packetType, int reportCount)
     {
-        public const int HEADER_BYTES_LENGTH = 4;
-        private const int RTCP_VERSION = 2;
+        PacketType = packetType;
+        ReceptionReportCount = reportCount;
+    }
 
-        private int Version { get; set; } = RTCP_VERSION;         // 2 bits.
-        private int PaddingFlag { get; set; } // 1 bit.
-        public int ReceptionReportCount { get; private set; } // 5 bits.
-        public RtcpReportTypes PacketType { get; private set; }       // 8 bits.
-        private UInt16 Length { get; set; }                        // 16 bits.
-
-        /// <summary>
-        /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
-        /// When used this field gets set in place of the Reception Report Counter field.
-        /// </summary>
-        public RTCPFeedbackTypesEnum FeedbackMessageType { get; private set; } = RTCPFeedbackTypesEnum.unassigned;
-
-        /// <summary>
-        /// The Payload Feedback Message Type is used for RFC4585 payload layer feedback reports.
-        /// When used this field gets set in place of the Reception Report Counter field.
-        /// </summary>
-        public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; private set; } = PSFBFeedbackTypesEnum.unassigned;
-
-        public RTCPHeader(RtcpReportTypes packetType, int reportCount)
+    /// <summary>
+    /// Identifies whether an RTCP header is for a standard RTCP packet or for an
+    /// RTCP feedback report.
+    /// </summary>
+    /// <returns>True if the header is for an RTCP feedback report or false if not.</returns>
+    private bool IsFeedbackReport()
+    {
+        if (PacketType == RtcpReportTypes.RTPFB ||
+            PacketType == RtcpReportTypes.PSFB)
         {
-            PacketType = packetType;
-            ReceptionReportCount = reportCount;
+            return true;
         }
 
-        /// <summary>
-        /// Identifies whether an RTCP header is for a standard RTCP packet or for an
-        /// RTCP feedback report.
-        /// </summary>
-        /// <returns>True if the header is for an RTCP feedback report or false if not.</returns>
-        private bool IsFeedbackReport()
-        {
-            if (PacketType == RtcpReportTypes.RTPFB ||
-                PacketType == RtcpReportTypes.PSFB)
-            {
-                return true;
-            }
+        return false;
+    }
 
-            return false;
+    /// <summary>
+    /// Extract and load the RTCP header from an RTCP packet.
+    /// </summary>
+    /// <param name="packet"></param>
+    public RTCPHeader(byte[] packet)
+    {
+        if (packet.Length < HEADER_BYTES_LENGTH)
+        {
+            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
         }
 
-        /// <summary>
-        /// Extract and load the RTCP header from an RTCP packet.
-        /// </summary>
-        /// <param name="packet"></param>
-        public RTCPHeader(byte[] packet)
+        var firstWord = BitConverter.ToUInt16(packet, 0);
+
+        if (BitConverter.IsLittleEndian)
         {
-            if (packet.Length < HEADER_BYTES_LENGTH)
-            {
-                throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
-            }
+            firstWord = NetConvert.DoReverseEndian(firstWord);
+            Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
+        }
+        else
+        {
+            Length = BitConverter.ToUInt16(packet, 2);
+        }
 
-            var firstWord = BitConverter.ToUInt16(packet, 0);
+        Version = Convert.ToInt32(firstWord >> 14);
+        PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
+        PacketType = (RtcpReportTypes)(firstWord & 0x00ff);
 
-            if (BitConverter.IsLittleEndian)
+        if (IsFeedbackReport())
+        {
+            if (PacketType == RtcpReportTypes.RTPFB)
             {
-                firstWord = NetConvert.DoReverseEndian(firstWord);
-                Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
+                FeedbackMessageType = (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
             }
             else
             {
-                Length = BitConverter.ToUInt16(packet, 2);
-            }
-
-            Version = Convert.ToInt32(firstWord >> 14);
-            PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
-            PacketType = (RtcpReportTypes)(firstWord & 0x00ff);
-
-            if (IsFeedbackReport())
-            {
-                if (PacketType == RtcpReportTypes.RTPFB)
-                {
-                    FeedbackMessageType = (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
-                }
-                else
-                {
-                    PayloadFeedbackMessageType = (PSFBFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
-                }
-            }
-            else
-            {
-                ReceptionReportCount = Convert.ToInt32((firstWord >> 8) & 0x1f);
+                PayloadFeedbackMessageType = (PSFBFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
             }
         }
-
-        /// <summary>
-        /// The length of this RTCP packet in 32-bit words minus one,
-        /// including the header and any padding.
-        /// </summary>
-        public void SetLength(ushort length)
+        else
         {
-            Length = length;
+            ReceptionReportCount = Convert.ToInt32((firstWord >> 8) & 0x1f);
         }
+    }
 
-        public byte[] GetBytes()
+    /// <summary>
+    /// The length of this RTCP packet in 32-bit words minus one,
+    /// including the header and any padding.
+    /// </summary>
+    public void SetLength(ushort length)
+    {
+        Length = length;
+    }
+
+    public byte[] GetBytes()
+    {
+        var header = new byte[4];
+
+        var firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
+
+        if (IsFeedbackReport())
         {
-            var header = new byte[4];
-
-            var firstWord = ((uint)Version << 30) + ((uint)PaddingFlag << 29) + ((uint)PacketType << 16) + Length;
-
-            if (IsFeedbackReport())
+            if (PacketType == RtcpReportTypes.RTPFB)
             {
-                if (PacketType == RtcpReportTypes.RTPFB)
-                {
-                    firstWord += (uint)FeedbackMessageType << 24;
-                }
-                else
-                {
-                    firstWord += (uint)PayloadFeedbackMessageType << 24;
-                }
+                firstWord += (uint)FeedbackMessageType << 24;
             }
             else
             {
-                firstWord += (uint)ReceptionReportCount << 24;
+                firstWord += (uint)PayloadFeedbackMessageType << 24;
             }
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-            }
-
-            return header;
         }
+        else
+        {
+            firstWord += (uint)ReceptionReportCount << 24;
+        }
+
+        if (BitConverter.IsLittleEndian)
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
+        }
+        else
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
+        }
+
+        return header;
     }
 }
