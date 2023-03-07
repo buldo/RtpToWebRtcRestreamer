@@ -1,15 +1,4 @@
 //-----------------------------------------------------------------------------
-// Filename: RTCPHeader.cs
-//
-// Description: RTCP Header as defined in RFC3550.
-//
-// Author(s):
-// Aaron Clauson (aaron@sipsorcery.com
-//
-// History:
-// 22 Feb 2007	Aaron Clauson	Created, Hobart, Australia.
-// 29 Jun 2020  Aaron Clauson   Added support for feedback report types.
-//
 // Notes:
 //
 //      RTCP Header
@@ -27,42 +16,41 @@
 //      value of zero is valid.
 // Packet Type (PT) (8 bits) = Contains the constant 200 to identify this as an RTCP SR packet.
 // Length (16 bits) = The length of this RTCP packet in 32-bit words minus one, including the header and any padding.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// RTCP Header as defined in RFC3550.
 /// </summary>
-internal class RTCPHeader
+internal class RtcpHeader
 {
     public const int HEADER_BYTES_LENGTH = 4;
     private const int RTCP_VERSION = 2;
 
-    private int Version { get; set; } = RTCP_VERSION;         // 2 bits.
-    private int PaddingFlag { get; set; } // 1 bit.
-    public int ReceptionReportCount { get; private set; } // 5 bits.
-    public RtcpReportTypes PacketType { get; private set; }       // 8 bits.
+    private int Version { get; } = RTCP_VERSION;         // 2 bits.
+    private int PaddingFlag { get; } // 1 bit.
+    public int ReceptionReportCount { get; } // 5 bits.
+    public RtcpReportTypes PacketType { get; }       // 8 bits.
     private UInt16 Length { get; set; }                        // 16 bits.
 
     /// <summary>
     /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
     /// When used this field gets set in place of the Reception Report Counter field.
     /// </summary>
-    public RTCPFeedbackTypesEnum FeedbackMessageType { get; private set; } = RTCPFeedbackTypesEnum.unassigned;
+    public RTCPFeedbackTypesEnum FeedbackMessageType { get; } = RTCPFeedbackTypesEnum.unassigned;
 
     /// <summary>
     /// The Payload Feedback Message Type is used for RFC4585 payload layer feedback reports.
     /// When used this field gets set in place of the Reception Report Counter field.
     /// </summary>
-    public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; private set; } = PSFBFeedbackTypesEnum.unassigned;
+    public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; } = PSFBFeedbackTypesEnum.unassigned;
 
-    public RTCPHeader(RtcpReportTypes packetType, int reportCount)
+    public RtcpHeader(RtcpReportTypes packetType, int reportCount)
     {
         PacketType = packetType;
         ReceptionReportCount = reportCount;
@@ -87,25 +75,16 @@ internal class RTCPHeader
     /// <summary>
     /// Extract and load the RTCP header from an RTCP packet.
     /// </summary>
-    /// <param name="packet"></param>
-    public RTCPHeader(byte[] packet)
+    public RtcpHeader(Span<byte> packet)
     {
         if (packet.Length < HEADER_BYTES_LENGTH)
         {
             throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP header packet.");
         }
 
-        var firstWord = BitConverter.ToUInt16(packet, 0);
+        var firstWord = BinaryPrimitives.ReadUInt16BigEndian(packet);
 
-        if (BitConverter.IsLittleEndian)
-        {
-            firstWord = NetConvert.DoReverseEndian(firstWord);
-            Length = NetConvert.DoReverseEndian(BitConverter.ToUInt16(packet, 2));
-        }
-        else
-        {
-            Length = BitConverter.ToUInt16(packet, 2);
-        }
+        Length = BinaryPrimitives.ReadUInt16BigEndian(packet[2..]);
 
         Version = Convert.ToInt32(firstWord >> 14);
         PaddingFlag = Convert.ToInt32((firstWord >> 13) & 0x1);
@@ -159,14 +138,7 @@ internal class RTCPHeader
             firstWord += (uint)ReceptionReportCount << 24;
         }
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(firstWord)), 0, header, 0, 4);
-        }
-        else
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(firstWord), 0, header, 0, 4);
-        }
+        BinaryPrimitives.WriteUInt32BigEndian(header.AsSpan(0, 4), firstWord);
 
         return header;
     }

@@ -26,6 +26,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
@@ -38,7 +39,7 @@ internal class RTCPFeedback
 
     private int SENDER_PAYLOAD_SIZE = 20;
 
-    private RTCPHeader Header;
+    private RtcpHeader Header;
     public uint SenderSSRC; // Packet Sender
     private uint MediaSSRC;
     private ushort PID; // Packet ID (PID): 16 bits to specify a lost packet, the RTP sequence number of the lost packet.
@@ -50,9 +51,9 @@ internal class RTCPFeedback
     /// <param name="packet">The byte array holding the serialised feedback report.</param>
     public RTCPFeedback(byte[] packet)
     {
-        Header = new RTCPHeader(packet);
+        Header = new RtcpHeader(packet);
 
-        var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+        var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
         if (BitConverter.IsLittleEndian)
         {
             SenderSSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, payloadIndex));
@@ -106,11 +107,11 @@ internal class RTCPFeedback
     //:                                                               :
     public byte[] GetBytes()
     {
-        var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
+        var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + SENDER_PAYLOAD_SIZE];
         Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-        var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         // All feedback packets require the Sender and Media SSRC's to be set.
         if (BitConverter.IsLittleEndian)

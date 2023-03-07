@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Text;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
@@ -39,9 +40,9 @@ internal class RTCPBye
 {
     private const int MAX_REASON_BYTES = 255;
     private const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
-    private const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
+    private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
 
-    private RTCPHeader Header;
+    private RtcpHeader Header;
     public uint SSRC { get; private set; }
     public string Reason { get; private set; }
 
@@ -53,7 +54,7 @@ internal class RTCPBye
     /// (note bytes not characters).</param>
     public RTCPBye(uint ssrc, string reason)
     {
-        Header = new RTCPHeader(RtcpReportTypes.BYE, 1);
+        Header = new RtcpHeader(RtcpReportTypes.BYE, 1);
         SSRC = ssrc;
 
         if (reason != null)
@@ -79,7 +80,7 @@ internal class RTCPBye
             throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Goodbye packet.");
         }
 
-        Header = new RTCPHeader(packet);
+        Header = new RtcpHeader(packet);
 
         if (BitConverter.IsLittleEndian)
         {
@@ -109,11 +110,11 @@ internal class RTCPBye
     {
         var reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
         var reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
-        var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
+        var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
         Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-        var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         if (BitConverter.IsLittleEndian)
         {

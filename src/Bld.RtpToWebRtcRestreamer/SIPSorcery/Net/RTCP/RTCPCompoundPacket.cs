@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Text;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -58,7 +59,7 @@ internal class RTCPCompoundPacket
         var offset = 0;
         while (offset < packet.Length)
         {
-            if (packet.Length - offset < RTCPHeader.HEADER_BYTES_LENGTH)
+            if (packet.Length - offset < RtcpHeader.HEADER_BYTES_LENGTH)
             {
                 // Not enough bytes left for a RTCP header.
                 break;
@@ -95,7 +96,7 @@ internal class RTCPCompoundPacket
                     Feedback = new RTCPFeedback(buffer);
                     var rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                     offset += rtpfbFeedbackLength;
-                    //var rtpfbHeader = new RTCPHeader(buffer);
+                    //var rtpfbHeader = new RtcpHeader(buffer);
                     //offset += rtpfbHeader.Length * 4 + 4;
                     break;
                 case (byte)RtcpReportTypes.PSFB:
@@ -103,7 +104,7 @@ internal class RTCPCompoundPacket
                     Feedback = new RTCPFeedback(buffer);
                     var psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                     offset += psfbFeedbackLength;
-                    //var psfbHeader = new RTCPHeader(buffer);
+                    //var psfbHeader = new RtcpHeader(buffer);
                     //offset += psfbHeader.Length * 4 + 4;
                     break;
                 default:

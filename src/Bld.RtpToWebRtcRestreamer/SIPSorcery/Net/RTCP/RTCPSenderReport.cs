@@ -44,6 +44,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
@@ -63,9 +64,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 internal class RTCPSenderReport
 {
     private const int SENDER_PAYLOAD_SIZE = 20;
-    private const int MIN_PACKET_SIZE = RTCPHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;
+    private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;
 
-    private RTCPHeader Header;
+    private RtcpHeader Header;
     public uint SSRC;
     public ulong NtpTimestamp;
     private uint RtpTimestamp;
@@ -75,7 +76,7 @@ internal class RTCPSenderReport
 
     public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
     {
-        Header = new RTCPHeader(RtcpReportTypes.SR, (receptionReports != null) ? receptionReports.Count : 0);
+        Header = new RtcpHeader(RtcpReportTypes.SR, (receptionReports != null) ? receptionReports.Count : 0);
         SSRC = ssrc;
         NtpTimestamp = ntpTimestamp;
         RtpTimestamp = rtpTimestamp;
@@ -95,7 +96,7 @@ internal class RTCPSenderReport
             throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCPSenderReport packet.");
         }
 
-        Header = new RTCPHeader(packet);
+        Header = new RtcpHeader(packet);
         ReceptionReports = new List<ReceptionReportSample>();
 
         if (BitConverter.IsLittleEndian)
@@ -126,11 +127,11 @@ internal class RTCPSenderReport
     public byte[] GetBytes()
     {
         var rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
-        var buffer = new byte[RTCPHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
+        var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
         Header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RTCPHeader.HEADER_BYTES_LENGTH);
-        var payloadIndex = RTCPHeader.HEADER_BYTES_LENGTH;
+        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         if (BitConverter.IsLittleEndian)
         {
