@@ -6,8 +6,6 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
-using WebSocketSharp.Server;
-
 namespace Bld.RtpToWebRtcRestreamer;
 
 internal class RtpRestreamer
@@ -31,8 +29,7 @@ internal class RtpRestreamer
         _receiver = new(rtpListenEndpoint, _loggerFactory.CreateLogger<PooledUdpSource>());
         _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
 
-        // TODO: reenable
-        //_periodicalManagementTask = Task.Run(async () => await BackgroundTask().ConfigureAwait(false));
+        _periodicalManagementTask = Task.Run(BackgroundTask);
     }
 
     public event EventHandler<ConnectedClientsChangedEventArgs> ConnectedClientsChanged;
