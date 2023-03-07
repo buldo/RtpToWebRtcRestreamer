@@ -378,8 +378,7 @@ internal class SrtcpCryptoContext
 
         // The fixed header follows and fills the rest of the IV
         var buf = pkt.GetBuffer();
-        buf.Position = 0;
-        buf.Read(_ivStore, 8, 8);
+        buf[0..8].CopyTo(_ivStore.AsMemory(8, 8));
 
         // Encrypted part excludes fixed header (8 bytes), index (4 bytes), and
         // authentication tag (variable according to policy)
@@ -400,9 +399,9 @@ internal class SrtcpCryptoContext
     private void AuthenticatePacket(RawPacket pkt, int index)
     {
         var buf = pkt.GetBuffer();
-        buf.Position = 0;
         var len = pkt.GetLength();
-        buf.Read(_tempBuffer, 0, len);
+
+        buf[0..len].CopyTo(_tempBuffer.AsMemory(0, len));
 
         _mac.BlockUpdate(_tempBuffer, 0, len);
         _rbStore[0] = (byte)(index >> 24);

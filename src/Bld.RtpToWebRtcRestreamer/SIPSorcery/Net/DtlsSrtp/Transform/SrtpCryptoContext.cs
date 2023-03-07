@@ -197,6 +197,8 @@ internal class SrtpCryptoContext
          */
     private readonly byte[] _tempStore = new byte[100];
 
+    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+
     /**
          * Construct a normal SRTPCryptoContext based on the given parameters.
          *
@@ -473,7 +475,8 @@ internal class SrtpCryptoContext
         // 11 bytes of the RTP header are the 11 bytes of the iv
         // the first byte of the RTP header is not used.
         var buf = pkt.GetBuffer();
-        buf.Read(_ivStore, (int)buf.Position, 12);
+        buf[0..12].CopyTo(_ivStore);
+
         _ivStore[0] = 0;
 
         // set the ROC in network order into IV
@@ -488,8 +491,6 @@ internal class SrtpCryptoContext
         SrtpCipherF8.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore, _cipherF8);
     }
 
-    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
-
     /**
          * Authenticate a packet. Calculated authentication tag is returned.
          *
@@ -501,9 +502,8 @@ internal class SrtpCryptoContext
     private void AuthenticatePacketHmcsha1(RawPacket pkt, int rocIn)
     {
         var buf = pkt.GetBuffer();
-        buf.Position = 0;
         var len = (int)buf.Length;
-        buf.Read(_tempBuffer, 0, len);
+        buf.CopyTo(_tempBuffer);
         _mac.BlockUpdate(_tempBuffer, 0, len);
         _rbStore[0] = (byte)(rocIn >> 24);
         _rbStore[1] = (byte)(rocIn >> 16);

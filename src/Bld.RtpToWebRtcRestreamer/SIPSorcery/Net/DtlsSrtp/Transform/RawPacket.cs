@@ -1,44 +1,4 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: RawPacket.cs
-//
-// TODO: This class should be replaced by the existing RTP packet implementation
-// in src/net/RTP.
-//
-// Description: See below.
-//
-// Derived From:
-// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/RawPacket.java
-//
-// Author(s):
-// Rafael Soares (raf.csoares@kyubinteractive.com)
-//
-// History:
-// 01 Jul 2020	Rafael Soares   Created.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// Original Source: AGPL-3.0 License
-//-----------------------------------------------------------------------------
-
-/**
-* When using TransformConnector, a RTP/RTCP packet is represented using
-* RawPacket. RawPacket stores the buffer holding the RTP/RTCP packet, as well
-* as the inner offset and length of RTP/RTCP packet data.
-*
-* After transformation, data is also store in RawPacket objects, either the
-* original RawPacket (in place transformation), or a newly created RawPacket.
-*
-* Besides packet info storage, RawPacket also provides some other operations
-* such as readInt() to ease the development process.
-*
-* @author Werner Dittmann (Werner.Dittmann@t-online.de)
-* @author Bing SU (nova.su@gmail.com)
-* @author Emil Ivov
-* @author Damian Minkov
-* @author Boris Grozev
-* @author Lyubomir Marinov
-*
-*/
+﻿using System.Buffers.Binary;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
@@ -59,7 +19,7 @@ internal class RawPacket
     /**
          * Byte array storing the content of this Packet
          */
-    private MemoryStream _buffer;
+    private byte[] _buffer;
 
     private Memory<byte> _data;
 
@@ -68,35 +28,26 @@ internal class RawPacket
     /// </summary>
     public RawPacket()
     {
-        _buffer = new MemoryStream(RTPPacketMaxSize);
+        _buffer = new byte[RTPPacketMaxSize];
     }
 
-    public Memory<byte> GetMemory() => _data;
-
-    public void Wrap(byte[] data, int offset, int length)
+    public void Wrap(byte[] buffer, int offset, int length)
     {
-        _data = data.AsMemory(offset, length);
-        _buffer.Position = 0;
-        _buffer.Write(data, offset, length);
-        _buffer.SetLength(length - offset);
-        _buffer.Position = 0;
+        _buffer = buffer.AsSpan().ToArray();
+        _data = _buffer.AsMemory(offset, length);
     }
 
     public byte[] GetData()
     {
-        _buffer.Position = 0;
-        var data = new byte[_buffer.Length];
-        _buffer.Read(data, 0, data.Length);
-        return data;
+        return _data.ToArray();
     }
 
-    /**
-         * Append a byte array to the end of the packet. This may change the data
-         * buffer of this packet.
-         *
-         * @param data byte array to append
-         * @param len the number of bytes to append
-         */
+    /// <summary>
+    /// Append a byte array to the end of the packet. This may change the data
+    /// buffer of this packet.
+    /// </summary>
+    /// <param name="data">Byte array to append</param>
+    /// <param name="len">The number of bytes to append</param>
     public void Append(byte[] data, int len)
     {
         if (data == null || len <= 0 || len > data.Length)
@@ -104,15 +55,10 @@ internal class RawPacket
             throw new Exception("Invalid combination of parameters data and length to append()");
         }
 
-        var oldLimit = _buffer.Length;
+        var oldLimit = _data.Length;
         // grow buffer if necessary
         Grow(len);
-        // set positing to begin writing immediately after the last byte of the current buffer
-        _buffer.Position = oldLimit;
-        // set the buffer limit to exactly the old size plus the new appendix length
-        _buffer.SetLength(oldLimit + len);
-        // append data
-        _buffer.Write(data, 0, len);
+        data.AsSpan(0,len).CopyTo(_buffer.AsSpan(oldLimit, len));
     }
 
     /**
@@ -120,9 +66,9 @@ internal class RawPacket
          *
          * @return buffer containing the content of this packet
          */
-    public MemoryStream GetBuffer()
+    public Memory<byte> GetBuffer()
     {
-        return _buffer;
+        return _data;
     }
 
     /**
@@ -134,8 +80,7 @@ internal class RawPacket
          */
     private bool GetExtensionBit()
     {
-        _buffer.Position = 0;
-        return (_buffer.ReadByte() & 0x10) == 0x10;
+        return (_buffer[0] & 0x10) == 0x10;
     }
 
     /**
@@ -143,19 +88,15 @@ internal class RawPacket
          *
          * @return the length of the extensions currently added to this packet.
          */
-    private int GetExtensionLength()
+    private UInt16 GetExtensionLength()
     {
-        var length = 0;
+        UInt16 length = 0;
         if (GetExtensionBit())
         {
             // the extension length comes after the RTP header, the CSRC list,
             // and after two bytes in the extension header called "defined by profile"
             var extLenIndex = FixedHeaderSize + GetCsrcCount() * 4 + 2;
-            _buffer.Position = extLenIndex;
-            var byteLength = (_buffer.ReadByte() << 8);
-            var byteLength2 = _buffer.ReadByte();
-
-            length = (byteLength | byteLength2 * 4);
+            length = BinaryPrimitives.ReadUInt16BigEndian(_buffer.AsSpan(extLenIndex));
         }
         return length;
     }
@@ -167,8 +108,7 @@ internal class RawPacket
          */
     private int GetCsrcCount()
     {
-        _buffer.Position = 0;
-        return (_buffer.ReadByte() & 0x0f);
+        return (_data.Span[0] & 0x0f);
     }
 
     /**
@@ -193,7 +133,7 @@ internal class RawPacket
          */
     public int GetLength()
     {
-        return (int)_buffer.Length;
+        return (int)_data.Length;
     }
 
     /**
@@ -213,126 +153,54 @@ internal class RawPacket
          */
     public int GetRtcpssrc()
     {
-        return ReadInt(4);
+        return BinaryPrimitives.ReadInt32BigEndian(_buffer.AsSpan(4));
     }
 
-    /**
-         * Get RTP sequence number from a RTP packet
-         *
-         * @return RTP sequence num from source packet
-         */
+    /// <summary>
+    /// Get RTP sequence number from a RTP packet
+    /// </summary>
+    /// <returns>RTP sequence num from source packet</returns>
     public int GetSequenceNumber()
     {
-        return ReadUnsignedShortAsInt(2);
+        return BinaryPrimitives.ReadUInt16BigEndian(_buffer.AsSpan(2));
     }
 
-    /**
-         * Get SRTCP sequence number from a SRTCP packet
-         *
-         * @param authTagLen authentication tag length
-         * @return SRTCP sequence num from source packet
-         */
+    /// <summary>
+    /// Get SRTCP sequence number from a SRTCP packet
+    /// </summary>
+    /// <param name="authTagLen">authentication tag length</param>
+    /// <returns>SRTCP sequence num from source packet</returns>
     public int GetSrtcpIndex(int authTagLen)
     {
         var offset = GetLength() - (4 + authTagLen);
-        return ReadInt(offset);
+        return BinaryPrimitives.ReadInt32BigEndian(_buffer.AsSpan(offset));
     }
 
-    /**
-         * Get RTP SSRC from a RTP packet
-         *
-         * @return RTP SSRC from source RTP packet
-         */
+    /// <summary>
+    /// Get RTP SSRC from a RTP packet
+    /// </summary>
+    /// <returns>RTP SSRC from source RTP packet</returns>
     public int GetSsrc()
     {
-        return ReadInt(8);
+        return BinaryPrimitives.ReadInt32BigEndian(_buffer.AsSpan(8));
     }
 
-    /**
-         * Grow the internal packet buffer.
-         *
-         * This will change the data buffer of this packet but not the
-         * length of the valid data. Use this to grow the internal buffer
-         * to avoid buffer re-allocations when appending data.
-         *
-         * @param delta number of bytes to grow
-         */
-    private void Grow(int delta)
-    {
-        if (delta == 0)
-        {
-            return;
-        }
-
-        var newLen = _buffer.Length + delta;
-        if (newLen <= _buffer.Capacity)
-        {
-            // there is more room in the underlying reserved buffer memory
-            _buffer.SetLength(newLen);
-            return;
-        }
-
-        // create a new bigger buffer
-        var newBuffer = new MemoryStream();
-        _buffer.Position = 0;
-        newBuffer.Write(_buffer.GetBuffer(), 0, (int)_buffer.Length);
-        newBuffer.SetLength(newLen);
-        // switch to new buffer
-        _buffer = newBuffer;
-    }
-
-    /**
-         * Read a integer from this packet at specified offset
-         *
-         * @param off start offset of the integer to be read
-         * @return the integer to be read
-         */
-    private int ReadInt(int off)
-    {
-        _buffer.Position = off;
-        return ((_buffer.ReadByte() & 0xff) << 24) |
-               ((_buffer.ReadByte() & 0xff) << 16) |
-               ((_buffer.ReadByte() & 0xff) << 8) |
-               ((_buffer.ReadByte() & 0xff));
-    }
-
-    /**
-         * Read a byte region from specified offset in the RTP packet and with
-         * specified length into a given buffer
-         *
-         * @param off
-         *            start offset in the RTP packet of the region to be read
-         * @param len
-         *            length of the region to be read
-         * @param outBuff
-         *            output buffer
-         */
+    /// <summary>
+    /// Read a byte region from specified offset in the RTP packet and with
+    /// specified length into a given buffer
+    /// </summary>
+    /// <param name="off">start offset in the RTP packet of the region to be read</param>
+    /// <param name="len">length of the region to be read</param>
+    /// <param name="outBuff">output buffer</param>
     public void ReadRegionToBuff(int off, int len, byte[] outBuff)
     {
-        _buffer.Position = off;
-        _buffer.Read(outBuff, 0, len);
+        _buffer.AsSpan(off, len).CopyTo(outBuff);
     }
 
-    /**
-         * Read an unsigned short at specified offset as a int
-         *
-         * @param off start offset of the unsigned short
-         * @return the int value of the unsigned short at offset
-         */
-    private int ReadUnsignedShortAsInt(int off)
-    {
-        _buffer.Position = off;
-        var b1 = (0x000000FF & (_buffer.ReadByte()));
-        var b2 = (0x000000FF & (_buffer.ReadByte()));
-        var val = b1 << 8 | b2;
-        return val;
-    }
-
-    /**
-         * Shrink the buffer of this packet by specified length
-         *
-         * @param len length to shrink
-         */
+    /// <summary>
+    /// Shrink the buffer of this packet by specified length
+    /// </summary>
+    /// <param name="delta">length to shrink</param>
     public void Shrink(int delta)
     {
         if (delta <= 0)
@@ -340,11 +208,42 @@ internal class RawPacket
             return;
         }
 
-        var newLimit = _buffer.Length - delta;
+        var newLimit = _data.Length - delta;
         if (newLimit <= 0)
         {
             newLimit = 0;
         }
-        _buffer.SetLength(newLimit);
+
+        _data = _buffer.AsMemory(0, newLimit);
+    }
+
+    /// <summary>
+    /// Grow the internal packet buffer.
+    ///
+    /// This will change the data buffer of this packet but not the
+    /// length of the valid data. Use this to grow the internal buffer
+    /// to avoid buffer re-allocations when appending data.
+    /// </summary>
+    /// <param name="delta">number of bytes to grow</param>
+    private void Grow(int delta)
+    {
+        if (delta == 0)
+        {
+            return;
+        }
+
+        var newLen = _data.Length + delta;
+        if (newLen <= _data.Length)
+        {
+            // there is more room in the underlying reserved buffer memory
+            _data = _buffer.AsMemory(0, newLen);
+            return;
+        }
+
+        // create a new bigger buffer
+        var newBuffer = new byte[newLen];
+        _data.CopyTo(newBuffer);
+        _buffer = newBuffer;
+        _data = _buffer.AsMemory(0, newLen);
     }
 }

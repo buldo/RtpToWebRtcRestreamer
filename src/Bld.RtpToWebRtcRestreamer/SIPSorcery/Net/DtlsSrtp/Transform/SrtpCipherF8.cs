@@ -57,7 +57,7 @@ internal static class SrtpCipherF8
         f8Cipher.Init(true, encryptionKey);
     }
 
-    public static void Process(IBlockCipher cipher, MemoryStream data, int off, int len,
+    public static void Process(IBlockCipher cipher, Memory<byte> data, int off, int len,
         byte[] iv, IBlockCipher f8Cipher)
     {
         var f8Ctx = new F8Context();
@@ -81,14 +81,14 @@ internal static class SrtpCipherF8
 
         while (inLen >= Blklen)
         {
-            ProcessBlock(cipher, f8Ctx, data, off, data, off, Blklen);
+            ProcessBlock(cipher, f8Ctx, data, off, Blklen);
             inLen -= Blklen;
             off += Blklen;
         }
 
         if (inLen > 0)
         {
-            ProcessBlock(cipher, f8Ctx, data, off, data, off, inLen);
+            ProcessBlock(cipher, f8Ctx, data, off, inLen);
         }
     }
 
@@ -109,8 +109,12 @@ internal static class SrtpCipherF8
          * @param len
          *            length of the input data
          */
-    private static void ProcessBlock(IBlockCipher cipher, F8Context f8Ctx,
-        MemoryStream @in, int inOff, MemoryStream @out, int outOff, int len)
+    private static void ProcessBlock(
+        IBlockCipher cipher,
+        F8Context f8Ctx,
+        Memory<byte> @in,
+        int inOff,
+        int len)
     {
         /*
          * XOR the previous key stream with IV'
@@ -142,10 +146,9 @@ internal static class SrtpCipherF8
          */
         for (var i = 0; i < len; i++)
         {
-            @in.Position = inOff + i;
-            var inByte = @in.ReadByte();
-            @out.Position = outOff + i;
-            @out.WriteByte((byte)(inByte ^ f8Ctx.S[i]));
+            var position = inOff + i;
+            var inByte = @in.Span[position];
+            @in.Span[position] = (byte)(inByte ^ f8Ctx.S[i]);
         }
     }
 }

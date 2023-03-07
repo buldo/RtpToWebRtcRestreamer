@@ -11,7 +11,7 @@ internal class SrtpCipherCtr
     private readonly ArrayPool<byte> _bytesPool = ArrayPool<byte>.Shared;
     private byte[] _streamBuf = new byte[1024];
 
-    public void Process(IBlockCipher cipher, MemoryStream data, int off, int len, ReadOnlySpan<byte> iv)
+    public void Process(IBlockCipher cipher, Memory<byte> data, int off, int len, ReadOnlySpan<byte> iv)
     {
         // if data fits in inner buffer - use it. Otherwise allocate bigger
         // buffer store it to use it for later processing - up to a defined
@@ -33,10 +33,9 @@ internal class SrtpCipherCtr
         GetCipherStream(cipher, cipherStream, len, iv);
         for (var i = 0; i < len; i++)
         {
-            data.Position = i + off;
-            var byteToWrite = data.ReadByte();
-            data.Position = i + off;
-            data.WriteByte((byte)(byteToWrite ^ cipherStream[i]));
+            var position = i + off;
+            var byteToWrite = data.Span[position];
+            data.Span[position] = (byte)(byteToWrite ^ cipherStream[i]);
         }
     }
 
