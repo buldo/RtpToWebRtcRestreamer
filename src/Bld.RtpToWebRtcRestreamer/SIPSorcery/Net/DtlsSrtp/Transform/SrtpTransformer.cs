@@ -43,7 +43,7 @@ using System.Collections.Concurrent;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
-internal class SrtpTransformer : IPacketTransformer
+internal class SrtpTransformer
 {
     private int _isLocked;
     private readonly RawPacket _rawPacket;
@@ -80,12 +80,11 @@ internal class SrtpTransformer : IPacketTransformer
 
             // Associate packet to a crypto context
             long ssrc = rawPacket.GetSsrc();
-            SrtpCryptoContext context;
-            _contexts.TryGetValue(ssrc, out context);
+            _contexts.TryGetValue(ssrc, out var context);
 
             if (context == null)
             {
-                context = _forwardEngine.GetDefaultContext().DeriveContext(0, 0);
+                context = _forwardEngine.DefaultContext.DeriveContext(0, 0);
                 context.DeriveSrtpKeys(0);
                 _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
             }
@@ -115,11 +114,10 @@ internal class SrtpTransformer : IPacketTransformer
 
             // Associate packet to a crypto context
             long ssrc = rawPacket.GetSsrc();
-            SrtpCryptoContext context;
-            _contexts.TryGetValue(ssrc, out context);
+            _contexts.TryGetValue(ssrc, out var context);
             if (context == null)
             {
-                context = _reverseEngine.GetDefaultContext().DeriveContext(0, 0);
+                context = _reverseEngine.DefaultContext.DeriveContext(0, 0);
                 context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
                 _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
             }

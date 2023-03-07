@@ -40,10 +40,10 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     private static readonly Random Random = new Random();
 
-    private IPacketTransformer _srtpEncoder;
-    private IPacketTransformer _srtpDecoder;
-    private IPacketTransformer _srtcpEncoder;
-    private IPacketTransformer _srtcpDecoder;
+    private SrtpTransformer _srtpEncoder;
+    private SrtpTransformer _srtpDecoder;
+    private SrtcpTransformer _srtcpEncoder;
+    private SrtcpTransformer _srtcpDecoder;
     readonly IDtlsSrtpPeer _connection;
 
     /// <summary>The collection of chunks to be written.</summary>
@@ -278,29 +278,28 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return _connection.GetSrtcpPolicy();
     }
 
-    private IPacketTransformer GenerateRtpEncoder()
+    private SrtpTransformer GenerateRtpEncoder()
     {
-        return GenerateTransformer(_connection.IsClient(), true);
+        return GenerateRtpTransformer(_connection.IsClient());
     }
 
-    private IPacketTransformer GenerateRtpDecoder()
+    private SrtpTransformer GenerateRtpDecoder()
     {
-        //Generate the reverse result of "GenerateRtpEncoder"
-        return GenerateTransformer(!_connection.IsClient(), true);
+        return GenerateRtpTransformer(!_connection.IsClient());
     }
 
-    private IPacketTransformer GenerateRtcpEncoder()
+    private SrtcpTransformer GenerateRtcpEncoder()
     {
-        return GenerateTransformer(_connection.IsClient(), false);
+        return GenerateRtcpTransformer(_connection.IsClient());
     }
 
-    private IPacketTransformer GenerateRtcpDecoder()
+    private SrtcpTransformer GenerateRtcpDecoder()
     {
         //Generate the reverse result of "GenerateRctpEncoder"
-        return GenerateTransformer(!_connection.IsClient(), false);
+        return GenerateRtcpTransformer(!_connection.IsClient());
     }
 
-    private IPacketTransformer GenerateTransformer(bool isClient, bool isRtp)
+    private SrtpTransformer GenerateRtpTransformer(bool isClient)
     {
         SrtpTransformEngine engine;
         if (!isClient)
@@ -312,9 +311,20 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
             engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
         }
 
-        if (isRtp)
+        return engine.GetRTPTransformer();
+    }
+
+
+    private SrtcpTransformer GenerateRtcpTransformer(bool isClient)
+    {
+        SrtpTransformEngine engine;
+        if (!isClient)
         {
-            return engine.GetRTPTransformer();
+            engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+        }
+        else
+        {
+            engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
         }
 
         return engine.GetRtcpTransformer();

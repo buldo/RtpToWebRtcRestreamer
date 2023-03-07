@@ -28,7 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 /// @author Bing SU (nova.su @gmail.com)
 /// @author Werner Dittmann<Werner.Dittmann@t-online.de>
 /// </summary>
-internal class SrtcpTransformer : IPacketTransformer
+internal class SrtcpTransformer
 {
     private int _isLocked;
     private readonly RawPacket _packet;
@@ -68,7 +68,7 @@ internal class SrtcpTransformer : IPacketTransformer
 
             if (context == null)
             {
-                context = _forwardEngine.GetDefaultContextControl().DeriveContext();
+                context = _forwardEngine.DefaultContextControl.DeriveContext();
                 context.DeriveSrtcpKeys();
                 _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
             }
@@ -98,12 +98,11 @@ internal class SrtcpTransformer : IPacketTransformer
 
             // Associate the packet with its encryption context
             long ssrc = packet.GetRtcpssrc();
-            SrtcpCryptoContext context;
-            _contexts.TryGetValue(ssrc, out context);
+            _contexts.TryGetValue(ssrc, out var context);
 
             if (context == null)
             {
-                context = _reverseEngine.GetDefaultContextControl().DeriveContext();
+                context = _reverseEngine.DefaultContextControl.DeriveContext();
                 context.DeriveSrtcpKeys();
                 _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
             }
