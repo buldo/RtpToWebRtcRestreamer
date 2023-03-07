@@ -11,20 +11,22 @@ internal class WebRtcHostedService : IHostedService
     private readonly WebRtcConfiguration _configuration;
     private readonly ILoggerFactory _loggerFactory;
     private readonly object _rtpRestreamerLock = new();
+    private readonly ILogger<WebRtcHostedService> _logger;
     private RtpRestreamer? _rtpRestreamer;
 
     public WebRtcHostedService(
         WebRtcConfiguration configuration,
+        ILogger<WebRtcHostedService> logger,
         ILoggerFactory loggerFactory)
     {
         _configuration = configuration;
+        _logger = logger;
         _loggerFactory = loggerFactory;
         LogFactory.Set(loggerFactory);
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        StartStreamer();
         return Task.CompletedTask;
     }
 
@@ -33,7 +35,12 @@ internal class WebRtcHostedService : IHostedService
         return Task.CompletedTask;
     }
 
-    public void StartStreamer()
+    public void StopStreamer()
+    {
+        _rtpRestreamer?.StopAsync();
+    }
+
+    public async Task<(Guid PeerId, string Sdp)> AppendClient()
     {
         lock (_rtpRestreamerLock)
         {
@@ -47,16 +54,11 @@ internal class WebRtcHostedService : IHostedService
             }
         }
 
-        _rtpRestreamer.Start();
-    }
+        if (!_rtpRestreamer.IsStarted)
+        {
+            _rtpRestreamer.Start();
+        }
 
-    public void StopStreamer()
-    {
-        _rtpRestreamer?.Stop();
-    }
-
-    public async Task<(Guid PeerId, string Sdp)> AppendClient()
-    {
         return await _rtpRestreamer.AppendClient();
     }
 
@@ -67,10 +69,16 @@ internal class WebRtcHostedService : IHostedService
 
     private void RtpRestreamerOnConnectedClientsChanged(object? sender, ConnectedClientsChangedEventArgs e)
     {
-        //if (e.NewCount == 0)
-        //{
-        //    _rtpRestreamer?.Stop();
-        //}
+        if (e.NewCount == 0)
+        {
+            try
+            {
+                _rtpRestreamer?.StopAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Stop error");
+            }
+        }
     }
-
 }

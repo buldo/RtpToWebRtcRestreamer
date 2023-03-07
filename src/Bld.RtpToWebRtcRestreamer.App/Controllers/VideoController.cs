@@ -15,10 +15,10 @@ namespace Bld.RtpToWebRtcRestreamer.App.Controllers
             _control = control;
         }
 
-        [HttpPost("start")]
-        public void Start()
+        [HttpPost("stop")]
+        public void Stop()
         {
-            _control.Start();
+            _control.Stop();
         }
 
         [HttpPost("sdp")]

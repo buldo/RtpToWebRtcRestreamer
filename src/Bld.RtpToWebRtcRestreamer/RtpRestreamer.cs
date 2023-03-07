@@ -49,14 +49,29 @@ internal class RtpRestreamer
         }
     }
 
+    public bool IsStarted { get; private set; }
+
     public void Start()
     {
+        if (IsStarted)
+        {
+            return;
+        }
+
+        IsStarted = true;
+
         _receiver.Start(RtpProcessorAsync);
     }
 
-    public void Stop()
+    public async Task StopAsync()
     {
-        throw new NotImplementedException();
+        if (!IsStarted)
+        {
+            return;
+        }
+
+        IsStarted = false;
+        await _receiver.StopAsync();
     }
 
     public async Task<(Guid PeerId, string Sdp)> AppendClient()

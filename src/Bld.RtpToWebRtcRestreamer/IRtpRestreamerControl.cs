@@ -6,7 +6,5 @@ public interface IRtpRestreamerControl
 
     Task ProcessClientAnswerAsync(Guid peerId, string sdpString);
 
-    void Start();
-
     void Stop();
 }

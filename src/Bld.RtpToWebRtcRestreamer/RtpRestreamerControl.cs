@@ -19,11 +19,6 @@ internal class RtpRestreamerControl :IRtpRestreamerControl
         await _service.ProcessClientAnswerAsync(peerId, sdpString);
     }
 
-    public void Start()
-    {
-        _service.StartStreamer();
-    }
-
     public void Stop()
     {
         _service.StopStreamer();
