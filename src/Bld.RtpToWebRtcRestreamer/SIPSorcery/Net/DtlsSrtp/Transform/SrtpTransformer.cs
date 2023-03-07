@@ -102,40 +102,4 @@ internal class SrtpTransformer
                 Interlocked.CompareExchange(ref _isLocked, 0, 1);
         }
     }
-
-    public byte[] ReverseTransform(byte[] pkt, int offset, int length)
-    {
-        var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
-        try
-        {
-            // Wrap data into the raw packet for readable format
-            var rawPacket = !isLocked ? _rawPacket : new RawPacket();
-            rawPacket.Wrap(pkt, offset, length);
-
-            // Associate packet to a crypto context
-            long ssrc = rawPacket.GetSsrc();
-            _contexts.TryGetValue(ssrc, out var context);
-            if (context == null)
-            {
-                context = _reverseEngine.DefaultContext.DeriveContext(0, 0);
-                context.DeriveSrtpKeys(rawPacket.GetSequenceNumber());
-                _contexts.AddOrUpdate(ssrc, context, (_, _) => context);
-            }
-
-            byte[] result = null;
-            var reversed = context.ReverseTransformPacket(rawPacket);
-            if (reversed)
-            {
-                result = rawPacket.GetData();
-            }
-
-            return result;
-        }
-        finally
-        {
-            //Unlock
-            if (!isLocked)
-                Interlocked.CompareExchange(ref _isLocked, 0, 1);
-        }
-    }
 }

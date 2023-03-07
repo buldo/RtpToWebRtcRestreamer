@@ -1245,7 +1245,6 @@ internal class RTCPeerConnection : RTPSession
         Logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
         SetGlobalSecurityContext(dtlsHandle.ProtectRTP,
-            dtlsHandle.UnprotectRTP,
             dtlsHandle.ProtectRtcp,
             dtlsHandle.UnprotectRtcp);
 

@@ -330,30 +330,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return engine.GetRtcpTransformer();
     }
 
-    private byte[] UnprotectRTP(byte[] packet, int offset, int length)
-    {
-        lock (_srtpDecoder)
-        {
-            return _srtpDecoder.ReverseTransform(packet, offset, length);
-        }
-    }
-
-    public int UnprotectRTP(byte[] payload, int length, out int outLength)
-    {
-        var result = UnprotectRTP(payload, 0, length);
-
-        if (result == null)
-        {
-            outLength = 0;
-            return -1;
-        }
-
-        Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-        outLength = result.Length;
-
-        return 0; //No Errors
-    }
-
     private byte[] ProtectRTP(byte[] packet, int offset, int length)
     {
         lock (_srtpEncoder)

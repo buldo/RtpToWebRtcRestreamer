@@ -105,14 +105,14 @@ internal abstract class MediaStream
 
     public SecureContext SecurityContext => _secureContext;
 
-    public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket unprotectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+    public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
     {
         if (_secureContext != null)
         {
             Logger.LogTrace($"Tried adding new SecureContext for media type {MediaType}, but one already existed");
         }
 
-        _secureContext = new SecureContext(protectRtp, unprotectRtp, protectRtcp, unprotectRtcp);
+        _secureContext = new SecureContext(protectRtp, protectRtcp, unprotectRtcp);
     }
 
     public bool IsSecurityContextReady()

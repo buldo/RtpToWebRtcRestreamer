@@ -20,16 +20,15 @@ internal delegate int ProtectRtpPacket(byte[] payload, int length, out int outpu
 internal class SecureContext
 {
     public ProtectRtpPacket ProtectRtpPacket { get; }
+
     public ProtectRtpPacket ProtectRtcpPacket { get; }
 
-    public ProtectRtpPacket UnprotectRtpPacket { get; }
     public ProtectRtpPacket UnprotectRtcpPacket { get; }
 
-    public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
+    public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
     {
         ProtectRtpPacket = protectRtpPacket;
         ProtectRtcpPacket = protectRtcpPacket;
-        UnprotectRtpPacket = unprotectRtpPacket;
         UnprotectRtcpPacket = unprotectRtcpPacket;
     }
 }
