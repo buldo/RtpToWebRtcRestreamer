@@ -64,8 +64,13 @@ internal class WebRtcHostedService : IHostedService
         _rtpRestreamer?.Stop();
     }
 
-    public async Task<string> AppendClient()
+    public async Task<(Guid PeerId, string Sdp)> AppendClient()
     {
         return await _rtpRestreamer.AppendClient();
+    }
+
+    public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
+    {
+        await _rtpRestreamer.ProcessClientAnswerAsync(peerId, sdpString);
     }
 }

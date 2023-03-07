@@ -37,19 +37,18 @@ namespace Bld.RtpToWebRtcRestreamer.App.Controllers
             var answer = await _control.AppendClient();
 
             Response.StatusCode = StatusCodes.Status201Created;
-            Response.Headers.Location = "api/video/sdp";
-            await Response.WriteAsync(answer, Encoding.UTF8);
+            Response.Headers.Location = $"api/video/sdp/{answer.PeerId}";
+            await Response.WriteAsync(answer.Sdp, Encoding.UTF8);
         }
 
-        [HttpPatch("sdp")]
-        [Produces("application/sdp")]
+        [HttpPatch("sdp/{id}")]
         [Consumes("application/sdp")]
-        public async Task Patch()
+        public async Task Patch([FromRoute] Guid peerId)
         {
             using var streamReader = new StreamReader(Request.Body, Encoding.UTF8);
             var sdpString = await streamReader.ReadToEndAsync();
 
-            var answer = await _control.AppendClient();
+            await _control.ProcessClientAnswerAsync(peerId, sdpString);
 
             Response.StatusCode = StatusCodes.Status200OK;
         }

@@ -9,9 +9,14 @@ internal class RtpRestreamerControl :IRtpRestreamerControl
         _service = service;
     }
 
-    public async Task<string> AppendClient()
+    public async Task<(Guid PeerId, string Sdp)> AppendClient()
     {
         return await _service.AppendClient();
+    }
+
+    public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
+    {
+        await _service.ProcessClientAnswerAsync(peerId, sdpString);
     }
 
     public void Start()

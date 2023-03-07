@@ -2,7 +2,9 @@
 
 public interface IRtpRestreamerControl
 {
-    Task<string> AppendClient();
+    Task<(Guid PeerId, string Sdp)> AppendClient();
+
+    Task ProcessClientAnswerAsync(Guid peerId, string sdpString);
 
     void Start();
 
