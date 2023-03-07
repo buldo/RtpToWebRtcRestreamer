@@ -10,7 +10,7 @@ namespace Bld.RtpToWebRtcRestreamer.App
 
             // Add services to the container.
 
-            builder.Services.AddRtpRestreamer(new IPEndPoint(IPAddress.Any, 5600), new IPEndPoint(IPAddress.Any, 8081));
+            builder.Services.AddRtpRestreamer(new IPEndPoint(IPAddress.Any, 5600));
 
             builder.Services.AddSignalR();
 

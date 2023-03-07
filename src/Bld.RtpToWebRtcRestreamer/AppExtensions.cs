@@ -7,13 +7,11 @@ namespace Bld.RtpToWebRtcRestreamer
     {
         public static void AddRtpRestreamer(
             this IServiceCollection services,
-            IPEndPoint rtpListenEndpoint,
-            IPEndPoint webSocketEndPoint)
+            IPEndPoint rtpListenEndpoint)
         {
             var config = new WebRtcConfiguration
             {
-                RtpListenEndpoint = rtpListenEndpoint,
-                WebSocketListenEndpoint = webSocketEndPoint
+                RtpListenEndpoint = rtpListenEndpoint
             };
 
             services.AddSingleton(config);

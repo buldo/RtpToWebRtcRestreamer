@@ -41,7 +41,7 @@ namespace Bld.RtpToWebRtcRestreamer.App.Controllers
             await Response.WriteAsync(answer.Sdp, Encoding.UTF8);
         }
 
-        [HttpPatch("sdp/{id}")]
+        [HttpPatch("sdp/{peerId}")]
         [Consumes("application/sdp")]
         public async Task Patch([FromRoute] Guid peerId)
         {

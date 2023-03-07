@@ -14,7 +14,6 @@ internal class RtpRestreamer
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<RtpRestreamer> _logger;
-    private readonly WebSocketServer _webSocketServer;
     private readonly PooledUdpSource _receiver;
     private readonly StreamMultiplexer _streamMultiplexer;
     private readonly Task _periodicalManagementTask;
@@ -23,33 +22,22 @@ internal class RtpRestreamer
     private int _connectedClientsCount;
 
     public RtpRestreamer(
-        IPEndPoint webSocketEndpoint,
         IPEndPoint rtpListenEndpoint,
         ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory;
         _logger = _loggerFactory.CreateLogger<RtpRestreamer>();
 
-        _webSocketServer = new WebSocketServer(webSocketEndpoint.Address, webSocketEndpoint.Port, false);
-        _webSocketServer.AddWebSocketService<WebRTCWebSocketPeer>("/", (peer) =>
-        {
-            //peer.SetLogger(loggerFactory.CreateLogger<WebRTCWebSocketPeer>());
-            peer.CreatePeerConnection = CreatePeerConnection;
-        });
-
         _receiver = new(rtpListenEndpoint, _loggerFactory.CreateLogger<PooledUdpSource>());
         _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
 
-        _periodicalManagementTask = BackgroundTask();
+        // TODO: reenable
+        //_periodicalManagementTask = Task.Run(async () => await BackgroundTask().ConfigureAwait(false));
     }
 
-    private async Task RtpProcessorAsync(RtpPacket packet)
-    {
-        await _streamMultiplexer.SendVideoPacketAsync(packet);
-        _receiver.ReusePacket(packet);
-    }
+    public event EventHandler<ConnectedClientsChangedEventArgs> ConnectedClientsChanged;
 
-    private int ConnectedClientsCount
+    public int ConnectedClientsCount
     {
         set
         {
@@ -61,15 +49,47 @@ internal class RtpRestreamer
         }
     }
 
-    public event EventHandler<ConnectedClientsChangedEventArgs> ConnectedClientsChanged;
-
     public void Start()
     {
-        _webSocketServer.Start();
         _receiver.Start(RtpProcessorAsync);
     }
 
-    private async Task<RTCPeerConnection> CreatePeerConnection()
+    public void Stop()
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<(Guid PeerId, string Sdp)> AppendClient()
+    {
+        var newPeer = CreatePeerConnection();
+
+        var answer = newPeer.createOffer();
+        var peerId = Guid.NewGuid();
+        _peers.Add(peerId, newPeer);
+
+        return (peerId, answer.sdp);
+    }
+
+    public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
+    {
+        if (_peers.TryGetValue(peerId, out var peer))
+        {
+            var result = peer.setRemoteDescription(new RTCSessionDescriptionInit
+            {
+                sdp = sdpString,
+                type = RTCSdpType.answer
+            });
+            _logger.LogDebug("setRemoteDescription result: {@result}", result);
+        }
+    }
+
+    private async Task RtpProcessorAsync(RtpPacket packet)
+    {
+        await _streamMultiplexer.SendVideoPacketAsync(packet);
+        _receiver.ReusePacket(packet);
+    }
+
+    private RTCPeerConnection CreatePeerConnection()
     {
         var pc = new RTCPeerConnection();
         _streamMultiplexer.RegisterPeer(pc);
@@ -78,7 +98,7 @@ internal class RtpRestreamer
             new VideoFormat(VideoCodecsEnum.H264, 96),
             MediaStreamStatusEnum.SendOnly)
         {
-            StreamStatus = MediaStreamStatusEnum.SendOnly
+            //StreamStatus = MediaStreamStatusEnum.SendOnly
         };
         pc.AddTrack(videoTrack);
 
@@ -128,33 +148,5 @@ internal class RtpRestreamer
             }
         }
         // ReSharper disable once FunctionNeverReturns
-    }
-
-    public void Stop()
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<(Guid PeerId, string Sdp)> AppendClient()
-    {
-        var newPeer = await CreatePeerConnection();
-
-        var answer = newPeer.createOffer();
-        var peerId = Guid.NewGuid();
-        _peers.Add(peerId, newPeer);
-
-        return (peerId, answer.sdp);
-    }
-
-    public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
-    {
-        if (_peers.TryGetValue(peerId, out var peer))
-        {
-            peer.setRemoteDescription(new RTCSessionDescriptionInit()
-            {
-                sdp = sdpString,
-                type = RTCSdpType.answer
-            });
-        }
     }
 }
