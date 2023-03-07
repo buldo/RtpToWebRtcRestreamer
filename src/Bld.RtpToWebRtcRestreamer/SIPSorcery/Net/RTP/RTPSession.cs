@@ -632,16 +632,16 @@ internal abstract class RTPSession : IDisposable
         }
     }
 
-    protected void SetGlobalSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+    protected void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
     {
         foreach (var audioStream in AudioStreamList)
         {
-            audioStream.SetSecurityContext(protectRtp, protectRtcp, unprotectRtcp);
+            audioStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
         }
 
         foreach (var videoStream in VideoStreamList)
         {
-            videoStream.SetSecurityContext(protectRtp, protectRtcp, unprotectRtcp);
+            videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
         }
     }
 
@@ -653,7 +653,7 @@ internal abstract class RTPSession : IDisposable
             var secureContext = _mPrimaryStream.SecurityContext;
             if (secureContext != null)
             {
-                mediaStream.SetSecurityContext(secureContext.ProtectRtpPacket, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
+                mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
             }
             mediaStream.SetDestination(_mPrimaryStream.DestinationEndPoint, _mPrimaryStream.ControlDestinationEndPoint);
         }

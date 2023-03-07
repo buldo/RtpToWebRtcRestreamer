@@ -19,6 +19,7 @@ using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
@@ -105,14 +106,14 @@ internal abstract class MediaStream
 
     public SecureContext SecurityContext => _secureContext;
 
-    public void SetSecurityContext(ProtectRtpPacket protectRtp, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+    public void SetSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
     {
         if (_secureContext != null)
         {
             Logger.LogTrace($"Tried adding new SecureContext for media type {MediaType}, but one already existed");
         }
 
-        _secureContext = new SecureContext(protectRtp, protectRtcp, unprotectRtcp);
+        _secureContext = new SecureContext(rtpTransport, protectRtcp, unprotectRtcp);
     }
 
     public bool IsSecurityContextReady()
@@ -172,7 +173,7 @@ internal abstract class MediaStream
             rtpPacket.ApplyHeaderChanges();
 
             var requestedLen = packet.Header.Length + packet.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
-            var rtperr = _secureContext.ProtectRtpPacket(
+            var rtperr = _secureContext.RtpTransport.ProtectRTP(
                 localBuffer,
                 requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH,
                 out var outBufLen);
@@ -212,7 +213,7 @@ internal abstract class MediaStream
             return false;
         }
 
-        if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.ProtectRtpPacket == null)
+        if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.RtpTransport == null)
         {
             Logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
             return false;

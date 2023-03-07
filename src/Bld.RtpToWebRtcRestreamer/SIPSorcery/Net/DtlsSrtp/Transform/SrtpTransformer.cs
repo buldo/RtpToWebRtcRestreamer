@@ -49,21 +49,15 @@ internal class SrtpTransformer
     private readonly RawPacket _rawPacket;
 
     private readonly SrtpTransformEngine _forwardEngine;
-    private readonly SrtpTransformEngine _reverseEngine;
 
     /**
 	     * All the known SSRC's corresponding SRTPCryptoContexts
 	     */
     private readonly ConcurrentDictionary<long, SrtpCryptoContext> _contexts;
 
-    public SrtpTransformer(SrtpTransformEngine engine) : this(engine, engine)
-    {
-    }
-
-    private SrtpTransformer(SrtpTransformEngine forwardEngine, SrtpTransformEngine reverseEngine)
+    public SrtpTransformer(SrtpTransformEngine forwardEngine)
     {
         _forwardEngine = forwardEngine;
-        _reverseEngine = reverseEngine;
         _contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
         _rawPacket = new RawPacket();
     }
