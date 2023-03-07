@@ -1,67 +1,4 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: SrtpCipherF8.cs
-//
-// Description: Implements SRTP F8 Mode Encryption for 128 bits block cipher.
-//
-// Derived From:
-// https://github.com/jitsi/jitsi-srtp/blob/master/src/main/java/org/jitsi/srtp/crypto/SrtpCipherF8.java
-//
-// Author(s):
-// Rafael Soares (raf.csoares@kyubinteractive.com)
-//
-// History:
-// 01 Jul 2020	Rafael Soares   Created.
-//
-// License:
-// Customisations: BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// Original Source: Apache License: see below
-//-----------------------------------------------------------------------------
-
-/*
- * Copyright @ 2015 - present 8x8, Inc
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
- * SRTPCipherF8 implements SRTP F8 Mode AES Encryption (AES-f8).
- * F8 Mode AES Encryption algorithm is defined in RFC3711, section 4.1.2.
- * 
- * Other than Null Cipher, RFC3711 defined two two encryption algorithms:
- * Counter Mode AES Encryption and F8 Mode AES encryption. Both encryption
- * algorithms are capable to encrypt / decrypt arbitrary length data, and the
- * size of packet data is not required to be a multiple of the AES block 
- * size (128bit). So, no padding is needed.
- * 
- * Please note: these two encryption algorithms are specially defined by SRTP.
- * They are not common AES encryption modes, so you will not be able to find a 
- * replacement implementation in common cryptographic libraries. 
- * 
- * As defined by RFC3711: F8 mode encryption is optional.
- *
- *                        mandatory to impl     optional      default
- * -------------------------------------------------------------------------
- *   encryption           AES-CM, NULL          AES-f8        AES-CM
- *   message integrity    HMAC-SHA1                -          HMAC-SHA1
- *   key derivation       (PRF) AES-CM             -          AES-CM 
- *
- * We use AESCipher to handle basic AES encryption / decryption.
- * 
- * @author Bing SU (nova.su@gmail.com)
- * @author Werner Dittmann <werner.dittmann@t-online.de>
- */
-
-using Org.BouncyCastle.Crypto;
+﻿using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Utilities;
 
@@ -158,7 +95,7 @@ internal static class SrtpCipherF8
     /**
          * Encrypt / Decrypt a block using F8 Mode AES algorithm, read len bytes
          * data from in at inOff and write the output into out at outOff
-         * 
+         *
          * @param f8ctx
          *            F8 encryption context
          * @param in
@@ -185,7 +122,7 @@ internal static class SrtpCipherF8
         }
 
         /*
-         * Now XOR (S(n-1) xor IV') with the current counter, then increment 
+         * Now XOR (S(n-1) xor IV') with the current counter, then increment
          * the counter
          */
         f8Ctx.S[12] ^= (byte)(f8Ctx.J >> 24);
