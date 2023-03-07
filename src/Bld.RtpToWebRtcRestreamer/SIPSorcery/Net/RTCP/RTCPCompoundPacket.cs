@@ -36,7 +36,7 @@ internal class RTCPCompoundPacket
     public RTCPReceiverReport ReceiverReport { get; private set; }
     private RTCPSDesReport SDesReport { get; set; }
     public RTCPBye Bye { get; set; }
-    public RTCPFeedback Feedback { get; set; }
+    public RtcpFeedback Feedback { get; set; }
 
     public RTCPCompoundPacket(RTCPSenderReport senderReport, RTCPSDesReport sdesReport)
     {
@@ -93,7 +93,7 @@ internal class RTCPCompoundPacket
                     break;
                 case (byte)RtcpReportTypes.RTPFB:
                     // TODO: Interpret Generic RTP feedback reports.
-                    Feedback = new RTCPFeedback(buffer);
+                    Feedback = new RtcpFeedback(buffer);
                     var rtpfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                     offset += rtpfbFeedbackLength;
                     //var rtpfbHeader = new RtcpHeader(buffer);
@@ -101,7 +101,7 @@ internal class RTCPCompoundPacket
                     break;
                 case (byte)RtcpReportTypes.PSFB:
                     // TODO: Interpret Payload specific feedback reports.
-                    Feedback = new RTCPFeedback(buffer);
+                    Feedback = new RtcpFeedback(buffer);
                     var psfbFeedbackLength = (Feedback != null) ? Feedback.GetBytes().Length : Int32.MaxValue;
                     offset += psfbFeedbackLength;
                     //var psfbHeader = new RtcpHeader(buffer);
@@ -138,7 +138,7 @@ internal class RTCPCompoundPacket
             {
                 foreach (var rr in sr.ReceptionReports)
                 {
-                    sb.AppendLine($" RR: SSRC={rr.SSRC}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
+                    sb.AppendLine($" RR: SSRC={rr.Ssrc}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
                 }
             }
         }
@@ -151,7 +151,7 @@ internal class RTCPCompoundPacket
             {
                 foreach (var rr in recv.ReceptionReports)
                 {
-                    sb.AppendLine($" RR: SSRC={rr.SSRC}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
+                    sb.AppendLine($" RR: SSRC={rr.Ssrc}, LOST={rr.PacketsLost}, JITTER={rr.Jitter}");
                 }
             }
         }

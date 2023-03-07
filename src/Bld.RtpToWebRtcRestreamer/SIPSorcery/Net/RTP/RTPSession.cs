@@ -20,6 +20,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
@@ -1116,7 +1117,7 @@ internal abstract class RTPSession : IDisposable
 
         if (rtcpPkt.Feedback != null)
         {
-            return GetMediaStream(rtcpPkt.Feedback.SenderSSRC);
+            return GetMediaStream(rtcpPkt.Feedback.SenderSsrc);
         }
 
         // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.
@@ -1135,7 +1136,7 @@ internal abstract class RTPSession : IDisposable
         {
             foreach (var recRep in receptionReports)
             {
-                var mediaStream = GetMediaStream(recRep.SSRC);
+                var mediaStream = GetMediaStream(recRep.Ssrc);
                 if (mediaStream != null)
                 {
                     return mediaStream;

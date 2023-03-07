@@ -36,21 +36,22 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 12 Aug 2019  Aaron Clauson   Created, Montreux, Switzerland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 
 /// <summary>
-/// An RTCP sender report is for use by active RTP senders. 
+/// An RTCP sender report is for use by active RTP senders.
 /// </summary>
 /// <remarks>
 /// From https://tools.ietf.org/html/rfc3550#section-6.4:
@@ -89,7 +90,7 @@ internal class RTCPSenderReport
     /// Create a new RTCP Sender Report from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the serialised sender report.</param>
-    public RTCPSenderReport(byte[] packet)
+    public RTCPSenderReport(Span<byte> packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
@@ -99,27 +100,16 @@ internal class RTCPSenderReport
         Header = new RtcpHeader(packet);
         ReceptionReports = new List<ReceptionReportSample>();
 
-        if (BitConverter.IsLittleEndian)
-        {
-            SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-            NtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt64(packet, 8));
-            RtpTimestamp = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 16));
-            PacketCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 20));
-            OctetCount = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 24));
-        }
-        else
-        {
-            SSRC = BitConverter.ToUInt32(packet, 4);
-            NtpTimestamp = BitConverter.ToUInt64(packet, 8);
-            RtpTimestamp = BitConverter.ToUInt32(packet, 16);
-            PacketCount = BitConverter.ToUInt32(packet, 20);
-            OctetCount = BitConverter.ToUInt32(packet, 24);
-        }
+        SSRC = BinaryPrimitives.ReadUInt32BigEndian(packet[4..]);
+        NtpTimestamp = BinaryPrimitives.ReadUInt64BigEndian(packet[8..]);
+        RtpTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet[16..]);
+        PacketCount = BinaryPrimitives.ReadUInt32BigEndian(packet[20..]);
+        OctetCount = BinaryPrimitives.ReadUInt32BigEndian(packet[24..]);
 
         var rrIndex = 28;
         for (var i = 0; i < Header.ReceptionReportCount; i++)
         {
-            var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+            var rr = new ReceptionReportSample(packet[(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE)..]);
             ReceptionReports.Add(rr);
         }
     }
