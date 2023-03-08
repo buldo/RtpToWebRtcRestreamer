@@ -81,15 +81,6 @@ internal class RtpHeader
         }
     }
 
-    public byte[] GetBytes()
-    {
-        var header = new byte[Length];
-
-        WriteTo(header);
-
-        return header;
-    }
-
     public void WriteTo(Span<byte> header)
     {
         var firstWord = Convert.ToUInt16(Version * 16384 + PaddingFlag * 8192 + HeaderExtensionFlag * 4096 + CSRCCount * 256 + MarkerBit * 128 + PayloadType);
