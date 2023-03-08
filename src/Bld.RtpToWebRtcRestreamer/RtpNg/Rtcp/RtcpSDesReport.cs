@@ -136,14 +136,7 @@ internal class RtcpSDesReport
         Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, buffer, payloadIndex, 4);
-        }
-        else
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, buffer, payloadIndex, 4);
-        }
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex, 4), Ssrc);
 
         buffer[payloadIndex + 4] = CNAME_ID;
         buffer[payloadIndex + 5] = (byte)cnameBytes.Length;
