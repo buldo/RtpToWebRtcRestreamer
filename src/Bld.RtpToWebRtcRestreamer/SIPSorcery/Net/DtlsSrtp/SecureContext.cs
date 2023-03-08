@@ -1,36 +1,19 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: RtpSecureContextCollection.cs
-//
-// Description: Represents a secure context for Rtp Sessions
-//
-// Author(s):
-// Jean-Philippe Fournier
-//
-// History:
-// 5 January 2022 : Jean-Philippe Fournier, created Montréal, QC, Canada
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+internal delegate int ProtectRtpPacket(byte[] payload, int length, out int outputBufferLength);
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
+internal class SecureContext
 {
-    internal class SecureContext
+    public DtlsSrtpTransport RtpTransport { get; }
+
+    public ProtectRtpPacket ProtectRtcpPacket { get; }
+
+    public ProtectRtpPacket UnprotectRtcpPacket { get; }
+
+    public SecureContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
     {
-        public ProtectRtpPacket ProtectRtpPacket { get; }
-        public ProtectRtpPacket ProtectRtcpPacket { get; }
-
-        public ProtectRtpPacket UnprotectRtpPacket { get; }
-        public ProtectRtpPacket UnprotectRtcpPacket { get; }
-
-        public SecureContext(ProtectRtpPacket protectRtpPacket, ProtectRtpPacket unprotectRtpPacket, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
-        {
-            ProtectRtpPacket = protectRtpPacket;
-            ProtectRtcpPacket = protectRtcpPacket;
-            UnprotectRtpPacket = unprotectRtpPacket;
-            UnprotectRtcpPacket = unprotectRtcpPacket;
-        }
+        RtpTransport = rtpTransport;
+        ProtectRtcpPacket = protectRtcpPacket;
+        UnprotectRtcpPacket = unprotectRtcpPacket;
     }
 }

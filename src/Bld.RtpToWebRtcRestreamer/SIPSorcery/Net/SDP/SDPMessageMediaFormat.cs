@@ -15,15 +15,14 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+internal class SDPMessageMediaFormat
 {
-    internal class SDPMessageMediaFormat
-    {
-        public List<string> AcceptTypes;
+    public List<string> AcceptTypes;
 
-        public string Endpoint;
-        public string IP;
+    public string Endpoint;
+    public string IP;
 
-        public string Port;
-    }
+    public string Port;
 }

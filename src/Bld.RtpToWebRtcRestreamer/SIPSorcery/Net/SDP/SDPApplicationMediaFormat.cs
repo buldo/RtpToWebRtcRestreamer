@@ -15,34 +15,33 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+internal struct SDPApplicationMediaFormat
 {
-    internal struct SDPApplicationMediaFormat
+    public string ID;
+
+    public string Rtpmap;
+
+    public string Fmtp;
+
+    public SDPApplicationMediaFormat(string id)
     {
-        public string ID;
-
-        public string Rtpmap;
-
-        public string Fmtp;
-
-        public SDPApplicationMediaFormat(string id)
-        {
-            ID = id;
-            Rtpmap = null;
-            Fmtp = null;
-        }
-
-        public SDPApplicationMediaFormat(string id, string rtpmap, string fmtp)
-        {
-            ID = id;
-            Rtpmap = rtpmap;
-            Fmtp = fmtp;
-        }
-
-        public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) =>
-            new SDPApplicationMediaFormat(ID, rtpmap, Fmtp);
-
-        public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) =>
-            new SDPApplicationMediaFormat(ID, Rtpmap, fmtp);
+        ID = id;
+        Rtpmap = null;
+        Fmtp = null;
     }
+
+    public SDPApplicationMediaFormat(string id, string rtpmap, string fmtp)
+    {
+        ID = id;
+        Rtpmap = rtpmap;
+        Fmtp = fmtp;
+    }
+
+    public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) =>
+        new SDPApplicationMediaFormat(ID, rtpmap, Fmtp);
+
+    public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) =>
+        new SDPApplicationMediaFormat(ID, Rtpmap, fmtp);
 }

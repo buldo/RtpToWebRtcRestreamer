@@ -27,101 +27,100 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+
+internal class RTCPeerSctpAssociation : SctpAssociation
 {
-    internal class RTCPeerSctpAssociation : SctpAssociation
+    // TODO: Add MTU path discovery.
+    private const ushort DEFAULT_DTLS_MTU = 1200;
+
+    private static readonly ILogger logger = Log.Logger;
+
+    /// <summary>
+    /// Event notifications for user data on an SCTP stream representing a data channel.
+    /// </summary>
+    public event Action<SctpDataFrame> OnDataChannelData;
+
+    /// <summary>
+    /// Event notifications for the request to open a data channel being confirmed. This
+    /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
+    /// </summary>
+    public event OnRTCDataChannelOpened OnDataChannelOpened;
+
+    /// <summary>
+    /// Event notification for a new data channel open request from the remote peer.
+    /// </summary>
+    public event OnNewRTCDataChannel OnNewDataChannel;
+
+    /// <summary>
+    /// Creates a new SCTP association with the remote peer.
+    /// </summary>
+    /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
+    /// SCTP packets.</param>
+    /// <param name="isClient">True if this peer will be the client within the association. This
+    /// dictates whether streams created use odd or even ID's.</param>
+    /// <param name="srcPort">The source port to use when forming the association.</param>
+    /// <param name="dstPort">The destination port to use when forming the association.</param>
+    /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
+    /// will be set on the SCTP association to aid in diagnostics.</param>
+    public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
+        : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
     {
-        // TODO: Add MTU path discovery.
-        private const ushort DEFAULT_DTLS_MTU = 1200;
+        logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
 
-        private static readonly ILogger logger = Log.Logger;
+        OnData += OnDataFrameReceived;
+    }
 
-        /// <summary>
-        /// Event notifications for user data on an SCTP stream representing a data channel.
-        /// </summary>
-        public event Action<SctpDataFrame> OnDataChannelData;
-
-        /// <summary>
-        /// Event notifications for the request to open a data channel being confirmed. This
-        /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
-        /// </summary>
-        public event OnRTCDataChannelOpened OnDataChannelOpened;
-
-        /// <summary>
-        /// Event notification for a new data channel open request from the remote peer.
-        /// </summary>
-        public event OnNewRTCDataChannel OnNewDataChannel;
-
-        /// <summary>
-        /// Creates a new SCTP association with the remote peer.
-        /// </summary>
-        /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
-        /// SCTP packets.</param>
-        /// <param name="isClient">True if this peer will be the client within the association. This
-        /// dictates whether streams created use odd or even ID's.</param>
-        /// <param name="srcPort">The source port to use when forming the association.</param>
-        /// <param name="dstPort">The destination port to use when forming the association.</param>
-        /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
-        /// will be set on the SCTP association to aid in diagnostics.</param>
-        public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
-            : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
+    /// <summary>
+    /// Event handler for a DATA chunk being received. The chunk can be either a DCEP message or data channel data
+    /// payload.
+    /// </summary>
+    /// <param name="dataFrame">The received data frame which could represent one or more chunks depending
+    /// on fragmentation..</param>
+    private void OnDataFrameReceived(SctpDataFrame dataFrame)
+    {
+        switch (dataFrame)
         {
-            logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
+            case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
+                switch (frame.UserData[0])
+                {
+                    case (byte)DataChannelMessageTypes.ACK:
+                        OnDataChannelOpened?.Invoke(frame.StreamID);
+                        break;
+                    case (byte)DataChannelMessageTypes.OPEN:
+                        var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
 
-            OnData += OnDataFrameReceived;
-        }
+                        logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
+                                        $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
 
-        /// <summary>
-        /// Event handler for a DATA chunk being received. The chunk can be either a DCEP message or data channel data
-        /// payload.
-        /// </summary>
-        /// <param name="dataFrame">The received data frame which could represent one or more chunks depending
-        /// on fragmentation..</param>
-        private void OnDataFrameReceived(SctpDataFrame dataFrame)
-        {
-            switch (dataFrame)
-            {
-                case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
-                    switch (frame.UserData[0])
-                    {
-                        case (byte)DataChannelMessageTypes.ACK:
-                            OnDataChannelOpened?.Invoke(frame.StreamID);
-                            break;
-                        case (byte)DataChannelMessageTypes.OPEN:
-                            var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
+                        var channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
+                        if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
+                        {
+                            channelType = (DataChannelTypes)dcepOpen.ChannelType;
+                        }
+                        else
+                        {
+                            logger.LogWarning($"DECP OPEN channel type of {dcepOpen.ChannelType} not recognised, defaulting to {channelType}.");
+                        }
 
-                            logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
-                                $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
+                        OnNewDataChannel?.Invoke(
+                            frame.StreamID,
+                            channelType,
+                            dcepOpen.Priority,
+                            dcepOpen.Reliability,
+                            dcepOpen.Label,
+                            dcepOpen.Protocol);
 
-                            var channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
-                            if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
-                            {
-                                channelType = (DataChannelTypes)dcepOpen.ChannelType;
-                            }
-                            else
-                            {
-                                logger.LogWarning($"DECP OPEN channel type of {dcepOpen.ChannelType} not recognised, defaulting to {channelType}.");
-                            }
+                        break;
+                    default:
+                        logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
+                        break;
+                }
+                break;
 
-                            OnNewDataChannel?.Invoke(
-                                frame.StreamID,
-                                channelType,
-                                dcepOpen.Priority,
-                                dcepOpen.Reliability,
-                                dcepOpen.Label,
-                                dcepOpen.Protocol);
-
-                            break;
-                        default:
-                            logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
-                            break;
-                    }
-                    break;
-
-                default:
-                    OnDataChannelData?.Invoke(dataFrame);
-                    break;
-            }
+            default:
+                OnDataChannelData?.Invoke(dataFrame);
+                break;
         }
     }
 }

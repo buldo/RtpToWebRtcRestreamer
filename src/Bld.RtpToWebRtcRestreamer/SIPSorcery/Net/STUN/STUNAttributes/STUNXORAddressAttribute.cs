@@ -16,98 +16,97 @@
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
+
+/// <summary>
+/// This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 
+/// THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.
+/// </summary>
+internal class STUNXORAddressAttribute : STUNAttribute
 {
-    /// <summary>
-    /// This attribute is the same as the mapped address attribute except the address details are XOR'ed with the STUN magic cookie. 
-    /// THe reason for this is to stop NAT application layer gateways from doing string replacements of private IP addresses and ports.
-    /// </summary>
-    internal class STUNXORAddressAttribute : STUNAttribute
+    private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+
+    private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
+    private int Port;
+    private IPAddress Address;
+
+    public override UInt16 PaddedLength
     {
-        private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+        get { return ADDRESS_ATTRIBUTE_LENGTH; }
+    }
 
-        private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
-        private int Port;
-        private IPAddress Address;
-
-        public override UInt16 PaddedLength
+    public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
+        : base(attributeType, attributeValue)
+    {
+        if (BitConverter.IsLittleEndian)
         {
-            get { return ADDRESS_ATTRIBUTE_LENGTH; }
+            Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
+            var address = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE;
+            Address = new IPAddress(NetConvert.DoReverseEndian(address));
+        }
+        else
+        {
+            Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
+            var address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNHeader.MAGIC_COOKIE;
+            Address = new IPAddress(address);
+        }
+    }
+
+    public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
+        : base(attributeType, null)
+    {
+        Port = port;
+        Address = address;
+    }
+
+    public override int ToByteBuffer(byte[] buffer, int startIndex)
+    {
+        if (BitConverter.IsLittleEndian)
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
+        }
+        else
+        {
+            Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
         }
 
-        public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, byte[] attributeValue)
-            : base(attributeType, attributeValue)
+        buffer[startIndex + 4] = 0x00;
+        buffer[startIndex + 5] = (byte)Family;
+
+        if (BitConverter.IsLittleEndian)
         {
-            if (BitConverter.IsLittleEndian)
-            {
-                Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                var address = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE;
-                Address = new IPAddress(NetConvert.DoReverseEndian(address));
-            }
-            else
-            {
-                Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
-                var address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNHeader.MAGIC_COOKIE;
-                Address = new IPAddress(address);
-            }
+            var xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
+            var xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(Address.GetAddressBytes(), 0)) ^ STUNHeader.MAGIC_COOKIE;
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorPort)), 0, buffer, startIndex + 6, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorAddress)), 0, buffer, startIndex + 8, 4);
+        }
+        else
+        {
+            var xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
+            var xorAddress = BitConverter.ToUInt32(Address.GetAddressBytes(), 0) ^ STUNHeader.MAGIC_COOKIE;
+            Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
         }
 
-        public STUNXORAddressAttribute(STUNAttributeTypesEnum attributeType, int port, IPAddress address)
-            : base(attributeType, null)
+        return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
+    }
+
+    public override string ToString()
+    {
+        var attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
+
+        return attrDescrStr;
+    }
+
+    public IPEndPoint GetIPEndPoint()
+    {
+        if (Address != null)
         {
-            Port = port;
-            Address = address;
+            return new IPEndPoint(Address, Port);
         }
 
-        public override int ToByteBuffer(byte[] buffer, int startIndex)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
-            }
-            else
-            {
-                Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
-            }
-
-            buffer[startIndex + 4] = 0x00;
-            buffer[startIndex + 5] = (byte)Family;
-
-            if (BitConverter.IsLittleEndian)
-            {
-                var xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
-                var xorAddress = NetConvert.DoReverseEndian(BitConverter.ToUInt32(Address.GetAddressBytes(), 0)) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorPort)), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(xorAddress)), 0, buffer, startIndex + 8, 4);
-            }
-            else
-            {
-                var xorPort = Convert.ToUInt16(Convert.ToUInt16(Port) ^ (STUNHeader.MAGIC_COOKIE >> 16));
-                var xorAddress = BitConverter.ToUInt32(Address.GetAddressBytes(), 0) ^ STUNHeader.MAGIC_COOKIE;
-                Buffer.BlockCopy(BitConverter.GetBytes(xorPort), 0, buffer, startIndex + 6, 2);
-                Buffer.BlockCopy(BitConverter.GetBytes(xorAddress), 0, buffer, startIndex + 8, 4);
-            }
-
-            return STUNATTRIBUTE_HEADER_LENGTH + ADDRESS_ATTRIBUTE_LENGTH;
-        }
-
-        public override string ToString()
-        {
-            var attrDescrStr = "STUN XOR_MAPPED_ADDRESS Attribute: " + AttributeType + ", address=" + Address + ", port=" + Port + ".";
-
-            return attrDescrStr;
-        }
-
-        public IPEndPoint GetIPEndPoint()
-        {
-            if (Address != null)
-            {
-                return new IPEndPoint(Address, Port);
-            }
-
-            return null;
-        }
+        return null;
     }
 }

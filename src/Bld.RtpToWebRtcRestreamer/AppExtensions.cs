@@ -1,17 +1,22 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Bld.RtpToWebRtcRestreamer
+namespace Bld.RtpToWebRtcRestreamer;
+
+public static class AppExtensions
 {
-    public static class AppExtensions
+    public static void AddRtpRestreamer(
+        this IServiceCollection services,
+        IPEndPoint rtpListenEndpoint)
     {
-        /// <summary>
-        /// Call AddSignalR and AddControllersAsServices first
-        /// </summary>
-        /// <param name="services"></param>
-        /// <returns></returns>
-        public static void AddRtpRestreamer(this IServiceCollection services)
+        var config = new WebRtcConfiguration
         {
-            services.AddHostedService<WebRtcHostedService>();
-        }
+            RtpListenEndpoint = rtpListenEndpoint
+        };
+
+        services.AddSingleton(config);
+        services.AddSingleton<WebRtcHostedService>();
+        services.AddHostedService<WebRtcHostedService>(provider => provider.GetRequiredService<WebRtcHostedService>());
+        services.AddSingleton<IRtpRestreamerControl, RtpRestreamerControl>();
     }
 }

@@ -17,13 +17,12 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+public static class SDPMediaTypes
 {
-    public static class SDPMediaTypes
+    public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
     {
-        public static SDPMediaTypesEnum GetSDPMediaType(string mediaType)
-        {
-            return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
-        }
+        return (SDPMediaTypesEnum)Enum.Parse(typeof(SDPMediaTypesEnum), mediaType, true);
     }
 }

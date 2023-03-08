@@ -9,36 +9,28 @@
 // History:
 // 04 Feb 2016	Aaron Clauson	Created, Hobart, Australia.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
+using System.Buffers.Binary;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
+
+internal class STUNConnectionIdAttribute : STUNAttribute
 {
-    internal class STUNConnectionIdAttribute : STUNAttribute
+    private readonly uint ConnectionId;
+
+    public STUNConnectionIdAttribute(byte[] attributeValue)
+        : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
     {
-        private readonly uint ConnectionId;
+        ConnectionId = BinaryPrimitives.ReadUInt32BigEndian(attributeValue);
+    }
 
-        public STUNConnectionIdAttribute(byte[] attributeValue)
-            : base(STUNAttributeTypesEnum.ConnectionId, attributeValue)
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                ConnectionId = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 0));
-            }
-            else
-            {
-                ConnectionId = BitConverter.ToUInt32(attributeValue, 0);
-            }
-        }
+    public override string ToString()
+    {
+        var attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
 
-        public override string ToString()
-        {
-            var attrDescrStr = "STUN CONNECTION_ID Attribute: value=" + ConnectionId + ".";
-
-            return attrDescrStr;
-        }
+        return attrDescrStr;
     }
 }

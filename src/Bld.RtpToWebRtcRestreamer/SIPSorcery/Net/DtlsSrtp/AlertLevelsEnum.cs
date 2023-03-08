@@ -1,11 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
+internal enum AlertLevelsEnum : short
 {
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    internal enum AlertLevelsEnum : byte
-    {
-        Warning = 1,
-        Fatal = 2
-    }
+    Warning = 1,
+    Fatal = 2
 }

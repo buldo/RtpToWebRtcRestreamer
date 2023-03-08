@@ -13,309 +13,318 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Tls;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Tls;
+using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+
+internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 {
-    internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
+    private static readonly ILogger Logger = Log.Logger;
+
+    internal Certificate MCertificateChain;
+    internal AsymmetricKeyParameter MPrivateKey;
+
+    internal TlsClientContext TlsContext
     {
-        private static readonly ILogger Logger = Log.Logger;
+        get { return m_context; }
+    }
 
-        internal Certificate MCertificateChain;
-        internal AsymmetricKeyParameter MPrivateKey;
+    public bool ForceUseExtendedMasterSecret { get; set; } = true;
 
-        internal TlsClientContext TlsContext
+    //Received from server
+    public TlsServerCertificate ServerCertificate { get; internal set; }
+
+    private RTCDtlsFingerprint Fingerprint { get; }
+
+    private readonly UseSrtpData _clientSrtpData;
+
+    // Asymmetric shared keys derived from the DTLS handshake and used for the SRTP encryption/
+    private byte[] _srtpMasterClientKey;
+    private byte[] _srtpMasterServerKey;
+    private byte[] _srtpMasterClientSalt;
+    private byte[] _srtpMasterServerSalt;
+    private byte[] _masterSecret;
+
+    // Policies
+    private SrtpPolicy _srtpPolicy;
+    private SrtpPolicy _srtcpPolicy;
+
+    /// <summary>
+    /// Parameters:
+    ///  - alert level,
+    ///  - alert type,
+    ///  - alert description.
+    /// </summary>
+    public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
+
+    public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey)
+        : base(new BcTlsCrypto())
+    {
+        if (certificateChain == null && privateKey == null)
         {
-            get { return mContext; }
+            (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, m_context.Crypto);
         }
 
-        public bool ForceUseExtendedMasterSecret { get; set; } = true;
+        var random = new SecureRandom();
+        int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
+        var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() +
+                            SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
+        random.NextBytes(mki); // Reusing our secure random for generating the key.
+        _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
 
-        //Received from server
-        public Certificate ServerCertificate { get; internal set; }
+        MPrivateKey = privateKey;
+        MCertificateChain = certificateChain;
+    }
 
-        private RTCDtlsFingerprint Fingerprint { get; }
-
-        private readonly UseSrtpData _clientSrtpData;
-
-        // Asymmetric shared keys derived from the DTLS handshake and used for the SRTP encryption/
-        private byte[] _srtpMasterClientKey;
-        private byte[] _srtpMasterServerKey;
-        private byte[] _srtpMasterClientSalt;
-        private byte[] _srtpMasterServerSalt;
-        private byte[] _masterSecret;
-
-        // Policies
-        private SrtpPolicy _srtpPolicy;
-        private SrtpPolicy _srtcpPolicy;
-
-        /// <summary>
-        /// Parameters:
-        ///  - alert level,
-        ///  - alert type,
-        ///  - alert description.
-        /// </summary>
-        public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
-
-        public DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey) :
-            this(certificateChain, privateKey, null)
+    public override IDictionary<int, byte[]> GetClientExtensions()
+    {
+        var clientExtensions = base.GetClientExtensions();
+        if (TlsSrtpUtilities.GetUseSrtpExtension(clientExtensions) == null)
         {
-        }
-
-        private DtlsSrtpClient(Certificate certificateChain, AsymmetricKeyParameter privateKey, UseSrtpData clientSrtpData)
-        {
-            if (certificateChain == null && privateKey == null)
+            if (clientExtensions == null)
             {
-                (certificateChain, privateKey) = DtlsUtils.CreateSelfSignedTlsCert();
+                clientExtensions = new Dictionary<int, byte[]>();
             }
 
-            if (clientSrtpData == null)
-            {
-                var random = new SecureRandom();
-                int[] protectionProfiles = { SrtpProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
-                var mki = new byte[(SrtpParameters.SrtpAes128CmHmacSha180.GetCipherKeyLength() + SrtpParameters.SrtpAes128CmHmacSha180.GetCipherSaltLength()) / 8];
-                random.NextBytes(mki); // Reusing our secure random for generating the key.
-                _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
-            }
-            else
-            {
-                _clientSrtpData = clientSrtpData;
-            }
+            TlsSrtpUtilities.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
+        }
+        return clientExtensions;
+    }
 
-            MPrivateKey = privateKey;
-            MCertificateChain = certificateChain;
+    public SrtpPolicy GetSrtpPolicy()
+    {
+        return _srtpPolicy;
+    }
+
+    public SrtpPolicy GetSrtcpPolicy()
+    {
+        return _srtcpPolicy;
+    }
+
+    public byte[] GetSrtpMasterServerKey()
+    {
+        return _srtpMasterServerKey;
+    }
+
+    public byte[] GetSrtpMasterServerSalt()
+    {
+        return _srtpMasterServerSalt;
+    }
+
+    public byte[] GetSrtpMasterClientKey()
+    {
+        return _srtpMasterClientKey;
+    }
+
+    public byte[] GetSrtpMasterClientSalt()
+    {
+        return _srtpMasterClientSalt;
+    }
+
+    public override TlsAuthentication GetAuthentication()
+    {
+        return new DtlsSrtpTlsAuthentication(this);
+    }
+
+    public override void NotifyHandshakeComplete()
+    {
+        base.NotifyHandshakeComplete();
+
+        //Copy master Secret (will be inaccessible after this call)
+        _masterSecret = new byte[m_context.SecurityParameters.MasterSecret != null ? m_context.SecurityParameters.MasterSecret.Length : 0];
+        Buffer.BlockCopy(m_context.SecurityParameters.MasterSecret.Extract(), 0, _masterSecret, 0, _masterSecret.Length);
+
+        //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
+        PrepareSrtpSharedSecret();
+    }
+
+    public bool IsClient()
+    {
+        return true;
+    }
+
+    private byte[] GetKeyingMaterial(int length)
+    {
+        return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
+    }
+
+    private byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
+    {
+        if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
+        {
+            throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
         }
 
-        public override IDictionary GetClientExtensions()
+        var sp = m_context.SecurityParameters;
+        if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
         {
-            var clientExtensions = base.GetClientExtensions();
-            if (TlsSRTPUtils.GetUseSrtpExtension(clientExtensions) == null)
-            {
-                if (clientExtensions == null)
-                {
-                    clientExtensions = new Hashtable();
-                }
-
-                TlsSRTPUtils.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
-            }
-            return clientExtensions;
-        }
-
-        public SrtpPolicy GetSrtpPolicy()
-        {
-            return _srtpPolicy;
-        }
-
-        public SrtpPolicy GetSrtcpPolicy()
-        {
-            return _srtcpPolicy;
-        }
-
-        public byte[] GetSrtpMasterServerKey()
-        {
-            return _srtpMasterServerKey;
-        }
-
-        public byte[] GetSrtpMasterServerSalt()
-        {
-            return _srtpMasterServerSalt;
-        }
-
-        public byte[] GetSrtpMasterClientKey()
-        {
-            return _srtpMasterClientKey;
-        }
-
-        public byte[] GetSrtpMasterClientSalt()
-        {
-            return _srtpMasterClientSalt;
-        }
-
-        public override TlsAuthentication GetAuthentication()
-        {
-            return new DtlsSrtpTlsAuthentication(this);
-        }
-
-        public override void NotifyHandshakeComplete()
-        {
-            base.NotifyHandshakeComplete();
-
-            //Copy master Secret (will be inaccessible after this call)
-            _masterSecret = new byte[mContext.SecurityParameters.MasterSecret != null ? mContext.SecurityParameters.MasterSecret.Length : 0];
-            Buffer.BlockCopy(mContext.SecurityParameters.MasterSecret, 0, _masterSecret, 0, _masterSecret.Length);
-
-            //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
-            PrepareSrtpSharedSecret();
-        }
-
-        public bool IsClient()
-        {
-            return true;
-        }
-
-        private byte[] GetKeyingMaterial(int length)
-        {
-            return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
-        }
-
-        private byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
-        {
-            if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
-            {
-                throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
-            }
-
-            var sp = mContext.SecurityParameters;
-            if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
-            {
-                /*
-                 * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
-                 * the extended master secret extension, [..] the client or server MUST NOT export any
-                 * key material based on the new master secret for any subsequent application-level
-                 * authentication. In particular, it MUST disable [RFC5705] [..].
-                 */
-                throw new InvalidOperationException("cannot export keying material without extended_master_secret");
-            }
-
-            byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
-
-            var seedLength = cr.Length + sr.Length;
-            if (contextValue != null)
-            {
-                seedLength += (2 + contextValue.Length);
-            }
-
-            var seed = new byte[seedLength];
-            var seedPos = 0;
-
-            Array.Copy(cr, 0, seed, seedPos, cr.Length);
-            seedPos += cr.Length;
-            Array.Copy(sr, 0, seed, seedPos, sr.Length);
-            seedPos += sr.Length;
-            if (contextValue != null)
-            {
-                TlsUtilities.WriteUint16(contextValue.Length, seed, seedPos);
-                seedPos += 2;
-                Array.Copy(contextValue, 0, seed, seedPos, contextValue.Length);
-                seedPos += contextValue.Length;
-            }
-
-            if (seedPos != seedLength)
-            {
-                throw new InvalidOperationException("error in calculation of seed for export");
-            }
-
-            return TlsUtilities.PRF(mContext, sp.MasterSecret, asciiLabel, seed, length);
-        }
-
-        public override bool RequiresExtendedMasterSecret()
-        {
-            return ForceUseExtendedMasterSecret;
-        }
-
-        private void PrepareSrtpSharedSecret()
-        {
-            //Set master secret back to security parameters (only works in old bouncy castle versions)
-            //mContext.SecurityParameters.MasterSecret = masterSecret;
-
-            var srtpParams = SrtpParameters.GetSrtpParametersForProfile(_clientSrtpData.ProtectionProfiles[0]);
-            var keyLen = srtpParams.GetCipherKeyLength();
-            var saltLen = srtpParams.GetCipherSaltLength();
-
-            _srtpPolicy = srtpParams.GetSrtpPolicy();
-            _srtcpPolicy = srtpParams.GetSrtcpPolicy();
-
-            _srtpMasterClientKey = new byte[keyLen];
-            _srtpMasterServerKey = new byte[keyLen];
-            _srtpMasterClientSalt = new byte[saltLen];
-            _srtpMasterServerSalt = new byte[saltLen];
-
-            // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
-            // No need to divide by 8 here since lengths are already in bits
-            var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
-
             /*
-             *
-             * See: http://tools.ietf.org/html/rfc5764#section-4.2
-             *
-             * sharedSecret is an equivalent of :
-             *
-             * struct {
-             *     client_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
-             *     server_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
-             *     client_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
-             *     server_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
-             *  } ;
-             *
-             * Here, client = local configuration, server = remote.
-             * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client.
-             *                Here we run as a server, so 'local' referring to the client is actually confusing.
-             *
-             * l(k) = KEY length
-             * s(k) = salt lenght
-             *
-             * So we have the following repartition :
-             *                           l(k)                                 2*l(k)+s(k)
-             *                                                   2*l(k)                       2*(l(k)+s(k))
-             * +------------------------+------------------------+---------------+-------------------+
-             * + local key           |    remote key    | local salt   | remote salt   |
-             * +------------------------+------------------------+---------------+-------------------+
+             * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
+             * the extended master secret extension, [..] the client or server MUST NOT export any
+             * key material based on the new master secret for any subsequent application-level
+             * authentication. In particular, it MUST disable [RFC5705] [..].
              */
-            Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
-            Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
-            Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
-            Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+            throw new InvalidOperationException("cannot export keying material without extended_master_secret");
         }
 
-        public override ProtocolVersion ClientVersion
+        byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
+
+        var seedLength = cr.Length + sr.Length;
+        if (contextValue != null)
         {
-            get { return ProtocolVersion.DTLSv12; }
+            seedLength += (2 + contextValue.Length);
         }
 
-        public override ProtocolVersion MinimumVersion
+        var seed = new byte[seedLength];
+        var seedPos = 0;
+
+        Array.Copy(cr, 0, seed, seedPos, cr.Length);
+        seedPos += cr.Length;
+        Array.Copy(sr, 0, seed, seedPos, sr.Length);
+        seedPos += sr.Length;
+        if (contextValue != null)
         {
-            get { return ProtocolVersion.DTLSv10; }
+            TlsUtilities.WriteUint16(contextValue.Length, seed, seedPos);
+            seedPos += 2;
+            Array.Copy(contextValue, 0, seed, seedPos, contextValue.Length);
+            seedPos += contextValue.Length;
         }
 
-        public override TlsSession GetSessionToResume()
+        if (seedPos != seedLength)
         {
-            return null;
+            throw new InvalidOperationException("error in calculation of seed for export");
         }
 
-        public override void NotifyAlertRaised(byte alertLevel, byte alertDescription, string message, Exception cause)
+        return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
+    }
+
+    public override bool RequiresExtendedMasterSecret()
+    {
+        return ForceUseExtendedMasterSecret;
+    }
+
+    private void PrepareSrtpSharedSecret()
+    {
+        //Set master secret back to security parameters (only works in old bouncy castle versions)
+        //mContext.SecurityParameters.MasterSecret = masterSecret;
+
+        var srtpParams = SrtpParameters.GetSrtpParametersForProfile(_clientSrtpData.ProtectionProfiles[0]);
+        var keyLen = srtpParams.GetCipherKeyLength();
+        var saltLen = srtpParams.GetCipherSaltLength();
+
+        _srtpPolicy = srtpParams.GetSrtpPolicy();
+        _srtcpPolicy = srtpParams.GetSrtcpPolicy();
+
+        _srtpMasterClientKey = new byte[keyLen];
+        _srtpMasterServerKey = new byte[keyLen];
+        _srtpMasterClientSalt = new byte[saltLen];
+        _srtpMasterServerSalt = new byte[saltLen];
+
+        // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
+        // No need to divide by 8 here since lengths are already in bits
+        var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
+
+        /*
+         *
+         * See: http://tools.ietf.org/html/rfc5764#section-4.2
+         *
+         * sharedSecret is an equivalent of :
+         *
+         * struct {
+         *     client_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
+         *     server_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
+         *     client_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
+         *     server_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
+         *  } ;
+         *
+         * Here, client = local configuration, server = remote.
+         * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client.
+         *                Here we run as a server, so 'local' referring to the client is actually confusing.
+         *
+         * l(k) = KEY length
+         * s(k) = salt lenght
+         *
+         * So we have the following repartition :
+         *                           l(k)                                 2*l(k)+s(k)
+         *                                                   2*l(k)                       2*(l(k)+s(k))
+         * +------------------------+------------------------+---------------+-------------------+
+         * + local key           |    remote key    | local salt   | remote salt   |
+         * +------------------------+------------------------+---------------+-------------------+
+         */
+        Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
+        Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
+        Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
+        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+    }
+
+    protected override ProtocolVersion[] GetSupportedVersions()
+    {
+        return ProtocolVersion.DTLSv12.DownTo(ProtocolVersion.DTLSv10);
+    }
+
+    public override int[] GetCipherSuites()
+    {
+        return new int[]
         {
-            string description = null;
-            if (message != null)
-            {
-                description += message;
-            }
-            if (cause != null)
-            {
-                description += cause;
-            }
+            //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+            //CipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+            //CipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+            //CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
+            CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+        };
+    }
 
-            var alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
-            alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
+    public override TlsSession GetSessionToResume()
+    {
+        return null;
+    }
 
-            if (alertDescription == AlertTypesEnum.CloseNotify.GetHashCode())
-            {
-                Logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
-            }
-            else
-            {
-                Logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
-            }
-        }
-
-        public Certificate GetRemoteCertificate()
+    public override void NotifyAlertRaised(short alertLevel, short alertDescription, string message, Exception cause)
+    {
+        string description = null;
+        if (message != null)
         {
-            return ServerCertificate;
+            description += message;
         }
+        if (cause != null)
+        {
+            description += cause;
+        }
+
+        var alertMessage = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
+        alertMessage += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
+
+        if (alertDescription == AlertTypesEnum.CloseNotify.GetHashCode())
+        {
+            Logger.LogDebug($"DTLS client raised close notification: {alertMessage}");
+        }
+        else
+        {
+            Logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
+        }
+    }
+
+    public Certificate GetRemoteCertificate()
+    {
+        return ServerCertificate.Certificate;
     }
 }

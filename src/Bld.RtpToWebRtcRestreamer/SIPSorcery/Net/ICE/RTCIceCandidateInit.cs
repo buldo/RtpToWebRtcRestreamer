@@ -1,49 +1,15 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE
+/// <summary>
+/// Represents an ICE candidate and associated properties that link it to the SDP.
+/// </summary>
+/// <remarks>
+/// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.
+/// </remarks>
+internal class RTCIceCandidateInit
 {
-    /// <summary>
-    /// Represents an ICE candidate and associated properties that link it to the SDP.
-    /// </summary>
-    /// <remarks>
-    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcicecandidateinit.
-    /// </remarks>
-    internal class RTCIceCandidateInit
-    {
-        public string candidate { get; set; }
-        public string sdpMid { get; set; }
-        public ushort sdpMLineIndex { get; set; }
-        public string usernameFragment { get; set; }
-
-        public string toJSON()
-        {
-            //return "{" +
-            //     $"  \"sdpMid\": \"{sdpMid ?? sdpMLineIndex.ToString()}\"," +
-            //     $"  \"sdpMLineIndex\": {sdpMLineIndex}," +
-            //     $"  \"usernameFragment\": \"{usernameFragment}\"," +
-            //     $"  \"candidate\": \"{candidate}\"" +
-            //     "}";
-
-            return JSONWriter.ToJson(this);
-        }
-
-        public static bool TryParse(string json, out RTCIceCandidateInit init)
-        {
-            //init = JsonSerializer.Deserialize< RTCIceCandidateInit>(json);
-
-            init = null;
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return false;
-            }
-
-            init = JSONParser.FromJson<RTCIceCandidateInit>(json);
-
-            // To qualify as parsed all required fields must be set.
-            return init != null &&
-                   init.candidate != null &&
-                   init.sdpMid != null;
-        }
-    }
+    public string candidate { get; set; }
+    public string sdpMid { get; set; }
+    public ushort sdpMLineIndex { get; set; }
+    public string usernameFragment { get; set; }
 }
