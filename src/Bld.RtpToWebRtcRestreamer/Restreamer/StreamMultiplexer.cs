@@ -1,17 +1,18 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer;
+namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 internal class StreamMultiplexer
 {
     private readonly ILogger<StreamMultiplexer> _logger;
-    private readonly ConcurrentDictionary<RTCPeerConnection, MultiplexedPeer> _peers = new();
+    private ImmutableDictionary<RTCPeerConnection, MultiplexedPeer> _peers = (new Dictionary<RTCPeerConnection, MultiplexedPeer>()).ToImmutableDictionary();
 
-    public StreamMultiplexer(
-        ILogger<StreamMultiplexer> logger)
+    public StreamMultiplexer(ILogger<StreamMultiplexer> logger)
     {
         _logger = logger;
     }
@@ -21,15 +22,8 @@ internal class StreamMultiplexer
 
     public void RegisterPeer(RTCPeerConnection peer)
     {
-        var result = _peers.TryAdd(peer, new MultiplexedPeer(peer));
-        if (result)
-        {
-            _logger.LogDebug("Peer added");
-        }
-        else
-        {
-            _logger.LogError("Peer adding error");
-        }
+        _peers = _peers.Add(peer, new MultiplexedPeer(peer));
+
     }
 
     public void StartPeerTransmit(RTCPeerConnection peer)
@@ -60,20 +54,19 @@ internal class StreamMultiplexer
 
     public async Task SendVideoPacketAsync(RtpPacket rtpPacket)
     {
-        foreach (var streamMultiplexer in _peers.Values) {
-            await streamMultiplexer.SendVideoAsync(rtpPacket);
+        foreach (var pair in _peers)
+        {
+            await pair.Value.SendVideoAsync(rtpPacket);
         }
     }
 
     public void Cleanup()
     {
         var toRemove = _peers.Where(pair =>
-                pair.Key.connectionState is (RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected
-                    or RTCPeerConnectionState.closed))
+                pair.Key.connectionState is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected
+                    or RTCPeerConnectionState.closed)
+            .Select(pair => pair.Key)
             .ToList();
-        foreach (var multiplexedPeer in toRemove)
-        {
-            _peers.TryRemove(multiplexedPeer);
-        }
+        _peers = _peers.RemoveRange(toRemove);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 
-namespace Bld.RtpToWebRtcRestreamer;
+namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 internal class MultiplexedPeer
 {

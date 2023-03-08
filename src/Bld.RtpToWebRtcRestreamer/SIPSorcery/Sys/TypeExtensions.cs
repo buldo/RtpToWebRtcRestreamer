@@ -26,7 +26,7 @@ public static class TypeExtensions
         (char)0x10, (char)0x11, (char)0x12, (char)0x13, (char)0x14, (char)0x15, (char)0x16, (char)0x17, (char)0x18, (char)0x19, (char)0x20,
         (char)0x1a, (char)0x1b, (char)0x1c, (char)0x1d, (char)0x1e, (char)0x1f, (char)0x7f, (char)0x85, (char)0x2028, (char)0x2029 };
 
-    private static readonly char[] Hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    private static readonly char[] Hexmap = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     /// <summary>
     /// Gets a value that indicates whether or not the collection is empty.
@@ -51,17 +51,22 @@ public static class TypeExtensions
         return true;
     }
 
-    public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null)
+    public static string HexStr(this ReadOnlySpan<byte> buffer)
+    {
+        return Convert.ToHexString(buffer);
+    }
+
+    public static string HexStr(this byte[] buffer)
+    {
+        return Convert.ToHexString(buffer);
+    }
+
+    public static string HexStr(this byte[] buffer, char separator)
     {
         return buffer.HexStr(buffer.Length, separator);
     }
 
-    public static string HexStr(this byte[] buffer, char? separator = null)
-    {
-        return buffer.HexStr(buffer.Length, separator);
-    }
-
-    private static string HexStr(this byte[] buffer, int length, char? separator = null)
+    private static string HexStr(this byte[] buffer, int length, char separator)
     {
         var rv = string.Empty;
 
@@ -77,26 +82,7 @@ public static class TypeExtensions
             }
         }
 
-        return rv.ToUpper();
-    }
-
-    private static string HexStr(this ReadOnlySpan<byte> buffer, int length, char? separator = null)
-    {
-        var rv = string.Empty;
-
-        for (var i = 0; i < length; i++)
-        {
-            var val = buffer[i];
-            rv += Hexmap[val >> 4];
-            rv += Hexmap[val & 15];
-
-            if (separator != null && i != length - 1)
-            {
-                rv += separator;
-            }
-        }
-
-        return rv.ToUpper();
+        return rv;
     }
 
     /// <summary>
