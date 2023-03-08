@@ -23,7 +23,7 @@ internal class SrtpTransformer
         var rawPacket = _packetsPool.Get();
         try
         {
-            rawPacket.Wrap(pkt, length);
+            rawPacket.WrapNoCopy(pkt, length);
 
             // Associate packet to a crypto context
             if (!_contexts.TryGetValue(ssrc, out var context))

@@ -37,6 +37,12 @@ internal class RawPacket
         _data = _buffer.AsMemory(0, length);
     }
 
+    public void WrapNoCopy(byte[] buffer, int length)
+    {
+        _buffer = buffer;
+        _data = _buffer.AsMemory(0, length);
+    }
+
     public ReadOnlyMemory<byte> GetMemory()
     {
         return _data;
@@ -238,7 +244,7 @@ internal class RawPacket
         }
 
         var newLen = _data.Length + delta;
-        if (newLen <= _data.Length)
+        if (newLen <= _buffer.Length)
         {
             // there is more room in the underlying reserved buffer memory
             _data = _buffer.AsMemory(0, newLen);
