@@ -1,4 +1,5 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+﻿using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
@@ -6,7 +7,6 @@ internal class VideoStream : MediaStream
 {
     public VideoStream(RtpSessionConfig config, int index) : base(config, index)
     {
-        MediaType = SDPMediaTypesEnum.video;
     }
 
     /// <summary>
@@ -19,4 +19,6 @@ internal class VideoStream : MediaStream
             return LocalTrack != null && LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive;
         }
     }
+
+    public override SDPMediaTypesEnum MediaType => SDPMediaTypesEnum.video;
 }

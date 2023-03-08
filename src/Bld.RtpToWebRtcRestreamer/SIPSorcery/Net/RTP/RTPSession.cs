@@ -76,9 +76,6 @@ internal abstract class RTPSession : IDisposable
     /// the buffer that holds the RTCP packet.
     /// </summary>
     public const int SRTP_MAX_PREFIX_LENGTH = 148;
-    protected internal const int DEFAULT_AUDIO_CLOCK_RATE = 8000;
-    public const int DEFAULT_DTMF_EVENT_PAYLOAD_ID = 101;
-    public const int DTMF_EVENT_PAYLOAD_ID = 101;
 
     /// <summary>
     /// When there are no RTP packets being sent for an audio or video stream webrtc.lib
@@ -99,8 +96,8 @@ internal abstract class RTPSession : IDisposable
 
     protected RTPChannel MultiplexRtpChannel;
 
-    private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new List<List<SDPSsrcAttribute>>();
-    private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new List<List<SDPSsrcAttribute>>();
+    private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
+    private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
 
     /// <summary>
     /// The primary stream for this session - can be an AudioStream or a VideoStream

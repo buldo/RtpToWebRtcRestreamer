@@ -16,17 +16,15 @@
 
 using System.Buffers;
 using System.Net;
-using Bld.RtpToWebRtcRestreamer.RtpNg;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
 internal abstract class MediaStream
 {
@@ -62,7 +60,7 @@ internal abstract class MediaStream
     /// <summary>
     /// To type of this media
     /// </summary>
-    public SDPMediaTypesEnum MediaType { get; protected init; }
+    public abstract SDPMediaTypesEnum MediaType { get; }
 
     /// <summary>
     /// The local track. Will be null if we are not sending this media.
