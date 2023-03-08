@@ -8,13 +8,13 @@ public static class Crc32
     private const UInt32 DefaultSeed = 0xffffffff;
 
     private static UInt32[] _defaultTable;
-        
+
 
     public static UInt32 Compute(byte[] buffer)
     {
         return ~CalculateHash(InitializeTable(DefaultPolynomial), DefaultSeed, buffer, 0, buffer.Length);
     }
-        
+
     private static UInt32[] InitializeTable(UInt32 polynomial)
     {
         if (polynomial == DefaultPolynomial && _defaultTable != null)

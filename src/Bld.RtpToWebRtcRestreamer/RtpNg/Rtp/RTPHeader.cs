@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
@@ -28,13 +27,6 @@ internal class RtpHeader
     public int Length
     {
         get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
-    }
-
-    public RtpHeader()
-    {
-        SequenceNumber = Crypto.GetRandomUInt16();
-        SyncSource = Crypto.GetRandomUInt();
-        Timestamp = Crypto.GetRandomUInt();
     }
 
     /// <summary>

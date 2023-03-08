@@ -34,13 +34,6 @@ public static class Crypto
         return Random.Shared.Next(randomStart, randomEnd);
     }
 
-    public static ushort GetRandomUInt16()
-    {
-        var uint16Buffer = new byte[2];
-        Random.Shared.NextBytes(uint16Buffer);
-        return BitConverter.ToUInt16(uint16Buffer, 0);
-    }
-
     public static uint GetRandomUInt(bool noZero = false)
     {
         var uint32Buffer = new byte[4];
