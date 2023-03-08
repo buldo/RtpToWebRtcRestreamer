@@ -30,7 +30,7 @@ internal class ReceptionReportSample
     /// </summary>
     private readonly uint _delaySinceLastSenderReport = 0;
 
-    public ReceptionReportSample(Span<byte> packet)
+    public ReceptionReportSample(ReadOnlySpan<byte> packet)
     {
         {
             Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet[4..]);

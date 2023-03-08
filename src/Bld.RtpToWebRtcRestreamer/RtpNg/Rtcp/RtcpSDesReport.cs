@@ -50,6 +50,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
 using System.Text;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
@@ -66,9 +67,7 @@ internal class RtcpSDesReport
     private const byte CNAME_ID = 0x01;
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
 
-    private RtcpHeader Header;
-    public uint SSRC { get; private set; }
-    public string CNAME { get; private set; }
+    private readonly RtcpHeader _header;
 
     /// <summary>
     /// Creates a new RTCP SDES payload that can be included in an RTCP packet.
@@ -84,14 +83,14 @@ internal class RtcpSDesReport
             throw new ArgumentNullException("cname");
         }
 
-        Header = new RtcpHeader(RtcpReportTypes.SDES, 1);
-        SSRC = ssrc;
-        CNAME = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
+        _header = new RtcpHeader(RtcpReportTypes.SDES, 1);
+        Ssrc = ssrc;
+        Cname = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
 
         // Need to take account of multi-byte characters.
-        while (Encoding.UTF8.GetBytes(CNAME).Length > MAX_CNAME_BYTES)
+        while (Encoding.UTF8.GetBytes(Cname).Length > MAX_CNAME_BYTES)
         {
-            CNAME = CNAME.Substring(0, CNAME.Length - 1);
+            Cname = Cname.Substring(0, Cname.Length - 1);
         }
     }
 
@@ -99,7 +98,7 @@ internal class RtcpSDesReport
     /// Create a new RTCP SDES item from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the SDES report.</param>
-    public RtcpSDesReport(byte[] packet)
+    public RtcpSDesReport(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
@@ -111,20 +110,17 @@ internal class RtcpSDesReport
             throw new ApplicationException("The RTCP report packet did not have the required CNAME type field set correctly.");
         }
 
-        Header = new RtcpHeader(packet);
+        _header = new RtcpHeader(packet);
 
-        if (BitConverter.IsLittleEndian)
-        {
-            SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-        }
-        else
-        {
-            SSRC = BitConverter.ToUInt32(packet, 4);
-        }
+        Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
         int cnameLength = packet[9];
-        CNAME = Encoding.UTF8.GetString(packet, 10, cnameLength);
+        Cname = Encoding.UTF8.GetString(packet.Slice(10, cnameLength));
     }
+
+    public uint Ssrc { get; }
+
+    public string Cname { get; }
 
     /// <summary>
     /// Gets the raw bytes for the SDES item. This packet is ready to be included
@@ -133,20 +129,20 @@ internal class RtcpSDesReport
     /// <returns>A byte array containing the serialised SDES item.</returns>
     public byte[] GetBytes()
     {
-        var cnameBytes = Encoding.UTF8.GetBytes(CNAME);
+        var cnameBytes = Encoding.UTF8.GetBytes(Cname);
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
-        Header.SetLength((ushort)(buffer.Length / 4 - 1));
+        _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, buffer, payloadIndex, 4);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, buffer, payloadIndex, 4);
         }
 
         buffer[payloadIndex + 4] = CNAME_ID;

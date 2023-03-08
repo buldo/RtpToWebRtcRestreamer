@@ -44,6 +44,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
@@ -71,7 +72,7 @@ internal class RtcpReceiverReport
     /// Create a new RTCP Receiver Report from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the serialised receiver report.</param>
-    public RtcpReceiverReport(byte[] packet)
+    public RtcpReceiverReport(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
@@ -81,19 +82,12 @@ internal class RtcpReceiverReport
         _header = new RtcpHeader(packet);
         ReceptionReports = new List<ReceptionReportSample>();
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-        }
-        else
-        {
-            Ssrc = BitConverter.ToUInt32(packet, 4);
-        }
+        Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
         var rrIndex = 8;
         for (var i = 0; i < _header.ReceptionReportCount; i++)
         {
-            var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
+            var rr = new ReceptionReportSample(packet.Slice(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE));
             ReceptionReports.Add(rr);
         }
     }

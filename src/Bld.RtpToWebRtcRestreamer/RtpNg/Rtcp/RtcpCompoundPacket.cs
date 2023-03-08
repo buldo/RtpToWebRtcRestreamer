@@ -53,7 +53,7 @@ internal class RtcpCompoundPacket
     /// Creates a new RTCP compound packet from a serialised buffer.
     /// </summary>
     /// <param name="packet">The serialised RTCP compound packet to parse.</param>
-    public RtcpCompoundPacket(byte[] packet)
+    public RtcpCompoundPacket(ReadOnlySpan<byte> packet)
     {
         var offset = 0;
         while (offset < packet.Length)
@@ -64,7 +64,7 @@ internal class RtcpCompoundPacket
                 break;
             }
 
-            var buffer = packet.Skip(offset).ToArray();
+            var buffer = packet.Slice(offset);
 
             // The payload type field is the second byte in the RTCP header.
             var packetTypeID = buffer[1];
@@ -126,13 +126,13 @@ internal class RtcpCompoundPacket
 
         if (SDesReport != null)
         {
-            sb.AppendLine($"SDES: SSRC={SDesReport.SSRC}, CNAME={SDesReport.CNAME}");
+            sb.AppendLine($"SDES: SSRC={SDesReport.Ssrc}, CNAME={SDesReport.Cname}");
         }
 
         if (SenderReport != null)
         {
             var sr = SenderReport;
-            sb.AppendLine($"Sender: SSRC={sr.SSRC}, PKTS={sr.PacketCount}, BYTES={sr.OctetCount}");
+            sb.AppendLine($"Sender: SSRC={sr.Ssrc}, PKTS={sr.PacketCount}, BYTES={sr.OctetCount}");
             if (sr.ReceptionReports != null)
             {
                 foreach (var rr in sr.ReceptionReports)

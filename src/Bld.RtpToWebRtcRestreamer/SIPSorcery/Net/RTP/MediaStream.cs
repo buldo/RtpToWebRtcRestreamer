@@ -140,7 +140,7 @@ internal abstract class MediaStream
     {
         if (RtcpSession == null)
         {
-            RtcpSession = new RtcpSession(MediaType, 0);
+            RtcpSession = new RtcpSession(0);
             return true;
         }
         return false;

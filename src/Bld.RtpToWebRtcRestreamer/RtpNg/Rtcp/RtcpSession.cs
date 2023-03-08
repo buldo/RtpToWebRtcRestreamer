@@ -64,11 +64,6 @@ internal class RtcpSession
     private static readonly DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
-    /// The media type this report session is measuring.
-    /// </summary>
-    private SDPMediaTypesEnum MediaType { get; set; }
-
-    /// <summary>
     /// The SSRC number of the RTP packets we are sending.
     /// </summary>
     public uint Ssrc { get; internal set; }
@@ -131,11 +126,9 @@ internal class RtcpSession
     /// <summary>
     /// Default constructor.
     /// </summary>
-    /// <param name="mediaType">The media type this reporting session will be measuring.</param>
     /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
-    public RtcpSession(SDPMediaTypesEnum mediaType, uint ssrc)
+    public RtcpSession(uint ssrc)
     {
-        MediaType = mediaType;
         Ssrc = ssrc;
         CreatedAt = DateTime.Now;
         Cname = Guid.NewGuid().ToString();

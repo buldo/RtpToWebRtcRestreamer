@@ -51,12 +51,36 @@ public static class TypeExtensions
         return true;
     }
 
+    public static string HexStr(this ReadOnlySpan<byte> buffer, char? separator = null)
+    {
+        return buffer.HexStr(buffer.Length, separator);
+    }
+
     public static string HexStr(this byte[] buffer, char? separator = null)
     {
         return buffer.HexStr(buffer.Length, separator);
     }
 
     private static string HexStr(this byte[] buffer, int length, char? separator = null)
+    {
+        var rv = string.Empty;
+
+        for (var i = 0; i < length; i++)
+        {
+            var val = buffer[i];
+            rv += Hexmap[val >> 4];
+            rv += Hexmap[val & 15];
+
+            if (separator != null && i != length - 1)
+            {
+                rv += separator;
+            }
+        }
+
+        return rv.ToUpper();
+    }
+
+    private static string HexStr(this ReadOnlySpan<byte> buffer, int length, char? separator = null)
     {
         var rv = string.Empty;
 

@@ -1106,7 +1106,7 @@ internal abstract class RTPSession : IDisposable
     {
         if (rtcpPkt.SenderReport != null)
         {
-            return GetMediaStream(rtcpPkt.SenderReport.SSRC);
+            return GetMediaStream(rtcpPkt.SenderReport.Ssrc);
         }
 
         if (rtcpPkt.ReceiverReport != null)

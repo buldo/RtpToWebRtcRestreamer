@@ -38,7 +38,7 @@ internal class RtcpFeedback
     /// Create a new RTCP Report from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the serialised feedback report.</param>
-    public RtcpFeedback(Span<byte> packet)
+    public RtcpFeedback(ReadOnlySpan<byte> packet)
     {
         _header = new RtcpHeader(packet);
 
