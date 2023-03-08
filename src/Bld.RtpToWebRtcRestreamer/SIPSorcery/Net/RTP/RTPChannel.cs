@@ -203,7 +203,7 @@ internal class RTPChannel : IDisposable
         }
     }
 
-    public async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, Memory<byte> buffer)
+    public async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, ReadOnlyMemory<byte> buffer)
     {
         if (m_isClosed)
         {

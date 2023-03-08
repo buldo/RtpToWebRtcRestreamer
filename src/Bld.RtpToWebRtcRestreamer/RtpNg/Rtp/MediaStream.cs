@@ -155,18 +155,19 @@ internal abstract class MediaStream
             rtpPacket.ApplyHeaderChanges();
 
             var requestedLen = packet.Header.Length + packet.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
-            var rtperr = _secureContext.RtpTransport.ProtectRTP(
+
+            var encoded = _secureContext.RtpTransport.ProtectRTP(
                 rtpPacket.Header.SyncSource,
                 localBuffer,
-                requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH,
-                out var outBufLen);
-            if (rtperr != 0)
+                requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH);
+
+            if (encoded.Length == 0)
             {
-                Logger.LogError("SendRTPPacket protection failed, result " + rtperr + ".");
+                Logger.LogError("SendRTPPacket protection failed");
             }
             else
             {
-                await RTPChannel.SendAsync(DestinationEndPoint, localBuffer.AsMemory(0, outBufLen));
+                await RTPChannel.SendAsync(DestinationEndPoint, encoded);
             }
 
             RtcpSession?.RecordRtpPacketSend(rtpPacket);
