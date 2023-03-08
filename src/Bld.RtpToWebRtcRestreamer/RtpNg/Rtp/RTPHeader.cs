@@ -33,7 +33,7 @@ internal class RtpHeader
     /// Extract and load the RTP header from an RTP packet.
     /// </summary>
     /// <param name="packet"></param>
-    public RtpHeader(ReadOnlySpan<byte> packet)
+    public void ApplyData(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < MIN_HEADER_LEN)
         {

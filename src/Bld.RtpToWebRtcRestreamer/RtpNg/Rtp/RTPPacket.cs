@@ -3,18 +3,17 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
 internal class RtpPacket
 {
+    private readonly RtpHeader _header = new();
     private byte[]? _dataBuffer;
     private Memory<byte> _rawPacket;
-    private RtpHeader? _header;
     private Memory<byte> _payload;
-
-    public bool IsReadyToUse { get; private set; }
+    private bool _isReadyToUse;
 
     public RtpHeader Header
     {
         get
         {
-            if (!IsReadyToUse)
+            if (!_isReadyToUse)
             {
                 throw new Exception("RtpPacket has no data");
             }
@@ -27,7 +26,7 @@ internal class RtpPacket
     {
         get
         {
-            if (!IsReadyToUse)
+            if (!_isReadyToUse)
             {
                 throw new Exception("RtpPacket has no data");
             }
@@ -38,7 +37,7 @@ internal class RtpPacket
 
     public void ApplyBuffer(byte[] data, int start, int length)
     {
-        if (IsReadyToUse)
+        if (_isReadyToUse)
         {
             throw new Exception("RtpPacket already handle data");
         }
@@ -46,30 +45,24 @@ internal class RtpPacket
         _dataBuffer = data;
         _rawPacket = _dataBuffer.AsMemory(start, length);
 
-        _header = new RtpHeader(_rawPacket.Span);
+        _header.ApplyData(_rawPacket.Span);
         _payload = _rawPacket[_header.Length..];
-        IsReadyToUse = true;
+        _isReadyToUse = true;
     }
 
     public byte[] ReleaseBuffer()
     {
-        if (!IsReadyToUse)
+        if (!_isReadyToUse)
         {
             throw new Exception("RtpPacket has no data");
         }
 
-        IsReadyToUse = false;
+        _isReadyToUse = false;
         var temp = _dataBuffer!;
         _dataBuffer = null;
         _rawPacket = null;
-        _header = null;
         _payload = null;
         return temp;
-    }
-
-    public void ApplyPayload(ReadOnlySpan<byte> newPayload)
-    {
-        newPayload.CopyTo(_payload.Span);
     }
 
     public void ApplyHeaderChanges()
