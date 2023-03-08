@@ -27,7 +27,6 @@
 //-----------------------------------------------------------------------------
 
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 

@@ -40,7 +40,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Org.BouncyCastle.Asn1;
