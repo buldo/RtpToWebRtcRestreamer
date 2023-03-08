@@ -14,6 +14,5 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
 
       <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.2.0" />
-      <PackageReference Include="System.Text.Json" Version="7.0.2" />
   </ItemGroup>
 </Project>

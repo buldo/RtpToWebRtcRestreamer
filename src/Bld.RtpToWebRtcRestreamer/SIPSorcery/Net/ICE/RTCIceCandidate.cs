@@ -325,19 +325,6 @@ internal class RTCIceCandidate
         return (uint)((typePreference << 24) | (localPreference << 8) | (256u - component.GetHashCode()));
     }
 
-    public string toJSON()
-    {
-        var rtcCandInit = new RTCIceCandidateInit
-        {
-            sdpMid = sdpMid ?? sdpMLineIndex.ToString(),
-            sdpMLineIndex = sdpMLineIndex,
-            usernameFragment = usernameFragment,
-            candidate = CANDIDATE_PREFIX + ":" + ToString()
-        };
-
-        return rtcCandInit.toJSON();
-    }
-
     /// <summary>
     /// Checks the candidate to identify whether it is equivalent to the specified
     /// protocol and IP end point. Primary use case is to check whether a candidate
