@@ -35,7 +35,7 @@ internal class RTPChannel : IDisposable
     private static readonly ILogger logger = Log.Logger;
     private UdpReceiver m_rtpReceiver;
     private bool m_rtpReceiverStarted;
-    private bool m_isClosed;
+    private bool _isClosed;
 
     protected Socket RtpSocket { get; private set; }
 
@@ -117,7 +117,7 @@ internal class RTPChannel : IDisposable
     /// </summary>
     public void Close(string reason)
     {
-        if (!m_isClosed)
+        if (!_isClosed)
         {
             try
             {
@@ -125,7 +125,7 @@ internal class RTPChannel : IDisposable
 
                 logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
 
-                m_isClosed = true;
+                _isClosed = true;
                 m_rtpReceiver?.Close(null);
 
                 OnClosed?.Invoke(closeReason);
@@ -147,7 +147,7 @@ internal class RTPChannel : IDisposable
     /// whether the remote party received the packet or not.</returns>
     public SocketError Send(IPEndPoint dstEndPoint, byte[] buffer)
     {
-        if (m_isClosed)
+        if (_isClosed)
         {
             return SocketError.Disconnecting;
         }
@@ -203,63 +203,35 @@ internal class RTPChannel : IDisposable
         }
     }
 
-    public async Task<SocketError> SendAsync(IPEndPoint dstEndPoint, ReadOnlyMemory<byte> buffer)
+#nullable enable
+    public async ValueTask SendAsync(IPEndPoint dstEndPoint, ReadOnlyMemory<byte> buffer)
     {
-        if (m_isClosed)
+        if (_isClosed)
         {
-            return SocketError.Disconnecting;
-        }
-
-        if (dstEndPoint == null)
-        {
-            throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
+            return;
         }
 
         if (buffer.Length == 0)
         {
-            throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
+            return;
         }
 
         if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
         {
             logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-            return SocketError.DestinationAddressRequired;
+            return;
         }
 
         try
         {
-            //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-            //if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork && sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-            //{
-            //    dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-            //}
-
-            //Fix ReceiveFrom logic if any previous exception happens
-            //if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
-            //{
-            //    m_rtpReceiver.BeginReceiveFrom();
-            //}
-
             await RtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
-
-            return SocketError.Success;
         }
-        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
+        catch (Exception exception)
         {
-            return SocketError.Disconnecting;
-        }
-        catch (SocketException sockExcp)
-        {
-            return sockExcp.SocketErrorCode;
-        }
-        catch (Exception excp)
-        {
-            logger.LogError($"Exception RTPChannel.Send. {excp}");
-            return SocketError.Fault;
+            logger.LogError(exception,$"Exception RTPChannel.Send.");
         }
     }
-
-
+#nullable restore
 
     /// <summary>
     /// Ends an async send on one of the channel's sockets.
