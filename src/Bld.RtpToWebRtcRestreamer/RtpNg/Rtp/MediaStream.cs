@@ -140,40 +140,46 @@ internal abstract class MediaStream
         ControlDestinationEndPoint = rtcpEndPoint;
     }
 
-    public async Task SendRtpRawFromPacketAsync(RtpPacket packet)
+    public async Task SendRtpRawFromPacketAsync(RtpPacket originalPacket)
     {
         if (CheckIfCanSendRtpRaw())
         {
             var localBuffer = _sendBuffersPool.Rent(Constants.MAX_UDP_SIZE);
-            packet.Header.WriteTo(localBuffer.AsSpan(0,packet.Header.Length));
-            packet.Payload.CopyTo(localBuffer.AsSpan(packet.Header.Length));
-            var rtpPacket = _packetsPool.Get();
-            rtpPacket.ApplyBuffer(localBuffer, 0, localBuffer.Length);
-            rtpPacket.Header.SyncSource = LocalTrack.Ssrc;
-            rtpPacket.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
-
-            rtpPacket.ApplyHeaderChanges();
-
-            var requestedLen = packet.Header.Length + packet.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
-
-            var encoded = _secureContext.RtpTransport.ProtectRTP(
-                rtpPacket.Header.SyncSource,
-                localBuffer,
-                requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH);
-
-            if (encoded.Length == 0)
+            var packetToSent = _packetsPool.Get();
+            try
             {
-                Logger.LogError("SendRTPPacket protection failed");
-            }
-            else
-            {
-                await RTPChannel.SendAsync(DestinationEndPoint, encoded);
-            }
+                originalPacket.Header.WriteTo(localBuffer.AsSpan(0, originalPacket.Header.Length));
+                originalPacket.Payload.CopyTo(localBuffer.AsSpan(originalPacket.Header.Length));
+                packetToSent.ApplyBuffer(localBuffer, 0, localBuffer.Length);
+                packetToSent.Header.SyncSource = LocalTrack.Ssrc;
+                packetToSent.Header.SequenceNumber = LocalTrack.GetNextSeqNum();
 
-            RtcpSession?.RecordRtpPacketSend(rtpPacket);
-            var released = rtpPacket.ReleaseBuffer();
-            _sendBuffersPool.Return(released);
-            _packetsPool.Return(rtpPacket);
+                packetToSent.ApplyHeaderChanges();
+
+                var requestedLen = originalPacket.Header.Length + originalPacket.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
+
+                var encoded = _secureContext.RtpTransport.ProtectRTP(
+                    packetToSent.Header.SyncSource,
+                    localBuffer,
+                    requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH);
+
+                if (encoded.Length == 0)
+                {
+                    Logger.LogError("SendRTPPacket protection failed");
+                }
+                else
+                {
+                    await RTPChannel.SendAsync(DestinationEndPoint, encoded);
+                }
+
+                RtcpSession?.RecordRtpPacketSend(packetToSent);
+            }
+            finally
+            {
+                var released = packetToSent.ReleaseBuffer();
+                _sendBuffersPool.Return(released);
+                _packetsPool.Return(packetToSent);
+            }
         }
     }
 

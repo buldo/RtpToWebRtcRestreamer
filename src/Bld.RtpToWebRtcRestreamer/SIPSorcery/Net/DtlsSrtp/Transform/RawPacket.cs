@@ -31,13 +31,18 @@ internal class RawPacket
         _buffer = new byte[RTPPacketMaxSize];
     }
 
-    public void Wrap(byte[] buffer, int offset, int length)
+    public void Wrap(byte[] buffer, int length)
     {
         _buffer = buffer.AsSpan().ToArray();
-        _data = _buffer.AsMemory(offset, length);
+        _data = _buffer.AsMemory(0, length);
     }
 
-    public byte[] GetData()
+    public ReadOnlyMemory<byte> GetMemory()
+    {
+        return _data;
+    }
+
+    public byte[] CopyData()
     {
         return _data.ToArray();
     }

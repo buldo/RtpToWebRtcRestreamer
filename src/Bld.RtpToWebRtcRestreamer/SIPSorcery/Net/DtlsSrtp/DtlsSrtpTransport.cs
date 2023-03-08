@@ -330,28 +330,28 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return engine.GetRtcpTransformer();
     }
 
-    public byte[] ProtectRTP(long ssrc, byte[] payload, int length)
+    public ReadOnlyMemory<byte> ProtectRTP(long ssrc, byte[] toEncryptBuffer, int length)
     {
-        byte[] result;
+        ReadOnlyMemory<byte> result;
         lock (_srtpEncoder)
         {
-            result = _srtpEncoder.Transform(ssrc, payload, 0, length);
+            result = _srtpEncoder.Transform(ssrc, toEncryptBuffer, length);
         }
 
         return result;
     }
 
-    private byte[] UnprotectRtcp(byte[] packet, int offset, int length)
+    private byte[] UnprotectRtcp(byte[] packet, int length)
     {
         lock (_srtcpDecoder)
         {
-            return _srtcpDecoder.ReverseTransform(packet, offset, length);
+            return _srtcpDecoder.ReverseTransform(packet, length);
         }
     }
 
     public int UnprotectRtcp(byte[] payload, int length, out int outLength)
     {
-        var result = UnprotectRtcp(payload, 0, length);
+        var result = UnprotectRtcp(payload, length);
         if (result == null)
         {
             outLength = 0;
@@ -364,17 +364,17 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return 0; //No Errors
     }
 
-    private byte[] ProtectRtcp(byte[] packet, int offset, int length)
+    private byte[] ProtectRtcp(byte[] packet, int length)
     {
         lock (_srtcpEncoder)
         {
-            return _srtcpEncoder.Transform(packet, offset, length);
+            return _srtcpEncoder.Transform(packet, length);
         }
     }
 
     public int ProtectRtcp(byte[] payload, int length, out int outLength)
     {
-        var result = ProtectRtcp(payload, 0, length);
+        var result = ProtectRtcp(payload, length);
         if (result == null)
         {
             outLength = 0;

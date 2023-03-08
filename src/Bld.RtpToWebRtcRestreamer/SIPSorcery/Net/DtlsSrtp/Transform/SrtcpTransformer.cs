@@ -52,14 +52,14 @@ internal class SrtcpTransformer
         _contexts = new ConcurrentDictionary<long, SrtcpCryptoContext>();
     }
 
-    public byte[] Transform(byte[] pkt, int offset, int length)
+    public byte[] Transform(byte[] pkt, int length)
     {
         var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
         try
         {
             // Wrap the data into raw packet for readable format
             var packet = !isLocked ? _packet : new RawPacket();
-            packet.Wrap(pkt, offset, length);
+            packet.Wrap(pkt, length);
 
             // Associate the packet with its encryption context
             long ssrc = packet.GetRtcpssrc();
@@ -75,7 +75,7 @@ internal class SrtcpTransformer
 
             // Secure packet into SRTCP format
             context.TransformPacket(packet);
-            var result = packet.GetData();
+            var result = packet.CopyData();
 
             return result;
         }
@@ -87,14 +87,14 @@ internal class SrtcpTransformer
         }
     }
 
-    public byte[] ReverseTransform(byte[] pkt, int offset, int length)
+    public byte[] ReverseTransform(byte[] pkt, int length)
     {
         var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
         try
         {
             // wrap data into raw packet for readable format
             var packet = !isLocked ? _packet : new RawPacket();
-            packet.Wrap(pkt, offset, length);
+            packet.Wrap(pkt, length);
 
             // Associate the packet with its encryption context
             long ssrc = packet.GetRtcpssrc();
@@ -112,7 +112,7 @@ internal class SrtcpTransformer
             var reversed = context.ReverseTransformPacket(packet);
             if (reversed)
             {
-                result = packet.GetData();
+                result = packet.CopyData();
             }
             return result;
         }

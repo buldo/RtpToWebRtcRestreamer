@@ -18,12 +18,12 @@ internal class SrtpTransformer
         _contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
     }
 
-    public byte[] Transform(long ssrc, byte[] pkt, int offset, int length)
+    public ReadOnlyMemory<byte> Transform(long ssrc, byte[] pkt, int length)
     {
         var rawPacket = _packetsPool.Get();
         try
         {
-            rawPacket.Wrap(pkt, offset, length);
+            rawPacket.Wrap(pkt, length);
 
             // Associate packet to a crypto context
             if (!_contexts.TryGetValue(ssrc, out var context))
@@ -35,9 +35,8 @@ internal class SrtpTransformer
 
             // Transform RTP packet into SRTP
             context.TransformPacket(rawPacket);
-            var result = rawPacket.GetData();
 
-            return result;
+            return rawPacket.GetMemory();
         }
         finally
         {
