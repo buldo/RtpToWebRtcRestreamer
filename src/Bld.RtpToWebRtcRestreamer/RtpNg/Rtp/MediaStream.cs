@@ -1,20 +1,4 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: MediaStream.cs
-//
-// Description: Define a Media Stream to centralize all related objects: local/remote tracks, rtcp session, ip end point
-// The goal is to simplify RTPSession class
-//
-// Author(s):
-// Christophe Irles
-//
-// History:
-// 05 Apr 2022	Christophe Irles        Created (based on existing code from previous RTPSession class)
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
-using System.Buffers;
+﻿using System.Buffers;
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
@@ -36,7 +20,7 @@ internal abstract class MediaStream
     private readonly RtpSessionConfig _rtpSessionConfig;
 
     private SecureContext _secureContext;
-    private MediaStreamTrack _mLocalTrack;
+    private MediaStreamTrack _localTrack;
 
     private readonly int _index;
 
@@ -49,7 +33,7 @@ internal abstract class MediaStream
     /// <summary>
     /// Gets fired when an RTCP report is received. This event is for diagnostics only.
     /// </summary>
-    public event Action<int, IPEndPoint, SDPMediaTypesEnum, RtcpCompoundPacket> OnReceiveReportByIndex;
+    public event Action<int, IPEndPoint, RtcpCompoundPacket> OnReceiveReportByIndex;
 
     /// <summary>
     /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -69,17 +53,17 @@ internal abstract class MediaStream
     {
         get
         {
-            return _mLocalTrack;
+            return _localTrack;
         }
         set
         {
-            _mLocalTrack = value;
-            if (_mLocalTrack != null)
+            _localTrack = value;
+            if (_localTrack != null)
             {
                 // Need to create a sending SSRC and set it on the RTCP session.
                 if (RtcpSession != null)
                 {
-                    RtcpSession.Ssrc = _mLocalTrack.Ssrc;
+                    RtcpSession.Ssrc = _localTrack.Ssrc;
                 }
             }
         }
@@ -126,7 +110,7 @@ internal abstract class MediaStream
 
     public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RtcpCompoundPacket rtcpPCompoundPacket)
     {
-        OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, MediaType, rtcpPCompoundPacket);
+        OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, rtcpPCompoundPacket);
     }
 
     /// <summary>

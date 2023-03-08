@@ -225,7 +225,7 @@ internal abstract class RTPSession : IDisposable
     /// <summary>
     /// Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
     /// </summary>
-    public event Action<IPEndPoint, SDPMediaTypesEnum, RtcpCompoundPacket> OnReceiveReport;
+    public event Action<IPEndPoint, RtcpCompoundPacket> OnReceiveReport;
 
     /// <summary>
     /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -329,11 +329,11 @@ internal abstract class RTPSession : IDisposable
         }
     }
 
-    private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RtcpCompoundPacket report)
+    private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, RtcpCompoundPacket report)
     {
         if (index == 0)
         {
-            OnReceiveReport?.Invoke(ipEndPoint, media, report);
+            OnReceiveReport?.Invoke(ipEndPoint, report);
         }
     }
 

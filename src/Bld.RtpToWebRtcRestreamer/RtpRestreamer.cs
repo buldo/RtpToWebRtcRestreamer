@@ -134,9 +134,9 @@ internal class RtpRestreamer
         };
 
         // Diagnostics.
-        pc.OnReceiveReport += (re, media, rr) =>
+        pc.OnReceiveReport += (re, rr) =>
         {
-            _logger.LogDebug($"RTCP Receive for {media} from {re}\n{rr.GetDebugSummary()}");
+            _logger.LogDebug($"RTCP Receive for from {re}\n{rr.GetDebugSummary()}");
         };
 
         return pc;
