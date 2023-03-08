@@ -178,7 +178,7 @@ internal abstract class RTPSession : IDisposable
     /// Indicates whether the session has been closed. Once a session is closed it cannot
     /// be restarted.
     /// </summary>
-    protected bool IsClosed { get; private set; }
+    public bool IsClosed { get; private set; }
 
     /// <summary>
     /// Indicates whether the session has been started. Starting a session tells the RTP
@@ -322,10 +322,12 @@ internal abstract class RTPSession : IDisposable
 
     private void CloseRtcpSession(MediaStream mediaStream, string reason)
     {
-        if (mediaStream.RtcpSession != null)
+        var session = mediaStream.RtcpSession;
+
+        if (session != null)
         {
             mediaStream.OnReceiveReportByIndex -= RaisedOnOnReceiveReport;
-            mediaStream.RtcpSession.Close(reason);
+            session.Close(reason);
             mediaStream.RtcpSession = null;
         }
     }
@@ -825,7 +827,6 @@ internal abstract class RTPSession : IDisposable
         if (!IsClosed)
         {
             IsClosed = true;
-
 
             foreach (var audioStream in AudioStreamList)
             {

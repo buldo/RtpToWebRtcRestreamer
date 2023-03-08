@@ -70,6 +70,13 @@ internal class RtpRestreamer
 
         IsStarted = false;
         await _receiver.StopAsync();
+        foreach (var peerConnection in _peers)
+        {
+            _streamMultiplexer.StopPeerTransmit(peerConnection.Value);
+            peerConnection.Value.Close("");
+        }
+        _peers.Clear();
+        _streamMultiplexer.Cleanup();
     }
 
     public async Task<(Guid PeerId, string Sdp)> AppendClient()

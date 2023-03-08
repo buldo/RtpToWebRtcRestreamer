@@ -30,14 +30,17 @@ internal class WebRtcHostedService : IHostedService
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        await StopStreamerAsync();
     }
 
-    public void StopStreamer()
+    public async Task StopStreamerAsync()
     {
-        _rtpRestreamer?.StopAsync();
+        if (_rtpRestreamer != null)
+        {
+            await _rtpRestreamer.StopAsync();
+        }
     }
 
     public async Task<(Guid PeerId, string Sdp)> AppendClient()
@@ -64,6 +67,11 @@ internal class WebRtcHostedService : IHostedService
 
     public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
     {
+        if (_rtpRestreamer == null)
+        {
+            return;
+        }
+
         await _rtpRestreamer.ProcessClientAnswerAsync(peerId, sdpString);
     }
 

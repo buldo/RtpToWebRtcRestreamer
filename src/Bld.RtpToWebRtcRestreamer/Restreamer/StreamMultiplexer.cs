@@ -63,8 +63,8 @@ internal class StreamMultiplexer
     public void Cleanup()
     {
         var toRemove = _peers.Where(pair =>
-                pair.Key.connectionState is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected
-                    or RTCPeerConnectionState.closed)
+                (pair.Key.connectionState is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected or RTCPeerConnectionState.closed) ||
+                pair.Key.IsClosed)
             .Select(pair => pair.Key)
             .ToList();
         _peers = _peers.RemoveRange(toRemove);
