@@ -31,7 +31,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// Represents an RTCP session intended to be used in conjunction with an
@@ -50,7 +50,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 ///   - First RTCP packet must be a SR or RR,
 ///   - Must contain an SDES packet.
 /// </remarks>
-internal class RTCPSession
+internal class RtcpSession
 {
     private const int RTCP_MINIMUM_REPORT_PERIOD_MILLISECONDS = 5000;
     private const float RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR = 0.5F;
@@ -133,7 +133,7 @@ internal class RTCPSession
     /// </summary>
     /// <param name="mediaType">The media type this reporting session will be measuring.</param>
     /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
-    public RTCPSession(SDPMediaTypesEnum mediaType, uint ssrc)
+    public RtcpSession(SDPMediaTypesEnum mediaType, uint ssrc)
     {
         MediaType = mediaType;
         Ssrc = ssrc;
@@ -156,7 +156,7 @@ internal class RTCPSession
             m_rtcpReportTimer?.Dispose();
 
             var byeReport = GetRtcpReport();
-            byeReport.Bye = new RTCPBye(Ssrc, reason);
+            byeReport.Bye = new RtcpBye(Ssrc, reason);
         }
     }
 
@@ -241,21 +241,21 @@ internal class RTCPSession
     /// Gets the RTCP compound packet containing the RTCP reports we send.
     /// </summary>
     /// <returns>An RTCP compound packet.</returns>
-    private RTCPCompoundPacket GetRtcpReport()
+    private RtcpCompoundPacket GetRtcpReport()
     {
         var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-        var sdesReport = new RTCPSDesReport(Ssrc, Cname);
+        var sdesReport = new RtcpSDesReport(Ssrc, Cname);
 
         if (PacketsSentCount > m_previousPacketsSentCount)
         {
             // If we have sent a packet since the last report then we send an RTCP Sender Report.
             // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-            var senderReport = new RTCPSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
-            return new RTCPCompoundPacket(senderReport, sdesReport);
+            var senderReport = new RtcpSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
+            return new RtcpCompoundPacket(senderReport, sdesReport);
         }
 
-        var receiverReport = new RTCPReceiverReport(Ssrc, null);
-        return new RTCPCompoundPacket(receiverReport, sdesReport);
+        var receiverReport = new RtcpReceiverReport(Ssrc, null);
+        return new RtcpCompoundPacket(receiverReport, sdesReport);
     }
 
     /// <summary>

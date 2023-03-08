@@ -18,7 +18,6 @@
 //-----------------------------------------------------------------------------
 
 using System.Buffers.Binary;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
@@ -49,7 +48,7 @@ internal class RtcpFeedback
 
         switch (_header)
         {
-            case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+            case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RtcpFeedbackTypesEnum.RTCP_SR_REQ:
                 _senderPayloadSize = 8;
                 // PLI feedback reports do no have any additional parameters.
                 break;
@@ -95,7 +94,7 @@ internal class RtcpFeedback
 
         switch (_header)
         {
-            case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RTCPFeedbackTypesEnum.RTCP_SR_REQ:
+            case var x when x.PacketType == RtcpReportTypes.RTPFB && x.FeedbackMessageType == RtcpFeedbackTypesEnum.RTCP_SR_REQ:
                 // PLI feedback reports do no have any additional parameters.
                 break;
             case var x when x.PacketType == RtcpReportTypes.RTPFB:

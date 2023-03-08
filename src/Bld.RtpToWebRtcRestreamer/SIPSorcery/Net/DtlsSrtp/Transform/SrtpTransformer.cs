@@ -1,82 +1,32 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: SrtpTransformer.cs
-//
-// Description:  SRTPTransformer implements PacketTransformer and provides
-// implementations for RTP packet to SRTP packet transformation and SRTP
-// packet to RTP packet transformation logic.
-//
-// Derived From:
-// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTPTransformer.java
-//
-// Author(s):
-// Rafael Soares (raf.csoares@kyubinteractive.com)
-//
-// History:
-// 01 Jul 2020	Rafael Soares   Created.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// Original Source: AGPL-3.0 License
-//-----------------------------------------------------------------------------
+﻿using System.Collections.Concurrent;
 
-/**
-*
-* Code derived and adapted from the Jitsi client side SRTP framework.
-*
-* Distributed under LGPL license.
-* See terms of license at gnu.org.
-*//**
-* SRTPTransformer implements PacketTransformer and provides implementations for
-* RTP packet to SRTP packet transformation and SRTP packet to RTP packet
-* transformation logic.
-*
-* It will first find the corresponding SRTPCryptoContext for each packet based
-* on their SSRC and then invoke the context object to perform the
-* transformation and reverse transformation operation.
-*
-* @author Bing SU (nova.su@gmail.com)
-* @author Rafael Soares (raf.csoares@kyubinteractive.com)
-*
-*/
-
-using System.Collections.Concurrent;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
 internal class SrtpTransformer
 {
-    private int _isLocked;
-    private readonly RawPacket _rawPacket;
-
+    private readonly ConcurrentDictionary<long, SrtpCryptoContext> _contexts;
     private readonly SrtpTransformEngine _forwardEngine;
 
-    /**
-	     * All the known SSRC's corresponding SRTPCryptoContexts
-	     */
-    private readonly ConcurrentDictionary<long, SrtpCryptoContext> _contexts;
+    private readonly ObjectPool<RawPacket> _packetsPool =
+        new DefaultObjectPool<RawPacket>(new DefaultPooledObjectPolicy<RawPacket>());
 
     public SrtpTransformer(SrtpTransformEngine forwardEngine)
     {
         _forwardEngine = forwardEngine;
         _contexts = new ConcurrentDictionary<long, SrtpCryptoContext>();
-        _rawPacket = new RawPacket();
     }
 
-    public byte[] Transform(byte[] pkt, int offset, int length)
+    public byte[] Transform(long ssrc, byte[] pkt, int offset, int length)
     {
-        var isLocked = Interlocked.CompareExchange(ref _isLocked, 1, 0) != 0;
-
+        var rawPacket = _packetsPool.Get();
         try
         {
-            // Updates the contents of raw packet with new incoming packet
-            var rawPacket = !isLocked ? _rawPacket : new RawPacket();
             rawPacket.Wrap(pkt, offset, length);
 
             // Associate packet to a crypto context
-            long ssrc = rawPacket.GetSsrc();
-            _contexts.TryGetValue(ssrc, out var context);
-
-            if (context == null)
+            if (!_contexts.TryGetValue(ssrc, out var context))
             {
                 context = _forwardEngine.DefaultContext.DeriveContext(0, 0);
                 context.DeriveSrtpKeys(0);
@@ -91,9 +41,7 @@ internal class SrtpTransformer
         }
         finally
         {
-            //Unlock
-            if (!isLocked)
-                Interlocked.CompareExchange(ref _isLocked, 0, 1);
+            _packetsPool.Return(rawPacket);
         }
     }
 }

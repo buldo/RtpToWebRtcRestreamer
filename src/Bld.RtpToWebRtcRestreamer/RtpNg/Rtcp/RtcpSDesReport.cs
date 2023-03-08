@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: RTCPSDesReport.cs
+// Filename: RtcpSDesReport.cs
 //
 // Description: RTCP Source Description (SDES) report as defined in RFC3550.
 // Only the mandatory CNAME item is supported.
@@ -51,16 +51,15 @@
 //-----------------------------------------------------------------------------
 
 using System.Text;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// RTCP Source Description (SDES) report as defined in RFC3550.
 /// Only the mandatory CNAME item is supported.
 /// </summary>
-internal class RTCPSDesReport
+internal class RtcpSDesReport
 {
     private const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
     private const int MAX_CNAME_BYTES = 255;
@@ -78,7 +77,7 @@ internal class RTCPSDesReport
     /// <param name="cname">Canonical End-Point Identifier SDES item. This should be a
     /// unique string common to all RTP streams in use by the application. Maximum
     /// length is 255 bytes (note bytes not characters).</param>
-    public RTCPSDesReport(uint ssrc, string cname)
+    public RtcpSDesReport(uint ssrc, string cname)
     {
         if (String.IsNullOrEmpty(cname))
         {
@@ -100,7 +99,7 @@ internal class RTCPSDesReport
     /// Create a new RTCP SDES item from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the SDES report.</param>
-    public RTCPSDesReport(byte[] packet)
+    public RtcpSDesReport(byte[] packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {

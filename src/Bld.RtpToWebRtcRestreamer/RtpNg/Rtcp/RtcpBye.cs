@@ -1,61 +1,33 @@
-//-----------------------------------------------------------------------------
-// Filename: RTCPBye.cs
-//
-// Description: RTCP Goodbye packet as defined in RFC3550.
-//
-//         Goodbye RTCP Packet
-//         0                   1                   2                   3
-//         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |V=2|P|    SC   |   PT=BYE=203  |             length            |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        |                           SSRC/CSRC                           |
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//        :                              ...                              :
-//        +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
-//  (opt) |     length    |               reason for leaving            ...
-//        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//
-// Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
-// 
-// History:
-// 29 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
-//
-// License: 
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
+using System.Buffers.Binary;
 using System.Text;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
-/// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates 
+/// RTCP Goodbye packet as defined in RFC3550. The BYE packet indicates
 /// that one or more sources are no longer active.
 /// </summary>
-internal class RTCPBye
+internal class RtcpBye
 {
     private const int MAX_REASON_BYTES = 255;
     private const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
 
-    private RtcpHeader Header;
-    public uint SSRC { get; private set; }
-    public string Reason { get; private set; }
+    private readonly RtcpHeader _header;
+    public uint Ssrc { get; }
+    public string Reason { get; }
 
     /// <summary>
     /// Creates a new RTCP Bye payload.
     /// </summary>
     /// <param name="ssrc">The synchronisation source of the RTP stream being closed.</param>
-    /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes 
+    /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes
     /// (note bytes not characters).</param>
-    public RTCPBye(uint ssrc, string reason)
+    public RtcpBye(uint ssrc, string reason)
     {
-        Header = new RtcpHeader(RtcpReportTypes.BYE, 1);
-        SSRC = ssrc;
+        _header = new RtcpHeader(RtcpReportTypes.BYE, 1);
+        Ssrc = ssrc;
 
         if (reason != null)
         {
@@ -73,23 +45,16 @@ internal class RTCPBye
     /// Create a new RTCP Goodbye packet from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the Goodbye packet.</param>
-    public RTCPBye(byte[] packet)
+    public RtcpBye(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
             throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCP Goodbye packet.");
         }
 
-        Header = new RtcpHeader(packet);
+        _header = new RtcpHeader(packet);
 
-        if (BitConverter.IsLittleEndian)
-        {
-            SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
-        }
-        else
-        {
-            SSRC = BitConverter.ToUInt32(packet, 4);
-        }
+        Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
         if (packet.Length > MIN_PACKET_SIZE)
         {
@@ -97,7 +62,7 @@ internal class RTCPBye
 
             if (packet.Length - MIN_PACKET_SIZE - 1 >= reasonLength)
             {
-                Reason = Encoding.UTF8.GetString(packet, 9, reasonLength);
+                Reason = Encoding.UTF8.GetString(packet.Slice(9,reasonLength));
             }
         }
     }
@@ -111,18 +76,18 @@ internal class RTCPBye
         var reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
         var reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
-        Header.SetLength((ushort)(buffer.Length / 4 - 1));
+        _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, buffer, payloadIndex, 4);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, buffer, payloadIndex, 4);
         }
 
         if (reasonLength > 0)

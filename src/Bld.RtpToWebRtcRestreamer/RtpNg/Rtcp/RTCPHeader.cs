@@ -19,8 +19,6 @@
 //-----------------------------------------------------------------------------
 
 using System.Buffers.Binary;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
@@ -42,7 +40,7 @@ internal class RtcpHeader
     /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.
     /// When used this field gets set in place of the Reception Report Counter field.
     /// </summary>
-    public RTCPFeedbackTypesEnum FeedbackMessageType { get; } = RTCPFeedbackTypesEnum.unassigned;
+    public RtcpFeedbackTypesEnum FeedbackMessageType { get; } = RtcpFeedbackTypesEnum.unassigned;
 
     /// <summary>
     /// The Payload Feedback Message Type is used for RFC4585 payload layer feedback reports.
@@ -75,7 +73,7 @@ internal class RtcpHeader
     /// <summary>
     /// Extract and load the RTCP header from an RTCP packet.
     /// </summary>
-    public RtcpHeader(Span<byte> packet)
+    public RtcpHeader(ReadOnlySpan<byte> packet)
     {
         if (packet.Length < HEADER_BYTES_LENGTH)
         {
@@ -94,7 +92,7 @@ internal class RtcpHeader
         {
             if (PacketType == RtcpReportTypes.RTPFB)
             {
-                FeedbackMessageType = (RTCPFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
+                FeedbackMessageType = (RtcpFeedbackTypesEnum)((firstWord >> 8) & 0x1f);
             }
             else
             {

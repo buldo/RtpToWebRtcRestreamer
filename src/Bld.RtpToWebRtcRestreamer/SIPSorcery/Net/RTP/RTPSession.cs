@@ -23,7 +23,6 @@ using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
@@ -229,7 +228,7 @@ internal abstract class RTPSession : IDisposable
     /// <summary>
     /// Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
     /// </summary>
-    public event Action<IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReport;
+    public event Action<IPEndPoint, SDPMediaTypesEnum, RtcpCompoundPacket> OnReceiveReport;
 
     /// <summary>
     /// Creates a new RTP session. The synchronisation source and sequence number are initialised to
@@ -333,7 +332,7 @@ internal abstract class RTPSession : IDisposable
         }
     }
 
-    private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RTCPCompoundPacket report)
+    private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, SDPMediaTypesEnum media, RtcpCompoundPacket report)
     {
         if (index == 0)
         {
@@ -942,11 +941,11 @@ internal abstract class RTPSession : IDisposable
             Logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
         }
 
-        var rtcpPkt = new RTCPCompoundPacket(buffer);
+        var rtcpPkt = new RtcpCompoundPacket(buffer);
         mediaStream = GetMediaStream(rtcpPkt);
         if (rtcpPkt.Bye != null)
         {
-            Logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.SSRC}, reason {rtcpPkt.Bye.Reason}.");
+            Logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.Ssrc}, reason {rtcpPkt.Bye.Reason}.");
 
             // In some cases, such as a SIP re-INVITE, it's possible the RTP session
             // will keep going with a new remote SSRC.
@@ -977,7 +976,7 @@ internal abstract class RTPSession : IDisposable
                 mediaStream.RtcpSession.ReportReceived();
                 mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
             }
-            else if (rtcpPkt.ReceiverReport?.SSRC == RTCP_RR_NOSTREAM_SSRC)
+            else if (rtcpPkt.ReceiverReport?.Ssrc == RTCP_RR_NOSTREAM_SSRC)
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
@@ -1103,7 +1102,7 @@ internal abstract class RTPSession : IDisposable
     /// </summary>
     /// <param name="rtcpPkt">The RTCP compound packet received from the remote party.</param>
     /// <returns>If a match could be found an SSRC the MediaStream otherwise null.</returns>
-    private MediaStream GetMediaStream(RTCPCompoundPacket rtcpPkt)
+    private MediaStream GetMediaStream(RtcpCompoundPacket rtcpPkt)
     {
         if (rtcpPkt.SenderReport != null)
         {
@@ -1112,7 +1111,7 @@ internal abstract class RTPSession : IDisposable
 
         if (rtcpPkt.ReceiverReport != null)
         {
-            return GetMediaStream(rtcpPkt.ReceiverReport.SSRC);
+            return GetMediaStream(rtcpPkt.ReceiverReport.Ssrc);
         }
 
         if (rtcpPkt.Feedback != null)

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: RTCPSenderReport.cs
+// Filename: RtcpSenderReport.cs
 //
 // Description:
 //
@@ -45,10 +45,9 @@
 //-----------------------------------------------------------------------------
 
 using System.Buffers.Binary;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// An RTCP sender report is for use by active RTP senders.
@@ -62,7 +61,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 /// site has sent any data packets during the interval since issuing the
 /// last report or the previous one, otherwise the RR is issued."
 /// </remarks>
-internal class RTCPSenderReport
+internal class RtcpSenderReport
 {
     private const int SENDER_PAYLOAD_SIZE = 20;
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE;
@@ -75,7 +74,7 @@ internal class RTCPSenderReport
     public uint OctetCount;
     public List<ReceptionReportSample> ReceptionReports;
 
-    public RTCPSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
+    public RtcpSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
     {
         Header = new RtcpHeader(RtcpReportTypes.SR, (receptionReports != null) ? receptionReports.Count : 0);
         SSRC = ssrc;
@@ -90,11 +89,11 @@ internal class RTCPSenderReport
     /// Create a new RTCP Sender Report from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the serialised sender report.</param>
-    public RTCPSenderReport(Span<byte> packet)
+    public RtcpSenderReport(Span<byte> packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
-            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCPSenderReport packet.");
+            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RtcpSenderReport packet.");
         }
 
         Header = new RtcpHeader(packet);

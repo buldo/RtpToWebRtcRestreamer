@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Filename: RTCPReceiverReport.cs
+// Filename: RtcpReceiverReport.cs
 //
 // Description:
 //
@@ -36,26 +36,23 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 28 Dec 2019  Aaron Clauson   Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
-internal class RTCPReceiverReport
+internal class RtcpReceiverReport
 {
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + 4;
 
-    private RtcpHeader Header;
-    public uint SSRC;
-    public List<ReceptionReportSample> ReceptionReports;
+    private readonly RtcpHeader _header;
 
     /// <summary>
     /// Creates a new RTCP Reception Report payload.
@@ -63,10 +60,10 @@ internal class RTCPReceiverReport
     /// <param name="ssrc">The synchronisation source of the RTP packet being sent. Can be zero
     /// if there are none being sent.</param>
     /// <param name="receptionReports">A list of the reception reports to include. Can be empty.</param>
-    public RTCPReceiverReport(uint ssrc, List<ReceptionReportSample> receptionReports)
+    public RtcpReceiverReport(uint ssrc, List<ReceptionReportSample> receptionReports)
     {
-        Header = new RtcpHeader(RtcpReportTypes.RR, receptionReports != null ? receptionReports.Count : 0);
-        SSRC = ssrc;
+        _header = new RtcpHeader(RtcpReportTypes.RR, receptionReports != null ? receptionReports.Count : 0);
+        Ssrc = ssrc;
         ReceptionReports = receptionReports;
     }
 
@@ -74,32 +71,36 @@ internal class RTCPReceiverReport
     /// Create a new RTCP Receiver Report from a serialised byte array.
     /// </summary>
     /// <param name="packet">The byte array holding the serialised receiver report.</param>
-    public RTCPReceiverReport(byte[] packet)
+    public RtcpReceiverReport(byte[] packet)
     {
         if (packet.Length < MIN_PACKET_SIZE)
         {
-            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RTCPReceiverReport packet.");
+            throw new ApplicationException("The packet did not contain the minimum number of bytes for an RtcpReceiverReport packet.");
         }
 
-        Header = new RtcpHeader(packet);
+        _header = new RtcpHeader(packet);
         ReceptionReports = new List<ReceptionReportSample>();
 
         if (BitConverter.IsLittleEndian)
         {
-            SSRC = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
+            Ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(packet, 4));
         }
         else
         {
-            SSRC = BitConverter.ToUInt32(packet, 4);
+            Ssrc = BitConverter.ToUInt32(packet, 4);
         }
 
         var rrIndex = 8;
-        for (var i = 0; i < Header.ReceptionReportCount; i++)
+        for (var i = 0; i < _header.ReceptionReportCount; i++)
         {
             var rr = new ReceptionReportSample(packet.Skip(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE).ToArray());
             ReceptionReports.Add(rr);
         }
     }
+
+    public uint Ssrc { get; }
+
+    public List<ReceptionReportSample> ReceptionReports { get; }
 
     /// <summary>
     /// Gets the serialised bytes for this Receiver Report.
@@ -109,18 +110,18 @@ internal class RTCPReceiverReport
     {
         var rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + 4 + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
-        Header.SetLength((ushort)(buffer.Length / 4 - 1));
+        _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
-        Buffer.BlockCopy(Header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
+        Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(SSRC)), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, buffer, payloadIndex, 4);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(SSRC), 0, buffer, payloadIndex, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, buffer, payloadIndex, 4);
         }
 
         var bufferIndex = payloadIndex + 4;

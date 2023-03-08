@@ -17,10 +17,10 @@
 using System.Buffers;
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTCP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
@@ -51,7 +51,7 @@ internal abstract class MediaStream
     /// <summary>
     /// Gets fired when an RTCP report is received. This event is for diagnostics only.
     /// </summary>
-    public event Action<int, IPEndPoint, SDPMediaTypesEnum, RTCPCompoundPacket> OnReceiveReportByIndex;
+    public event Action<int, IPEndPoint, SDPMediaTypesEnum, RtcpCompoundPacket> OnReceiveReportByIndex;
 
     /// <summary>
     /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -90,7 +90,7 @@ internal abstract class MediaStream
     /// <summary>
     /// The reporting session for this media stream.
     /// </summary>
-    public RTCPSession RtcpSession { get; set; }
+    public RtcpSession RtcpSession { get; set; }
 
     /// <summary>
     /// The remote RTP end point this stream is sending media to.
@@ -126,7 +126,7 @@ internal abstract class MediaStream
         return RTPChannel != null;
     }
 
-    public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RTCPCompoundPacket rtcpPCompoundPacket)
+    public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RtcpCompoundPacket rtcpPCompoundPacket)
     {
         OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, MediaType, rtcpPCompoundPacket);
     }
@@ -140,7 +140,7 @@ internal abstract class MediaStream
     {
         if (RtcpSession == null)
         {
-            RtcpSession = new RTCPSession(MediaType, 0);
+            RtcpSession = new RtcpSession(MediaType, 0);
             return true;
         }
         return false;
@@ -174,6 +174,7 @@ internal abstract class MediaStream
 
             var requestedLen = packet.Header.Length + packet.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
             var rtperr = _secureContext.RtpTransport.ProtectRTP(
+                rtpPacket.Header.SyncSource,
                 localBuffer,
                 requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH,
                 out var outBufLen);
