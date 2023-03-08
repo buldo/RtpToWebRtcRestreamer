@@ -13,6 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
+
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 public static class NetConvert
@@ -96,31 +98,8 @@ public static class NetConvert
     public static byte[] GetBytes(uint val)
     {
         var buffer = new byte[4];
-        ToBuffer(val, buffer, 0);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer, val);
         return buffer;
-    }
-
-    /// <summary>
-    /// Writes a UInt64 value to a network buffer using network byte order.
-    /// </summary>
-    /// <param name="val">The value to write to the buffer.</param>
-    /// <param name="buffer">The buffer to write the value to.</param>
-    /// <param name="posn">The start position in the buffer to write the value at.</param>
-    private static void ToBuffer(ulong val, byte[] buffer, int posn)
-    {
-        if (buffer.Length < posn + 8)
-        {
-            throw new ApplicationException("Buffer was too short for ulong ToBuffer.");
-        }
-
-        buffer[posn] = (byte)(val >> 56);
-        buffer[posn + 1] = (byte)(val >> 48);
-        buffer[posn + 2] = (byte)(val >> 40);
-        buffer[posn + 3] = (byte)(val >> 32);
-        buffer[posn + 4] = (byte)(val >> 24);
-        buffer[posn + 5] = (byte)(val >> 16);
-        buffer[posn + 6] = (byte)(val >> 8);
-        buffer[posn + 7] = (byte)val;
     }
 
     /// <summary>
@@ -132,7 +111,7 @@ public static class NetConvert
     public static byte[] GetBytes(ulong val)
     {
         var buffer = new byte[8];
-        ToBuffer(val, buffer, 0);
+        BinaryPrimitives.TryWriteUInt64BigEndian(buffer, val);
         return buffer;
     }
 

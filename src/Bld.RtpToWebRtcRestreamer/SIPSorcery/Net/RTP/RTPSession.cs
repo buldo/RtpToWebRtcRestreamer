@@ -19,6 +19,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System.Buffers.Binary;
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
@@ -901,21 +902,9 @@ internal abstract class RTPSession : IDisposable
 
     private void OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
     {
-        //logger.LogDebug($"RTCP packet received from {remoteEndPoint} {buffer.HexStr()}");
-
-        #region RTCP packet.
-
         // Get the SSRC in order to be able to figure out which media type
         // This will let us choose the apropriate unprotect methods
-        uint ssrc;
-        if (BitConverter.IsLittleEndian)
-        {
-            ssrc = NetConvert.DoReverseEndian(BitConverter.ToUInt32(buffer, 4));
-        }
-        else
-        {
-            ssrc = BitConverter.ToUInt32(buffer, 4);
-        }
+        uint ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
 
         var mediaStream = GetMediaStream(ssrc);
         if (mediaStream != null)
@@ -984,8 +973,6 @@ internal abstract class RTPSession : IDisposable
                 //logger.LogTrace(rtcpPkt.GetDebugSummary());
             }
         }
-
-        #endregion
     }
 
     private MediaStream GetMediaStream(uint ssrc)
