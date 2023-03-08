@@ -65,27 +65,16 @@ internal class ReceptionReportSample
     public byte[] GetBytes()
     {
         var payload = new byte[24];
+        var payloadSpan = payload.AsSpan();
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, payload, 0, 4);
-            payload[4] = _fractionLost;
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketsLost)), 1, payload, 5, 3);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(_extendedHighestSequenceNumber)), 0, payload, 8, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Jitter)), 0, payload, 12, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(_lastSenderReportTimestamp)), 0, payload, 16, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(_delaySinceLastSenderReport)), 0, payload, 20, 4);
-        }
-        else
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, payload, 0, 4);
-            payload[4] = _fractionLost;
-            Buffer.BlockCopy(BitConverter.GetBytes(PacketsLost), 1, payload, 5, 3);
-            Buffer.BlockCopy(BitConverter.GetBytes(_extendedHighestSequenceNumber), 0, payload, 8, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(Jitter), 0, payload, 12, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(_lastSenderReportTimestamp), 0, payload, 16, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(_delaySinceLastSenderReport), 0, payload, 20, 4);
-        }
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(0, 4), Ssrc);
+        BinaryPrimitives.WriteInt32BigEndian(payloadSpan.Slice(4, 4), PacketsLost);
+        payload[4] = _fractionLost; // It will rewrite first byte of previous line
+
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(8, 4), _extendedHighestSequenceNumber);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(12, 4), Jitter);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(16, 4), _lastSenderReportTimestamp);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(20, 4), _delaySinceLastSenderReport);
 
         return payload;
     }

@@ -126,22 +126,12 @@ internal class RtcpSenderReport
         Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
-        if (BitConverter.IsLittleEndian)
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(Ssrc)), 0, buffer, payloadIndex, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(_ntpTimestamp)), 0, buffer, payloadIndex + 4, 8);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(_rtpTimestamp)), 0, buffer, payloadIndex + 12, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(PacketCount)), 0, buffer, payloadIndex + 16, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(OctetCount)), 0, buffer, payloadIndex + 20, 4);
-        }
-        else
-        {
-            Buffer.BlockCopy(BitConverter.GetBytes(Ssrc), 0, buffer, payloadIndex, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(_ntpTimestamp), 0, buffer, payloadIndex + 4, 8);
-            Buffer.BlockCopy(BitConverter.GetBytes(_rtpTimestamp), 0, buffer, payloadIndex + 12, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(PacketCount), 0, buffer, payloadIndex + 16, 4);
-            Buffer.BlockCopy(BitConverter.GetBytes(OctetCount), 0, buffer, payloadIndex + 20, 4);
-        }
+        var payloadSpan = buffer.AsSpan(payloadIndex);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(0, 4), Ssrc);
+        BinaryPrimitives.WriteUInt64BigEndian(payloadSpan.Slice(4, 8), _ntpTimestamp);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(12, 4), _rtpTimestamp);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(16, 4), PacketCount);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(20, 4), OctetCount);
 
         var bufferIndex = payloadIndex + 24;
         for (var i = 0; i < rrCount; i++)
