@@ -1,11 +1,10 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
 internal class AudioStream : MediaStream
 {
-    public AudioStream(RtpSessionConfig config, int index) : base(config, index)
+    public AudioStream(int index) : base(index)
     {
     }
 

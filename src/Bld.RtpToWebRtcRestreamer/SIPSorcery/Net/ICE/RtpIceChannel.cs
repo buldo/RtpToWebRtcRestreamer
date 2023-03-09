@@ -233,7 +233,6 @@ internal class RtpIceChannel : RTPChannel
     private bool _closed;
     private Timer _connectivityChecksTimer;
     private DateTime _checklistStartedAt = DateTime.MinValue;
-    private readonly bool _includeAllInterfaceAddresses;
     private readonly ulong _iceTiebreaker;
 
     public event Action<RTCIceCandidate> OnIceCandidate;
@@ -247,30 +246,12 @@ internal class RtpIceChannel : RTPChannel
     /// Creates a new instance of an RTP ICE channel to provide RTP channel functions
     /// with ICE connectivity checks.
     /// </summary>
-    /// <param name="bindAddress"> Optional. If this is not set then the default is to
-    /// bind to the IPv6 wildcard address in dual mode to the IPv4 wildcard address if
-    /// IPv6 is not available.</param>
-    /// <param name="component">The component (RTP or RTCP) the channel is being used for. Note
-    /// for cases where RTP and RTCP are multiplexed the component is set to RTP.</param>
-    /// <param name="iceServers">A list of STUN or TURN servers that can be used by this ICE agent.</param>
-    /// <param name="policy">Determines which ICE candidates can be used in this RTP ICE Channel.</param>
-    /// <param name="includeAllInterfaceAddresses">If set to true then IP addresses from ALL local
-    /// interfaces will be used for host ICE candidates. If left as the default false value host
-    /// candidates will be restricted to the single interface that the OS routing table matches to
-    /// the destination address or the Internet facing interface if the destination is not known.
-    /// The restrictive behaviour is as per the recommendation at:
-    /// https://tools.ietf.org/html/draft-ietf-rtcweb-ip-handling-12#section-5.2.
-    /// </param>
-    public RtpIceChannel(
-        RTCIceTransportPolicy policy = RTCIceTransportPolicy.all,
-        bool includeAllInterfaceAddresses = false,
-        int bindPort = 0) :
-        base(IPAddress.Any, bindPort)
+    public RtpIceChannel(RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)
+        : base(IPAddress.Any, 0)
     {
         _bindAddress = IPAddress.Any;
         Component = RTCIceComponent.rtp;
         _policy = policy;
-        _includeAllInterfaceAddresses = includeAllInterfaceAddresses;
         _iceTiebreaker = Crypto.GetRandomULong();
 
         LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);

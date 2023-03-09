@@ -98,8 +98,6 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly RtpIceChannel _rtpIceChannel;
 
-    private readonly RtpSessionConfig _rtpSessionConfig;
-
     private readonly RTCSctpTransport _sctp;
     private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
 
@@ -145,14 +143,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     public RtcPeerConnection()
     {
-        _rtpSessionConfig = new RtpSessionConfig
-        {
-            IsRtcpMultiplexed = true,
-            RtpSecureMediaOption = RtpSecureMediaOptionEnum.DtlsSrtp,
-            BindAddress = null,
-            BindPort = 0
-        };
-
         _dataChannels = new RTCDataChannelCollection(() => _dtlsHandle.IsClient);
 
         // No certificate was provided so create a new self signed one.
@@ -443,10 +433,7 @@ internal class RtcPeerConnection : IDisposable
             return _multiplexRtpChannel;
         }
 
-        var rtpIceChannel = new RtpIceChannel(
-            RTCIceTransportPolicy.all,
-            false,
-            _rtpSessionConfig.BindPort == 0 ? 0 : _rtpSessionConfig.BindPort + _rtpChannelsCount * 2 + 2);
+        var rtpIceChannel = new RtpIceChannel();
 
         if (true)
         {
@@ -1371,7 +1358,7 @@ internal class RtcPeerConnection : IDisposable
 
         if (index == _audioStreamList.Count)
         {
-            var audioStream = new AudioStream(_rtpSessionConfig, index);
+            var audioStream = new AudioStream(index);
             _audioStreamList.Add(audioStream);
             return audioStream;
         }
@@ -1389,7 +1376,7 @@ internal class RtcPeerConnection : IDisposable
 
         if (index == _videoStreamList.Count)
         {
-            var videoStream = new VideoStream(_rtpSessionConfig, index);
+            var videoStream = new VideoStream(index);
             _videoStreamList.Add(videoStream);
             return videoStream;
         }
@@ -1792,7 +1779,7 @@ internal class RtcPeerConnection : IDisposable
         // Quick sanity check on whether this is not an RTP or RTCP packet.
         if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
         {
-            if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
+            if (!IsSecureContextReady())
             {
                 Logger.LogWarning("RTP or RTCP packet received before secure context ready.");
             }

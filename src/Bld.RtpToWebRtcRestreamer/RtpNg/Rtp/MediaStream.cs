@@ -18,16 +18,14 @@ internal abstract class MediaStream
     private readonly ArrayPool<byte> _sendBuffersPool = ArrayPool<byte>.Shared;
     private readonly ObjectPool<RtpPacket> _packetsPool =
         new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
-    private readonly RtpSessionConfig _rtpSessionConfig;
 
     private SecureContext _secureContext;
     private MediaStreamTrack _localTrack;
 
     private readonly int _index;
 
-    protected MediaStream(RtpSessionConfig config, int index)
+    protected MediaStream(int index)
     {
-        _rtpSessionConfig = config;
         _index = index;
     }
 
@@ -212,7 +210,7 @@ internal abstract class MediaStream
             return false;
         }
 
-        if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && _secureContext?.RtpTransport == null)
+        if (_secureContext?.RtpTransport == null)
         {
             Logger.LogWarning("SendRtpPacket cannot be called on a secure session before calling SetSecurityContext.");
             return false;
