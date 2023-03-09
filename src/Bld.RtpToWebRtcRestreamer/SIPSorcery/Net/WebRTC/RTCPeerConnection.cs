@@ -31,10 +31,7 @@ internal class RtcPeerConnection : IDisposable
     private const string RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
     private const string RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE = "UDP/DTLS/SCTP";
     private const string SDP_DATA_CHANNEL_FORMAT_ID = "webrtc-datachannel";
-
-    private const string
-        RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
-
+    private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
     private const string BUNDLE_ATTRIBUTE = "BUNDLE";
     private const string ICE_OPTIONS = "ice2,trickle"; // Supported ICE options.
     private const ushort SCTP_DEFAULT_PORT = 5000;
@@ -121,7 +118,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     The primary stream for this session - can be an AudioStream or a VideoStream
     /// </summary>
-    private MediaStream _primaryStream;
+    private readonly MediaStream _primaryStream;
 
     private RTCSessionDescription _remoteDescription;
 
@@ -169,7 +166,8 @@ internal class RtcPeerConnection : IDisposable
 
         // Request the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams.
-        AddSingleTrack(false);
+        _primaryStream = GetNextVideoStreamByLocalTrack();
+        InitMediaStream(_primaryStream);
 
         _rtpIceChannel = _primaryStream.RTPChannel as RtpIceChannel;
 
@@ -700,13 +698,13 @@ internal class RtcPeerConnection : IDisposable
     /// </param>
     public RTCSessionDescriptionInit CreateOffer()
     {
-        var mediaStream2 = new List<MediaStream>();
+        var mediaStreamList = new List<MediaStream>();
 
         foreach (var audioStream in _audioStreamList)
         {
             if (audioStream.LocalTrack != null)
             {
-                mediaStream2.Add(audioStream);
+                mediaStreamList.Add(audioStream);
             }
         }
 
@@ -714,11 +712,10 @@ internal class RtcPeerConnection : IDisposable
         {
             if (videoStream.LocalTrack != null)
             {
-                mediaStream2.Add(videoStream);
+                mediaStreamList.Add(videoStream);
             }
         }
 
-        var mediaStreamList = mediaStream2;
         //Revert to DefaultStreamStatus
         foreach (var mediaStream in mediaStreamList)
         {
@@ -736,8 +733,8 @@ internal class RtcPeerConnection : IDisposable
         // delay of a few hundred milliseconds it was decided not to break the API.
         _iceGatheringTask.Wait();
 
-        var offerSdp1 = new SDP.SDP(IPAddress.Loopback);
-        offerSdp1.SessionId = _localSdpSessionId;
+        var offerSdp = new SDP.SDP(IPAddress.Loopback);
+        offerSdp.SessionId = _localSdpSessionId;
 
         var dtlsFingerprint = _dtlsCertificateFingerprint.ToString();
         var iceCandidatesAdded = false;
@@ -762,8 +759,6 @@ internal class RtcPeerConnection : IDisposable
                 }
             }
         }
-
-        ;
 
         // Media announcements must be in the same order in the offer and answer.
         var mediaIndex = 0;
@@ -840,7 +835,7 @@ internal class RtcPeerConnection : IDisposable
                     }
                 }
 
-                offerSdp1.Media.Add(announcement);
+                offerSdp.Media.Add(announcement);
             }
         }
 
@@ -888,34 +883,30 @@ internal class RtcPeerConnection : IDisposable
                     iceCandidatesAdded = true;
                 }
 
-                offerSdp1.Media.Add(dataChannelAnnouncement);
+                offerSdp.Media.Add(dataChannelAnnouncement);
             }
         }
 
         // Set the Bundle attribute to indicate all media announcements are being multiplexed.
-        if (offerSdp1.Media?.Count > 0)
+        if (offerSdp.Media?.Count > 0)
         {
-            offerSdp1.Group = BUNDLE_ATTRIBUTE;
-            foreach (var ann1 in offerSdp1.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            offerSdp.Group = BUNDLE_ATTRIBUTE;
+            foreach (var ann1 in offerSdp.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
-                offerSdp1.Group += $" {ann1.MediaID}";
+                offerSdp.Group += $" {ann1.MediaID}";
+            }
+
+            foreach (var ann in offerSdp.Media)
+            {
+                ann.IceRole = IceRole;
             }
         }
 
-        var offerSdp = offerSdp1;
-
-        foreach (var ann in offerSdp.Media)
-        {
-            ann.IceRole = IceRole;
-        }
-
-        var initDescription = new RTCSessionDescriptionInit
+        return new RTCSessionDescriptionInit
         {
             type = RTCSdpType.offer,
             sdp = offerSdp.ToString()
         };
-
-        return initDescription;
     }
 
     /// <summary>
@@ -928,7 +919,7 @@ internal class RtcPeerConnection : IDisposable
     ///     |       B< 2    -+--> forward to STUN
     ///     +----------------+
     /// </summary>
-    /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
+    /// <param name="localPort">The local port on the RTP socket that received the packet.</param>
     /// <param name="remoteEP">The remote end point the packet was received from.</param>
     /// <param name="buffer">The data received.</param>
     private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
@@ -1613,24 +1604,6 @@ internal class RtcPeerConnection : IDisposable
         }
 
         return rtpEndPoint;
-    }
-
-    /// <summary>
-    ///     Used for child classes that require a single RTP channel for all RTP (audio and video)
-    ///     and RTCP communications.
-    /// </summary>
-    private void AddSingleTrack(bool videoAsPrimary)
-    {
-        if (videoAsPrimary)
-        {
-            _primaryStream = GetNextVideoStreamByLocalTrack();
-        }
-        else
-        {
-            _primaryStream = GetNextAudioStreamByLocalTrack();
-        }
-
-        InitMediaStream(_primaryStream);
     }
 
     private void InitMediaStream(MediaStream currentMediaStream)
