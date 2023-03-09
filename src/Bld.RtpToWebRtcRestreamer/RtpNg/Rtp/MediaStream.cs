@@ -210,11 +210,6 @@ internal abstract class MediaStream
             return false;
         }
 
-        if (_secureContext == null)
-        {
-            return false;
-        }
-
         return true;
     }
 }

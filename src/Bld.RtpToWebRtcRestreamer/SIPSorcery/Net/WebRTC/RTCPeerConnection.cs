@@ -300,7 +300,7 @@ internal class RtcPeerConnection : IDisposable
 
     /// <summary>
     ///     The signaling state has changed. This state change is the result of either setLocalDescription or
-    ///     setRemoteDescription being invoked.
+    ///     SetRemoteDescription being invoked.
     /// </summary>
     public event Action onsignalingstatechange;
 
@@ -471,7 +471,7 @@ internal class RtcPeerConnection : IDisposable
     ///     Updates the session after receiving the remote SDP.
     /// </summary>
     /// <param name="init">The answer/offer SDP from the remote party.</param>
-    public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
+    public SetDescriptionResultEnum SetRemoteDescription(RTCSessionDescriptionInit init)
     {
         _remoteDescription = new RTCSessionDescription
             { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
@@ -1666,7 +1666,9 @@ internal class RtcPeerConnection : IDisposable
         }
     }
 
-    private void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp,
+    private void SetGlobalSecurityContext(
+        DtlsSrtpTransport rtpTransport,
+        ProtectRtpPacket protectRtcp,
         ProtectRtpPacket unprotectRtcp)
     {
         foreach (var audioStream in _audioStreamList)

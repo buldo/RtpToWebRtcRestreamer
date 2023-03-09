@@ -96,12 +96,12 @@ internal class RtpRestreamer
         var peer = _streamMultiplexer.GetById(peerId);
         if (peer != null)
         {
-            var result = peer.Peer.setRemoteDescription(new RTCSessionDescriptionInit
+            var result = peer.Peer.SetRemoteDescription(new RTCSessionDescriptionInit
             {
                 sdp = sdpString,
                 type = RTCSdpType.answer
             });
-            _logger.LogDebug("setRemoteDescription result: {@result}", result);
+            _logger.LogDebug("SetRemoteDescription result: {@result}", result);
         }
     }
 
