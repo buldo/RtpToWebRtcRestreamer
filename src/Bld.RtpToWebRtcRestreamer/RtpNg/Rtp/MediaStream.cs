@@ -4,6 +4,7 @@ using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -156,12 +157,12 @@ internal abstract class MediaStream
 
                 packetToSent.ApplyHeaderChanges();
 
-                var requestedLen = originalPacket.Header.Length + originalPacket.Payload.Length + RTPSession.SRTP_MAX_PREFIX_LENGTH;
+                var requestedLen = originalPacket.Header.Length + originalPacket.Payload.Length + RTCPeerConnection.SRTP_MAX_PREFIX_LENGTH;
 
                 var encoded = _secureContext.RtpTransport.ProtectRTP(
                     packetToSent.Header.SyncSource,
                     localBuffer,
-                    requestedLen - RTPSession.SRTP_MAX_PREFIX_LENGTH);
+                    requestedLen - RTCPeerConnection.SRTP_MAX_PREFIX_LENGTH);
 
                 if (encoded.Length == 0)
                 {

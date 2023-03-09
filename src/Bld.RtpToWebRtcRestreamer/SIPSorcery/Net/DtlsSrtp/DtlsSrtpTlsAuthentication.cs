@@ -33,7 +33,7 @@ internal class DtlsSrtpTlsAuthentication
         return DtlsUtils.LoadSignerCredentials(_mContext,
             certificateRequest.SupportedSignatureAlgorithms,
             SignatureAlgorithm.rsa,
-            _mClient.MCertificateChain,
-            _mClient.MPrivateKey);
+            _mClient.CertificateChain,
+            _mClient.PrivateKey);
     }
 }

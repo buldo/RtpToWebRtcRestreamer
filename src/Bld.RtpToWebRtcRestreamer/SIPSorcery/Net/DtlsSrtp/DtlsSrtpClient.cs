@@ -13,7 +13,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
@@ -26,21 +25,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 {
     private static readonly ILogger Logger = Log.Logger;
-
-    internal Certificate MCertificateChain;
-    internal AsymmetricKeyParameter MPrivateKey;
-
-    internal TlsClientContext TlsContext
-    {
-        get { return m_context; }
-    }
-
-    public bool ForceUseExtendedMasterSecret { get; set; } = true;
-
-    //Received from server
-    public TlsServerCertificate ServerCertificate { get; internal set; }
-
-    private RTCDtlsFingerprint Fingerprint { get; }
 
     private readonly UseSrtpData _clientSrtpData;
 
@@ -78,10 +62,14 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         random.NextBytes(mki); // Reusing our secure random for generating the key.
         _clientSrtpData = new UseSrtpData(protectionProfiles, mki);
 
-        MPrivateKey = privateKey;
-        MCertificateChain = certificateChain;
+        PrivateKey = privateKey;
+        CertificateChain = certificateChain;
     }
 
+    public TlsServerCertificate ServerCertificate { get; set; }
+    public Certificate CertificateChain { get; }
+    public AsymmetricKeyParameter PrivateKey { get; }
+    public TlsClientContext TlsContext => m_context;
     public Certificate RemoteCertificate => ServerCertificate.Certificate;
     public bool IsClient => true;
     public SrtpPolicy SrtpPolicy => _srtpPolicy;
@@ -90,6 +78,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
     public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
     public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
+    public bool ForceUseExtendedMasterSecret { get; init; } = true;
 
     public override IDictionary<int, byte[]> GetClientExtensions()
     {
@@ -123,118 +112,9 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         PrepareSrtpSharedSecret();
     }
 
-    private byte[] GetKeyingMaterial(int length)
-    {
-        return GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
-    }
-
-    private byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
-    {
-        if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
-        {
-            throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
-        }
-
-        var sp = m_context.SecurityParameters;
-        if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
-        {
-            /*
-             * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
-             * the extended master secret extension, [..] the client or server MUST NOT export any
-             * key material based on the new master secret for any subsequent application-level
-             * authentication. In particular, it MUST disable [RFC5705] [..].
-             */
-            throw new InvalidOperationException("cannot export keying material without extended_master_secret");
-        }
-
-        byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
-
-        var seedLength = cr.Length + sr.Length;
-        if (contextValue != null)
-        {
-            seedLength += (2 + contextValue.Length);
-        }
-
-        var seed = new byte[seedLength];
-        var seedPos = 0;
-
-        Array.Copy(cr, 0, seed, seedPos, cr.Length);
-        seedPos += cr.Length;
-        Array.Copy(sr, 0, seed, seedPos, sr.Length);
-        seedPos += sr.Length;
-        if (contextValue != null)
-        {
-            TlsUtilities.WriteUint16(contextValue.Length, seed, seedPos);
-            seedPos += 2;
-            Array.Copy(contextValue, 0, seed, seedPos, contextValue.Length);
-            seedPos += contextValue.Length;
-        }
-
-        if (seedPos != seedLength)
-        {
-            throw new InvalidOperationException("error in calculation of seed for export");
-        }
-
-        return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
-    }
-
     public override bool RequiresExtendedMasterSecret()
     {
         return ForceUseExtendedMasterSecret;
-    }
-
-    private void PrepareSrtpSharedSecret()
-    {
-        //Set master secret back to security parameters (only works in old bouncy castle versions)
-        //mContext.SecurityParameters.MasterSecret = masterSecret;
-
-        var srtpParams = SrtpParameters.GetSrtpParametersForProfile(_clientSrtpData.ProtectionProfiles[0]);
-        var keyLen = srtpParams.GetCipherKeyLength();
-        var saltLen = srtpParams.GetCipherSaltLength();
-
-        _srtpPolicy = srtpParams.GetSrtpPolicy();
-        _srtcpPolicy = srtpParams.GetSrtcpPolicy();
-
-        _srtpMasterClientKey = new byte[keyLen];
-        _srtpMasterServerKey = new byte[keyLen];
-        _srtpMasterClientSalt = new byte[saltLen];
-        _srtpMasterServerSalt = new byte[saltLen];
-
-        // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
-        // No need to divide by 8 here since lengths are already in bits
-        var sharedSecret = GetKeyingMaterial(2 * (keyLen + saltLen));
-
-        /*
-         *
-         * See: http://tools.ietf.org/html/rfc5764#section-4.2
-         *
-         * sharedSecret is an equivalent of :
-         *
-         * struct {
-         *     client_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
-         *     server_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
-         *     client_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
-         *     server_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
-         *  } ;
-         *
-         * Here, client = local configuration, server = remote.
-         * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client.
-         *                Here we run as a server, so 'local' referring to the client is actually confusing.
-         *
-         * l(k) = KEY length
-         * s(k) = salt lenght
-         *
-         * So we have the following repartition :
-         *                           l(k)                                 2*l(k)+s(k)
-         *                                                   2*l(k)                       2*(l(k)+s(k))
-         * +------------------------+------------------------+---------------+-------------------+
-         * + local key           |    remote key    | local salt   | remote salt   |
-         * +------------------------+------------------------+---------------+-------------------+
-         */
-        Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
-        Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
-        Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
-        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
     }
 
     protected override ProtocolVersion[] GetSupportedVersions()
@@ -296,4 +176,110 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
             Logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
         }
     }
+
+    private byte[] GetKeyingMaterial(string asciiLabel, byte[] contextValue, int length)
+    {
+        if (contextValue != null && !TlsUtilities.IsValidUint16(contextValue.Length))
+        {
+            throw new ArgumentException("must have length less than 2^16 (or be null)", "contextValue");
+        }
+
+        var sp = m_context.SecurityParameters;
+        if (!sp.IsExtendedMasterSecret && RequiresExtendedMasterSecret())
+        {
+            /*
+             * RFC 7627 5.4. If a client or server chooses to continue with a full handshake without
+             * the extended master secret extension, [..] the client or server MUST NOT export any
+             * key material based on the new master secret for any subsequent application-level
+             * authentication. In particular, it MUST disable [RFC5705] [..].
+             */
+            throw new InvalidOperationException("cannot export keying material without extended_master_secret");
+        }
+
+        byte[] cr = sp.ClientRandom, sr = sp.ServerRandom;
+
+        var seedLength = cr.Length + sr.Length;
+        if (contextValue != null)
+        {
+            seedLength += (2 + contextValue.Length);
+        }
+
+        var seed = new byte[seedLength];
+        var seedPos = 0;
+
+        Array.Copy(cr, 0, seed, seedPos, cr.Length);
+        seedPos += cr.Length;
+        Array.Copy(sr, 0, seed, seedPos, sr.Length);
+        seedPos += sr.Length;
+        if (contextValue != null)
+        {
+            TlsUtilities.WriteUint16(contextValue.Length, seed, seedPos);
+            seedPos += 2;
+            Array.Copy(contextValue, 0, seed, seedPos, contextValue.Length);
+            seedPos += contextValue.Length;
+        }
+
+        if (seedPos != seedLength)
+        {
+            throw new InvalidOperationException("error in calculation of seed for export");
+        }
+
+        return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
+    }
+
+    private void PrepareSrtpSharedSecret()
+    {
+        //Set master secret back to security parameters (only works in old bouncy castle versions)
+        //mContext.SecurityParameters.MasterSecret = masterSecret;
+
+        var srtpParams = SrtpParameters.GetSrtpParametersForProfile(_clientSrtpData.ProtectionProfiles[0]);
+        var keyLen = srtpParams.GetCipherKeyLength();
+        var saltLen = srtpParams.GetCipherSaltLength();
+
+        _srtpPolicy = srtpParams.GetSrtpPolicy();
+        _srtcpPolicy = srtpParams.GetSrtcpPolicy();
+
+        _srtpMasterClientKey = new byte[keyLen];
+        _srtpMasterServerKey = new byte[keyLen];
+        _srtpMasterClientSalt = new byte[saltLen];
+        _srtpMasterServerSalt = new byte[saltLen];
+
+        // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
+        // No need to divide by 8 here since lengths are already in bits
+        int length = 2 * (keyLen + saltLen);
+        var sharedSecret = GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
+
+        /*
+         *
+         * See: http://tools.ietf.org/html/rfc5764#section-4.2
+         *
+         * sharedSecret is an equivalent of :
+         *
+         * struct {
+         *     client_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
+         *     server_write_SRTP_master_key[SRTPSecurityParams.master_key_len];
+         *     client_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
+         *     server_write_SRTP_master_salt[SRTPSecurityParams.master_salt_len];
+         *  } ;
+         *
+         * Here, client = local configuration, server = remote.
+         * NOTE [ivelin]: 'local' makes sense if this code is used from a DTLS SRTP client.
+         *                Here we run as a server, so 'local' referring to the client is actually confusing.
+         *
+         * l(k) = KEY length
+         * s(k) = salt lenght
+         *
+         * So we have the following repartition :
+         *                           l(k)                                 2*l(k)+s(k)
+         *                                                   2*l(k)                       2*(l(k)+s(k))
+         * +------------------------+------------------------+---------------+-------------------+
+         * + local key           |    remote key    | local salt   | remote salt   |
+         * +------------------------+------------------------+---------------+-------------------+
+         */
+        Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
+        Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
+        Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
+        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+    }
+
 }
