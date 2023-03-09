@@ -1509,22 +1509,22 @@ internal class RtcPeerConnection : IDisposable
                     }
                 }
 
-                IPEndPoint remoteRtcpEp = null;
-                if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
-                {
-                    remoteRtcpEp = _rtpSessionConfig.IsRtcpMultiplexed
-                        ? remoteRtpEp
-                        : new IPEndPoint(remoteRtpEp.Address, remoteRtpEp.Port + 1);
-                }
+                // IPEndPoint remoteRtcpEp = null;
+                // if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                // {
+                //     remoteRtcpEp = _rtpSessionConfig.IsRtcpMultiplexed
+                //         ? remoteRtpEp
+                //         : new IPEndPoint(remoteRtpEp.Address, remoteRtpEp.Port + 1);
+                // }
 
-                currentMediaStream.DestinationEndPoint =
-                    remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
-                        ? remoteRtpEp
-                        : currentMediaStream.DestinationEndPoint;
-                currentMediaStream.ControlDestinationEndPoint =
-                    remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
-                        ? remoteRtcpEp
-                        : currentMediaStream.ControlDestinationEndPoint;
+                // currentMediaStream.DestinationEndPoint =
+                //     remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
+                //         ? remoteRtpEp
+                //         : currentMediaStream.DestinationEndPoint;
+                // currentMediaStream.ControlDestinationEndPoint =
+                //     remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
+                //         ? remoteRtcpEp
+                //         : currentMediaStream.ControlDestinationEndPoint;
 
                 if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
@@ -1867,21 +1867,6 @@ internal class RtcPeerConnection : IDisposable
         {
             if (mediaStream?.RtcpSession != null)
             {
-                if (mediaStream.RtcpSession.LastActivityAt == DateTime.MinValue)
-                {
-                    // On the first received RTCP report for a session check whether the remote end point matches the
-                    // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
-                    // Take the risk and switch the remote control end point to the one we are receiving from.
-                    if (mediaStream.ControlDestinationEndPoint == null ||
-                        !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
-                        mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port)
-                    {
-                        Logger.LogDebug(
-                            $"{mediaStream.MediaType} control end point switched from {mediaStream.ControlDestinationEndPoint} to {remoteEndPoint}.");
-                        mediaStream.ControlDestinationEndPoint = remoteEndPoint;
-                    }
-                }
-
                 mediaStream.RtcpSession.ReportReceived();
                 mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
             }

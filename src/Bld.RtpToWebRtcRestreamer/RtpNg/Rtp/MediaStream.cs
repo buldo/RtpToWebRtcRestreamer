@@ -78,12 +78,12 @@ internal abstract class MediaStream
     /// <summary>
     /// The remote RTP end point this stream is sending media to.
     /// </summary>
-    public IPEndPoint DestinationEndPoint { get; set; }
+    public IPEndPoint DestinationEndPoint { get; private set; }
 
     /// <summary>
     /// The remote RTP control end point this stream is sending to RTCP reports for the media stream to.
     /// </summary>
-    public IPEndPoint ControlDestinationEndPoint { get; set; }
+    public IPEndPoint ControlDestinationEndPoint { get; private set; }
 
     public RTPChannel RTPChannel { get; set; }
 
