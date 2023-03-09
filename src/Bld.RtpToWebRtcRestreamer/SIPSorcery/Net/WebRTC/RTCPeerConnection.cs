@@ -36,7 +36,6 @@
 
 using System.Buffers.Binary;
 using System.Net;
-
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
@@ -53,14 +52,14 @@ using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 
 /// <summary>
-/// Represents a WebRTC RTCPeerConnection.
+///     Represents a WebRTC RTCPeerConnection.
 /// </summary>
 /// <remarks>
-/// Interface is defined in https://www.w3.org/TR/webrtc/#interface-definition.
-/// The Session Description offer/answer mechanisms are detailed in
-/// https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
+///     Interface is defined in https://www.w3.org/TR/webrtc/#interface-definition.
+///     The Session Description offer/answer mechanisms are detailed in
+///     https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
 /// </remarks>
-internal class RTCPeerConnection :  IDisposable
+internal class RTCPeerConnection : IDisposable
 {
     // SDP constants.
     //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
@@ -68,157 +67,84 @@ internal class RTCPeerConnection :  IDisposable
     private const string RTP_MEDIA_DATACHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
     private const string RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE = "UDP/DTLS/SCTP";
     private const string SDP_DATACHANNEL_FORMAT_ID = "webrtc-datachannel";
-    private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux";    // Indicates the media announcement is using multiplexed RTCP.
+
+    private const string
+        RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
+
     private const string BUNDLE_ATTRIBUTE = "BUNDLE";
-    private const string ICE_OPTIONS = "ice2,trickle";          // Supported ICE options.
+    private const string ICE_OPTIONS = "ice2,trickle"; // Supported ICE options.
     private const ushort SCTP_DEFAULT_PORT = 5000;
 
     /// <summary>
-    /// The period to wait for the SCTP association to complete before giving up.
-    /// In theory this should be very quick as the DTLS connection should already have been established
-    /// and the SCTP logic only needs to send the small handshake messages to establish
-    /// the association.
+    ///     The period to wait for the SCTP association to complete before giving up.
+    ///     In theory this should be very quick as the DTLS connection should already have been established
+    ///     and the SCTP logic only needs to send the small handshake messages to establish
+    ///     the association.
     /// </summary>
     private const int SCTP_ASSOCIATE_TIMEOUT_SECONDS = 2;
 
-    private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
-    private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
-    private string LocalSdpSessionID { get; }
+    /// <summary>
+    ///     From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
+    ///     (authentication tag and MKI) supported by libSRTP.This value is
+    ///     the maximum number of octets that will be added to an RTP packet by
+    ///     srtp_protect().
+    ///     srtp_protect():
+    ///     @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
+    ///     into the location in memory immediately following the RTP packet.
+    ///     Callers MUST ensure that this much writeable memory is available in
+    ///     the buffer that holds the RTP packet.
+    ///     srtp_protect_rtcp():
+    ///     @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
+    ///     to the location in memory immediately following the RTCP packet.
+    ///     Callers MUST ensure that this much writeable memory is available in
+    ///     the buffer that holds the RTCP packet.
+    /// </summary>
+    public const int SRTP_MAX_PREFIX_LENGTH = 148;
 
-    public RtpIceChannel RtpIceChannel { get; }
+    /// <summary>
+    ///     When there are no RTP packets being sent for an audio or video stream webrtc.lib
+    ///     still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
+    ///     in an RFC somewhere but I wasn't able to find it from a quick search.
+    /// </summary>
+    private const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
 
-    readonly RTCDataChannelCollection dataChannels;
-    private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
+    protected static readonly ILogger Logger = Log.Logger;
+
+    /// <summary>
+    ///     Local ICE candidates that have been supplied directly by the application.
+    ///     Useful for cases where the application may has extra information about the
+    ///     network set up such as 1:1 NATs as used by Azure and AWS.
+    /// </summary>
+    private readonly List<RTCIceCandidate> _applicationIceCandidates = new();
+
+    private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
 
     private readonly Certificate _dtlsCertificate;
     private readonly AsymmetricKeyParameter _dtlsPrivateKey;
-    private DtlsSrtpTransport _dtlsHandle;
     private readonly Task _iceGatheringTask;
+    private readonly object _renegotiationLock = new();
+    private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
+
+    private readonly RTCDataChannelCollection dataChannels;
+    private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
+
+    private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
+
+    protected readonly RtpSessionConfig RtpSessionConfig;
+
+    private CancellationTokenSource _cancellationSource = new();
+    private DtlsSrtpTransport _dtlsHandle;
+
+    // The stream used for the underlying RTP session to create a single RTP channel that will
+    // be used to multiplex all required media streams. (see addSingleTrack())
+
+    internal int MRtpChannelsCount; // Need to know the number of RTP Channels
+
+    protected RTPChannel MultiplexRtpChannel;
 
     /// <summary>
-    /// Local ICE candidates that have been supplied directly by the application.
-    /// Useful for cases where the application may has extra information about the
-    /// network set up such as 1:1 NATs as used by Azure and AWS.
-    /// </summary>
-    private readonly List<RTCIceCandidate> _applicationIceCandidates = new List<RTCIceCandidate>();
-
-    /// <summary>
-    /// The ICE role the peer is acting in.
-    /// </summary>
-    private IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
-
-    /// <summary>
-    /// The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
-    /// that the certificate supplied during the DTLS handshake matches.
-    /// </summary>
-    private RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; set; }
-
-    private RTCSessionDescription remoteDescription { get; set; }
-
-    public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.closed;
-
-    private RTCIceConnectionState iceConnectionState
-    {
-        get
-        {
-            return RtpIceChannel != null ? RtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
-        }
-    }
-
-    public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
-
-    /// <summary>
-    /// The certificate being used to negotiate the DTLS handshake with the
-    /// remote peer.
-    /// </summary>
-    //private RTCCertificate _currentCertificate;
-    //public RTCCertificate CurrentCertificate
-    //{
-    //    get
-    //    {
-    //        return _currentCertificate;
-    //    }
-    //}
-
-    /// <summary>
-    /// The fingerprint of the certificate being used to negotiate the DTLS handshake with the
-    /// remote peer.
-    /// </summary>
-    private RTCDtlsFingerprint DtlsCertificateFingerprint { get; set; }
-
-    /// <summary>
-    /// The SCTP transport over which SCTP data is sent and received.
-    /// </summary>
-    /// <remarks>
-    /// WebRTC API definition:
-    /// https://www.w3.org/TR/webrtc/#attributes-15
-    /// </remarks>
-    private RTCSctpTransport sctp { get; set; }
-
-    /// <summary>
-    /// Informs the application that session negotiation needs to be done (i.e. a CreateOffer call
-    /// followed by setLocalDescription).
-    /// </summary>
-    public event Action onnegotiationneeded;
-
-    private event Action<RTCIceCandidate> _onIceCandidate;
-    /// <summary>
-    /// A new ICE candidate is available for the Peer Connection.
-    /// </summary>
-    public event Action<RTCIceCandidate> onicecandidate
-    {
-        add
-        {
-            var notifyIce = _onIceCandidate == null && value != null;
-            _onIceCandidate += value;
-            if (notifyIce)
-            {
-                foreach (var ice in RtpIceChannel.Candidates)
-                {
-                    _onIceCandidate?.Invoke(ice);
-                }
-            }
-        }
-        remove
-        {
-            _onIceCandidate -= value;
-        }
-    }
-
-    private CancellationTokenSource _cancellationSource = new CancellationTokenSource();
-    private readonly object _renegotiationLock = new object();
-
-    /// <summary>
-    /// A failure occurred when gathering ICE candidates.
-    /// </summary>
-    public event Action<RTCIceCandidate, string> onicecandidateerror;
-
-    /// <summary>
-    /// The signaling state has changed. This state change is the result of either setLocalDescription or
-    /// setRemoteDescription being invoked.
-    /// </summary>
-    public event Action onsignalingstatechange;
-
-    /// <summary>
-    /// This Peer Connection's ICE connection state has changed.
-    /// </summary>
-    public event Action<RTCIceConnectionState> oniceconnectionstatechange;
-
-    /// <summary>
-    /// This Peer Connection's ICE gathering state has changed.
-    /// </summary>
-    public event Action<RTCIceGatheringState> onicegatheringstatechange;
-
-    /// <summary>
-    /// The state of the peer connection. A state of connected means the ICE checks have
-    /// succeeded and the DTLS handshake has completed. Once in the connected state it's
-    /// suitable for media packets can be exchanged.
-    /// </summary>
-    public event Action<RTCPeerConnectionState> onconnectionstatechange;
-
-    /// <summary>
-    /// Constructor to create a new RTC peer connection instance.
+    ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
     public RTCPeerConnection()
     {
@@ -231,10 +157,11 @@ internal class RTCPeerConnection :  IDisposable
             BindPort = 0
         };
 
-        dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
+        dataChannels = new RTCDataChannelCollection(() => _dtlsHandle.IsClient);
 
         // No certificate was provided so create a new self signed one.
-        (_dtlsCertificate, _dtlsPrivateKey) = DtlsUtils.CreateSelfSignedTlsCert( ProtocolVersion.DTLSv12 , new BcTlsCrypto());
+        (_dtlsCertificate, _dtlsPrivateKey) =
+            DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, new BcTlsCrypto());
 
         DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
@@ -268,10 +195,201 @@ internal class RTCPeerConnection :  IDisposable
         _iceGatheringTask = Task.Run(RtpIceChannel.StartGathering);
     }
 
+    private string LocalSdpSessionID { get; }
+
+    public RtpIceChannel RtpIceChannel { get; }
+    private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
+
+    /// <summary>
+    ///     The ICE role the peer is acting in.
+    /// </summary>
+    private IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
+
+    /// <summary>
+    ///     The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
+    ///     that the certificate supplied during the DTLS handshake matches.
+    /// </summary>
+    private RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; set; }
+
+    private RTCSessionDescription remoteDescription { get; set; }
+
+    public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.closed;
+
+    private RTCIceConnectionState iceConnectionState =>
+        RtpIceChannel != null ? RtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
+
+    public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
+
+    /// <summary>
+    /// The certificate being used to negotiate the DTLS handshake with the
+    /// remote peer.
+    /// </summary>
+    //private RTCCertificate _currentCertificate;
+    //public RTCCertificate CurrentCertificate
+    //{
+    //    get
+    //    {
+    //        return _currentCertificate;
+    //    }
+    //}
+
+    /// <summary>
+    ///     The fingerprint of the certificate being used to negotiate the DTLS handshake with the
+    ///     remote peer.
+    /// </summary>
+    private RTCDtlsFingerprint DtlsCertificateFingerprint { get; }
+
+    /// <summary>
+    ///     The SCTP transport over which SCTP data is sent and received.
+    /// </summary>
+    /// <remarks>
+    ///     WebRTC API definition:
+    ///     https://www.w3.org/TR/webrtc/#attributes-15
+    /// </remarks>
+    private RTCSctpTransport sctp { get; }
+
     public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
-    /// Event handler for ICE connection state changes.
+    ///     The primary stream for this session - can be an AudioStream or a VideoStream
+    /// </summary>
+    protected MediaStream PrimaryStream { get; private set; }
+
+    /// <summary>
+    ///     The primary Audio Stream for this session
+    /// </summary>
+    private AudioStream AudioStream
+    {
+        get
+        {
+            if (AudioStreamList.Count > 0)
+            {
+                return AudioStreamList[0];
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     The primary Video Stream for this session
+    /// </summary>
+    private VideoStream VideoStream
+    {
+        get
+        {
+            if (VideoStreamList.Count > 0)
+            {
+                return VideoStreamList[0];
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     List of all Audio Streams for this session
+    /// </summary>
+    private List<AudioStream> AudioStreamList { get; } = new();
+
+    /// <summary>
+    ///     List of all Video Streams for this session
+    /// </summary>
+    private List<VideoStream> VideoStreamList { get; } = new();
+
+    /// <summary>
+    ///     The SDP offered by the remote call party for this session.
+    /// </summary>
+    protected SDP.SDP RemoteDescription { get; private set; }
+
+    /// <summary>
+    ///     Indicates whether the session has been closed. Once a session is closed it cannot
+    ///     be restarted.
+    /// </summary>
+    public bool IsClosed { get; private set; }
+
+    /// <summary>
+    ///     Indicates whether the session has been started. Starting a session tells the RTP
+    ///     socket to start receiving,
+    /// </summary>
+    private bool IsStarted { get; set; }
+
+    /// <summary>
+    ///     Indicates whether this session is using audio.
+    /// </summary>
+    private bool HasAudio => AudioStream?.HasAudio == true;
+
+    /// <summary>
+    ///     Indicates whether this session is using video.
+    /// </summary>
+    private bool HasVideo => VideoStream?.HasVideo == true;
+
+    /// <summary>
+    ///     Close the session if the instance is out of scope.
+    /// </summary>
+    public void Dispose()
+    {
+        Close("disposed");
+    }
+
+    /// <summary>
+    ///     Informs the application that session negotiation needs to be done (i.e. a CreateOffer call
+    ///     followed by setLocalDescription).
+    /// </summary>
+    public event Action onnegotiationneeded;
+
+    private event Action<RTCIceCandidate> _onIceCandidate;
+
+    /// <summary>
+    ///     A new ICE candidate is available for the Peer Connection.
+    /// </summary>
+    public event Action<RTCIceCandidate> onicecandidate
+    {
+        add
+        {
+            var notifyIce = _onIceCandidate == null && value != null;
+            _onIceCandidate += value;
+            if (notifyIce)
+            {
+                foreach (var ice in RtpIceChannel.Candidates)
+                {
+                    _onIceCandidate?.Invoke(ice);
+                }
+            }
+        }
+        remove => _onIceCandidate -= value;
+    }
+
+    /// <summary>
+    ///     A failure occurred when gathering ICE candidates.
+    /// </summary>
+    public event Action<RTCIceCandidate, string> onicecandidateerror;
+
+    /// <summary>
+    ///     The signaling state has changed. This state change is the result of either setLocalDescription or
+    ///     setRemoteDescription being invoked.
+    /// </summary>
+    public event Action onsignalingstatechange;
+
+    /// <summary>
+    ///     This Peer Connection's ICE connection state has changed.
+    /// </summary>
+    public event Action<RTCIceConnectionState> oniceconnectionstatechange;
+
+    /// <summary>
+    ///     This Peer Connection's ICE gathering state has changed.
+    /// </summary>
+    public event Action<RTCIceGatheringState> onicegatheringstatechange;
+
+    /// <summary>
+    ///     The state of the peer connection. A state of connected means the ICE checks have
+    ///     succeeded and the DTLS handshake has completed. Once in the connected state it's
+    ///     suitable for media packets can be exchanged.
+    /// </summary>
+    public event Action<RTCPeerConnectionState> onconnectionstatechange;
+
+    /// <summary>
+    ///     Event handler for ICE connection state changes.
     /// </summary>
     /// <param name="state">The new ICE connection state.</param>
     private async void IceConnectionStateChange(RTCIceConnectionState iceState)
@@ -282,8 +400,10 @@ internal class RTCPeerConnection :  IDisposable
         {
             if (_dtlsHandle != null)
             {
-                if (PrimaryStream.DestinationEndPoint?.Address.Equals(RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Address) == false ||
-                    PrimaryStream.DestinationEndPoint?.Port != RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                if (PrimaryStream.DestinationEndPoint?.Address.Equals(RtpIceChannel.NominatedEntry.RemoteCandidate
+                        .DestinationEndPoint.Address) == false ||
+                    PrimaryStream.DestinationEndPoint?.Port !=
+                    RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                 {
                     // Already connected and this event is due to change in the nominated remote candidate.
                     var connectedEP = RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
@@ -310,13 +430,15 @@ internal class RTCPeerConnection :  IDisposable
                 SetGlobalDestination(connectedEP, connectedEP);
                 Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
-                if(IceRole == IceRolesEnum.active)
+                if (IceRole == IceRolesEnum.active)
                 {
-                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey) { ForceUseExtendedMasterSecret = true });
+                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
+                        { ForceUseExtendedMasterSecret = true });
                 }
                 else
                 {
-                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey) { ForceUseExtendedMasterSecret = true });
+                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                        { ForceUseExtendedMasterSecret = true });
                 }
 
                 _dtlsHandle.OnAlert += OnDtlsAlert;
@@ -327,7 +449,9 @@ internal class RTCPeerConnection :  IDisposable
                 {
                     var handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
-                    connectionState = (handshakeResult) ? RTCPeerConnectionState.connected : connectionState = RTCPeerConnectionState.failed;
+                    connectionState = handshakeResult
+                        ? RTCPeerConnectionState.connected
+                        : connectionState = RTCPeerConnectionState.failed;
                     onconnectionstatechange?.Invoke(connectionState);
 
                     if (connectionState == RTCPeerConnectionState.connected)
@@ -376,8 +500,8 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
-    /// packets) for use with this session.
+    ///     Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
+    ///     packets) for use with this session.
     /// </summary>
     /// <returns>A new RTPChannel instance.</returns>
     protected RTPChannel CreateRtpChannel()
@@ -411,7 +535,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Updates the session after receiving the remote SDP.
+    ///     Updates the session after receiving the remote SDP.
     /// </summary>
     /// <param name="init">The answer/offer SDP from the remote party.</param>
     public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
@@ -420,12 +544,13 @@ internal class RTCPeerConnection :  IDisposable
 
         var remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
-        var sdpType = (init.type == RTCSdpType.offer) ? SdpType.offer : SdpType.answer;
+        var sdpType = init.type == RTCSdpType.offer ? SdpType.offer : SdpType.answer;
 
         switch (signalingState)
         {
             case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
-                Logger.LogWarning($"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
+                Logger.LogWarning(
+                    $"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
                 return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
         }
 
@@ -440,7 +565,8 @@ internal class RTCPeerConnection :  IDisposable
 
             foreach (var ann in remoteSdp.Media)
             {
-                if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null || remoteIceRole == null)
+                if (remoteIceUser == null || remoteIcePassword == null || dtlsFingerprint == null ||
+                    remoteIceRole == null)
                 {
                     remoteIceUser = remoteIceUser ?? ann.IceUfrag;
                     remoteIcePassword = remoteIcePassword ?? ann.IcePwd;
@@ -461,15 +587,18 @@ internal class RTCPeerConnection :  IDisposable
                     }
                     else
                     {
-                        Logger.LogWarning($"The remote SDP requested an unsupported data channel transport of {ann.Transport}.");
+                        Logger.LogWarning(
+                            $"The remote SDP requested an unsupported data channel transport of {ann.Transport}.");
                         return SetDescriptionResultEnum.DataChannelTransportNotSupported;
                     }
                 }
             }
 
-            if (remoteSdp.IceImplementation == IceImplementationEnum.lite) {
+            if (remoteSdp.IceImplementation == IceImplementationEnum.lite)
+            {
                 RtpIceChannel.IsController = true;
             }
+
             if (init.type == RTCSdpType.answer)
             {
                 RtpIceChannel.IsController = true;
@@ -530,9 +659,9 @@ internal class RTCPeerConnection :  IDisposable
 
                 AddRemoteSDPSsrcAttributes(media.Media, media.SsrcAttributes);
             }
+
             Logger.LogDebug($"SDP:[{remoteSdp}]");
             LogRemoteSDPSsrcAttributes();
-
 
 
             UpdatedSctpDestinationPort();
@@ -561,7 +690,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Close the session including the underlying RTP session and channels.
+    ///     Close the session including the underlying RTP session and channels.
     /// </summary>
     /// <param name="reason">An optional descriptive reason for the closure.</param>
     public void Close(string reason)
@@ -625,13 +754,15 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Generates the SDP for an offer that can be made to a remote peer.
+    ///     Generates the SDP for an offer that can be made to a remote peer.
     /// </summary>
     /// <remarks>
-    /// As specified in https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createoffer.
+    ///     As specified in https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-createoffer.
     /// </remarks>
-    /// <param name="options">Optional. If supplied the options will be sued to apply additional
-    /// controls over the generated offer SDP.</param>
+    /// <param name="options">
+    ///     Optional. If supplied the options will be sued to apply additional
+    ///     controls over the generated offer SDP.
+    /// </param>
     public RTCSessionDescriptionInit CreateOffer()
     {
         var mediaStreamList = GetMediaStreams();
@@ -661,9 +792,9 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Gets the RTP channel being used to send and receive data on this peer connection.
-    /// Unlike the base RTP session peer connections only ever use a single RTP channel.
-    /// Audio and video (and RTCP) are all multiplexed on the same channel.
+    ///     Gets the RTP channel being used to send and receive data on this peer connection.
+    ///     Unlike the base RTP session peer connections only ever use a single RTP channel.
+    ///     Audio and video (and RTCP) are all multiplexed on the same channel.
     /// </summary>
     private RtpIceChannel GetRtpChannel()
     {
@@ -671,18 +802,20 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Generates the base SDP for an offer or answer. The SDP will then be tailored depending
-    /// on whether it's being used in an offer or an answer.
+    ///     Generates the base SDP for an offer or answer. The SDP will then be tailored depending
+    ///     on whether it's being used in an offer or an answer.
     /// </summary>
     /// <param name="mediaStreamList">THe media streamss to add to the SDP description.</param>
-    /// <param name="excludeIceCandidates">If true it indicates the caller does not want ICE candidates added
-    /// to the SDP.</param>
+    /// <param name="excludeIceCandidates">
+    ///     If true it indicates the caller does not want ICE candidates added
+    ///     to the SDP.
+    /// </param>
     /// <remarks>
-    /// From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
-    ///   "The transport address from the peer for the default destination
-    ///   is set to IPv4/IPv6 address values "0.0.0.0"/"::" and port value
-    ///   of "9".  This MUST NOT be considered as a ICE failure by the peer
-    ///   agent and the ICE processing MUST continue as usual."
+    ///     From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
+    ///     "The transport address from the peer for the default destination
+    ///     is set to IPv4/IPv6 address values "0.0.0.0"/"::" and port value
+    ///     of "9".  This MUST NOT be considered as a ICE failure by the peer
+    ///     agent and the ICE processing MUST continue as usual."
     /// </remarks>
     private SDP.SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false)
     {
@@ -724,7 +857,9 @@ internal class RTCPeerConnection :  IDisposable
                     announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
                 }
             }
-        };
+        }
+
+        ;
 
         // Media announcements must be in the same order in the offer and answer.
         var mediaIndex = 0;
@@ -742,22 +877,26 @@ internal class RTCPeerConnection :  IDisposable
             }
             else
             {
-                if(mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
                 {
-                    (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
+                    (mindex, midTag) =
+                        RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
                     audioMediaIndex++;
                 }
                 else if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.video)
                 {
-                    (mindex, midTag) = RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, videoMediaIndex);
+                    (mindex, midTag) =
+                        RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, videoMediaIndex);
                     videoMediaIndex++;
                 }
             }
+
             mediaIndex++;
 
             if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
             {
-                Logger.LogWarning($"Media announcement for {mediaStream.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
+                Logger.LogWarning(
+                    $"Media announcement for {mediaStream.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
             }
             else
             {
@@ -792,7 +931,8 @@ internal class RTCPeerConnection :  IDisposable
 
                     if (trackCname != null)
                     {
-                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream.LocalTrack.Ssrc, trackCname, null));
+                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream.LocalTrack.Ssrc, trackCname,
+                            null));
                     }
                 }
 
@@ -800,7 +940,8 @@ internal class RTCPeerConnection :  IDisposable
             }
         }
 
-        if (DataChannels.Count > 0 || (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
+        if (DataChannels.Count > 0 ||
+            (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
         {
             int mindex;
             string midTag;
@@ -810,19 +951,20 @@ internal class RTCPeerConnection :  IDisposable
             }
             else
             {
-                (mindex,midTag) = RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
+                (mindex, midTag) = RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
             }
 
             if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
             {
-                Logger.LogWarning("Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
+                Logger.LogWarning(
+                    "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
             }
             else
             {
                 var dataChannelAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.application,
                     SDP.SDP.IGNORE_RTP_PORT_NUMBER,
-                    new List<SDPApplicationMediaFormat> { new SDPApplicationMediaFormat(SDP_DATACHANNEL_FORMAT_ID) });
+                    new List<SDPApplicationMediaFormat> { new(SDP_DATACHANNEL_FORMAT_ID) });
                 dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
                 dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
 
@@ -860,14 +1002,14 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// From RFC5764:
-    ///             +----------------+
-    ///             | 127 < B< 192  -+--> forward to RTP
-    ///             |                |
-    /// packet -->  |  19 < B< 64   -+--> forward to DTLS
-    ///             |                |
-    ///             |       B< 2    -+--> forward to STUN
-    ///             +----------------+
+    ///     From RFC5764:
+    ///     +----------------+
+    ///     | 127 < B< 192  -+--> forward to RTP
+    ///     |                |
+    ///     packet -->  |  19 < B< 64   -+--> forward to DTLS
+    ///     |                |
+    ///     |       B< 2    -+--> forward to STUN
+    ///     +----------------+
     /// </summary>
     /// <paramref name="localPort">The local port on the RTP socket that received the packet.</paramref>
     /// <param name="remoteEP">The remote end point the packet was received from.</param>
@@ -899,7 +1041,8 @@ internal class RTCPeerConnection :  IDisposable
                     }
                     else
                     {
-                        Logger.LogWarning($"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
+                        Logger.LogWarning(
+                            $"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
                     }
                 }
             }
@@ -911,7 +1054,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Used to add remote ICE candidates to the peer connection's checklist.
+    ///     Used to add remote ICE candidates to the peer connection's checklist.
     /// </summary>
     /// <param name="candidateInit">The remote ICE candidate to add.</param>
     private void AddIceCandidate(RTCIceCandidateInit candidateInit)
@@ -924,13 +1067,14 @@ internal class RTCPeerConnection :  IDisposable
         }
         else
         {
-            Logger.LogWarning($"Remote ICE candidate not added as no available ICE session for component {candidate.component}.");
+            Logger.LogWarning(
+                $"Remote ICE candidate not added as no available ICE session for component {candidate.component}.");
         }
     }
 
     /// <summary>
-    /// Once the SDP exchange has been made the SCTP transport ports are known. If the destination
-    /// port is not using the default value attempt to update it on teh SCTP transprot.
+    ///     Once the SDP exchange has been made the SCTP transport ports are known. If the destination
+    ///     port is not using the default value attempt to update it on teh SCTP transprot.
     /// </summary>
     private void UpdatedSctpDestinationPort()
     {
@@ -945,7 +1089,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Cancel current Negotiation Event Call to prevent running thread to call OnNegotiationNeeded
+    ///     Cancel current Negotiation Event Call to prevent running thread to call OnNegotiationNeeded
     /// </summary>
     private void CancelOnNegotiationNeededTask()
     {
@@ -964,10 +1108,10 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Initialises the SCTP transport. This will result in the DTLS SCTP transport listening
-    /// for incoming INIT packets if the remote peer attempts to create the association. The local
-    /// peer will NOT attempt to establish the association at this point. It's up to the
-    /// application to specify it wants a data channel to initiate the SCTP association attempt.
+    ///     Initialises the SCTP transport. This will result in the DTLS SCTP transport listening
+    ///     for incoming INIT packets if the remote peer attempts to create the association. The local
+    ///     peer will NOT attempt to establish the association at this point. It's up to the
+    ///     application to specify it wants a data channel to initiate the SCTP association attempt.
     /// </summary>
     private async Task InitialiseSctpTransport()
     {
@@ -989,7 +1133,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Event handler for changes to the SCTP transport state.
+    ///     Event handler for changes to the SCTP transport state.
     /// </summary>
     /// <param name="state">The new transport state.</param>
     private void OnSctpTransportStateChanged(RTCSctpTransportState state)
@@ -1010,15 +1154,17 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Event handler for a new data channel being opened by the remote peer.
+    ///     Event handler for a new data channel being opened by the remote peer.
     /// </summary>
-    private void OnSctpAssociationNewDataChannel(ushort streamID, DataChannelTypes type, ushort priority, uint reliability, string label, string protocol)
+    private void OnSctpAssociationNewDataChannel(ushort streamID, DataChannelTypes type, ushort priority,
+        uint reliability, string label, string protocol)
     {
         Logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamID}, type {type}, " +
                               $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
         // TODO: Set reliability, priority etc. properties on the data channel.
-        var dc = new RTCDataChannel(sctp) { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
+        var dc = new RTCDataChannel(sctp)
+            { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
 
         dc.SendDcepAck();
 
@@ -1033,7 +1179,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Event handler for the confirmation that a data channel opened by this peer has been acknowledged.
+    ///     Event handler for the confirmation that a data channel opened by this peer has been acknowledged.
     /// </summary>
     /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
     private void OnSctpAssociationDataChannelOpened(ushort streamID)
@@ -1054,8 +1200,8 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// When a data channel is requested an SCTP association is needed. This method attempts to
-    /// initialise the association if it is not already available.
+    ///     When a data channel is requested an SCTP association is needed. This method attempts to
+    ///     initialise the association if it is not already available.
     /// </summary>
     private async Task InitialiseSctpAssociation()
     {
@@ -1079,7 +1225,9 @@ internal class RTCPeerConnection :  IDisposable
 
             var startTime = DateTime.Now;
 
-            var completedTask = await Task.WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000)).ConfigureAwait(false);
+            var completedTask = await Task
+                .WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000))
+                .ConfigureAwait(false);
 
             if (sctp.state != RTCSctpTransportState.Connected)
             {
@@ -1087,28 +1235,33 @@ internal class RTCPeerConnection :  IDisposable
 
                 if (completedTask != onSctpConnectedTcs.Task)
                 {
-                    throw new ApplicationException($"SCTP association timed out after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                    throw new ApplicationException(
+                        $"SCTP association timed out after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
                 }
 
-                throw new ApplicationException($"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                throw new ApplicationException(
+                    $"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
             }
         }
     }
 
     /// <summary>
-    /// Sends the Data Channel Establishment Protocol (DCEP) OPEN message to configure the data
-    /// channel on the remote peer.
+    ///     Sends the Data Channel Establishment Protocol (DCEP) OPEN message to configure the data
+    ///     channel on the remote peer.
     /// </summary>
     /// <param name="dataChannel">The data channel to open.</param>
     private void OpenDataChannel(RTCDataChannel dataChannel)
     {
-        if (dataChannel.negotiated) {
-            Logger.LogDebug($"WebRTC data channel negotiated out of band with label {dataChannel.label} and stream ID {dataChannel.id}; invoking open event");
+        if (dataChannel.negotiated)
+        {
+            Logger.LogDebug(
+                $"WebRTC data channel negotiated out of band with label {dataChannel.label} and stream ID {dataChannel.id}; invoking open event");
             dataChannel.GotAck();
         }
         else if (dataChannel.id.HasValue)
         {
-            Logger.LogDebug($"WebRTC attempting to open data channel with label {dataChannel.label} and stream ID {dataChannel.id}.");
+            Logger.LogDebug(
+                $"WebRTC attempting to open data channel with label {dataChannel.label} and stream ID {dataChannel.id}.");
             dataChannel.SendDcepOpen();
         }
         else
@@ -1118,10 +1271,10 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    ///  DtlsHandshake requires DtlsSrtpTransport to work.
-    ///  DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform
-    ///  Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient
-    ///  or DtlsSrtpServer to work.
+    ///     DtlsHandshake requires DtlsSrtpTransport to work.
+    ///     DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform
+    ///     Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient
+    ///     or DtlsSrtpServer to work.
     /// </summary>
     /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
     /// <returns>True if the DTLS handshake is successful or false if not.</returns>
@@ -1147,19 +1300,22 @@ internal class RTCPeerConnection :  IDisposable
             return false;
         }
 
-        Logger.LogDebug($"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
+        Logger.LogDebug(
+            $"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
         var expectedFp = RemotePeerDtlsFingerprint;
         var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.RemoteCertificate);
 
         if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
         {
-            Logger.LogWarning($"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
+            Logger.LogWarning(
+                $"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
             Close("dtls fingerprint mismatch");
             return false;
         }
 
-        Logger.LogDebug($"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
+        Logger.LogDebug(
+            $"RTCPeerConnection remote certificate fingerprint matched expected value of {remoteFingerprint.value} for {remoteFingerprint.algorithm}.");
 
         SetGlobalSecurityContext(
             dtlsHandle,
@@ -1170,7 +1326,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Event handler for TLS alerts from the DTLS transport.
+    ///     Event handler for TLS alerts from the DTLS transport.
     /// </summary>
     /// <param name="alertLevel">The level of the alert: warning or critical.</param>
     /// <param name="alertType">The type of the alert.</param>
@@ -1192,115 +1348,8 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Close the session if the instance is out of scope.
-    /// </summary>
-    public void Dispose()
-    {
-        Close("disposed");
-    }
-
-
-    //--------------------------FROM HERE_______________
-    /// <summary>
-    /// From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
-    /// (authentication tag and MKI) supported by libSRTP.This value is
-    /// the maximum number of octets that will be added to an RTP packet by
-    /// srtp_protect().
-    ///
-    /// srtp_protect():
-    /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
-    /// into the location in memory immediately following the RTP packet.
-    /// Callers MUST ensure that this much writeable memory is available in
-    /// the buffer that holds the RTP packet.
-    ///
-    /// srtp_protect_rtcp():
-    /// @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
-    /// to the location in memory immediately following the RTCP packet.
-    /// Callers MUST ensure that this much writeable memory is available in
-    /// the buffer that holds the RTCP packet.
-    /// </summary>
-    public const int SRTP_MAX_PREFIX_LENGTH = 148;
-
-    /// <summary>
-    /// When there are no RTP packets being sent for an audio or video stream webrtc.lib
-    /// still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
-    /// in an RFC somewhere but I wasn't able to find it from a quick search.
-    /// </summary>
-    private const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
-
-    protected static readonly ILogger Logger = Log.Logger;
-
-    protected readonly RtpSessionConfig RtpSessionConfig;
-
-    internal int MRtpChannelsCount;            // Need to know the number of RTP Channels
-
-    // The stream used for the underlying RTP session to create a single RTP channel that will
-    // be used to multiplex all required media streams. (see addSingleTrack())
-    private MediaStream _mPrimaryStream;
-
-    protected RTPChannel MultiplexRtpChannel;
-
-    private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
-    private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
-
-    /// <summary>
-    /// The primary stream for this session - can be an AudioStream or a VideoStream
-    /// </summary>
-    protected MediaStream PrimaryStream
-    {
-        get
-        {
-            return _mPrimaryStream;
-        }
-    }
-
-    /// <summary>
-    /// The primary Audio Stream for this session
-    /// </summary>
-    private AudioStream AudioStream
-    {
-        get
-        {
-            if (AudioStreamList.Count > 0)
-            {
-                return AudioStreamList[0];
-            }
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// The primary Video Stream for this session
-    /// </summary>
-    private VideoStream VideoStream
-    {
-        get
-        {
-            if (VideoStreamList.Count > 0)
-            {
-                return VideoStreamList[0];
-            }
-            return null;
-        }
-    }
-    /// <summary>
-    /// List of all Audio Streams for this session
-    /// </summary>
-    private List<AudioStream> AudioStreamList { get; } = new List<AudioStream>();
-
-    /// <summary>
-    /// List of all Video Streams for this session
-    /// </summary>
-    private List<VideoStream> VideoStreamList { get; } = new List<VideoStream>();
-
-    /// <summary>
-    /// The SDP offered by the remote call party for this session.
-    /// </summary>
-    protected SDP.SDP RemoteDescription { get; private set; }
-
-    /// <summary>
-    /// If this session is using a secure context this flag MUST be set to indicate
-    /// the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
+    ///     If this session is using a secure context this flag MUST be set to indicate
+    ///     the security delegate (SrtpProtect, SrtpUnprotect etc) have been set.
     /// </summary>
     private bool IsSecureContextReady()
     {
@@ -1318,56 +1367,22 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Indicates whether the session has been closed. Once a session is closed it cannot
-    /// be restarted.
-    /// </summary>
-    public bool IsClosed { get; private set; }
-
-    /// <summary>
-    /// Indicates whether the session has been started. Starting a session tells the RTP
-    /// socket to start receiving,
-    /// </summary>
-    private bool IsStarted { get; set; }
-
-    /// <summary>
-    /// Indicates whether this session is using audio.
-    /// </summary>
-    private bool HasAudio
-    {
-        get
-        {
-            return AudioStream?.HasAudio == true;
-        }
-    }
-
-    /// <summary>
-    /// Indicates whether this session is using video.
-    /// </summary>
-    private bool HasVideo
-    {
-        get
-        {
-            return VideoStream?.HasVideo == true;
-        }
-    }
-
-    /// <summary>
-    /// Gets fired when the RTP session and underlying channel are closed.
+    ///     Gets fired when the RTP session and underlying channel are closed.
     /// </summary>
     public event Action<string> OnRtpClosed;
 
     /// <summary>
-    /// Gets fired when an RTCP BYE packet is received from the remote party.
-    /// The string parameter contains the BYE reason. Normally a BYE
-    /// report means the RTP session is finished. But... cases have been observed where
-    /// an RTCP BYE is received when a remote party is put on hold and then the session
-    /// resumes when take off hold. It's up to the application to decide what action to
-    /// take when n RTCP BYE is received.
+    ///     Gets fired when an RTCP BYE packet is received from the remote party.
+    ///     The string parameter contains the BYE reason. Normally a BYE
+    ///     report means the RTP session is finished. But... cases have been observed where
+    ///     an RTCP BYE is received when a remote party is put on hold and then the session
+    ///     resumes when take off hold. It's up to the application to decide what action to
+    ///     take when n RTCP BYE is received.
     /// </summary>
     public event Action<string> OnRtcpBye;
 
     /// <summary>
-    /// Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
+    ///     Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
     /// </summary>
     public event Action<IPEndPoint, RtcpCompoundPacket> OnReceiveReport;
 
@@ -1400,6 +1415,7 @@ internal class RTCPeerConnection :  IDisposable
                 str += attr.SSRC + " - ";
             }
         }
+
         str += "] \r\n Video: [ ";
         foreach (var videoRemoteSdpSsrcAttribute in _videoRemoteSdpSsrcAttributes)
         {
@@ -1408,8 +1424,10 @@ internal class RTCPeerConnection :  IDisposable
             {
                 str += attr.SSRC + " - ";
             }
+
             str += "] ";
         }
+
         str += " ]";
         Logger.LogDebug($"LogRemoteSDPSsrcAttributes: {str}");
     }
@@ -1456,6 +1474,7 @@ internal class RTCPeerConnection :  IDisposable
             AudioStreamList.Add(audioStream);
             return audioStream;
         }
+
         return null;
     }
 
@@ -1473,11 +1492,12 @@ internal class RTCPeerConnection :  IDisposable
             VideoStreamList.Add(videoStream);
             return videoStream;
         }
+
         return null;
     }
 
     /// <summary>
-    /// Sets the remote SDP description for this session.
+    ///     Sets the remote SDP description for this session.
     /// </summary>
     /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
     /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
@@ -1486,7 +1506,8 @@ internal class RTCPeerConnection :  IDisposable
     {
         if (sessionDescription == null)
         {
-            throw new ArgumentNullException(nameof(sessionDescription), "The session description cannot be null for SetRemoteDescription.");
+            throw new ArgumentNullException(nameof(sessionDescription),
+                "The session description cannot be null for SetRemoteDescription.");
         }
 
         try
@@ -1499,12 +1520,14 @@ internal class RTCPeerConnection :  IDisposable
             if (sessionDescription.Media?.Count == 1)
             {
                 var remoteMediaType = sessionDescription.Media.First().Media;
-                if (remoteMediaType == SDPMediaTypesEnum.audio && ((AudioStream == null) || (AudioStream.LocalTrack == null)))
+                if (remoteMediaType == SDPMediaTypesEnum.audio &&
+                    (AudioStream == null || AudioStream.LocalTrack == null))
                 {
                     return SetDescriptionResultEnum.NoMatchingMediaType;
                 }
 
-                if (remoteMediaType == SDPMediaTypesEnum.video && ((VideoStream == null) || (VideoStream.LocalTrack == null)))
+                if (remoteMediaType == SDPMediaTypesEnum.video &&
+                    (VideoStream == null || VideoStream.LocalTrack == null))
                 {
                     return SetDescriptionResultEnum.NoMatchingMediaType;
                 }
@@ -1512,7 +1535,8 @@ internal class RTCPeerConnection :  IDisposable
 
             // Pre-flight checks have passed. Move onto matching up the local and remote media streams.
             IPAddress connectionAddress = null;
-            if (sessionDescription.Connection != null && !string.IsNullOrEmpty(sessionDescription.Connection.ConnectionAddress))
+            if (sessionDescription.Connection != null &&
+                !string.IsNullOrEmpty(sessionDescription.Connection.ConnectionAddress))
             {
                 connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
             }
@@ -1554,17 +1578,17 @@ internal class RTCPeerConnection :  IDisposable
                 IPEndPoint remoteRtcpEp = null;
                 if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
-                    remoteRtcpEp = (RtpSessionConfig.IsRtcpMultiplexed)
+                    remoteRtcpEp = RtpSessionConfig.IsRtcpMultiplexed
                         ? remoteRtpEp
                         : new IPEndPoint(remoteRtpEp.Address, remoteRtpEp.Port + 1);
                 }
 
                 currentMediaStream.DestinationEndPoint =
-                    (remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
+                    remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
                         ? remoteRtpEp
                         : currentMediaStream.DestinationEndPoint;
                 currentMediaStream.ControlDestinationEndPoint =
-                    (remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
+                    remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
                         ? remoteRtcpEp
                         : currentMediaStream.ControlDestinationEndPoint;
 
@@ -1575,10 +1599,11 @@ internal class RTCPeerConnection :  IDisposable
                         return SetDescriptionResultEnum.AudioIncompatible;
                     }
                 }
-                else if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null && currentMediaStream.LocalTrack != null && currentMediaStream.LocalTrack.Capabilities?.Count == 0))
+                else if (capabilities?.Count == 0 || (currentMediaStream.LocalTrack == null &&
+                                                      currentMediaStream.LocalTrack != null &&
+                                                      currentMediaStream.LocalTrack.Capabilities?.Count == 0))
                 {
                     return SetDescriptionResultEnum.VideoIncompatible;
-
                 }
             }
 
@@ -1614,7 +1639,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Gets the RTP end point for an SDP media announcement from the remote peer.
+    ///     Gets the RTP end point for an SDP media announcement from the remote peer.
     /// </summary>
     /// <param name="announcement">The media announcement to get the connection address for.</param>
     /// <param name="connectionAddress">The remote SDP session level connection address. Will be null if not available.</param>
@@ -1624,7 +1649,9 @@ internal class RTCPeerConnection :  IDisposable
         var kind = announcement.Media;
         IPEndPoint rtpEndPoint = null;
 
-        var remoteAddr = (announcement.Connection != null) ? IPAddress.Parse(announcement.Connection.ConnectionAddress) : connectionAddress;
+        var remoteAddr = announcement.Connection != null
+            ? IPAddress.Parse(announcement.Connection.ConnectionAddress)
+            : connectionAddress;
 
         if (remoteAddr != null)
         {
@@ -1646,21 +1673,21 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Used for child classes that require a single RTP channel for all RTP (audio and video)
-    /// and RTCP communications.
+    ///     Used for child classes that require a single RTP channel for all RTP (audio and video)
+    ///     and RTCP communications.
     /// </summary>
     protected void AddSingleTrack(bool videoAsPrimary)
     {
         if (videoAsPrimary)
         {
-            _mPrimaryStream = GetNextVideoStreamByLocalTrack();
+            PrimaryStream = GetNextVideoStreamByLocalTrack();
         }
         else
         {
-            _mPrimaryStream = GetNextAudioStreamByLocalTrack();
+            PrimaryStream = GetNextAudioStreamByLocalTrack();
         }
 
-        InitMediaStream(_mPrimaryStream);
+        InitMediaStream(PrimaryStream);
     }
 
     private void InitMediaStream(MediaStream currentMediaStream)
@@ -1672,9 +1699,9 @@ internal class RTCPeerConnection :  IDisposable
 
 #nullable enable
     /// <summary>
-    /// Adds a media track to this session. A media track represents an audio or video
-    /// stream and can be a local (which means we're sending) or remote (which means
-    /// we're receiving).
+    ///     Adds a media track to this session. A media track represents an audio or video
+    ///     stream and can be a local (which means we're sending) or remote (which means
+    ///     we're receiving).
     /// </summary>
     /// <param name="track">The media track to add to the session.</param>
     public void AddTrack(MediaStreamTrack track)
@@ -1683,9 +1710,9 @@ internal class RTCPeerConnection :  IDisposable
     }
 #nullable restore
     /// <summary>
-    /// Adds a local media stream to this session. Local media tracks should be added by the
-    /// application to control what session description offers and answers can be made as
-    /// well as being used to match up with remote tracks.
+    ///     Adds a local media stream to this session. Local media tracks should be added by the
+    ///     application to control what session description offers and answers can be made as
+    ///     well as being used to match up with remote tracks.
     /// </summary>
     /// <param name="track">The local track to add.</param>
     private void AddLocalTrack(MediaStreamTrack track)
@@ -1733,7 +1760,8 @@ internal class RTCPeerConnection :  IDisposable
         }
     }
 
-    protected void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp, ProtectRtpPacket unprotectRtcp)
+    protected void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp,
+        ProtectRtpPacket unprotectRtcp)
     {
         foreach (var audioStream in AudioStreamList)
         {
@@ -1749,14 +1777,16 @@ internal class RTCPeerConnection :  IDisposable
     private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
     {
         // Get primary AudioStream
-        if ((_mPrimaryStream != null) && (mediaStream != null))
+        if (PrimaryStream != null && mediaStream != null)
         {
-            var secureContext = _mPrimaryStream.SecurityContext;
+            var secureContext = PrimaryStream.SecurityContext;
             if (secureContext != null)
             {
-                mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket, secureContext.UnprotectRtcpPacket);
+                mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket,
+                    secureContext.UnprotectRtcpPacket);
             }
-            mediaStream.SetDestination(_mPrimaryStream.DestinationEndPoint, _mPrimaryStream.ControlDestinationEndPoint);
+
+            mediaStream.SetDestination(PrimaryStream.DestinationEndPoint, PrimaryStream.ControlDestinationEndPoint);
         }
     }
 
@@ -1808,7 +1838,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Adjust the stream status of the local media tracks based on the remote tracks.
+    ///     Adjust the stream status of the local media tracks based on the remote tracks.
     /// </summary>
     private void SetLocalTrackStreamStatus(MediaStreamTrack localTrack, IPEndPoint remoteRTPEndPoint)
     {
@@ -1821,7 +1851,8 @@ internal class RTCPeerConnection :  IDisposable
 
             if (remoteRTPEndPoint != null)
             {
-                if (IPAddress.Any.Equals(remoteRTPEndPoint.Address) || IPAddress.IPv6Any.Equals(remoteRTPEndPoint.Address))
+                if (IPAddress.Any.Equals(remoteRTPEndPoint.Address) ||
+                    IPAddress.IPv6Any.Equals(remoteRTPEndPoint.Address))
                 {
                     // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive, except
                     // if a special port number is used (defined as "9") which indicates that the media announcement is not
@@ -1841,13 +1872,12 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Gets the media streams available in this session. Will only be audio, video or both.
-    /// media streams represent an audio or video source that we are sending to the remote party.
+    ///     Gets the media streams available in this session. Will only be audio, video or both.
+    ///     media streams represent an audio or video source that we are sending to the remote party.
     /// </summary>
     /// <returns>A list of the local tracks that have been added to this session.</returns>
     protected List<MediaStream> GetMediaStreams()
     {
-
         var mediaStream = new List<MediaStream>();
 
         foreach (var audioStream in AudioStreamList)
@@ -1870,7 +1900,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Starts the RTCP session(s) that monitor this RTP session.
+    ///     Starts the RTCP session(s) that monitor this RTP session.
     /// </summary>
     protected Task Start()
     {
@@ -1881,7 +1911,8 @@ internal class RTCPeerConnection :  IDisposable
 
             foreach (var audioStream in AudioStreamList)
             {
-                if (audioStream.HasAudio && audioStream.RtcpSession != null && audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                if (audioStream.HasAudio && audioStream.RtcpSession != null &&
+                    audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
                     // The local audio track may have been disabled if there were no matching capabilities with
                     // the remote party.
@@ -1891,14 +1922,14 @@ internal class RTCPeerConnection :  IDisposable
 
             foreach (var videoStream in VideoStreamList)
             {
-                if (videoStream.HasVideo && videoStream.RtcpSession != null && videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                if (videoStream.HasVideo && videoStream.RtcpSession != null &&
+                    videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
                     // The local video track may have been disabled if there were no matching capabilities with
                     // the remote party.
                     videoStream.RtcpSession.Start();
                 }
             }
-
         }
 
         return Task.CompletedTask;
@@ -1952,7 +1983,7 @@ internal class RTCPeerConnection :  IDisposable
     {
         // Get the SSRC in order to be able to figure out which media type
         // This will let us choose the apropriate unprotect methods
-        uint ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
+        var ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
 
         var mediaStream = GetMediaStream(ssrc);
         if (mediaStream != null)
@@ -1984,7 +2015,7 @@ internal class RTCPeerConnection :  IDisposable
             // In some cases, such as a SIP re-INVITE, it's possible the RTP session
             // will keep going with a new remote SSRC.
             // We close peer connection only if there is no more local/remote tracks on the primary stream
-            if (_mPrimaryStream.LocalTrack == null)
+            if (PrimaryStream.LocalTrack == null)
             {
                 OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
             }
@@ -1998,11 +2029,12 @@ internal class RTCPeerConnection :  IDisposable
                     // On the first received RTCP report for a session check whether the remote end point matches the
                     // expected remote end point. If not it's "likely" that a private IP address was specified in the SDP.
                     // Take the risk and switch the remote control end point to the one we are receiving from.
-                    if ((mediaStream.ControlDestinationEndPoint == null ||
-                         !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
-                         mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port))
+                    if (mediaStream.ControlDestinationEndPoint == null ||
+                        !mediaStream.ControlDestinationEndPoint.Address.Equals(remoteEndPoint.Address) ||
+                        mediaStream.ControlDestinationEndPoint.Port != remoteEndPoint.Port)
                     {
-                        Logger.LogDebug($"{mediaStream.MediaType} control end point switched from {mediaStream.ControlDestinationEndPoint} to {remoteEndPoint}.");
+                        Logger.LogDebug(
+                            $"{mediaStream.MediaType} control end point switched from {mediaStream.ControlDestinationEndPoint} to {remoteEndPoint}.");
                         mediaStream.ControlDestinationEndPoint = remoteEndPoint;
                     }
                 }
@@ -2014,7 +2046,8 @@ internal class RTCPeerConnection :  IDisposable
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
-            else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 || VideoStream?.RtcpSession?.PacketsReceivedCount > 0)
+            else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 ||
+                     VideoStream?.RtcpSession?.PacketsReceivedCount > 0)
             {
                 // Only give this warning if we've received at least one RTP packet.
                 //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
@@ -2080,6 +2113,7 @@ internal class RTCPeerConnection :  IDisposable
                     break;
                 }
             }
+
             if (found)
             {
                 break;
@@ -2087,7 +2121,7 @@ internal class RTCPeerConnection :  IDisposable
         }
 
         // Get related AudioStream if found
-        if (found && (AudioStreamList.Count > index))
+        if (found && AudioStreamList.Count > index)
         {
             var audioStream = AudioStreamList[index];
             //if (audioStream?.RemoteTrack != null)
@@ -2109,6 +2143,7 @@ internal class RTCPeerConnection :  IDisposable
                     break;
                 }
             }
+
             if (found)
             {
                 break;
@@ -2116,7 +2151,7 @@ internal class RTCPeerConnection :  IDisposable
         }
 
         // Get related VideoStreamList if found
-        if (found && (VideoStreamList.Count > index))
+        if (found && VideoStreamList.Count > index)
         {
             var videoStream = VideoStreamList[index];
             //if (videoStream?.RemoteTrack != null)
@@ -2130,7 +2165,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Attempts to get MediaStream that matches a received RTCP report.
+    ///     Attempts to get MediaStream that matches a received RTCP report.
     /// </summary>
     /// <param name="rtcpPkt">The RTCP compound packet received from the remote party.</param>
     /// <returns>If a match could be found an SSRC the MediaStream otherwise null.</returns>
@@ -2179,7 +2214,7 @@ internal class RTCPeerConnection :  IDisposable
     }
 
     /// <summary>
-    /// Event handler for the RTP channel closure.
+    ///     Event handler for the RTP channel closure.
     /// </summary>
     private void OnRTPChannelClosed(string reason)
     {
