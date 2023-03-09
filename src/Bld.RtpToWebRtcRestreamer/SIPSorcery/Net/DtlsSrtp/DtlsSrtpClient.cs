@@ -82,6 +82,15 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         MCertificateChain = certificateChain;
     }
 
+    public Certificate RemoteCertificate => ServerCertificate.Certificate;
+    public bool IsClient => true;
+    public SrtpPolicy SrtpPolicy => _srtpPolicy;
+    public SrtpPolicy SrtcpPolicy => _srtcpPolicy;
+    public byte[] SrtpMasterServerKey => _srtpMasterServerKey;
+    public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
+    public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
+    public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
+
     public override IDictionary<int, byte[]> GetClientExtensions()
     {
         var clientExtensions = base.GetClientExtensions();
@@ -95,36 +104,6 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
             TlsSrtpUtilities.AddUseSrtpExtension(clientExtensions, _clientSrtpData);
         }
         return clientExtensions;
-    }
-
-    public SrtpPolicy GetSrtpPolicy()
-    {
-        return _srtpPolicy;
-    }
-
-    public SrtpPolicy GetSrtcpPolicy()
-    {
-        return _srtcpPolicy;
-    }
-
-    public byte[] GetSrtpMasterServerKey()
-    {
-        return _srtpMasterServerKey;
-    }
-
-    public byte[] GetSrtpMasterServerSalt()
-    {
-        return _srtpMasterServerSalt;
-    }
-
-    public byte[] GetSrtpMasterClientKey()
-    {
-        return _srtpMasterClientKey;
-    }
-
-    public byte[] GetSrtpMasterClientSalt()
-    {
-        return _srtpMasterClientSalt;
     }
 
     public override TlsAuthentication GetAuthentication()
@@ -142,11 +121,6 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 
         //Prepare Srtp Keys (we must to it here because master key will be cleared after that)
         PrepareSrtpSharedSecret();
-    }
-
-    public bool IsClient()
-    {
-        return true;
     }
 
     private byte[] GetKeyingMaterial(int length)
@@ -321,10 +295,5 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         {
             Logger.LogWarning($"DTLS client raised unexpected alert: {alertMessage}");
         }
-    }
-
-    public Certificate GetRemoteCertificate()
-    {
-        return ServerCertificate.Certificate;
     }
 }

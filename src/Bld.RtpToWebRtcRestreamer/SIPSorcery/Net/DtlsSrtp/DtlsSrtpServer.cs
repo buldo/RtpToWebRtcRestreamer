@@ -28,8 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
 internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 {
-    private static readonly int[] DefaultCipherSuites = new int[]
-    {
+    private static readonly int[] DefaultCipherSuites = {
         /*
          * TLS 1.3
          */
@@ -91,8 +90,15 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 
     public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-    public bool ForceUseExtendedMasterSecret { get; set; } = true;
-
+    public Certificate RemoteCertificate => ClientCertificate;
+    public bool IsClient => false;
+    public SrtpPolicy SrtpPolicy => _srtpPolicy;
+    public SrtpPolicy SrtcpPolicy => _srtcpPolicy;
+    public byte[] SrtpMasterServerKey => _srtpMasterServerKey;
+    public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
+    public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
+    public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
+    public bool ForceUseExtendedMasterSecret { get; init; } = true;
     private Certificate ClientCertificate { get; set; }
 
     protected override int[] GetSupportedCipherSuites()
@@ -355,41 +361,6 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
     }
 
-    public SrtpPolicy GetSrtpPolicy()
-    {
-        return _srtpPolicy;
-    }
-
-    public SrtpPolicy GetSrtcpPolicy()
-    {
-        return _srtcpPolicy;
-    }
-
-    public byte[] GetSrtpMasterServerKey()
-    {
-        return _srtpMasterServerKey;
-    }
-
-    public byte[] GetSrtpMasterServerSalt()
-    {
-        return _srtpMasterServerSalt;
-    }
-
-    public byte[] GetSrtpMasterClientKey()
-    {
-        return _srtpMasterClientKey;
-    }
-
-    public byte[] GetSrtpMasterClientSalt()
-    {
-        return _srtpMasterClientSalt;
-    }
-
-    public bool IsClient()
-    {
-        return false;
-    }
-
     private void PrepareSrtpSharedSecret()
     {
         //Set master secret back to security parameters (only works in old bouncy castle versions)
@@ -497,10 +468,5 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
-    }
-
-    public Certificate GetRemoteCertificate()
-    {
-        return ClientCertificate;
     }
 }

@@ -1233,7 +1233,7 @@ internal class RTCPeerConnection : RTPSession
         Logger.LogDebug($"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
         var expectedFp = RemotePeerDtlsFingerprint;
-        var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.GetRemoteCertificate());
+        var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.RemoteCertificate);
 
         if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
         {

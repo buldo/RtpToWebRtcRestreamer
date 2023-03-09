@@ -100,7 +100,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     public bool DoHandshake(out string handshakeError)
     {
-        if (_connection.IsClient())
+        if (_connection.IsClient)
         {
             return DoHandshakeAsClient(out handshakeError);
         }
@@ -108,10 +108,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return DoHandshakeAsServer(out handshakeError);
     }
 
-    public bool IsClient
-    {
-        get { return _connection.IsClient(); }
-    }
+    public bool IsClient => _connection.IsClient;
 
     private bool DoHandshakeAsClient(out string handshakeError)
     {
@@ -134,7 +131,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 // Prepare the shared key to be used in RTP streaming
                 //client.PrepareSrtpSharedSecret();
                 // Generate encoders for DTLS traffic
-                if (client.GetSrtpPolicy() != null)
+                if (client.SrtpPolicy != null)
                 {
                     _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
@@ -201,7 +198,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 // Prepare the shared key to be used in RTP streaming
                 //server.PrepareSrtpSharedSecret();
                 // Generate encoders for DTLS traffic
-                if (server.GetSrtpPolicy() != null)
+                if (server.SrtpPolicy != null)
                 {
                     _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
@@ -243,60 +240,27 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return false;
     }
 
-    public Certificate GetRemoteCertificate()
-    {
-        return _connection.GetRemoteCertificate();
-    }
-
-    private byte[] GetMasterServerKey()
-    {
-        return _connection.GetSrtpMasterServerKey();
-    }
-
-    private byte[] GetMasterServerSalt()
-    {
-        return _connection.GetSrtpMasterServerSalt();
-    }
-
-    private byte[] GetMasterClientKey()
-    {
-        return _connection.GetSrtpMasterClientKey();
-    }
-
-    private byte[] GetMasterClientSalt()
-    {
-        return _connection.GetSrtpMasterClientSalt();
-    }
-
-    private SrtpPolicy GetSrtpPolicy()
-    {
-        return _connection.GetSrtpPolicy();
-    }
-
-    private SrtpPolicy GetSrtcpPolicy()
-    {
-        return _connection.GetSrtcpPolicy();
-    }
+    public Certificate RemoteCertificate => _connection.RemoteCertificate;
 
     private SrtpTransformer GenerateRtpEncoder()
     {
-        return GenerateRtpTransformer(_connection.IsClient());
+        return GenerateRtpTransformer(_connection.IsClient);
     }
 
     private SrtpTransformer GenerateRtpDecoder()
     {
-        return GenerateRtpTransformer(!_connection.IsClient());
+        return GenerateRtpTransformer(!_connection.IsClient);
     }
 
     private SrtcpTransformer GenerateRtcpEncoder()
     {
-        return GenerateRtcpTransformer(_connection.IsClient());
+        return GenerateRtcpTransformer(_connection.IsClient);
     }
 
     private SrtcpTransformer GenerateRtcpDecoder()
     {
         //Generate the reverse result of "GenerateRctpEncoder"
-        return GenerateRtcpTransformer(!_connection.IsClient());
+        return GenerateRtcpTransformer(!_connection.IsClient);
     }
 
     private SrtpTransformer GenerateRtpTransformer(bool isClient)
@@ -304,11 +268,11 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         SrtpTransformEngine engine;
         if (!isClient)
         {
-            engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterServerKey, _connection.SrtpMasterServerSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
         else
         {
-            engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterClientKey, _connection.SrtpMasterClientSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
 
         return engine.GetRTPTransformer();
@@ -320,11 +284,11 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         SrtpTransformEngine engine;
         if (!isClient)
         {
-            engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterServerKey, _connection.SrtpMasterServerSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
         else
         {
-            engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterClientKey, _connection.SrtpMasterClientSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
 
         return engine.GetRtcpTransformer();
@@ -456,7 +420,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
             if (millisecondsRemaining <= 0)
             {
-                Logger.LogWarning($"DTLS transport timed out after {_timeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient() ? "server" : "client")}.");
+                Logger.LogWarning($"DTLS transport timed out after {_timeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient ? "server" : "client")}.");
                 throw new TimeoutException();
             }
 
