@@ -41,7 +41,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private static readonly Random Random = new Random();
 
     private SrtpTransformer _srtpEncoder;
-    private SrtpTransformer _srtpDecoder;
     private SrtcpTransformer _srtcpEncoder;
     private SrtcpTransformer _srtcpDecoder;
     readonly IDtlsSrtpPeer _connection;
@@ -133,7 +132,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 // Generate encoders for DTLS traffic
                 if (client.SrtpPolicy != null)
                 {
-                    _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
                     _srtcpEncoder = GenerateRtcpEncoder();
@@ -200,7 +198,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 // Generate encoders for DTLS traffic
                 if (server.SrtpPolicy != null)
                 {
-                    _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
                     _srtcpEncoder = GenerateRtcpEncoder();
@@ -245,11 +242,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private SrtpTransformer GenerateRtpEncoder()
     {
         return GenerateRtpTransformer(_connection.IsClient);
-    }
-
-    private SrtpTransformer GenerateRtpDecoder()
-    {
-        return GenerateRtpTransformer(!_connection.IsClient);
     }
 
     private SrtcpTransformer GenerateRtcpEncoder()
