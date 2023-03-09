@@ -147,7 +147,6 @@ internal class RtcPeerConnection : IDisposable
     {
         _rtpSessionConfig = new RtpSessionConfig
         {
-            IsMediaMultiplexed = true,
             IsRtcpMultiplexed = true,
             RtpSecureMediaOption = RtpSecureMediaOptionEnum.DtlsSrtp,
             BindAddress = null,
@@ -439,12 +438,9 @@ internal class RtcPeerConnection : IDisposable
     /// <returns>A new RTPChannel instance.</returns>
     private RTPChannel CreateRtpChannel()
     {
-        if (_rtpSessionConfig.IsMediaMultiplexed)
+        if (_multiplexRtpChannel != null)
         {
-            if (_multiplexRtpChannel != null)
-            {
-                return _multiplexRtpChannel;
-            }
+            return _multiplexRtpChannel;
         }
 
         var rtpIceChannel = new RtpIceChannel(
@@ -452,7 +448,7 @@ internal class RtcPeerConnection : IDisposable
             false,
             _rtpSessionConfig.BindPort == 0 ? 0 : _rtpSessionConfig.BindPort + _rtpChannelsCount * 2 + 2);
 
-        if (_rtpSessionConfig.IsMediaMultiplexed)
+        if (true)
         {
             _multiplexRtpChannel = rtpIceChannel;
         }
@@ -1350,13 +1346,10 @@ internal class RtcPeerConnection : IDisposable
 
     private void CloseRtcpSession(MediaStream mediaStream, string reason)
     {
-        var session = mediaStream.RtcpSession;
-
-        if (session != null)
+        if (mediaStream.RtcpSession != null)
         {
             mediaStream.OnReceiveReportByIndex -= RaisedOnOnReceiveReport;
-            session.Close(reason);
-            mediaStream.RtcpSession = null;
+            mediaStream.CloseRtcpSession(reason);
         }
     }
 

@@ -73,7 +73,7 @@ internal abstract class MediaStream
     /// <summary>
     /// The reporting session for this media stream.
     /// </summary>
-    public RtcpSession RtcpSession { get; set; }
+    public RtcpSession RtcpSession { get; private set; }
 
     /// <summary>
     /// The remote RTP end point this stream is sending media to.
@@ -129,6 +129,14 @@ internal abstract class MediaStream
         return false;
     }
 
+    public void CloseRtcpSession(string reason)
+    {
+        if (RtcpSession != null)
+        {
+            RtcpSession.Close(reason);
+            RtcpSession = null;
+        }
+    }
 
     /// <summary>
     /// Sets the remote end points for a media type supported by this RTP session.

@@ -329,19 +329,9 @@ public static class NetServices
     /// ALL local IP addresses only those on the interface needed to connect to
     /// the destination are returned.
     /// </summary>
-    /// <param name="destination">Optional. If not specified the interface that
-    /// connects to the Internet will be used.</param>
-    /// <param name="includeAllInterfaces">By default only the single interface that is used to
-    /// connect to the destination address (or internet address if it's null) will be
-    /// used to get the list of IP addresses. This default behaviour is to shield all local
-    /// IP addresses being included in ICE candidates. In some circumstances, and after
-    /// weighing up the security concerns, it's very useful to include all interfaces in
-    /// when generating the address list. Setting this parameter to true will cause all
-    /// interfaces to be used irrespective of the destination address.</param>
     /// <returns>A list of local IP addresses on the identified interface(s).</returns>
-    public static List<IPAddress> GetLocalAddressesOnInterface(IPAddress destination, bool includeAllInterfaces = false)
+    public static List<IPAddress> GetLocalAddressesOnInterface()
     {
-        var localAddress = GetLocalAddressForRemote(destination);
         var localAddresses = new List<IPAddress>();
 
         var adapters = NetworkInterface.GetAllNetworkInterfaces();
@@ -351,18 +341,7 @@ public static class NetServices
             if (n.OperationalStatus == OperationalStatus.Up || n.OperationalStatus == OperationalStatus.Unknown)
             {
                 var ipProps = n.GetIPProperties();
-
-                if (includeAllInterfaces)
-                {
-                    localAddresses.AddRange(ipProps.UnicastAddresses.Select(x => x.Address));
-                }
-                else if (localAddress == null || ipProps.UnicastAddresses.Any(x => x.Address.Equals(localAddress)))
-                {
-                    // Use this interface if it has the local IP address for the destination.
-                    // If the local address couldn't be determined use the first available interface.
-                    localAddresses.AddRange(ipProps.UnicastAddresses.Select(x => x.Address));
-                    break;
-                }
+                localAddresses.AddRange(ipProps.UnicastAddresses.Select(x => x.Address));
             }
         }
 

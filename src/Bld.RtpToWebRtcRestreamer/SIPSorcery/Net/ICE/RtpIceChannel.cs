@@ -500,13 +500,13 @@ internal class RtpIceChannel : RTPChannel
             if (RtpSocket.DualMode)
             {
                 // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
+                localAddresses = NetServices.GetLocalAddressesOnInterface()
                     .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
             }
             else
             {
                 // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
+                localAddresses = NetServices.GetLocalAddressesOnInterface()
                     .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
                                 && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal && !x.IsIPv6LinkLocal).ToList();
             }
@@ -514,7 +514,7 @@ internal class RtpIceChannel : RTPChannel
         else if (IPAddress.Any.Equals(rtpBindAddress))
         {
             // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
-            localAddresses = NetServices.GetLocalAddressesOnInterface(_bindAddress, _includeAllInterfaceAddresses)
+            localAddresses = NetServices.GetLocalAddressesOnInterface()
                 .Where(x => x.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(x)).ToList();
         }
         else
@@ -574,15 +574,13 @@ internal class RtpIceChannel : RTPChannel
             {
                 if (remoteCandidateIPAddr != null)
                 {
-                    var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-                    remoteCandidate.SetDestinationEndPoint(remoteEP);
+                    remoteCandidate.SetDestinationEndPoint(new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port));
                 }
             }
         }
         else
         {
-            var remoteEP = new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port);
-            remoteCandidate.SetDestinationEndPoint(remoteEP);
+            remoteCandidate.SetDestinationEndPoint(new IPEndPoint(remoteCandidateIPAddr, remoteCandidate.port));
         }
 
         // If the remote candidate is resolvable create a new checklist entry.
