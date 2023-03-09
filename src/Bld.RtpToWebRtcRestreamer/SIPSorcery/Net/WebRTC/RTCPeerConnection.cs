@@ -1,40 +1,4 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: RTCPeerConnection.cs
-//
-// Description: Represents a WebRTC RTCPeerConnection.
-//
-// Specification Soup (as of 13 Jul 2020):
-// - "Session Description Protocol (SDP) Offer/Answer procedures for
-//   Interactive Connectivity Establishment(ICE)" [ed: specification for
-//   including ICE candidates in SDP]:
-//   https://tools.ietf.org/html/rfc8839
-// - "Session Description Protocol (SDP) Offer/Answer Procedures For Stream
-//   Control Transmission Protocol(SCTP) over Datagram Transport Layer
-//   Security(DTLS) Transport." [ed: specification for negotiating
-//   data channels in SDP, this defines the SDP "sctp-port" attribute]
-//   https://tools.ietf.org/html/rfc8841
-// - "SDP-based Data Channel Negotiation" [ed: not currently implemented,
-//   actually seems like a big pain to implement this given it can already
-//   be done in-band on the SCTP connection]:
-//   https://tools.ietf.org/html/rfc8864
-//
-// Author(s):
-// Aaron Clauson (aaron@sipsorcery.com)
-//
-// History:
-// 04 Mar 2016	Aaron Clauson	Created.
-// 25 Aug 2019  Aaron Clauson   Updated from video only to audio and video.
-// 18 Jan 2020  Aaron Clauson   Combined WebRTCPeer and WebRTCSession.
-// 16 Mar 2020  Aaron Clauson   Refactored to support RTCPeerConnection interface.
-// 13 Jul 2020  Aaron Clauson   Added data channel support.
-// 22 Mar 2021  Aaron Clauson   Refactored data channels logic for new SCTP
-//                              implementation.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-//-----------------------------------------------------------------------------
-
-using System.Buffers.Binary;
+﻿using System.Buffers.Binary;
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
@@ -59,14 +23,14 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 ///     The Session Description offer/answer mechanisms are detailed in
 ///     https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
 /// </remarks>
-internal class RTCPeerConnection : IDisposable
+internal class RtcPeerConnection : IDisposable
 {
     // SDP constants.
     //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
     private const string RTP_MEDIA_NON_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVP";
-    private const string RTP_MEDIA_DATACHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
-    private const string RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE = "UDP/DTLS/SCTP";
-    private const string SDP_DATACHANNEL_FORMAT_ID = "webrtc-datachannel";
+    private const string RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
+    private const string RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE = "UDP/DTLS/SCTP";
+    private const string SDP_DATA_CHANNEL_FORMAT_ID = "webrtc-datachannel";
 
     private const string
         RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
@@ -82,7 +46,6 @@ internal class RTCPeerConnection : IDisposable
     ///     the association.
     /// </summary>
     private const int SCTP_ASSOCIATE_TIMEOUT_SECONDS = 2;
-
 
     /// <summary>
     ///     From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
@@ -107,48 +70,85 @@ internal class RTCPeerConnection : IDisposable
     ///     still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
     ///     in an RFC somewhere but I wasn't able to find it from a quick search.
     /// </summary>
-    private const uint RTCP_RR_NOSTREAM_SSRC = 4195875351U;
+    private const uint RTCP_RR_NO_STREAM_SSRC = 4195875351U;
 
-    protected static readonly ILogger Logger = Log.Logger;
-
-    /// <summary>
-    ///     Local ICE candidates that have been supplied directly by the application.
-    ///     Useful for cases where the application may has extra information about the
-    ///     network set up such as 1:1 NATs as used by Azure and AWS.
-    /// </summary>
-    private readonly List<RTCIceCandidate> _applicationIceCandidates = new();
+    private static readonly ILogger Logger = Log.Logger;
+    private static readonly string RtcpAttribute = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
     private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
 
+    /// <summary>
+    ///     List of all Audio Streams for this session
+    /// </summary>
+    private readonly List<AudioStream> _audioStreamList = new();
+
+    private readonly RTCDataChannelCollection _dataChannels;
+
     private readonly Certificate _dtlsCertificate;
+
+
+    /// <summary>
+    ///     The fingerprint of the certificate being used to negotiate the DTLS handshake with the
+    ///     remote peer.
+    /// </summary>
+    private readonly RTCDtlsFingerprint _dtlsCertificateFingerprint;
+
     private readonly AsymmetricKeyParameter _dtlsPrivateKey;
     private readonly Task _iceGatheringTask;
+
+    private readonly string _localSdpSessionId;
     private readonly object _renegotiationLock = new();
+
+    private readonly RtpIceChannel _rtpIceChannel;
+
+    private readonly RtpSessionConfig _rtpSessionConfig;
+
+    private readonly RTCSctpTransport _sctp;
     private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
 
-    private readonly RTCDataChannelCollection dataChannels;
-    private readonly string RTCP_ATTRIBUTE = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
-
-    private readonly string RTP_MEDIA_PROFILE = RTP_MEDIA_NON_FEEDBACK_PROFILE;
-
-    protected readonly RtpSessionConfig RtpSessionConfig;
+    /// <summary>
+    ///     List of all Video Streams for this session
+    /// </summary>
+    private readonly List<VideoStream> _videoStreamList = new();
 
     private CancellationTokenSource _cancellationSource = new();
+
+    private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
     private DtlsSrtpTransport _dtlsHandle;
+
+    private RTPChannel _multiplexRtpChannel;
+
+    /// <summary>
+    ///     The primary stream for this session - can be an AudioStream or a VideoStream
+    /// </summary>
+    private MediaStream _primaryStream;
+
+    private RTCSessionDescription _remoteDescription;
+
+    /// <summary>
+    ///     The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
+    ///     that the certificate supplied during the DTLS handshake matches.
+    /// </summary>
+    private RTCDtlsFingerprint _remotePeerDtlsFingerprint;
+
+    /// <summary>
+    ///     The SDP offered by the remote call party for this session.
+    /// </summary>
+    private SDP.SDP _remoteSdp;
 
     // The stream used for the underlying RTP session to create a single RTP channel that will
     // be used to multiplex all required media streams. (see addSingleTrack())
 
-    internal int MRtpChannelsCount; // Need to know the number of RTP Channels
+    private int _rtpChannelsCount; // Need to know the number of RTP Channels
 
-    protected RTPChannel MultiplexRtpChannel;
+    private RTCSignalingState _signalingState = RTCSignalingState.closed;
 
     /// <summary>
     ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
-    public RTCPeerConnection()
+    public RtcPeerConnection()
     {
-        RtpSessionConfig = new RtpSessionConfig
+        _rtpSessionConfig = new RtpSessionConfig
         {
             IsMediaMultiplexed = true,
             IsRtcpMultiplexed = true,
@@ -157,26 +157,26 @@ internal class RTCPeerConnection : IDisposable
             BindPort = 0
         };
 
-        dataChannels = new RTCDataChannelCollection(() => _dtlsHandle.IsClient);
+        _dataChannels = new RTCDataChannelCollection(() => _dtlsHandle.IsClient);
 
         // No certificate was provided so create a new self signed one.
         (_dtlsCertificate, _dtlsPrivateKey) =
             DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, new BcTlsCrypto());
 
-        DtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
+        _dtlsCertificateFingerprint = DtlsUtils.Fingerprint(_dtlsCertificate);
 
-        LocalSdpSessionID = Crypto.GetRandomInt(5).ToString();
+        _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
         // Request the underlying RTP session to create a single RTP channel that will
         // be used to multiplex all required media streams.
         AddSingleTrack(false);
 
-        RtpIceChannel = GetRtpChannel();
+        _rtpIceChannel = _primaryStream.RTPChannel as RtpIceChannel;
 
-        RtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
-        RtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
-        RtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
-        RtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
+        _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
+        _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
+        _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
+        _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
         OnRtpClosed += Close;
         OnRtcpBye += Close;
@@ -184,7 +184,7 @@ internal class RTCPeerConnection : IDisposable
         //Cancel Negotiation Task Event to Prevent Duplicated Calls
         onnegotiationneeded += CancelOnNegotiationNeededTask;
 
-        sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, RtpIceChannel.RTPPort);
+        _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
         onnegotiationneeded?.Invoke();
 
@@ -192,68 +192,18 @@ internal class RTCPeerConnection : IDisposable
         // This job was moved to a background thread as it was observed that interacting with the OS network
         // calls and/or initialising DNS was taking up to 600ms, see
         // https://github.com/sipsorcery-org/sipsorcery/issues/456.
-        _iceGatheringTask = Task.Run(RtpIceChannel.StartGathering);
+        _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
     }
-
-    private string LocalSdpSessionID { get; }
-
-    public RtpIceChannel RtpIceChannel { get; }
-    private IReadOnlyCollection<RTCDataChannel> DataChannels => dataChannels;
 
     /// <summary>
     ///     The ICE role the peer is acting in.
     /// </summary>
     private IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
 
-    /// <summary>
-    ///     The DTLS fingerprint supplied by the remote peer in their SDP. Needs to be checked
-    ///     that the certificate supplied during the DTLS handshake matches.
-    /// </summary>
-    private RTCDtlsFingerprint RemotePeerDtlsFingerprint { get; set; }
-
-    private RTCSessionDescription remoteDescription { get; set; }
-
-    public RTCSignalingState signalingState { get; private set; } = RTCSignalingState.closed;
-
-    private RTCIceConnectionState iceConnectionState =>
-        RtpIceChannel != null ? RtpIceChannel.IceConnectionState : RTCIceConnectionState.@new;
-
-    public RTCPeerConnectionState connectionState { get; private set; } = RTCPeerConnectionState.@new;
-
-    /// <summary>
-    /// The certificate being used to negotiate the DTLS handshake with the
-    /// remote peer.
-    /// </summary>
-    //private RTCCertificate _currentCertificate;
-    //public RTCCertificate CurrentCertificate
-    //{
-    //    get
-    //    {
-    //        return _currentCertificate;
-    //    }
-    //}
-
-    /// <summary>
-    ///     The fingerprint of the certificate being used to negotiate the DTLS handshake with the
-    ///     remote peer.
-    /// </summary>
-    private RTCDtlsFingerprint DtlsCertificateFingerprint { get; }
-
-    /// <summary>
-    ///     The SCTP transport over which SCTP data is sent and received.
-    /// </summary>
-    /// <remarks>
-    ///     WebRTC API definition:
-    ///     https://www.w3.org/TR/webrtc/#attributes-15
-    /// </remarks>
-    private RTCSctpTransport sctp { get; }
+    private RTCIceConnectionState IceConnectionState =>
+        _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
 
     public Guid Id { get; } = Guid.NewGuid();
-
-    /// <summary>
-    ///     The primary stream for this session - can be an AudioStream or a VideoStream
-    /// </summary>
-    protected MediaStream PrimaryStream { get; private set; }
 
     /// <summary>
     ///     The primary Audio Stream for this session
@@ -262,9 +212,9 @@ internal class RTCPeerConnection : IDisposable
     {
         get
         {
-            if (AudioStreamList.Count > 0)
+            if (_audioStreamList.Count > 0)
             {
-                return AudioStreamList[0];
+                return _audioStreamList[0];
             }
 
             return null;
@@ -278,29 +228,14 @@ internal class RTCPeerConnection : IDisposable
     {
         get
         {
-            if (VideoStreamList.Count > 0)
+            if (_videoStreamList.Count > 0)
             {
-                return VideoStreamList[0];
+                return _videoStreamList[0];
             }
 
             return null;
         }
     }
-
-    /// <summary>
-    ///     List of all Audio Streams for this session
-    /// </summary>
-    private List<AudioStream> AudioStreamList { get; } = new();
-
-    /// <summary>
-    ///     List of all Video Streams for this session
-    /// </summary>
-    private List<VideoStream> VideoStreamList { get; } = new();
-
-    /// <summary>
-    ///     The SDP offered by the remote call party for this session.
-    /// </summary>
-    protected SDP.SDP RemoteDescription { get; private set; }
 
     /// <summary>
     ///     Indicates whether the session has been closed. Once a session is closed it cannot
@@ -312,7 +247,7 @@ internal class RTCPeerConnection : IDisposable
     ///     Indicates whether the session has been started. Starting a session tells the RTP
     ///     socket to start receiving,
     /// </summary>
-    private bool IsStarted { get; set; }
+    public bool IsStarted { get; set; }
 
     /// <summary>
     ///     Indicates whether this session is using audio.
@@ -351,7 +286,7 @@ internal class RTCPeerConnection : IDisposable
             _onIceCandidate += value;
             if (notifyIce)
             {
-                foreach (var ice in RtpIceChannel.Candidates)
+                foreach (var ice in _rtpIceChannel.Candidates)
                 {
                     _onIceCandidate?.Invoke(ice);
                 }
@@ -394,38 +329,38 @@ internal class RTCPeerConnection : IDisposable
     /// <param name="state">The new ICE connection state.</param>
     private async void IceConnectionStateChange(RTCIceConnectionState iceState)
     {
-        oniceconnectionstatechange?.Invoke(iceConnectionState);
+        oniceconnectionstatechange?.Invoke(IceConnectionState);
 
-        if (iceState == RTCIceConnectionState.connected && RtpIceChannel.NominatedEntry != null)
+        if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
         {
             if (_dtlsHandle != null)
             {
-                if (PrimaryStream.DestinationEndPoint?.Address.Equals(RtpIceChannel.NominatedEntry.RemoteCandidate
+                if (_primaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate
                         .DestinationEndPoint.Address) == false ||
-                    PrimaryStream.DestinationEndPoint?.Port !=
-                    RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
+                    _primaryStream.DestinationEndPoint?.Port !=
+                    _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                 {
                     // Already connected and this event is due to change in the nominated remote candidate.
-                    var connectedEP = RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                    var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                     SetGlobalDestination(connectedEP, connectedEP);
                     Logger.LogInformation($"ICE changing connected remote end point to {connectedEP}.");
                 }
 
-                if (connectionState == RTCPeerConnectionState.disconnected ||
-                    connectionState == RTCPeerConnectionState.failed)
+                if (_connectionState == RTCPeerConnectionState.disconnected ||
+                    _connectionState == RTCPeerConnectionState.failed)
                 {
                     // The ICE connection state change is due to a re-connection.
-                    connectionState = RTCPeerConnectionState.connected;
-                    onconnectionstatechange?.Invoke(connectionState);
+                    _connectionState = RTCPeerConnectionState.connected;
+                    onconnectionstatechange?.Invoke(_connectionState);
                 }
             }
             else
             {
-                connectionState = RTCPeerConnectionState.connecting;
-                onconnectionstatechange?.Invoke(connectionState);
+                _connectionState = RTCPeerConnectionState.connecting;
+                onconnectionstatechange?.Invoke(_connectionState);
 
-                var connectedEP = RtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
+                var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
                 SetGlobalDestination(connectedEP, connectedEP);
                 Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
@@ -449,14 +384,14 @@ internal class RTCPeerConnection : IDisposable
                 {
                     var handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
-                    connectionState = handshakeResult
+                    _connectionState = handshakeResult
                         ? RTCPeerConnectionState.connected
-                        : connectionState = RTCPeerConnectionState.failed;
-                    onconnectionstatechange?.Invoke(connectionState);
+                        : _connectionState = RTCPeerConnectionState.failed;
+                    onconnectionstatechange?.Invoke(_connectionState);
 
-                    if (connectionState == RTCPeerConnectionState.connected)
+                    if (_connectionState == RTCPeerConnectionState.connected)
                     {
-                        await Start().ConfigureAwait(false);
+                        Start();
                         await InitialiseSctpTransport().ConfigureAwait(false);
                     }
                 }
@@ -472,30 +407,30 @@ internal class RTCPeerConnection : IDisposable
             }
         }
 
-        if (iceConnectionState == RTCIceConnectionState.checking)
+        if (IceConnectionState == RTCIceConnectionState.checking)
         {
             // Not sure about this correspondence between the ICE and peer connection states.
             // TODO: Double check spec.
             //connectionState = RTCPeerConnectionState.connecting;
             //onconnectionstatechange?.Invoke(connectionState);
         }
-        else if (iceConnectionState == RTCIceConnectionState.disconnected)
+        else if (IceConnectionState == RTCIceConnectionState.disconnected)
         {
-            if (connectionState == RTCPeerConnectionState.connected)
+            if (_connectionState == RTCPeerConnectionState.connected)
             {
-                connectionState = RTCPeerConnectionState.disconnected;
-                onconnectionstatechange?.Invoke(connectionState);
+                _connectionState = RTCPeerConnectionState.disconnected;
+                onconnectionstatechange?.Invoke(_connectionState);
             }
             else
             {
-                connectionState = RTCPeerConnectionState.failed;
-                onconnectionstatechange?.Invoke(connectionState);
+                _connectionState = RTCPeerConnectionState.failed;
+                onconnectionstatechange?.Invoke(_connectionState);
             }
         }
-        else if (iceConnectionState == RTCIceConnectionState.failed)
+        else if (IceConnectionState == RTCIceConnectionState.failed)
         {
-            connectionState = RTCPeerConnectionState.failed;
-            onconnectionstatechange?.Invoke(connectionState);
+            _connectionState = RTCPeerConnectionState.failed;
+            onconnectionstatechange?.Invoke(_connectionState);
         }
     }
 
@@ -504,24 +439,24 @@ internal class RTCPeerConnection : IDisposable
     ///     packets) for use with this session.
     /// </summary>
     /// <returns>A new RTPChannel instance.</returns>
-    protected RTPChannel CreateRtpChannel()
+    private RTPChannel CreateRtpChannel()
     {
-        if (RtpSessionConfig.IsMediaMultiplexed)
+        if (_rtpSessionConfig.IsMediaMultiplexed)
         {
-            if (MultiplexRtpChannel != null)
+            if (_multiplexRtpChannel != null)
             {
-                return MultiplexRtpChannel;
+                return _multiplexRtpChannel;
             }
         }
 
         var rtpIceChannel = new RtpIceChannel(
             RTCIceTransportPolicy.all,
             false,
-            RtpSessionConfig.BindPort == 0 ? 0 : RtpSessionConfig.BindPort + MRtpChannelsCount * 2 + 2);
+            _rtpSessionConfig.BindPort == 0 ? 0 : _rtpSessionConfig.BindPort + _rtpChannelsCount * 2 + 2);
 
-        if (RtpSessionConfig.IsMediaMultiplexed)
+        if (_rtpSessionConfig.IsMediaMultiplexed)
         {
-            MultiplexRtpChannel = rtpIceChannel;
+            _multiplexRtpChannel = rtpIceChannel;
         }
 
         rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
@@ -529,7 +464,7 @@ internal class RTCPeerConnection : IDisposable
         // Start the RTP, and if required the Control, socket receivers and the RTCP session.
         rtpIceChannel.Start();
 
-        MRtpChannelsCount++;
+        _rtpChannelsCount++;
 
         return rtpIceChannel;
     }
@@ -540,21 +475,21 @@ internal class RTCPeerConnection : IDisposable
     /// <param name="init">The answer/offer SDP from the remote party.</param>
     public SetDescriptionResultEnum setRemoteDescription(RTCSessionDescriptionInit init)
     {
-        remoteDescription = new RTCSessionDescription { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
+        _remoteDescription = new RTCSessionDescription
+            { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
 
-        var remoteSdp = remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+        var remoteSdp = _remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
         var sdpType = init.type == RTCSdpType.offer ? SdpType.offer : SdpType.answer;
 
-        switch (signalingState)
+        if (_signalingState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer)
         {
-            case var sigState when sigState == RTCSignalingState.have_local_offer && sdpType == SdpType.offer:
-                Logger.LogWarning(
-                    $"RTCPeerConnection received an SDP offer but was already in {sigState} state. Remote offer rejected.");
-                return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
+            Logger.LogWarning(
+                $"RTCPeerConnection received an SDP offer but was already in {_signalingState} state. Remote offer rejected.");
+            return SetDescriptionResultEnum.WrongSdpTypeOfferAfterOffer;
         }
 
-        var setResult = SetRemoteDescription(sdpType, remoteSdp);
+        var setResult = SetRemoteDescription(remoteSdp);
 
         if (setResult == SetDescriptionResultEnum.OK)
         {
@@ -577,10 +512,10 @@ internal class RTCPeerConnection : IDisposable
                 // Check for data channel announcements.
                 if (ann.Media == SDPMediaTypesEnum.application &&
                     ann.MediaFormats.Count() == 1 &&
-                    ann.ApplicationMediaFormats.Single().Key == SDP_DATACHANNEL_FORMAT_ID)
+                    ann.ApplicationMediaFormats.Single().Key == SDP_DATA_CHANNEL_FORMAT_ID)
                 {
-                    if (ann.Transport == RTP_MEDIA_DATACHANNEL_DTLS_PROFILE ||
-                        ann.Transport == RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE)
+                    if (ann.Transport == RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE ||
+                        ann.Transport == RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE)
                     {
                         dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                         remoteIceRole = remoteIceRole ?? remoteSdp.IceRole;
@@ -596,12 +531,12 @@ internal class RTCPeerConnection : IDisposable
 
             if (remoteSdp.IceImplementation == IceImplementationEnum.lite)
             {
-                RtpIceChannel.IsController = true;
+                _rtpIceChannel.IsController = true;
             }
 
             if (init.type == RTCSdpType.answer)
             {
-                RtpIceChannel.IsController = true;
+                _rtpIceChannel.IsController = true;
                 IceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
             }
             //As Chrome does not support changing IceRole while renegotiating we need to keep same previous IceRole if we already negotiated before
@@ -613,7 +548,7 @@ internal class RTCPeerConnection : IDisposable
 
             if (remoteIceUser != null && remoteIcePassword != null)
             {
-                RtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
+                _rtpIceChannel.SetRemoteCredentials(remoteIceUser, remoteIcePassword);
             }
 
             if (!string.IsNullOrWhiteSpace(dtlsFingerprint))
@@ -621,7 +556,7 @@ internal class RTCPeerConnection : IDisposable
                 dtlsFingerprint = dtlsFingerprint.Trim().ToLower();
                 if (RTCDtlsFingerprint.TryParse(dtlsFingerprint, out var remoteFingerprint))
                 {
-                    RemotePeerDtlsFingerprint = remoteFingerprint;
+                    _remotePeerDtlsFingerprint = remoteFingerprint;
                 }
                 else
                 {
@@ -668,19 +603,19 @@ internal class RTCPeerConnection : IDisposable
 
             if (init.type == RTCSdpType.offer)
             {
-                signalingState = RTCSignalingState.have_remote_offer;
+                _signalingState = RTCSignalingState.have_remote_offer;
                 onsignalingstatechange?.Invoke();
             }
             else
             {
-                signalingState = RTCSignalingState.stable;
+                _signalingState = RTCSignalingState.stable;
                 onsignalingstatechange?.Invoke();
             }
 
             // Trigger the ICE candidate events for any non-host candidates, host candidates are always included in the
             // SDP offer/answer. The reason for the trigger is that ICE candidates cannot be sent to the remote peer
             // until it is ready to receive them which is indicated by the remote offer being received.
-            foreach (var nonHostCand in RtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
+            foreach (var nonHostCand in _rtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
             {
                 _onIceCandidate?.Invoke(nonHostCand);
             }
@@ -699,19 +634,19 @@ internal class RTCPeerConnection : IDisposable
         {
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-            RtpIceChannel?.Close();
+            _rtpIceChannel?.Close();
             _dtlsHandle?.Close();
 
-            if (sctp != null && sctp.state == RTCSctpTransportState.Connected)
+            if (_sctp != null && _sctp.state == RTCSctpTransportState.Connected)
             {
-                sctp?.Close();
+                _sctp?.Close();
             }
 
             if (!IsClosed)
             {
                 IsClosed = true;
 
-                foreach (var audioStream in AudioStreamList)
+                foreach (var audioStream in _audioStreamList)
                 {
                     if (audioStream != null)
                     {
@@ -728,7 +663,7 @@ internal class RTCPeerConnection : IDisposable
                     }
                 }
 
-                foreach (var videoStream in VideoStreamList)
+                foreach (var videoStream in _videoStreamList)
                 {
                     if (videoStream != null)
                     {
@@ -748,7 +683,7 @@ internal class RTCPeerConnection : IDisposable
                 OnRtpClosed?.Invoke(reason);
             }
 
-            connectionState = RTCPeerConnectionState.closed;
+            _connectionState = RTCPeerConnectionState.closed;
             onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
         }
     }
@@ -765,7 +700,25 @@ internal class RTCPeerConnection : IDisposable
     /// </param>
     public RTCSessionDescriptionInit CreateOffer()
     {
-        var mediaStreamList = GetMediaStreams();
+        var mediaStream2 = new List<MediaStream>();
+
+        foreach (var audioStream in _audioStreamList)
+        {
+            if (audioStream.LocalTrack != null)
+            {
+                mediaStream2.Add(audioStream);
+            }
+        }
+
+        foreach (var videoStream in _videoStreamList)
+        {
+            if (videoStream.LocalTrack != null)
+            {
+                mediaStream2.Add(videoStream);
+            }
+        }
+
+        var mediaStreamList = mediaStream2;
         //Revert to DefaultStreamStatus
         foreach (var mediaStream in mediaStreamList)
         {
@@ -775,7 +728,181 @@ internal class RTCPeerConnection : IDisposable
             }
         }
 
-        var offerSdp = createBaseSdp(mediaStreamList);
+        // Make sure the ICE gathering of local IP addresses is complete.
+        // This task should complete very quickly (<1s) but it is deemed very useful to wait
+        // for it to complete as it allows local ICE candidates to be included in the SDP.
+        // In theory it would be better to an async/await but that would result in a breaking
+        // change to the API and for a one off (once per class instance not once per method call)
+        // delay of a few hundred milliseconds it was decided not to break the API.
+        _iceGatheringTask.Wait();
+
+        var offerSdp1 = new SDP.SDP(IPAddress.Loopback);
+        offerSdp1.SessionId = _localSdpSessionId;
+
+        var dtlsFingerprint = _dtlsCertificateFingerprint.ToString();
+        var iceCandidatesAdded = false;
+
+
+        // Local function to add ICE candidates to one of the media announcements.
+        void AddIceCandidates(SDPMediaAnnouncement announcement)
+        {
+            if (_rtpIceChannel.Candidates?.Count > 0)
+            {
+                announcement.IceCandidates = new List<string>();
+
+                // Add ICE candidates.
+                foreach (var iceCandidate in _rtpIceChannel.Candidates)
+                {
+                    announcement.IceCandidates.Add(iceCandidate.ToString());
+                }
+
+                if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
+                {
+                    announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
+                }
+            }
+        }
+
+        ;
+
+        // Media announcements must be in the same order in the offer and answer.
+        var mediaIndex = 0;
+        var audioMediaIndex = 0;
+        var videoMediaIndex = 0;
+        foreach (var mediaStream1 in mediaStreamList)
+        {
+            var mindex = 0;
+            var midTag = "0";
+
+            if (_remoteSdp == null)
+            {
+                mindex = mediaIndex;
+                midTag = mediaIndex.ToString();
+            }
+            else
+            {
+                if (mediaStream1.LocalTrack.Kind == SDPMediaTypesEnum.audio)
+                {
+                    (mindex, midTag) =
+                        _remoteSdp.GetIndexForMediaType(mediaStream1.LocalTrack.Kind, audioMediaIndex);
+                    audioMediaIndex++;
+                }
+                else if (mediaStream1.LocalTrack.Kind == SDPMediaTypesEnum.video)
+                {
+                    (mindex, midTag) =
+                        _remoteSdp.GetIndexForMediaType(mediaStream1.LocalTrack.Kind, videoMediaIndex);
+                    videoMediaIndex++;
+                }
+            }
+
+            mediaIndex++;
+
+            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            {
+                Logger.LogWarning(
+                    $"Media announcement for {mediaStream1.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
+            }
+            else
+            {
+                var announcement = new SDPMediaAnnouncement(
+                    mediaStream1.LocalTrack.Kind,
+                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    mediaStream1.LocalTrack.Capabilities);
+
+                announcement.Transport = RTP_MEDIA_NON_FEEDBACK_PROFILE;
+                announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
+                announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
+                announcement.AddExtra(RtcpAttribute);
+                announcement.MediaStreamStatus = mediaStream1.LocalTrack.StreamStatus;
+                announcement.MediaID = midTag;
+                announcement.MLineIndex = mindex;
+
+                announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                announcement.IceOptions = ICE_OPTIONS;
+                announcement.IceRole = IceRole;
+                announcement.DtlsFingerprint = dtlsFingerprint;
+
+                if (iceCandidatesAdded == false && !false)
+                {
+                    AddIceCandidates(announcement);
+                    iceCandidatesAdded = true;
+                }
+
+                if (mediaStream1.LocalTrack.Ssrc != 0)
+                {
+                    var trackCname = mediaStream1.RtcpSession?.Cname;
+
+                    if (trackCname != null)
+                    {
+                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream1.LocalTrack.Ssrc, trackCname,
+                            null));
+                    }
+                }
+
+                offerSdp1.Media.Add(announcement);
+            }
+        }
+
+        if (_dataChannels.Count > 0 ||
+            (_remoteSdp?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
+        {
+            int mindex;
+            string midTag;
+            if (_remoteSdp == null)
+            {
+                (mindex, midTag) = (mediaIndex, mediaIndex.ToString());
+            }
+            else
+            {
+                (mindex, midTag) = _remoteSdp.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
+            }
+
+            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            {
+                Logger.LogWarning(
+                    "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
+            }
+            else
+            {
+                var dataChannelAnnouncement = new SDPMediaAnnouncement(
+                    SDPMediaTypesEnum.application,
+                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    new List<SDPApplicationMediaFormat> { new(SDP_DATA_CHANNEL_FORMAT_ID) });
+                dataChannelAnnouncement.Transport = RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE;
+                dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
+
+                dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
+                dataChannelAnnouncement.MaxMessageSize = _sctp.maxMessageSize;
+                dataChannelAnnouncement.MLineIndex = mindex;
+                dataChannelAnnouncement.MediaID = midTag;
+                dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
+                dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
+                dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
+                dataChannelAnnouncement.IceRole = IceRole;
+                dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
+
+                if (iceCandidatesAdded == false && !false)
+                {
+                    AddIceCandidates(dataChannelAnnouncement);
+                    iceCandidatesAdded = true;
+                }
+
+                offerSdp1.Media.Add(dataChannelAnnouncement);
+            }
+        }
+
+        // Set the Bundle attribute to indicate all media announcements are being multiplexed.
+        if (offerSdp1.Media?.Count > 0)
+        {
+            offerSdp1.Group = BUNDLE_ATTRIBUTE;
+            foreach (var ann1 in offerSdp1.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
+            {
+                offerSdp1.Group += $" {ann1.MediaID}";
+            }
+        }
+
+        var offerSdp = offerSdp1;
 
         foreach (var ann in offerSdp.Media)
         {
@@ -789,216 +916,6 @@ internal class RTCPeerConnection : IDisposable
         };
 
         return initDescription;
-    }
-
-    /// <summary>
-    ///     Gets the RTP channel being used to send and receive data on this peer connection.
-    ///     Unlike the base RTP session peer connections only ever use a single RTP channel.
-    ///     Audio and video (and RTCP) are all multiplexed on the same channel.
-    /// </summary>
-    private RtpIceChannel GetRtpChannel()
-    {
-        return PrimaryStream.RTPChannel as RtpIceChannel;
-    }
-
-    /// <summary>
-    ///     Generates the base SDP for an offer or answer. The SDP will then be tailored depending
-    ///     on whether it's being used in an offer or an answer.
-    /// </summary>
-    /// <param name="mediaStreamList">THe media streamss to add to the SDP description.</param>
-    /// <param name="excludeIceCandidates">
-    ///     If true it indicates the caller does not want ICE candidates added
-    ///     to the SDP.
-    /// </param>
-    /// <remarks>
-    ///     From https://tools.ietf.org/html/draft-ietf-mmusic-ice-sip-sdp-39#section-4.2.5:
-    ///     "The transport address from the peer for the default destination
-    ///     is set to IPv4/IPv6 address values "0.0.0.0"/"::" and port value
-    ///     of "9".  This MUST NOT be considered as a ICE failure by the peer
-    ///     agent and the ICE processing MUST continue as usual."
-    /// </remarks>
-    private SDP.SDP createBaseSdp(List<MediaStream> mediaStreamList, bool excludeIceCandidates = false)
-    {
-        // Make sure the ICE gathering of local IP addresses is complete.
-        // This task should complete very quickly (<1s) but it is deemed very useful to wait
-        // for it to complete as it allows local ICE candidates to be included in the SDP.
-        // In theory it would be better to an async/await but that would result in a breaking
-        // change to the API and for a one off (once per class instance not once per method call)
-        // delay of a few hundred milliseconds it was decided not to break the API.
-        _iceGatheringTask.Wait();
-
-        var offerSdp = new SDP.SDP(IPAddress.Loopback);
-        offerSdp.SessionId = LocalSdpSessionID;
-
-        var dtlsFingerprint = DtlsCertificateFingerprint.ToString();
-        var iceCandidatesAdded = false;
-
-
-        // Local function to add ICE candidates to one of the media announcements.
-        void AddIceCandidates(SDPMediaAnnouncement announcement)
-        {
-            if (RtpIceChannel.Candidates?.Count > 0)
-            {
-                announcement.IceCandidates = new List<string>();
-
-                // Add ICE candidates.
-                foreach (var iceCandidate in RtpIceChannel.Candidates)
-                {
-                    announcement.IceCandidates.Add(iceCandidate.ToString());
-                }
-
-                foreach (var iceCandidate in _applicationIceCandidates)
-                {
-                    announcement.IceCandidates.Add(iceCandidate.ToString());
-                }
-
-                if (RtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
-                {
-                    announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
-                }
-            }
-        }
-
-        ;
-
-        // Media announcements must be in the same order in the offer and answer.
-        var mediaIndex = 0;
-        var audioMediaIndex = 0;
-        var videoMediaIndex = 0;
-        foreach (var mediaStream in mediaStreamList)
-        {
-            var mindex = 0;
-            var midTag = "0";
-
-            if (RemoteDescription == null)
-            {
-                mindex = mediaIndex;
-                midTag = mediaIndex.ToString();
-            }
-            else
-            {
-                if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.audio)
-                {
-                    (mindex, midTag) =
-                        RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, audioMediaIndex);
-                    audioMediaIndex++;
-                }
-                else if (mediaStream.LocalTrack.Kind == SDPMediaTypesEnum.video)
-                {
-                    (mindex, midTag) =
-                        RemoteDescription.GetIndexForMediaType(mediaStream.LocalTrack.Kind, videoMediaIndex);
-                    videoMediaIndex++;
-                }
-            }
-
-            mediaIndex++;
-
-            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
-            {
-                Logger.LogWarning(
-                    $"Media announcement for {mediaStream.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
-            }
-            else
-            {
-                var announcement = new SDPMediaAnnouncement(
-                    mediaStream.LocalTrack.Kind,
-                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
-                    mediaStream.LocalTrack.Capabilities);
-
-                announcement.Transport = RTP_MEDIA_PROFILE;
-                announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                announcement.AddExtra(RTCP_ATTRIBUTE);
-                announcement.MediaStreamStatus = mediaStream.LocalTrack.StreamStatus;
-                announcement.MediaID = midTag;
-                announcement.MLineIndex = mindex;
-
-                announcement.IceUfrag = RtpIceChannel.LocalIceUser;
-                announcement.IcePwd = RtpIceChannel.LocalIcePassword;
-                announcement.IceOptions = ICE_OPTIONS;
-                announcement.IceRole = IceRole;
-                announcement.DtlsFingerprint = dtlsFingerprint;
-
-                if (iceCandidatesAdded == false && !excludeIceCandidates)
-                {
-                    AddIceCandidates(announcement);
-                    iceCandidatesAdded = true;
-                }
-
-                if (mediaStream.LocalTrack.Ssrc != 0)
-                {
-                    var trackCname = mediaStream.RtcpSession?.Cname;
-
-                    if (trackCname != null)
-                    {
-                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream.LocalTrack.Ssrc, trackCname,
-                            null));
-                    }
-                }
-
-                offerSdp.Media.Add(announcement);
-            }
-        }
-
-        if (DataChannels.Count > 0 ||
-            (RemoteDescription?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
-        {
-            int mindex;
-            string midTag;
-            if (RemoteDescription == null)
-            {
-                (mindex, midTag) = (mediaIndex, mediaIndex.ToString());
-            }
-            else
-            {
-                (mindex, midTag) = RemoteDescription.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
-            }
-
-            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
-            {
-                Logger.LogWarning(
-                    "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
-            }
-            else
-            {
-                var dataChannelAnnouncement = new SDPMediaAnnouncement(
-                    SDPMediaTypesEnum.application,
-                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
-                    new List<SDPApplicationMediaFormat> { new(SDP_DATACHANNEL_FORMAT_ID) });
-                dataChannelAnnouncement.Transport = RTP_MEDIA_DATACHANNEL_UDPDTLS_PROFILE;
-                dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-
-                dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
-                dataChannelAnnouncement.MaxMessageSize = sctp.maxMessageSize;
-                dataChannelAnnouncement.MLineIndex = mindex;
-                dataChannelAnnouncement.MediaID = midTag;
-                dataChannelAnnouncement.IceUfrag = RtpIceChannel.LocalIceUser;
-                dataChannelAnnouncement.IcePwd = RtpIceChannel.LocalIcePassword;
-                dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                dataChannelAnnouncement.IceRole = IceRole;
-                dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
-
-                if (iceCandidatesAdded == false && !excludeIceCandidates)
-                {
-                    AddIceCandidates(dataChannelAnnouncement);
-                    iceCandidatesAdded = true;
-                }
-
-                offerSdp.Media.Add(dataChannelAnnouncement);
-            }
-        }
-
-        // Set the Bundle attribute to indicate all media announcements are being multiplexed.
-        if (offerSdp.Media?.Count > 0)
-        {
-            offerSdp.Group = BUNDLE_ATTRIBUTE;
-            foreach (var ann in offerSdp.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
-            {
-                offerSdp.Group += $" {ann.MediaID}";
-            }
-        }
-
-        return offerSdp;
     }
 
     /// <summary>
@@ -1061,9 +978,9 @@ internal class RTCPeerConnection : IDisposable
     {
         var candidate = new RTCIceCandidate(candidateInit);
 
-        if (RtpIceChannel.Component == candidate.component)
+        if (_rtpIceChannel.Component == candidate.component)
         {
-            RtpIceChannel.AddRemoteCandidate(candidate);
+            _rtpIceChannel.AddRemoteCandidate(candidate);
         }
         else
         {
@@ -1079,12 +996,12 @@ internal class RTCPeerConnection : IDisposable
     private void UpdatedSctpDestinationPort()
     {
         // If a data channel was requested by the application then create the SCTP association.
-        var sctpAnn = RemoteDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
+        var sctpAnn = _remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
         var destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
 
         if (destinationPort != SCTP_DEFAULT_PORT)
         {
-            sctp.UpdateDestinationPort(destinationPort);
+            _sctp.UpdateDestinationPort(destinationPort);
         }
     }
 
@@ -1117,10 +1034,10 @@ internal class RTCPeerConnection : IDisposable
     {
         try
         {
-            sctp.OnStateChanged += OnSctpTransportStateChanged;
-            sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
+            _sctp.OnStateChanged += OnSctpTransportStateChanged;
+            _sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
 
-            if (DataChannels.Count > 0)
+            if (_dataChannels.Count > 0)
             {
                 await InitialiseSctpAssociation().ConfigureAwait(false);
             }
@@ -1128,7 +1045,7 @@ internal class RTCPeerConnection : IDisposable
         catch (Exception excp)
         {
             Logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
-            sctp?.Close();
+            _sctp?.Close();
         }
     }
 
@@ -1142,11 +1059,11 @@ internal class RTCPeerConnection : IDisposable
         {
             Logger.LogDebug("SCTP transport successfully connected.");
 
-            sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
-            sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
+            _sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
+            _sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
 
             // Create new SCTP streams for any outstanding data channel requests.
-            foreach (var dataChannel in dataChannels.ActivatePendingChannels())
+            foreach (var dataChannel in _dataChannels.ActivatePendingChannels())
             {
                 OpenDataChannel(dataChannel);
             }
@@ -1163,12 +1080,12 @@ internal class RTCPeerConnection : IDisposable
                               $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
         // TODO: Set reliability, priority etc. properties on the data channel.
-        var dc = new RTCDataChannel(sctp)
+        var dc = new RTCDataChannel(_sctp)
             { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
 
         dc.SendDcepAck();
 
-        if (dataChannels.AddActiveChannel(dc))
+        if (_dataChannels.AddActiveChannel(dc))
         {
         }
         else
@@ -1184,7 +1101,7 @@ internal class RTCPeerConnection : IDisposable
     /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
     private void OnSctpAssociationDataChannelOpened(ushort streamID)
     {
-        dataChannels.TryGetChannel(streamID, out var dc);
+        _dataChannels.TryGetChannel(streamID, out var dc);
 
         var label = dc != null ? dc.label : "<none>";
         Logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
@@ -1205,15 +1122,15 @@ internal class RTCPeerConnection : IDisposable
     /// </summary>
     private async Task InitialiseSctpAssociation()
     {
-        if (sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
+        if (_sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
         {
-            sctp.Associate();
+            _sctp.Associate();
         }
 
-        if (sctp.state != RTCSctpTransportState.Connected)
+        if (_sctp.state != RTCSctpTransportState.Connected)
         {
             var onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            sctp.OnStateChanged += state =>
+            _sctp.OnStateChanged += state =>
             {
                 Logger.LogDebug($"SCTP transport for create data channel request changed to state {state}.");
 
@@ -1229,18 +1146,18 @@ internal class RTCPeerConnection : IDisposable
                 .WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000))
                 .ConfigureAwait(false);
 
-            if (sctp.state != RTCSctpTransportState.Connected)
+            if (_sctp.state != RTCSctpTransportState.Connected)
             {
                 var duration = DateTime.Now.Subtract(startTime).TotalMilliseconds;
 
                 if (completedTask != onSctpConnectedTcs.Task)
                 {
                     throw new ApplicationException(
-                        $"SCTP association timed out after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                        $"SCTP association timed out after {duration:0.##}ms with association in state {_sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
                 }
 
                 throw new ApplicationException(
-                    $"SCTP association failed after {duration:0.##}ms with association in state {sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
+                    $"SCTP association failed after {duration:0.##}ms with association in state {_sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
             }
         }
     }
@@ -1282,12 +1199,12 @@ internal class RTCPeerConnection : IDisposable
     {
         Logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-        var rtpChannel = PrimaryStream.RTPChannel;
+        var rtpChannel = _primaryStream.RTPChannel;
 
         dtlsHandle.OnDataReady += buf =>
         {
             //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-            rtpChannel.Send(PrimaryStream.DestinationEndPoint, buf);
+            rtpChannel.Send(_primaryStream.DestinationEndPoint, buf);
         };
 
         var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
@@ -1303,7 +1220,7 @@ internal class RTCPeerConnection : IDisposable
         Logger.LogDebug(
             $"RTCPeerConnection DTLS handshake result {true}, is handshake complete {dtlsHandle.IsHandshakeComplete()}.");
 
-        var expectedFp = RemotePeerDtlsFingerprint;
+        var expectedFp = _remotePeerDtlsFingerprint;
         var remoteFingerprint = DtlsUtils.Fingerprint(expectedFp.algorithm, dtlsHandle.RemoteCertificate);
 
         if (remoteFingerprint.value?.ToUpper() != expectedFp.value?.ToUpper())
@@ -1338,7 +1255,7 @@ internal class RTCPeerConnection : IDisposable
             Logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
 
             // No point keeping the SCTP association open if there is no DTLS transport available.
-            sctp?.Close();
+            _sctp?.Close();
         }
         else
         {
@@ -1387,13 +1304,13 @@ internal class RTCPeerConnection : IDisposable
     public event Action<IPEndPoint, RtcpCompoundPacket> OnReceiveReport;
 
 
-    protected void ResetRemoteSDPSsrcAttributes()
+    private void ResetRemoteSDPSsrcAttributes()
     {
         _audioRemoteSdpSsrcAttributes.Clear();
         _videoRemoteSdpSsrcAttributes.Clear();
     }
 
-    protected void AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum mediaType, List<SDPSsrcAttribute> sdpSsrcAttributes)
+    private void AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum mediaType, List<SDPSsrcAttribute> sdpSsrcAttributes)
     {
         if (mediaType == SDPMediaTypesEnum.audio)
         {
@@ -1405,7 +1322,7 @@ internal class RTCPeerConnection : IDisposable
         }
     }
 
-    protected void LogRemoteSDPSsrcAttributes()
+    private void LogRemoteSDPSsrcAttributes()
     {
         var str = "Audio:[ ";
         foreach (var audioRemoteSdpSsrcAttribute in _audioRemoteSdpSsrcAttributes)
@@ -1462,16 +1379,16 @@ internal class RTCPeerConnection : IDisposable
 
     private AudioStream GetOrCreateAudioStream(int index)
     {
-        if (index < AudioStreamList.Count)
+        if (index < _audioStreamList.Count)
         {
             // We ask too fast a new AudioStram ...
-            return AudioStreamList[index];
+            return _audioStreamList[index];
         }
 
-        if (index == AudioStreamList.Count)
+        if (index == _audioStreamList.Count)
         {
-            var audioStream = new AudioStream(RtpSessionConfig, index);
-            AudioStreamList.Add(audioStream);
+            var audioStream = new AudioStream(_rtpSessionConfig, index);
+            _audioStreamList.Add(audioStream);
             return audioStream;
         }
 
@@ -1480,16 +1397,16 @@ internal class RTCPeerConnection : IDisposable
 
     private VideoStream GetOrCreateVideoStream(int index)
     {
-        if (index < VideoStreamList.Count)
+        if (index < _videoStreamList.Count)
         {
             // We ask too fast a new AudioStram ...
-            return VideoStreamList[index];
+            return _videoStreamList[index];
         }
 
-        if (index == VideoStreamList.Count)
+        if (index == _videoStreamList.Count)
         {
-            var videoStream = new VideoStream(RtpSessionConfig, index);
-            VideoStreamList.Add(videoStream);
+            var videoStream = new VideoStream(_rtpSessionConfig, index);
+            _videoStreamList.Add(videoStream);
             return videoStream;
         }
 
@@ -1499,10 +1416,9 @@ internal class RTCPeerConnection : IDisposable
     /// <summary>
     ///     Sets the remote SDP description for this session.
     /// </summary>
-    /// <param name="sdpType">Whether the remote SDP is an offer or answer.</param>
     /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
     /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
-    protected SetDescriptionResultEnum SetRemoteDescription(SdpType sdpType, SDP.SDP sessionDescription)
+    private SetDescriptionResultEnum SetRemoteDescription(SDP.SDP sessionDescription)
     {
         if (sessionDescription == null)
         {
@@ -1574,11 +1490,38 @@ internal class RTCPeerConnection : IDisposable
                 SDPAudioVideoMediaFormat.SortMediaCapability(capabilities, currentMediaStream.LocalTrack?.Capabilities);
 
                 var remoteRtpEp = GetAnnouncementRTPDestination(announcement, connectionAddress);
-                SetLocalTrackStreamStatus(currentMediaStream.LocalTrack, remoteRtpEp);
+                if (currentMediaStream.LocalTrack != null)
+                {
+                    if (currentMediaStream.LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
+                    {
+                        currentMediaStream.LocalTrack.StreamStatus = currentMediaStream.LocalTrack.DefaultStreamStatus;
+                    }
+
+                    if (remoteRtpEp != null)
+                    {
+                        if (IPAddress.Any.Equals(remoteRtpEp.Address) ||
+                            IPAddress.IPv6Any.Equals(remoteRtpEp.Address))
+                        {
+                            // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive, except
+                            // if a special port number is used (defined as "9") which indicates that the media announcement is not
+                            // responsible for setting the remote end point for the audio stream. Instead it's most likely being set
+                            // using ICE.
+                            if (remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
+                            {
+                                currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                            }
+                        }
+                        else if (remoteRtpEp.Port == 0)
+                        {
+                            currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
+                        }
+                    }
+                }
+
                 IPEndPoint remoteRtcpEp = null;
                 if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
-                    remoteRtcpEp = RtpSessionConfig.IsRtcpMultiplexed
+                    remoteRtcpEp = _rtpSessionConfig.IsRtcpMultiplexed
                         ? remoteRtpEp
                         : new IPEndPoint(remoteRtpEp.Address, remoteRtpEp.Port + 1);
                 }
@@ -1608,7 +1551,7 @@ internal class RTCPeerConnection : IDisposable
             }
 
             //Close old RTCPSessions opened
-            foreach (var audioStream in AudioStreamList)
+            foreach (var audioStream in _audioStreamList)
             {
                 if (audioStream.RtcpSession != null && audioStream.LocalTrack == null)
                 {
@@ -1617,7 +1560,7 @@ internal class RTCPeerConnection : IDisposable
             }
 
             //Close old RTCPSessions opened
-            foreach (var videoStream in VideoStreamList)
+            foreach (var videoStream in _videoStreamList)
             {
                 if (videoStream.RtcpSession != null && videoStream.LocalTrack == null)
                 {
@@ -1627,7 +1570,7 @@ internal class RTCPeerConnection : IDisposable
 
             // If we get to here then the remote description was compatible with the local media tracks.
             // Set the remote description and end points.
-            RemoteDescription = sessionDescription;
+            _remoteSdp = sessionDescription;
 
             return SetDescriptionResultEnum.OK;
         }
@@ -1676,18 +1619,18 @@ internal class RTCPeerConnection : IDisposable
     ///     Used for child classes that require a single RTP channel for all RTP (audio and video)
     ///     and RTCP communications.
     /// </summary>
-    protected void AddSingleTrack(bool videoAsPrimary)
+    private void AddSingleTrack(bool videoAsPrimary)
     {
         if (videoAsPrimary)
         {
-            PrimaryStream = GetNextVideoStreamByLocalTrack();
+            _primaryStream = GetNextVideoStreamByLocalTrack();
         }
         else
         {
-            PrimaryStream = GetNextAudioStreamByLocalTrack();
+            _primaryStream = GetNextAudioStreamByLocalTrack();
         }
 
-        InitMediaStream(PrimaryStream);
+        InitMediaStream(_primaryStream);
     }
 
     private void InitMediaStream(MediaStream currentMediaStream)
@@ -1705,17 +1648,6 @@ internal class RTCPeerConnection : IDisposable
     /// </summary>
     /// <param name="track">The media track to add to the session.</param>
     public void AddTrack(MediaStreamTrack track)
-    {
-        AddLocalTrack(track);
-    }
-#nullable restore
-    /// <summary>
-    ///     Adds a local media stream to this session. Local media tracks should be added by the
-    ///     application to control what session description offers and answers can be made as
-    ///     well as being used to match up with remote tracks.
-    /// </summary>
-    /// <param name="track">The local track to add.</param>
-    private void AddLocalTrack(MediaStreamTrack track)
     {
         MediaStream currentMediaStream;
         if (track.Kind == SDPMediaTypesEnum.audio)
@@ -1746,29 +1678,30 @@ internal class RTCPeerConnection : IDisposable
             currentMediaStream.LocalTrack = track;
         }
     }
+#nullable restore
 
-    protected void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+    private void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
     {
-        foreach (var audioStream in AudioStreamList)
+        foreach (var audioStream in _audioStreamList)
         {
             audioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
         }
 
-        foreach (var videoStream in VideoStreamList)
+        foreach (var videoStream in _videoStreamList)
         {
             videoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
         }
     }
 
-    protected void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp,
+    private void SetGlobalSecurityContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcp,
         ProtectRtpPacket unprotectRtcp)
     {
-        foreach (var audioStream in AudioStreamList)
+        foreach (var audioStream in _audioStreamList)
         {
             audioStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
         }
 
-        foreach (var videoStream in VideoStreamList)
+        foreach (var videoStream in _videoStreamList)
         {
             videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
         }
@@ -1777,25 +1710,25 @@ internal class RTCPeerConnection : IDisposable
     private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
     {
         // Get primary AudioStream
-        if (PrimaryStream != null && mediaStream != null)
+        if (_primaryStream != null && mediaStream != null)
         {
-            var secureContext = PrimaryStream.SecurityContext;
+            var secureContext = _primaryStream.SecurityContext;
             if (secureContext != null)
             {
                 mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket,
                     secureContext.UnprotectRtcpPacket);
             }
 
-            mediaStream.SetDestination(PrimaryStream.DestinationEndPoint, PrimaryStream.ControlDestinationEndPoint);
+            mediaStream.SetDestination(_primaryStream.DestinationEndPoint, _primaryStream.ControlDestinationEndPoint);
         }
     }
 
     private AudioStream GetNextAudioStreamByLocalTrack()
     {
-        var index = AudioStreamList.Count;
+        var index = _audioStreamList.Count;
         if (index > 0)
         {
-            foreach (var audioStream in AudioStreamList)
+            foreach (var audioStream in _audioStreamList)
             {
                 if (audioStream.LocalTrack == null)
                 {
@@ -1818,10 +1751,10 @@ internal class RTCPeerConnection : IDisposable
 
     private VideoStream GetNextVideoStreamByLocalTrack()
     {
-        var index = VideoStreamList.Count;
+        var index = _videoStreamList.Count;
         if (index > 0)
         {
-            foreach (var videoStream in VideoStreamList)
+            foreach (var videoStream in _videoStreamList)
             {
                 if (videoStream.LocalTrack == null)
                 {
@@ -1838,78 +1771,15 @@ internal class RTCPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     Adjust the stream status of the local media tracks based on the remote tracks.
-    /// </summary>
-    private void SetLocalTrackStreamStatus(MediaStreamTrack localTrack, IPEndPoint remoteRTPEndPoint)
-    {
-        if (localTrack != null)
-        {
-            if (localTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
-            {
-                localTrack.StreamStatus = localTrack.DefaultStreamStatus;
-            }
-
-            if (remoteRTPEndPoint != null)
-            {
-                if (IPAddress.Any.Equals(remoteRTPEndPoint.Address) ||
-                    IPAddress.IPv6Any.Equals(remoteRTPEndPoint.Address))
-                {
-                    // A connection address of 0.0.0.0 or [::], which is unreachable, means the media is inactive, except
-                    // if a special port number is used (defined as "9") which indicates that the media announcement is not
-                    // responsible for setting the remote end point for the audio stream. Instead it's most likely being set
-                    // using ICE.
-                    if (remoteRTPEndPoint.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
-                    {
-                        localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
-                    }
-                }
-                else if (remoteRTPEndPoint.Port == 0)
-                {
-                    localTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Gets the media streams available in this session. Will only be audio, video or both.
-    ///     media streams represent an audio or video source that we are sending to the remote party.
-    /// </summary>
-    /// <returns>A list of the local tracks that have been added to this session.</returns>
-    protected List<MediaStream> GetMediaStreams()
-    {
-        var mediaStream = new List<MediaStream>();
-
-        foreach (var audioStream in AudioStreamList)
-        {
-            if (audioStream.LocalTrack != null)
-            {
-                mediaStream.Add(audioStream);
-            }
-        }
-
-        foreach (var videoStream in VideoStreamList)
-        {
-            if (videoStream.LocalTrack != null)
-            {
-                mediaStream.Add(videoStream);
-            }
-        }
-
-        return mediaStream;
-    }
-
-    /// <summary>
     ///     Starts the RTCP session(s) that monitor this RTP session.
     /// </summary>
-    protected Task Start()
+    private void Start()
     {
         if (!IsStarted)
         {
             IsStarted = true;
 
-
-            foreach (var audioStream in AudioStreamList)
+            foreach (var audioStream in _audioStreamList)
             {
                 if (audioStream.HasAudio && audioStream.RtcpSession != null &&
                     audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1920,7 +1790,7 @@ internal class RTCPeerConnection : IDisposable
                 }
             }
 
-            foreach (var videoStream in VideoStreamList)
+            foreach (var videoStream in _videoStreamList)
             {
                 if (videoStream.HasVideo && videoStream.RtcpSession != null &&
                     videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
@@ -1931,8 +1801,6 @@ internal class RTCPeerConnection : IDisposable
                 }
             }
         }
-
-        return Task.CompletedTask;
     }
 
     public async Task SendVideoAsync(RtpPacket packet)
@@ -1944,7 +1812,7 @@ internal class RTCPeerConnection : IDisposable
         }
     }
 
-    protected void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+    private void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
         if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
         {
@@ -1956,7 +1824,7 @@ internal class RTCPeerConnection : IDisposable
         // Quick sanity check on whether this is not an RTP or RTCP packet.
         if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
         {
-            if ((RtpSessionConfig.IsSecure || RtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
+            if ((_rtpSessionConfig.IsSecure || _rtpSessionConfig.UseSdpCryptoNegotiation) && !IsSecureContextReady())
             {
                 Logger.LogWarning("RTP or RTCP packet received before secure context ready.");
             }
@@ -2015,7 +1883,7 @@ internal class RTCPeerConnection : IDisposable
             // In some cases, such as a SIP re-INVITE, it's possible the RTP session
             // will keep going with a new remote SSRC.
             // We close peer connection only if there is no more local/remote tracks on the primary stream
-            if (PrimaryStream.LocalTrack == null)
+            if (_primaryStream.LocalTrack == null)
             {
                 OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
             }
@@ -2042,7 +1910,7 @@ internal class RTCPeerConnection : IDisposable
                 mediaStream.RtcpSession.ReportReceived();
                 mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
             }
-            else if (rtcpPkt.ReceiverReport?.Ssrc == RTCP_RR_NOSTREAM_SSRC)
+            else if (rtcpPkt.ReceiverReport?.Ssrc == RTCP_RR_NO_STREAM_SSRC)
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
@@ -2073,7 +1941,7 @@ internal class RTCPeerConnection : IDisposable
             }
         }
 
-        foreach (var audioStream in AudioStreamList)
+        foreach (var audioStream in _audioStreamList)
         {
             if (audioStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
             {
@@ -2081,7 +1949,7 @@ internal class RTCPeerConnection : IDisposable
             }
         }
 
-        foreach (var videoStream in VideoStreamList)
+        foreach (var videoStream in _videoStreamList)
         {
             if (videoStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
             {
@@ -2121,9 +1989,9 @@ internal class RTCPeerConnection : IDisposable
         }
 
         // Get related AudioStream if found
-        if (found && AudioStreamList.Count > index)
+        if (found && _audioStreamList.Count > index)
         {
-            var audioStream = AudioStreamList[index];
+            var audioStream = _audioStreamList[index];
             //if (audioStream?.RemoteTrack != null)
             //{
             //    audioStream.RemoteTrack.Ssrc = ssrc;
@@ -2151,9 +2019,9 @@ internal class RTCPeerConnection : IDisposable
         }
 
         // Get related VideoStreamList if found
-        if (found && VideoStreamList.Count > index)
+        if (found && _videoStreamList.Count > index)
         {
-            var videoStream = VideoStreamList[index];
+            var videoStream = _videoStreamList[index];
             //if (videoStream?.RemoteTrack != null)
             //{
             //    videoStream.RemoteTrack.Ssrc = ssrc;

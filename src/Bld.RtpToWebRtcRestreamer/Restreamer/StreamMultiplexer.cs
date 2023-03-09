@@ -16,7 +16,7 @@ internal class StreamMultiplexer
         _logger = logger;
     }
 
-    public void RegisterPeer(RTCPeerConnection peer)
+    public void RegisterPeer(RtcPeerConnection peer)
     {
         _peers = _peers.Add(peer.Id, new MultiplexedPeer(peer));
     }

@@ -7,12 +7,12 @@ internal class MultiplexedPeer
 {
     private bool _isStarted;
 
-    public MultiplexedPeer(RTCPeerConnection peer)
+    public MultiplexedPeer(RtcPeerConnection peer)
     {
         Peer = peer;
     }
 
-    public RTCPeerConnection Peer { get;}
+    public RtcPeerConnection Peer { get;}
 
     public async Task SendVideoAsync(RtpPacket packet)
     {
