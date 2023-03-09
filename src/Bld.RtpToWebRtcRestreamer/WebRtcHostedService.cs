@@ -47,14 +47,7 @@ internal class WebRtcHostedService : IHostedService
     {
         lock (_rtpRestreamerLock)
         {
-            if (_rtpRestreamer == null)
-            {
-                _rtpRestreamer = new RtpRestreamer(
-                    _configuration.RtpListenEndpoint,
-                    _loggerFactory
-                );
-                _rtpRestreamer.ConnectedClientsChanged += RtpRestreamerOnConnectedClientsChanged;
-            }
+            _rtpRestreamer ??= new RtpRestreamer(_configuration.RtpListenEndpoint, _loggerFactory);
         }
 
         if (!_rtpRestreamer.IsStarted)
@@ -73,20 +66,5 @@ internal class WebRtcHostedService : IHostedService
         }
 
         await _rtpRestreamer.ProcessClientAnswerAsync(peerId, sdpString);
-    }
-
-    private void RtpRestreamerOnConnectedClientsChanged(object? sender, ConnectedClientsChangedEventArgs e)
-    {
-        if (e.NewCount == 0)
-        {
-            try
-            {
-                _rtpRestreamer?.StopAsync().GetAwaiter().GetResult();
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Stop error");
-            }
-        }
     }
 }

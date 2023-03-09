@@ -5,13 +5,14 @@ namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 internal class MultiplexedPeer
 {
-    private readonly RTCPeerConnection _peer;
     private bool _isStarted;
 
     public MultiplexedPeer(RTCPeerConnection peer)
     {
-        _peer = peer;
+        Peer = peer;
     }
+
+    public RTCPeerConnection Peer { get;}
 
     public async Task SendVideoAsync(RtpPacket packet)
     {
@@ -20,16 +21,27 @@ internal class MultiplexedPeer
             return;
         }
 
-        await _peer.SendVideoAsync(packet);
+        await Peer.SendVideoAsync(packet);
     }
 
     public void Start()
     {
+        if (_isStarted)
+        {
+            return;
+        }
+
         _isStarted = true;
     }
 
-    public void Stop()
+    public void ClosePeer()
     {
+        if (!_isStarted)
+        {
+            return;
+        }
         _isStarted = false;
+
+        Peer.Close("");
     }
 }

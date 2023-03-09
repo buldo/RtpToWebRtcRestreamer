@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿#nullable enable
+using System.Collections.Immutable;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
@@ -8,25 +9,21 @@ namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 internal class StreamMultiplexer
 {
     private readonly ILogger<StreamMultiplexer> _logger;
-    private ImmutableDictionary<RTCPeerConnection, MultiplexedPeer> _peers = (new Dictionary<RTCPeerConnection, MultiplexedPeer>()).ToImmutableDictionary();
+    private ImmutableDictionary<Guid, MultiplexedPeer> _peers = (new Dictionary<Guid, MultiplexedPeer>()).ToImmutableDictionary();
 
     public StreamMultiplexer(ILogger<StreamMultiplexer> logger)
     {
         _logger = logger;
     }
 
-    public int ActiveStreamsCount => _peers.Count(pair =>
-        pair.Key.connectionState is not (RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected or RTCPeerConnectionState.closed));
-
     public void RegisterPeer(RTCPeerConnection peer)
     {
-        _peers = _peers.Add(peer, new MultiplexedPeer(peer));
-
+        _peers = _peers.Add(peer.Id, new MultiplexedPeer(peer));
     }
 
-    public void StartPeerTransmit(RTCPeerConnection peer)
+    public void StartPeerTransmit(Guid peerId)
     {
-        if (_peers.TryGetValue(peer, out var multiplexedPeer))
+        if (_peers.TryGetValue(peerId, out var multiplexedPeer))
         {
             multiplexedPeer.Start();
             _logger.LogDebug("Streaming for peer started");
@@ -37,11 +34,12 @@ internal class StreamMultiplexer
         }
     }
 
-    public void StopPeerTransmit(RTCPeerConnection peer)
+    public void ClosePeer(Guid peerId)
     {
-        if (_peers.TryGetValue(peer, out var multiplexedPeer))
+        if (_peers.TryGetValue(peerId, out var multiplexedPeer))
         {
-            multiplexedPeer.Stop();
+            multiplexedPeer.ClosePeer();
+            _peers = _peers.Remove(peerId);
             _logger.LogDebug("Streaming for peer stopped");
         }
         else
@@ -58,13 +56,18 @@ internal class StreamMultiplexer
         }
     }
 
-    public void Cleanup()
+    public List<MultiplexedPeer> GetAllPeers()
     {
-        var toRemove = _peers.Where(pair =>
-                (pair.Key.connectionState is RTCPeerConnectionState.closed or RTCPeerConnectionState.disconnected or RTCPeerConnectionState.closed) ||
-                pair.Key.IsClosed)
-            .Select(pair => pair.Key)
-            .ToList();
-        _peers = _peers.RemoveRange(toRemove);
+        return _peers.Values.ToList();
+    }
+
+    public MultiplexedPeer? GetById(Guid id)
+    {
+        if (_peers.TryGetValue(id, out var peer))
+        {
+            return peer;
+        }
+
+        return null;
     }
 }

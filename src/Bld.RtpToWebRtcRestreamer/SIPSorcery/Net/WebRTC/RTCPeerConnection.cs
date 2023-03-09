@@ -260,10 +260,8 @@ internal class RTCPeerConnection : RTPSession
     /// <summary>
     /// Constructor to create a new RTC peer connection instance.
     /// </summary>
-    /// <param name="configuration">Optional.</param>
-    /// <param name="videoAsPrimary"></param>
-    public RTCPeerConnection(int bindPort = 0) :
-        base(true, true, true, bindPort)
+    public RTCPeerConnection() :
+        base(true, true, true, 0)
     {
         dataChannels = new RTCDataChannelCollection(useEvenIds: () => _dtlsHandle.IsClient);
 
@@ -301,6 +299,8 @@ internal class RTCPeerConnection : RTPSession
         // https://github.com/sipsorcery-org/sipsorcery/issues/456.
         _iceGatheringTask = Task.Run(RtpIceChannel.StartGathering);
     }
+
+    public Guid Id { get; } = Guid.NewGuid();
 
     /// <summary>
     /// Event handler for ICE connection state changes.
