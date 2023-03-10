@@ -157,14 +157,18 @@ internal class RtcPeerConnection : IDisposable
 
         var newVideoStream = new VideoStream(0);
         _videoStreamList.Add(newVideoStream);
-
         _primaryStream = newVideoStream;
-        var rtpChannel = CreateRtpChannel();
-        _primaryStream.RTPChannel = rtpChannel;
+
+        var rtpIceChannel = new RtpIceChannel();
+        _multiplexRtpChannel = rtpIceChannel;
+        rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+        rtpIceChannel.Start();
+        _rtpChannelsCount++;
+        _primaryStream.RTPChannel = rtpIceChannel;
+
         CreateRtcpSession(_primaryStream);
 
         _rtpIceChannel = _primaryStream.RTPChannel as RtpIceChannel;
-
         _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
         _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
@@ -424,35 +428,6 @@ internal class RtcPeerConnection : IDisposable
             _connectionState = RTCPeerConnectionState.failed;
             onconnectionstatechange?.Invoke(_connectionState);
         }
-    }
-
-    /// <summary>
-    ///     Creates a new RTP ICE channel (which manages the UDP socket sending and receiving RTP
-    ///     packets) for use with this session.
-    /// </summary>
-    /// <returns>A new RTPChannel instance.</returns>
-    private RTPChannel CreateRtpChannel()
-    {
-        if (_multiplexRtpChannel != null)
-        {
-            return _multiplexRtpChannel;
-        }
-
-        var rtpIceChannel = new RtpIceChannel();
-
-        if (true)
-        {
-            _multiplexRtpChannel = rtpIceChannel;
-        }
-
-        rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
-
-        // Start the RTP, and if required the Control, socket receivers and the RTCP session.
-        rtpIceChannel.Start();
-
-        _rtpChannelsCount++;
-
-        return rtpIceChannel;
     }
 
     /// <summary>
@@ -1593,7 +1568,7 @@ internal class RtcPeerConnection : IDisposable
 
     private void InitMediaStream(MediaStream currentMediaStream)
     {
-        var rtpChannel = CreateRtpChannel();
+        var rtpChannel = _multiplexRtpChannel;
         currentMediaStream.RTPChannel = rtpChannel;
         CreateRtcpSession(currentMediaStream);
     }
