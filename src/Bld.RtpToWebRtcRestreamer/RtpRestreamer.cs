@@ -62,7 +62,7 @@ internal class RtpRestreamer
         var videoTrack = new MediaStreamTrack(
             new VideoFormat(VideoCodecsEnum.H264, 96),
             MediaStreamStatusEnum.SendOnly);
-        var peerConnection = new RtcPeerConnection(videoTrack, null);
+        var peerConnection = new RtcPeerConnection(videoTrack);
         _streamMultiplexer.RegisterPeer(peerConnection);
 
         peerConnection.onconnectionstatechange += (state) =>

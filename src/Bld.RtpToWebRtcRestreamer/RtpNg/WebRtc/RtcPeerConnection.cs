@@ -78,13 +78,6 @@ internal class RtcPeerConnection : IDisposable
     private static readonly ILogger Logger = Log.Logger;
     private static readonly string RtcpAttribute = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
-    private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
-
-    /// <summary>
-    ///     List of all Audio Streams for this session
-    /// </summary>
-    private readonly List<AudioStream> _audioStreamList = new();
-
     private readonly RTCDataChannelCollection _dataChannels;
 
     private readonly Certificate _dtlsCertificate;
@@ -138,7 +131,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
-    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack, [CanBeNull] MediaStreamTrack audioTrack)
+    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack)
     {
         _dataChannels = new RTCDataChannelCollection(() => DtlsHandle.IsClient);
 
@@ -177,39 +170,9 @@ internal class RtcPeerConnection : IDisposable
 
         //---------------Video-----------------
         _videoStream.LocalTrack = videoTrack;
-
-        //---------------Audio-----------------
-        if (audioTrack != null)
-        {
-            var currentMediaStream = GetNextAudioStreamByLocalTrack();
-
-            currentMediaStream.RTPChannel = _rtpIceChannel;
-            if (currentMediaStream.CreateRtcpSession())
-            {
-                currentMediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-            }
-
-            currentMediaStream.LocalTrack = audioTrack;
-        }
     }
 
     public Guid Id { get; } = Guid.NewGuid();
-
-    /// <summary>
-    ///     The primary Audio Stream for this session
-    /// </summary>
-    private AudioStream AudioStream
-    {
-        get
-        {
-            if (_audioStreamList.Count > 0)
-            {
-                return _audioStreamList[0];
-            }
-
-            return null;
-        }
-    }
 
     /// <summary>
     ///     Indicates whether the session has been closed. Once a session is closed it cannot
@@ -222,12 +185,7 @@ internal class RtcPeerConnection : IDisposable
     ///     socket to start receiving,
     /// </summary>
     public bool IsStarted { get; set; }
-
-    /// <summary>
-    ///     Indicates whether this session is using audio.
-    /// </summary>
-    private bool HasAudio => AudioStream?.HasAudio == true;
-
+    
     /// <summary>
     ///     Indicates whether this session is using video.
     /// </summary>
@@ -468,7 +426,6 @@ internal class RtcPeerConnection : IDisposable
             }
 
 
-            _audioRemoteSdpSsrcAttributes.Clear();
             _videoRemoteSdpSsrcAttributes.Clear();
             foreach (var media in remoteSdp.Media)
             {
@@ -480,11 +437,7 @@ internal class RtcPeerConnection : IDisposable
                     }
                 }
 
-                if (media.Media == SDPMediaTypesEnum.audio)
-                {
-                    _audioRemoteSdpSsrcAttributes.Add(media.SsrcAttributes);
-                }
-                else if (media.Media == SDPMediaTypesEnum.video)
+                if (media.Media == SDPMediaTypesEnum.video)
                 {
                     _videoRemoteSdpSsrcAttributes.Add(media.SsrcAttributes);
                 }
@@ -531,35 +484,16 @@ internal class RtcPeerConnection : IDisposable
             {
                 IsClosed = true;
 
-                foreach (var audioStream in _audioStreamList)
+
+                _videoStream.IsClosed = true;
+                CloseRtcpSession(_videoStream, reason);
+
+                if (_videoStream.HasRtpChannel())
                 {
-                    if (audioStream != null)
-                    {
-                        audioStream.IsClosed = true;
-                        CloseRtcpSession(audioStream, reason);
-
-                        if (audioStream.HasRtpChannel())
-                        {
-                            var rtpChannel = audioStream.RTPChannel;
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnClosed -= OnRTPChannelClosed;
-                            rtpChannel.Close(reason);
-                        }
-                    }
-                }
-
-                if (_videoStream != null)
-                {
-                    _videoStream.IsClosed = true;
-                    CloseRtcpSession(_videoStream, reason);
-
-                    if (_videoStream.HasRtpChannel())
-                    {
-                        var rtpChannel = _videoStream.RTPChannel;
-                        rtpChannel.OnRTPDataReceived -= OnReceive;
-                        rtpChannel.OnClosed -= OnRTPChannelClosed;
-                        rtpChannel.Close(reason);
-                    }
+                    var rtpChannel = _videoStream.RTPChannel;
+                    rtpChannel.OnRTPDataReceived -= OnReceive;
+                    rtpChannel.OnClosed -= OnRTPChannelClosed;
+                    rtpChannel.Close(reason);
                 }
 
                 OnRtpClosed?.Invoke(reason);
@@ -583,15 +517,7 @@ internal class RtcPeerConnection : IDisposable
     public RTCSessionDescriptionInit CreateOffer()
     {
         var mediaStreamList = new List<MediaStream>();
-
-        foreach (var audioStream in _audioStreamList)
-        {
-            if (audioStream.LocalTrack != null)
-            {
-                mediaStreamList.Add(audioStream);
-            }
-        }
-
+        
         if (_videoStream.LocalTrack != null)
         {
             mediaStreamList.Add(_videoStream);
@@ -1135,11 +1061,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     private bool IsSecureContextReady()
     {
-        if (HasAudio && !AudioStream.IsSecurityContextReady())
-        {
-            return false;
-        }
-
         if (HasVideo && !_videoStream.IsSecurityContextReady())
         {
             return false;
@@ -1170,16 +1091,7 @@ internal class RtcPeerConnection : IDisposable
 
     private void LogRemoteSDPSsrcAttributes()
     {
-        var str = "Audio:[ ";
-        foreach (var audioRemoteSdpSsrcAttribute in _audioRemoteSdpSsrcAttributes)
-        {
-            foreach (var attr in audioRemoteSdpSsrcAttribute)
-            {
-                str += attr.SSRC + " - ";
-            }
-        }
-
-        str += "] \r\n Video: [ ";
+        var str = "Video: [ ";
         foreach (var videoRemoteSdpSsrcAttribute in _videoRemoteSdpSsrcAttributes)
         {
             str += " [";
@@ -1212,24 +1124,6 @@ internal class RtcPeerConnection : IDisposable
         }
     }
 
-    private AudioStream GetOrCreateAudioStream(int index)
-    {
-        if (index < _audioStreamList.Count)
-        {
-            // We ask too fast a new AudioStram ...
-            return _audioStreamList[index];
-        }
-
-        if (index == _audioStreamList.Count)
-        {
-            var audioStream = new AudioStream(index);
-            _audioStreamList.Add(audioStream);
-            return audioStream;
-        }
-
-        return null;
-    }
-
     /// <summary>
     ///     Sets the remote SDP description for this session.
     /// </summary>
@@ -1247,12 +1141,7 @@ internal class RtcPeerConnection : IDisposable
             if (sessionDescription.Media?.Count == 1)
             {
                 var remoteMediaType = sessionDescription.Media.First().Media;
-                if (remoteMediaType == SDPMediaTypesEnum.audio &&
-                    (AudioStream == null || AudioStream.LocalTrack == null))
-                {
-                    return SetDescriptionResultEnum.NoMatchingMediaType;
-                }
-
+                
                 if (remoteMediaType == SDPMediaTypesEnum.video && _videoStream.LocalTrack == null)
                 {
                     return SetDescriptionResultEnum.NoMatchingMediaType;
@@ -1273,18 +1162,7 @@ internal class RtcPeerConnection : IDisposable
             foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.video))
             {
                 MediaStream currentMediaStream;
-                if (announcement.Media == SDPMediaTypesEnum.audio)
-                {
-                    currentMediaStream = GetOrCreateAudioStream(currentAudioStreamCount++);
-                    if (currentMediaStream == null)
-                    {
-                        return SetDescriptionResultEnum.Error;
-                    }
-                }
-                else
-                {
-                    currentMediaStream = _videoStream;
-                }
+                currentMediaStream = _videoStream;
 
                 var capabilities =
                     // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
@@ -1356,14 +1234,7 @@ internal class RtcPeerConnection : IDisposable
             }
 
             //Close old RTCPSessions opened
-            foreach (var audioStream in _audioStreamList)
-            {
-                if (audioStream.RtcpSession != null && audioStream.LocalTrack == null)
-                {
-                    audioStream.RtcpSession.Close(null);
-                }
-            }
-
+            
             if (_videoStream.RtcpSession != null && _videoStream.LocalTrack == null)
             {
                 _videoStream.RtcpSession.Close(null);
@@ -1418,11 +1289,6 @@ internal class RtcPeerConnection : IDisposable
 
     private void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
     {
-        foreach (var audioStream in _audioStreamList)
-        {
-            audioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-        }
-
         _videoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
     }
 
@@ -1431,11 +1297,6 @@ internal class RtcPeerConnection : IDisposable
         ProtectRtpPacket protectRtcp,
         ProtectRtpPacket unprotectRtcp)
     {
-        foreach (var audioStream in _audioStreamList)
-        {
-            audioStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
-        }
-
         _videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
     }
 
@@ -1454,33 +1315,7 @@ internal class RtcPeerConnection : IDisposable
             mediaStream.SetDestination(_videoStream.DestinationEndPoint, _videoStream.ControlDestinationEndPoint);
         }
     }
-
-    private AudioStream GetNextAudioStreamByLocalTrack()
-    {
-        var index = _audioStreamList.Count;
-        if (index > 0)
-        {
-            foreach (var audioStream in _audioStreamList)
-            {
-                if (audioStream.LocalTrack == null)
-                {
-                    return audioStream;
-                }
-            }
-        }
-
-        // We need to create new AudioStream
-        var newAudioStream = GetOrCreateAudioStream(index);
-
-        // If it's not the first one we need to init it
-        if (index != 0)
-        {
-            InitIPEndPointAndSecurityContext(newAudioStream);
-        }
-
-        return newAudioStream;
-    }
-
+    
     /// <summary>
     ///     Starts the RTCP session(s) that monitor this RTP session.
     /// </summary>
@@ -1489,25 +1324,11 @@ internal class RtcPeerConnection : IDisposable
         if (!IsStarted)
         {
             IsStarted = true;
-
-            foreach (var audioStream in _audioStreamList)
+            if (_videoStream.HasVideo &&
+                _videoStream.RtcpSession != null &&
+                _videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
             {
-                if (audioStream.HasAudio && audioStream.RtcpSession != null &&
-                    audioStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
-                {
-                    // The local audio track may have been disabled if there were no matching capabilities with
-                    // the remote party.
-                    audioStream.RtcpSession.Start();
-                }
-            }
-
-            {
-                if (_videoStream.HasVideo &&
-                    _videoStream.RtcpSession != null &&
-                    _videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
-                {
-                    _videoStream.RtcpSession.Start();
-                }
+                _videoStream.RtcpSession.Start();
             }
         }
     }
@@ -1604,8 +1425,7 @@ internal class RtcPeerConnection : IDisposable
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
-            else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 ||
-                     _videoStream.RtcpSession?.PacketsReceivedCount > 0)
+            else if (_videoStream.RtcpSession?.PacketsReceivedCount > 0)
             {
                 // Only give this warning if we've received at least one RTP packet.
                 //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
@@ -1616,27 +1436,9 @@ internal class RtcPeerConnection : IDisposable
 
     private MediaStream GetMediaStream(uint ssrc)
     {
-        if (HasAudio)
+        if (HasVideo)
         {
-            if (!HasVideo)
-            {
-                return AudioStream;
-            }
-        }
-        else
-        {
-            if (HasVideo)
-            {
-                return _videoStream;
-            }
-        }
-
-        foreach (var audioStream in _audioStreamList)
-        {
-            if (audioStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
-            {
-                return audioStream;
-            }
+            return _videoStream;
         }
 
         if (_videoStream.LocalTrack?.IsSsrcMatch(ssrc) == true)
@@ -1656,35 +1458,6 @@ internal class RtcPeerConnection : IDisposable
 
         var found = false;
         int index;
-
-        // Loop au audioRemoteSDPSsrcAttributes
-        for (index = 0; index < _audioRemoteSdpSsrcAttributes.Count; index++)
-        {
-            foreach (var ssrcAttributes in _audioRemoteSdpSsrcAttributes[index])
-            {
-                if (ssrcAttributes.SSRC == ssrc)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                break;
-            }
-        }
-
-        // Get related AudioStream if found
-        if (found && _audioStreamList.Count > index)
-        {
-            var audioStream = _audioStreamList[index];
-            //if (audioStream?.RemoteTrack != null)
-            //{
-            //    audioStream.RemoteTrack.Ssrc = ssrc;
-            //}
-            return audioStream;
-        }
 
         // Loop au videoRemoteSDPSsrcAttributes
         found = false;
