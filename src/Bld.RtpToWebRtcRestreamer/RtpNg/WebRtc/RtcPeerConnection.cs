@@ -100,11 +100,6 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly string _localSdpSessionId;
 
-    /// <summary>
-    ///     The primary stream for this session - can be an AudioStream or a VideoStream
-    /// </summary>
-    private readonly MediaStream _primaryStream;
-
     private readonly object _renegotiationLock = new();
 
     private readonly RtpIceChannel _rtpIceChannel;
@@ -120,7 +115,7 @@ internal class RtcPeerConnection : IDisposable
     private CancellationTokenSource _cancellationSource = new();
 
     private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
-    private DtlsSrtpTransport _dtlsHandle;
+    private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
 
     /// <summary>
     ///     The ICE role the peer is acting in.
@@ -147,7 +142,7 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     public RtcPeerConnection()
     {
-        _dataChannels = new RTCDataChannelCollection(() => _dtlsHandle.IsClient);
+        _dataChannels = new RTCDataChannelCollection(() => DtlsHandle.IsClient);
 
         // No certificate was provided so create a new self signed one.
         (_dtlsCertificate, _dtlsPrivateKey) =
@@ -158,16 +153,15 @@ internal class RtcPeerConnection : IDisposable
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
         _videoStream = new VideoStream(0);
-        _primaryStream = _videoStream;
 
         _rtpIceChannel = new RtpIceChannel();
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
         _rtpIceChannel.Start();
-        _primaryStream.RTPChannel = _rtpIceChannel;
+        _videoStream.RTPChannel = _rtpIceChannel;
 
-        if (_primaryStream.CreateRtcpSession())
+        if (_videoStream.CreateRtcpSession())
         {
-            _primaryStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+            _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
         }
 
         _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
@@ -308,11 +302,11 @@ internal class RtcPeerConnection : IDisposable
 
         if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
         {
-            if (_dtlsHandle != null)
+            if (DtlsHandle != null)
             {
-                if (_primaryStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate
+                if (_videoStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate
                         .DestinationEndPoint.Address) == false ||
-                    _primaryStream.DestinationEndPoint?.Port !=
+                    _videoStream.DestinationEndPoint?.Port !=
                     _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint.Port)
                 {
                     // Already connected and this event is due to change in the nominated remote candidate.
@@ -342,22 +336,22 @@ internal class RtcPeerConnection : IDisposable
 
                 if (_iceRole == IceRolesEnum.active)
                 {
-                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
+                    DtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
                         { ForceUseExtendedMasterSecret = true });
                 }
                 else
                 {
-                    _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
+                    DtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
                         { ForceUseExtendedMasterSecret = true });
                 }
 
-                _dtlsHandle.OnAlert += OnDtlsAlert;
+                DtlsHandle.OnAlert += OnDtlsAlert;
 
                 Logger.LogDebug($"Starting DLS handshake with role {_iceRole}.");
 
                 try
                 {
-                    var handshakeResult = await Task.Run(() => DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
+                    var handshakeResult = await Task.Run(() => DoDtlsHandshake(DtlsHandle)).ConfigureAwait(false);
 
                     _connectionState = handshakeResult
                         ? RTCPeerConnectionState.connected
@@ -575,7 +569,7 @@ internal class RtcPeerConnection : IDisposable
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
             _rtpIceChannel?.Close();
-            _dtlsHandle?.Close();
+            DtlsHandle?.Close();
 
             if (_sctp != null && _sctp.state == RTCSctpTransportState.Connected)
             {
@@ -880,10 +874,10 @@ internal class RtcPeerConnection : IDisposable
                 }
                 else
                 {
-                    if (_dtlsHandle != null)
+                    if (DtlsHandle != null)
                     {
                         //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                        _dtlsHandle.WriteToRecvStream(buffer);
+                        DtlsHandle.WriteToRecvStream(buffer);
                     }
                     else
                     {
@@ -964,7 +958,7 @@ internal class RtcPeerConnection : IDisposable
         try
         {
             _sctp.OnStateChanged += OnSctpTransportStateChanged;
-            _sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
+            _sctp.Start(DtlsHandle.Transport, DtlsHandle.IsClient);
 
             if (_dataChannels.Count > 0)
             {
@@ -1138,12 +1132,12 @@ internal class RtcPeerConnection : IDisposable
     {
         Logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
 
-        var rtpChannel = _primaryStream.RTPChannel;
+        var rtpChannel = _videoStream.RTPChannel;
 
         dtlsHandle.OnDataReady += buf =>
         {
             //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-            rtpChannel.Send(_primaryStream.DestinationEndPoint, buf);
+            rtpChannel.Send(_videoStream.DestinationEndPoint, buf);
         };
 
         var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
@@ -1609,16 +1603,16 @@ internal class RtcPeerConnection : IDisposable
     private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
     {
         // Get primary AudioStream
-        if (_primaryStream != null && mediaStream != null)
+        if (mediaStream != null)
         {
-            var secureContext = _primaryStream.SecurityContext;
+            var secureContext = _videoStream.SecurityContext;
             if (secureContext != null)
             {
                 mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket,
                     secureContext.UnprotectRtcpPacket);
             }
 
-            mediaStream.SetDestination(_primaryStream.DestinationEndPoint, _primaryStream.ControlDestinationEndPoint);
+            mediaStream.SetDestination(_videoStream.DestinationEndPoint, _videoStream.ControlDestinationEndPoint);
         }
     }
 
@@ -1755,7 +1749,7 @@ internal class RtcPeerConnection : IDisposable
             // In some cases, such as a SIP re-INVITE, it's possible the RTP session
             // will keep going with a new remote SSRC.
             // We close peer connection only if there is no more local/remote tracks on the primary stream
-            if (_primaryStream.LocalTrack == null)
+            if (_videoStream.LocalTrack == null)
             {
                 OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
             }
