@@ -2,7 +2,7 @@
 // Filename: RTCPeerSctpAssociation.cs
 //
 // Description: Represents an SCTP association on top of the DTLS
-// transport. Each peer connection only requires a single SCTP 
+// transport. Each peer connection only requires a single SCTP
 // association. Multiple data channels can be created on top
 // of the association.
 //
@@ -19,7 +19,7 @@
 // 20 Jul 2020	Aaron Clauson	Created.
 // 22 Mar 2021  Aaron Clauson   Refactored for new SCTP implementation.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ internal class RTCPeerSctpAssociation : SctpAssociation
     /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
     /// will be set on the SCTP association to aid in diagnostics.</param>
     public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
-        : base(rtcSctpTransport, null, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
+        : base(rtcSctpTransport, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
     {
         logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
 

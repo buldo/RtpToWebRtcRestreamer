@@ -16,14 +16,6 @@ class RTCDataChannelCollection : IReadOnlyCollection<RTCDataChannel>
 
     public RTCDataChannelCollection(Func<bool> useEvenIds)
         => this.useEvenIds = useEvenIds;
-    public IEnumerable<RTCDataChannel> ActivatePendingChannels()
-    {
-        while (pendingChannels.TryTake(out var channel))
-        {
-            AddActiveChannel(channel);
-            yield return channel;
-        }
-    }
 
     public void TryGetChannel(ushort dataChannelID, out RTCDataChannel result)
     {

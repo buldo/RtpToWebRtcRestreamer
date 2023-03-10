@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 18 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -50,8 +50,8 @@ internal class SctpInitChunk : SctpChunk
     public uint InitiateTag;
 
     /// <summary>
-    /// Advertised Receiver Window Credit. This value represents the dedicated 
-    /// buffer space, in number of bytes, the sender of the INIT has reserved in 
+    /// Advertised Receiver Window Credit. This value represents the dedicated
+    /// buffer space, in number of bytes, the sender of the INIT has reserved in
     /// association with this window.
     /// </summary>
     public uint ARwnd;
@@ -100,18 +100,10 @@ internal class SctpInitChunk : SctpChunk
 
     /// <summary>
     /// INIT ACK only. Mandatory. This parameter value MUST contain all the necessary state and
-    /// parameter information required for the sender of this INIT ACK to create the association, 
-    /// along with a Message Authentication Code (MAC). 
+    /// parameter information required for the sender of this INIT ACK to create the association,
+    /// along with a Message Authentication Code (MAC).
     /// </summary>
     public byte[] StateCookie;
-
-    /// <summary>
-    /// INIT ACK only. Optional. This parameter is returned to the originator of the INIT chunk 
-    /// if the INIT contains an unrecognized parameter that has a value that indicates it should
-    /// be reported to the sender. This parameter value field will contain unrecognized parameters 
-    /// copied from the  INIT chunk complete with Parameter Type, Length, and Value fields.
-    /// </summary>
-    private List<byte[]> UnrecognizedParameters = new List<byte[]>();
 
     private SctpInitChunk()
     { }
@@ -364,7 +356,6 @@ internal class SctpInitChunk : SctpChunk
                     case (ushort)SctpInitChunkParameterType.UnrecognizedParameter:
                         // Used with INIT ACK chunks only. This parameter is the remote peer returning
                         // a list of parameters it did not understand in the INIT chunk.
-                        initChunk.UnrecognizedParameters.Add(varParam.ParameterValue);
                         break;
 
                     default:

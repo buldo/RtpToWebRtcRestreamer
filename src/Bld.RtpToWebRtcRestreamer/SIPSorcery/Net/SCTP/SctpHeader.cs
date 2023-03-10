@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 18 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -40,11 +40,6 @@ internal struct SctpHeader
     /// the sender of this SCTP packet.
     /// </summary>
     public uint VerificationTag;
-
-    /// <summary>
-    /// The CRC32c checksum of this SCTP packet.
-    /// </summary>
-    private uint Checksum { get; set; }
 
     /// <summary>
     /// Serialises the header to a pre-allocated buffer.
@@ -78,7 +73,6 @@ internal struct SctpHeader
         header.SourcePort = NetConvert.ParseUInt16(buffer, posn);
         header.DestinationPort = NetConvert.ParseUInt16(buffer, posn + 2);
         header.VerificationTag = NetConvert.ParseUInt32(buffer, posn + 4);
-        header.Checksum = NetConvert.ParseUInt32(buffer, posn + 8);
 
         return header;
     }

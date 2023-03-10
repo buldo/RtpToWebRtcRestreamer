@@ -614,8 +614,7 @@ internal class RtcPeerConnection : IDisposable
 
                     if (trackCname != null)
                     {
-                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream1.LocalTrack.Ssrc, trackCname,
-                            null));
+                        announcement.SsrcAttributes.Add(new SDPSsrcAttribute(mediaStream1.LocalTrack.Ssrc, trackCname));
                     }
                 }
 
@@ -816,12 +815,6 @@ internal class RtcPeerConnection : IDisposable
 
             _sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
             _sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
-
-            // Create new SCTP streams for any outstanding data channel requests.
-            foreach (var dataChannel in _dataChannels.ActivatePendingChannels())
-            {
-                OpenDataChannel(dataChannel);
-            }
         }
     }
 
@@ -924,31 +917,6 @@ internal class RtcPeerConnection : IDisposable
                 throw new ApplicationException(
                     $"SCTP association failed after {duration:0.##}ms with association in state {_sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
             }
-        }
-    }
-
-    /// <summary>
-    ///     Sends the Data Channel Establishment Protocol (DCEP) OPEN message to configure the data
-    ///     channel on the remote peer.
-    /// </summary>
-    /// <param name="dataChannel">The data channel to open.</param>
-    private void OpenDataChannel(RTCDataChannel dataChannel)
-    {
-        if (dataChannel.negotiated)
-        {
-            Logger.LogDebug(
-                $"WebRTC data channel negotiated out of band with label {dataChannel.label} and stream ID {dataChannel.id}; invoking open event");
-            dataChannel.GotAck();
-        }
-        else if (dataChannel.id.HasValue)
-        {
-            Logger.LogDebug(
-                $"WebRTC attempting to open data channel with label {dataChannel.label} and stream ID {dataChannel.id}.");
-            dataChannel.SendDcepOpen();
-        }
-        else
-        {
-            Logger.LogError("Attempt to open a data channel without an assigned ID has failed.");
         }
     }
 

@@ -13,19 +13,16 @@ internal class SDPSsrcAttribute
 
     public string Cname { get; set; }
 
-    private string GroupID { get; set; }
-
     /// <summary>
     /// Default constructor.
     /// </summary>
     /// <param name="ssrc">The SSRC that should match an RTP stream.</param>
     /// <param name="cname">Optional. The CNAME value to use in RTCP SDES sections.</param>
-    /// <param name="groupID">Optional. If this "ssrc" attribute is part of a 
+    /// <param name="groupID">Optional. If this "ssrc" attribute is part of a
     /// group this is the group ID.</param>
-    public SDPSsrcAttribute(uint ssrc, string cname, string groupID)
+    public SDPSsrcAttribute(uint ssrc, string cname)
     {
         SSRC = ssrc;
         Cname = cname;
-        GroupID = groupID;
     }
 }

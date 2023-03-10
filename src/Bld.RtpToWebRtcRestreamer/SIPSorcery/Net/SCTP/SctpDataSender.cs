@@ -488,6 +488,7 @@ internal class SctpDataSender
 
                     haveMissing = misses.MoveNext();
                 }
+                misses.Dispose();
             }
 
             // Check if there are any unconfirmed transactions that are due for a retransmit.

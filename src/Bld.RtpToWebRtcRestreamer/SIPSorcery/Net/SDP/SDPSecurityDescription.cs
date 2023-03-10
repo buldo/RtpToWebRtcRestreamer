@@ -448,7 +448,9 @@ internal class SDPSecurityDescription
             get;
             set;
         }
-        [SuppressMessage("ReSharper", "UnusedMember.Global")]
+
+
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         private enum FecTypes
         {
             unknown,

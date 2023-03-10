@@ -30,8 +30,6 @@ internal class RTCDataChannel
 
     public string label { get; set; }
 
-    public bool negotiated { get; set; }
-
     public ushort? id { get; set; }
 
     public RTCDataChannelState readyState { get; internal set; } = RTCDataChannelState.connecting;
@@ -53,27 +51,6 @@ internal class RTCDataChannel
         logger.LogDebug($"Data channel for label {label} now open.");
         IsOpened = true;
         readyState = RTCDataChannelState.open;
-    }
-
-    /// <summary>
-    /// Sends an OPEN Data Channel Establishment Protocol (DCEP) message
-    /// to open a data channel on the remote peer for send/receive.
-    /// </summary>
-    internal void SendDcepOpen()
-    {
-        var dcepOpen = new DataChannelOpenMessage
-        {
-            MessageType = (byte)DataChannelMessageTypes.OPEN,
-            ChannelType = (byte)DataChannelTypes.DATA_CHANNEL_RELIABLE_UNORDERED,
-            Label = label
-        };
-
-        lock (this)
-        {
-            _transport.RTCSctpAssociation.SendData(id.GetValueOrDefault(),
-                (uint)DataChannelPayloadProtocols.WebRTC_DCEP,
-                dcepOpen.GetBytes());
-        }
     }
 
     /// <summary>

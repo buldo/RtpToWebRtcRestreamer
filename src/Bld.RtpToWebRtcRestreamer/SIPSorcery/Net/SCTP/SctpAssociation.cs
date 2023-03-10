@@ -113,13 +113,6 @@ internal class SctpAssociation
     private uint _remoteInitialTSN;
 
     /// <summary>
-    /// The remote destination end point for this association. The underlying transport
-    /// will supply this field if it is needed (the UDP encapsulation transport needs it,
-    /// the DTSL transport does not).
-    /// </summary>
-    private IPEndPoint Destination { get; set; }
-
-    /// <summary>
     /// Indicates the current connection state of the association.
     /// </summary>
     public SctpAssociationState State { get; private set; }
@@ -152,8 +145,6 @@ internal class SctpAssociation
     /// </summary>
     /// <param name="sctpTransport">The transport layer doing the actual sending and receiving of
     /// packets, e.g. UDP, DTLS, raw sockets etc.</param>
-    /// <param name="destination">Optional. The remote destination end point for this association.
-    /// Some transports, such as DTLS, are already established and do not use this parameter.</param>
     /// <param name="sctpSourcePort">The source port for the SCTP packet header.</param>
     /// <param name="sctpDestinationPort">The destination port for the SCTP packet header.</param>
     /// <param name="defaultMTU">The default Maximum Transmission Unit (MTU) for the underlying
@@ -164,7 +155,6 @@ internal class SctpAssociation
     /// diagnostics.</param>
     protected SctpAssociation(
         SctpTransport sctpTransport,
-        IPEndPoint destination,
         ushort sctpSourcePort,
         ushort sctpDestinationPort,
         ushort defaultMTU,
@@ -173,7 +163,6 @@ internal class SctpAssociation
         ushort numberInboundStreams = DEFAULT_NUMBER_INBOUND_STREAMS)
     {
         _sctpTransport = sctpTransport;
-        Destination = destination;
         _sctpSourcePort = sctpSourcePort;
         _sctpDestinationPort = sctpDestinationPort;
         _defaultMTU = defaultMTU;
@@ -251,8 +240,6 @@ internal class SctpAssociation
             _sctpDestinationPort = cookie.DestinationPort;
             VerificationTag = cookie.Tag;
             ARwnd = cookie.ARwnd;
-            Destination = !string.IsNullOrEmpty(cookie.RemoteEndPoint) ?
-                IPSocket.Parse(cookie.RemoteEndPoint) : null;
 
             if (_dataReceiver == null)
             {

@@ -320,29 +320,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return 0; //No Errors
     }
 
-    private byte[] ProtectRtcp(byte[] packet, int length)
-    {
-        lock (_srtcpEncoder)
-        {
-            return _srtcpEncoder.Transform(packet, length);
-        }
-    }
-
-    public int ProtectRtcp(byte[] payload, int length, out int outLength)
-    {
-        var result = ProtectRtcp(payload, length);
-        if (result == null)
-        {
-            outLength = 0;
-            return -1;
-        }
-
-        Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-        outLength = result.Length;
-
-        return 0; //No Errors
-    }
-
     /// <summary>
     /// Returns the number of milliseconds remaining until a timeout occurs.
     /// </summary>

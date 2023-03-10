@@ -601,7 +601,7 @@ internal class SDP
                                 {
                                     if (uint.TryParse(fields[i], out var ssrc))
                                     {
-                                        activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null, activeAnnouncement.SsrcGroupID));
+                                        activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null));
                                     }
                                 }
                             }
@@ -621,7 +621,7 @@ internal class SDP
                                     var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
                                     if (ssrcAttribute == null)
                                     {
-                                        ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
+                                        ssrcAttribute = new SDPSsrcAttribute(ssrc, null);
                                         activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
                                     }
 
