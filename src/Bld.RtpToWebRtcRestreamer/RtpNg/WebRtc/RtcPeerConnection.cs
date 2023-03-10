@@ -452,7 +452,8 @@ internal class RtcPeerConnection : IDisposable
             }
 
 
-            ResetRemoteSDPSsrcAttributes();
+            _audioRemoteSdpSsrcAttributes.Clear();
+            _videoRemoteSdpSsrcAttributes.Clear();
             foreach (var media in remoteSdp.Media)
             {
                 if (media.IceCandidates != null)
@@ -463,7 +464,14 @@ internal class RtcPeerConnection : IDisposable
                     }
                 }
 
-                AddRemoteSDPSsrcAttributes(media.Media, media.SsrcAttributes);
+                if (media.Media == SDPMediaTypesEnum.audio)
+                {
+                    _audioRemoteSdpSsrcAttributes.Add(media.SsrcAttributes);
+                }
+                else if (media.Media == SDPMediaTypesEnum.video)
+                {
+                    _videoRemoteSdpSsrcAttributes.Add(media.SsrcAttributes);
+                }
             }
 
             Logger.LogDebug($"SDP:[{remoteSdp}]");
@@ -1144,25 +1152,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     public event Action<IPEndPoint, RtcpCompoundPacket> OnReceiveReport;
 
-
-    private void ResetRemoteSDPSsrcAttributes()
-    {
-        _audioRemoteSdpSsrcAttributes.Clear();
-        _videoRemoteSdpSsrcAttributes.Clear();
-    }
-
-    private void AddRemoteSDPSsrcAttributes(SDPMediaTypesEnum mediaType, List<SDPSsrcAttribute> sdpSsrcAttributes)
-    {
-        if (mediaType == SDPMediaTypesEnum.audio)
-        {
-            _audioRemoteSdpSsrcAttributes.Add(sdpSsrcAttributes);
-        }
-        else if (mediaType == SDPMediaTypesEnum.video)
-        {
-            _videoRemoteSdpSsrcAttributes.Add(sdpSsrcAttributes);
-        }
-    }
-
     private void LogRemoteSDPSsrcAttributes()
     {
         var str = "Audio:[ ";
@@ -1225,17 +1214,6 @@ internal class RtcPeerConnection : IDisposable
         return null;
     }
 
-    private VideoStream GetOrCreateVideoStream(int index)
-    {
-        if (index <= 1)
-        {
-            // We ask too fast a new AudioStram ...
-            return _videoStream;
-        }
-
-        return null;
-    }
-
     /// <summary>
     ///     Sets the remote SDP description for this session.
     /// </summary>
@@ -1280,7 +1258,6 @@ internal class RtcPeerConnection : IDisposable
             }
 
             var currentAudioStreamCount = 0;
-            var currentVideoStreamCount = 0;
 
             //foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
             foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.video))
@@ -1296,11 +1273,7 @@ internal class RtcPeerConnection : IDisposable
                 }
                 else
                 {
-                    currentMediaStream = GetOrCreateVideoStream(currentVideoStreamCount++);
-                    if (currentMediaStream == null)
-                    {
-                        return SetDescriptionResultEnum.Error;
-                    }
+                    currentMediaStream = _videoStream;
                 }
 
                 var capabilities =
