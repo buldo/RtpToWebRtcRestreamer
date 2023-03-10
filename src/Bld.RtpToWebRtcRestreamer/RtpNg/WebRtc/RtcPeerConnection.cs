@@ -88,7 +88,6 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly Certificate _dtlsCertificate;
 
-
     /// <summary>
     ///     The fingerprint of the certificate being used to negotiate the DTLS handshake with the
     ///     remote peer.
@@ -1582,7 +1581,14 @@ internal class RtcPeerConnection : IDisposable
         }
         else if (track.Kind == SDPMediaTypesEnum.video)
         {
-            currentMediaStream = GetNextVideoStreamByLocalTrack();
+            if (_videoStreamList[0].LocalTrack == null)
+            {
+                currentMediaStream = _videoStreamList[0];
+            }
+            else
+            {
+                throw new Exception("Ololo nonono");
+            }
         }
         else
         {
@@ -1680,27 +1686,6 @@ internal class RtcPeerConnection : IDisposable
         }
 
         return newAudioStream;
-    }
-
-    private VideoStream GetNextVideoStreamByLocalTrack()
-    {
-        var index = _videoStreamList.Count;
-        if (index > 0)
-        {
-            foreach (var videoStream in _videoStreamList)
-            {
-                if (videoStream.LocalTrack == null)
-                {
-                    return videoStream;
-                }
-            }
-        }
-
-        // We need to create new VideoStream and Init it
-        var newVideoStream = GetOrCreateVideoStream(index);
-
-        InitIPEndPointAndSecurityContext(newVideoStream);
-        return newVideoStream;
     }
 
     /// <summary>
