@@ -72,7 +72,7 @@ internal class RtcPeerConnection : IDisposable
     private const uint RTCP_RR_NO_STREAM_SSRC = 4195875351U;
 
     private static readonly ILogger Logger = Log.Logger;
-    private static readonly string RtcpAttribute = $"a=rtcp:{SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
+    private static readonly string RtcpAttribute = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
     private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
 
@@ -113,8 +113,6 @@ internal class RtcPeerConnection : IDisposable
     private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
     private DtlsSrtpTransport _dtlsHandle;
 
-    private RTPChannel _multiplexRtpChannel;
-
     /// <summary>
     ///     The primary stream for this session - can be an AudioStream or a VideoStream
     /// </summary>
@@ -131,12 +129,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     The SDP offered by the remote call party for this session.
     /// </summary>
-    private SIPSorcery.Net.SDP.SDP _remoteSdp;
-
-    // The stream used for the underlying RTP session to create a single RTP channel that will
-    // be used to multiplex all required media streams. (see addSingleTrack())
-
-    private int _rtpChannelsCount; // Need to know the number of RTP Channels
+    private SDP _remoteSdp;
 
     private RTCSignalingState _signalingState = RTCSignalingState.closed;
 
@@ -159,16 +152,16 @@ internal class RtcPeerConnection : IDisposable
         _videoStreamList.Add(newVideoStream);
         _primaryStream = newVideoStream;
 
-        var rtpIceChannel = new RtpIceChannel();
-        _multiplexRtpChannel = rtpIceChannel;
-        rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
-        rtpIceChannel.Start();
-        _rtpChannelsCount++;
-        _primaryStream.RTPChannel = rtpIceChannel;
+        _rtpIceChannel = new RtpIceChannel();
+        _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+        _rtpIceChannel.Start();
+        _primaryStream.RTPChannel = _rtpIceChannel;
 
-        CreateRtcpSession(_primaryStream);
+        if (_primaryStream.CreateRtcpSession())
+        {
+            _primaryStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+        }
 
-        _rtpIceChannel = _primaryStream.RTPChannel as RtpIceChannel;
         _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
         _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
@@ -194,10 +187,9 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     The ICE role the peer is acting in.
     /// </summary>
-    private IceRolesEnum IceRole { get; set; } = IceRolesEnum.actpass;
+    private IceRolesEnum _iceRole = IceRolesEnum.actpass;
 
-    private RTCIceConnectionState IceConnectionState =>
-        _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
+    private RTCIceConnectionState IceConnectionState => _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -322,7 +314,6 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Event handler for ICE connection state changes.
     /// </summary>
-    /// <param name="state">The new ICE connection state.</param>
     private async void IceConnectionStateChange(RTCIceConnectionState iceState)
     {
         oniceconnectionstatechange?.Invoke(IceConnectionState);
@@ -361,7 +352,7 @@ internal class RtcPeerConnection : IDisposable
                 SetGlobalDestination(connectedEP, connectedEP);
                 Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
-                if (IceRole == IceRolesEnum.active)
+                if (_iceRole == IceRolesEnum.active)
                 {
                     _dtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
                         { ForceUseExtendedMasterSecret = true });
@@ -374,7 +365,7 @@ internal class RtcPeerConnection : IDisposable
 
                 _dtlsHandle.OnAlert += OnDtlsAlert;
 
-                Logger.LogDebug($"Starting DLS handshake with role {IceRole}.");
+                Logger.LogDebug($"Starting DLS handshake with role {_iceRole}.");
 
                 try
                 {
@@ -437,7 +428,7 @@ internal class RtcPeerConnection : IDisposable
     public SetDescriptionResultEnum SetRemoteDescription(RTCSessionDescriptionInit init)
     {
         _remoteDescription = new RTCSessionDescription
-            { type = init.type, sdp = SIPSorcery.Net.SDP.SDP.ParseSDPDescription(init.sdp) };
+            { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
 
         var remoteSdp = _remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
@@ -498,13 +489,13 @@ internal class RtcPeerConnection : IDisposable
             if (init.type == RTCSdpType.answer)
             {
                 _rtpIceChannel.IsController = true;
-                IceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
+                _iceRole = remoteIceRole == IceRolesEnum.passive ? IceRolesEnum.active : IceRolesEnum.passive;
             }
             //As Chrome does not support changing IceRole while renegotiating we need to keep same previous IceRole if we already negotiated before
             else
             {
                 // Set DTLS role as client.
-                IceRole = IceRolesEnum.active;
+                _iceRole = IceRolesEnum.active;
             }
 
             if (remoteIceUser != null && remoteIcePassword != null)
@@ -696,8 +687,10 @@ internal class RtcPeerConnection : IDisposable
         // delay of a few hundred milliseconds it was decided not to break the API.
         _iceGatheringTask.Wait();
 
-        var offerSdp = new SIPSorcery.Net.SDP.SDP(IPAddress.Loopback);
-        offerSdp.SessionId = _localSdpSessionId;
+        var offerSdp = new SDP(IPAddress.Loopback)
+        {
+            SessionId = _localSdpSessionId
+        };
 
         var dtlsFingerprint = _dtlsCertificateFingerprint.ToString();
         var iceCandidatesAdded = false;
@@ -778,7 +771,7 @@ internal class RtcPeerConnection : IDisposable
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 announcement.IceOptions = ICE_OPTIONS;
-                announcement.IceRole = IceRole;
+                announcement.IceRole = _iceRole;
                 announcement.DtlsFingerprint = dtlsFingerprint;
 
                 if (iceCandidatesAdded == false && !false)
@@ -837,7 +830,7 @@ internal class RtcPeerConnection : IDisposable
                 dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
                 dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                dataChannelAnnouncement.IceRole = IceRole;
+                dataChannelAnnouncement.IceRole = _iceRole;
                 dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
                 if (iceCandidatesAdded == false && !false)
@@ -861,7 +854,7 @@ internal class RtcPeerConnection : IDisposable
 
             foreach (var ann in offerSdp.Media)
             {
-                ann.IceRole = IceRole;
+                ann.IceRole = _iceRole;
             }
         }
 
@@ -883,9 +876,9 @@ internal class RtcPeerConnection : IDisposable
     ///     +----------------+
     /// </summary>
     /// <param name="localPort">The local port on the RTP socket that received the packet.</param>
-    /// <param name="remoteEP">The remote end point the packet was received from.</param>
+    /// <param name="remoteEndPoint">The remote end point the packet was received from.</param>
     /// <param name="buffer">The data received.</param>
-    private void OnRTPDataReceived(int localPort, IPEndPoint remoteEP, byte[] buffer)
+    private void OnRTPDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
         //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
@@ -901,7 +894,7 @@ internal class RtcPeerConnection : IDisposable
                 if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                 {
                     // RTP/RTCP packet.
-                    OnReceive(localPort, remoteEP, buffer);
+                    OnReceive(localPort, remoteEndPoint, buffer);
                 }
                 else
                 {
@@ -913,7 +906,7 @@ internal class RtcPeerConnection : IDisposable
                     else
                     {
                         Logger.LogWarning(
-                            $"DTLS packet received {buffer.Length} bytes from {remoteEP} but no DTLS transport available.");
+                            $"DTLS packet received {buffer.Length} bytes from {remoteEndPoint} but no DTLS transport available.");
                     }
                 }
             }
@@ -1027,15 +1020,25 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Event handler for a new data channel being opened by the remote peer.
     /// </summary>
-    private void OnSctpAssociationNewDataChannel(ushort streamID, DataChannelTypes type, ushort priority,
-        uint reliability, string label, string protocol)
+    private void OnSctpAssociationNewDataChannel(
+        ushort streamId,
+        DataChannelTypes type,
+        ushort priority,
+        uint reliability,
+        string label,
+        string protocol)
     {
-        Logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamID}, type {type}, " +
+        Logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamId}, type {type}, " +
                               $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
 
         // TODO: Set reliability, priority etc. properties on the data channel.
         var dc = new RTCDataChannel(_sctp)
-            { id = streamID, label = label, IsOpened = true, readyState = RTCDataChannelState.open };
+        {
+            id = streamId,
+            label = label,
+            IsOpened = true,
+            readyState = RTCDataChannelState.open
+        };
 
         dc.SendDcepAck();
 
@@ -1045,7 +1048,7 @@ internal class RtcPeerConnection : IDisposable
         else
         {
             // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
-            Logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamID}.");
+            Logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamId}.");
         }
     }
 
@@ -1303,14 +1306,6 @@ internal class RtcPeerConnection : IDisposable
         Logger.LogDebug($"LogRemoteSDPSsrcAttributes: {str}");
     }
 
-    private void CreateRtcpSession(MediaStream mediaStream)
-    {
-        if (mediaStream.CreateRtcpSession())
-        {
-            mediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-        }
-    }
-
     private void CloseRtcpSession(MediaStream mediaStream, string reason)
     {
         if (mediaStream.RtcpSession != null)
@@ -1566,13 +1561,6 @@ internal class RtcPeerConnection : IDisposable
         return rtpEndPoint;
     }
 
-    private void InitMediaStream(MediaStream currentMediaStream)
-    {
-        var rtpChannel = _multiplexRtpChannel;
-        currentMediaStream.RTPChannel = rtpChannel;
-        CreateRtcpSession(currentMediaStream);
-    }
-
 #nullable enable
     /// <summary>
     ///     Adds a media track to this session. A media track represents an audio or video
@@ -1607,7 +1595,12 @@ internal class RtcPeerConnection : IDisposable
         }
         else
         {
-            InitMediaStream(currentMediaStream);
+            currentMediaStream.RTPChannel = _rtpIceChannel;
+            if (currentMediaStream.CreateRtcpSession())
+            {
+                currentMediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+            }
+
             currentMediaStream.LocalTrack = track;
         }
     }
