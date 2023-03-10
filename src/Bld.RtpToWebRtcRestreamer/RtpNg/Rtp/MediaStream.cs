@@ -3,6 +3,7 @@ using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
@@ -84,7 +85,7 @@ internal abstract class MediaStream
     /// </summary>
     public IPEndPoint ControlDestinationEndPoint { get; private set; }
 
-    public RTPChannel RTPChannel { get; set; }
+    public RtpIceChannel RTPChannel { get; set; }
 
     public SecureContext SecurityContext => _secureContext;
 
