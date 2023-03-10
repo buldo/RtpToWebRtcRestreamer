@@ -187,29 +187,33 @@ internal class MultiplexedRtpChannel
 
     private bool _closed;
     private DateTime _connectedAt = DateTime.MinValue;
-    private Timer _connectivityChecksTimer;
     private bool _isClosed;
     private readonly ConcurrentBag<RTCIceCandidate> _remoteCandidates = new();
 
     private DateTime _startedGatheringAt = DateTime.MinValue;
 
-    private UdpReceiver _rtpReceiver;
+    private readonly UdpSocket _udpSocket;
     private bool _rtpReceiverStarted;
+    /// <summary>
+    ///     The local end point the RTP socket is listening on.
+    /// </summary>
+    private readonly IPEndPoint _rtpLocalEndPoint;
+
+#nullable enable
+    private Task? _connectivityChecksTask;
+#nullable restore
 
     /// <summary>
     ///     Creates a new instance of an RTP ICE channel to provide RTP channel functions
     ///     with ICE connectivity checks.
     /// </summary>
-    public MultiplexedRtpChannel(RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)
+    public MultiplexedRtpChannel(UdpSocket udpSocket)
     {
-        NetServices.CreateRtpSocket(new IPEndPoint(IPAddress.Any, 0), out var rtpSocket);
-        _rtpSocket = rtpSocket ??
-                    throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-        _rtpLocalEndPoint = _rtpSocket.LocalEndPoint as IPEndPoint;
-        RTPPort = _rtpLocalEndPoint.Port;
+        _udpSocket = udpSocket;
+        _rtpLocalEndPoint = _udpSocket.LocalEndpoint;
 
         Component = RTCIceComponent.rtp;
-        _policy = policy;
+        _policy = RTCIceTransportPolicy.all;
         _iceTiebreaker = Crypto.GetRandomULong();
 
         LocalIceUser = Crypto.GetRandomString(ICE_UFRAG_LENGTH);
@@ -231,34 +235,10 @@ internal class MultiplexedRtpChannel
             0);
     }
 
-    private readonly Socket _rtpSocket;
-
     /// <summary>
     ///     The local port we are listening for RTP (and whatever else is multiplexed) packets on.
     /// </summary>
-    public int RTPPort { get; }
-
-    /// <summary>
-    ///     The local end point the RTP socket is listening on.
-    /// </summary>
-    private readonly IPEndPoint _rtpLocalEndPoint;
-
-    /// <summary>
-    ///     Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
-    ///     socket exists it will be the same.
-    /// </summary>
-    private bool IsDualMode
-    {
-        get
-        {
-            if (_rtpSocket != null && _rtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
-            {
-                return _rtpSocket.DualMode;
-            }
-
-            return false;
-        }
-    }
+    public int RTPPort => _rtpLocalEndPoint.Port;
 
     public RTCIceComponent Component { get; }
 
@@ -306,8 +286,8 @@ internal class MultiplexedRtpChannel
         }
     }
 
-    private string RemoteIceUser { get; set; }
-    private string RemoteIcePassword { get; set; }
+    private string _remoteIceUser;
+    private string _remoteIcePassword;
 
     public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
     public event Action<string> OnClosed;
@@ -317,20 +297,30 @@ internal class MultiplexedRtpChannel
     public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
     public event Action<RTCIceCandidate, string> OnIceCandidateError;
 
-    /// <summary>
-    ///     We've been given the green light to start the ICE candidate gathering process.
-    ///     This could include contacting external STUN and TURN servers. Events will
-    ///     be fired as each ICE is identified and as the gathering state machine changes
-    ///     state.
-    /// </summary>
-    public void StartGathering()
+#nullable enable
+
+    public void Start()
     {
         if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
         {
-            _startedGatheringAt = DateTime.Now;
+            if (!_rtpReceiverStarted)
+            {
+                _rtpReceiverStarted = true;
 
-            // Start listening on the UDP socket.
-            Start();
+                logger.LogDebug($"RTPChannel for {_rtpLocalEndPoint} started.");
+                _udpSocket.StartReceive(OnRTPPacketReceived);
+            }
+        }
+
+        // This is the point the ICE session potentially starts contacting STUN and TURN servers.
+        // This job was moved to a background thread as it was observed that interacting with the OS network
+        // calls and/or initialising DNS was taking up to 600ms, see
+        // https://github.com/sipsorcery-org/sipsorcery/issues/456.
+        //_iceGatheringTask = Task.Run(() => StartGathering);
+
+        if (!_closed && IceGatheringState == RTCIceGatheringState.@new)
+        {
+            _startedGatheringAt = DateTime.Now;
 
             IceGatheringState = RTCIceGatheringState.gathering;
             OnIceGatheringStateChange?.Invoke(IceGatheringState);
@@ -351,10 +341,21 @@ internal class MultiplexedRtpChannel
             IceGatheringState = RTCIceGatheringState.complete;
             OnIceGatheringStateChange?.Invoke(IceGatheringState);
 
-
-            _connectivityChecksTimer = new Timer(DoConnectivityCheck, null, 0, Ta);
+            _connectivityChecksTask = Task.Run(async () => await DoConnectivityCheckAsync());
         }
+
     }
+
+    public async ValueTask SendAsync(IPEndPoint dstEndPoint, ReadOnlyMemory<byte> buffer)
+    {
+        if (_isClosed)
+        {
+            return;
+        }
+
+        await _udpSocket.SendToAsync(buffer, dstEndPoint);
+    }
+#nullable restore
 
     /// <summary>
     ///     Set the ICE credentials that have been supplied by the remote peer. Once these
@@ -366,8 +367,8 @@ internal class MultiplexedRtpChannel
     {
         logger.LogDebug("RTP ICE Channel remote credentials set.");
 
-        RemoteIceUser = username;
-        RemoteIcePassword = password;
+        _remoteIceUser = username;
+        _remoteIcePassword = password;
 
         if (IceConnectionState == RTCIceConnectionState.@new)
         {
@@ -391,13 +392,12 @@ internal class MultiplexedRtpChannel
     /// <summary>
     ///     Closes the RTP ICE Channel and stops any further connectivity checks.
     /// </summary>
-    public void Close()
+    public void CloseAsync()
     {
         if (!_closed)
         {
             logger.LogDebug($"RtpIceChannel for {_rtpLocalEndPoint} closed.");
             _closed = true;
-            _connectivityChecksTimer?.Dispose();
         }
     }
 
@@ -520,25 +520,7 @@ internal class MultiplexedRtpChannel
 
         // We get a list of local addresses that can be used with the address the RTP socket is bound on.
         List<IPAddress> localAddresses;
-        if (IPAddress.IPv6Any.Equals(rtpBindAddress))
-        {
-            if (_rtpSocket.DualMode)
-            {
-                // IPv6 dual mode listening on [::] means we can use all valid local addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface()
-                    .Where(x => !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal &&
-                                !x.IsIPv6LinkLocal).ToList();
-            }
-            else
-            {
-                // IPv6 but not dual mode on [::] means can use all valid local IPv6 addresses.
-                localAddresses = NetServices.GetLocalAddressesOnInterface()
-                    .Where(x => x.AddressFamily == AddressFamily.InterNetworkV6
-                                && !IPAddress.IsLoopback(x) && !x.IsIPv4MappedToIPv6 && !x.IsIPv6SiteLocal &&
-                                !x.IsIPv6LinkLocal).ToList();
-            }
-        }
-        else if (IPAddress.Any.Equals(rtpBindAddress))
+        if (IPAddress.Any.Equals(rtpBindAddress))
         {
             // IPv4 on 0.0.0.0 means can use all valid local IPv4 addresses.
             localAddresses = NetServices.GetLocalAddressesOnInterface()
@@ -629,8 +611,8 @@ internal class MultiplexedRtpChannel
             }
             else
             {
-                supportsIPv4 = _rtpSocket.AddressFamily == AddressFamily.InterNetwork || IsDualMode;
-                supportsIPv6 = _rtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || IsDualMode;
+                supportsIPv4 = _rtpLocalEndPoint.AddressFamily == AddressFamily.InterNetwork;
+                supportsIPv6 = _rtpLocalEndPoint.AddressFamily == AddressFamily.InterNetworkV6;
             }
 
             lock (_checklist)
@@ -722,27 +704,42 @@ internal class MultiplexedRtpChannel
     /// <summary>
     ///     The periodic logic to run to establish or monitor an ICE connection.
     /// </summary>
-    private void DoConnectivityCheck(object stateInfo)
+    private async Task DoConnectivityCheckAsync()
     {
-        switch (IceConnectionState)
+        var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(Ta));
+        while (true)
         {
-            case RTCIceConnectionState.@new:
-            case RTCIceConnectionState.checking:
-                ProcessChecklist();
-                break;
+            if (IceConnectionState == RTCIceConnectionState.failed)
+            {
+                timer.Dispose();
+                return;
+            }
+            switch (IceConnectionState)
+            {
+                case RTCIceConnectionState.@new:
+                case RTCIceConnectionState.checking:
+                    await ProcessChecklistAsync();
+                    break;
 
-            case RTCIceConnectionState.connected:
-            case RTCIceConnectionState.disconnected:
-                // Periodic checks on the nominated peer.
-                SendCheckOnConnectedPair(NominatedEntry);
-                break;
+                case RTCIceConnectionState.connected:
+                case RTCIceConnectionState.disconnected:
+                    // Periodic checks on the nominated peer.
+                    await SendCheckOnConnectedPairAsync(NominatedEntry);
+                    break;
 
-            case RTCIceConnectionState.failed:
-            case RTCIceConnectionState.closed:
-                logger.LogDebug(
-                    $"ICE RTP channel stopping connectivity checks in connection state {IceConnectionState}.");
-                _connectivityChecksTimer?.Dispose();
-                break;
+                case RTCIceConnectionState.failed:
+                case RTCIceConnectionState.closed:
+                    logger.LogDebug($"ICE RTP channel stopping connectivity checks in connection state {IceConnectionState}.");
+                    break;
+            }
+
+            if (_checklistState == ChecklistState.Completed)
+            {
+                timer.Dispose();
+                timer = new PeriodicTimer(TimeSpan.FromMilliseconds(CONNECTED_CHECK_PERIOD * 1000));
+            }
+
+            await timer.WaitForNextTickAsync();
         }
     }
 
@@ -752,7 +749,7 @@ internal class MultiplexedRtpChannel
     /// <remarks>
     ///     The scheduling mechanism for ICE is specified in https://tools.ietf.org/html/rfc8445#section-6.1.4.
     /// </remarks>
-    private void ProcessChecklist()
+    private async Task ProcessChecklistAsync()
     {
         if (!_closed && (IceConnectionState == RTCIceConnectionState.@new ||
                          IceConnectionState == RTCIceConnectionState.checking))
@@ -778,7 +775,7 @@ internal class MultiplexedRtpChannel
             {
                 if (_checklist.Count > 0)
                 {
-                    if (RemoteIceUser == null || RemoteIcePassword == null)
+                    if (_remoteIceUser == null || _remoteIcePassword == null)
                     {
                         logger.LogWarning(
                             "ICE RTP channel checklist processing cannot occur as either the remote ICE user or password are not set.");
@@ -786,7 +783,7 @@ internal class MultiplexedRtpChannel
                     }
                     else
                     {
-                        lock (_checklist)
+                        //lock (_checklist)
                         {
                             // The checklist gets sorted into priority order whenever a remote candidate and its corresponding candidate pairs
                             // are added. At this point it can be relied upon that the checklist is correctly sorted by candidate pair priority.
@@ -810,7 +807,7 @@ internal class MultiplexedRtpChannel
 
                             if (nextEntry != null)
                             {
-                                SendConnectivityCheck(nextEntry, false);
+                                await SendConnectivityCheckAsync(nextEntry, false);
                                 return;
                             }
 
@@ -822,7 +819,7 @@ internal class MultiplexedRtpChannel
 
                             if (retransmitEntry != null)
                             {
-                                SendConnectivityCheck(retransmitEntry, false);
+                                await SendConnectivityCheckAsync(retransmitEntry, false);
                                 return;
                             }
 
@@ -857,7 +854,7 @@ internal class MultiplexedRtpChannel
                                     //Try nominate another entry
                                     if (requireReprocess)
                                     {
-                                        ProcessNominateLogicAsController(null);
+                                        await ProcessNominateLogicAsControllerAsync(null);
                                     }
                                 }
 
@@ -909,7 +906,6 @@ internal class MultiplexedRtpChannel
             entry.Nominated = true;
             entry.LastConnectedResponseAt = DateTime.Now;
             _checklistState = ChecklistState.Completed;
-            _connectivityChecksTimer.Change(CONNECTED_CHECK_PERIOD * 1000, CONNECTED_CHECK_PERIOD * 1000);
             NominatedEntry = entry;
             IceConnectionState = RTCIceConnectionState.connected;
             OnIceConnectionStateChange?.Invoke(RTCIceConnectionState.connected);
@@ -943,7 +939,7 @@ internal class MultiplexedRtpChannel
     ///     communicate with.
     ///     - Packets need to be sent and received as TURN Channel Data messages.
     /// </remarks>
-    private void SendConnectivityCheck(ChecklistEntry candidatePair, bool setUseCandidate)
+    private async Task SendConnectivityCheckAsync(ChecklistEntry candidatePair, bool setUseCandidate)
     {
         if (_closed)
         {
@@ -990,7 +986,7 @@ internal class MultiplexedRtpChannel
                     $"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {_rtpLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
             }
 
-            SendSTUNBindingRequest(candidatePair, setUseCandidate);
+            await SendSTUNBindingRequestAsync(candidatePair, setUseCandidate);
         }
     }
 
@@ -1002,11 +998,11 @@ internal class MultiplexedRtpChannel
     ///     to.
     /// </param>
     /// <param name="setUseCandidate">Set to true to add a "UseCandidate" attribute to the STUN request.</param>
-    private void SendSTUNBindingRequest(ChecklistEntry candidatePair, bool setUseCandidate)
+    private async Task SendSTUNBindingRequestAsync(ChecklistEntry candidatePair, bool setUseCandidate)
     {
         var stunRequest = new STUNMessage(STUNMessageTypesEnum.BindingRequest);
         stunRequest.Header.TransactionId = Encoding.ASCII.GetBytes(candidatePair.RequestTransactionId);
-        stunRequest.AddUsernameAttribute(RemoteIceUser + ":" + LocalIceUser);
+        stunRequest.AddUsernameAttribute(_remoteIceUser + ":" + LocalIceUser);
         stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.Priority,
             BitConverter.GetBytes(candidatePair.LocalPriority)));
 
@@ -1026,7 +1022,7 @@ internal class MultiplexedRtpChannel
             stunRequest.Attributes.Add(new STUNAttribute(STUNAttributeTypesEnum.UseCandidate, null));
         }
 
-        var stunReqBytes = stunRequest.ToByteBufferStringKey(RemoteIcePassword, true);
+        var stunReqBytes = stunRequest.ToByteBufferStringKey(_remoteIcePassword, true);
 
         if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
         {
@@ -1034,12 +1030,7 @@ internal class MultiplexedRtpChannel
         else
         {
             var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
-            var sendResult = Send(remoteEndPoint, stunReqBytes);
-
-            if (sendResult != SocketError.Success)
-            {
-                logger.LogWarning($"Error sending STUN server binding request to {remoteEndPoint}. {sendResult}.");
-            }
+            await SendAsync(remoteEndPoint, stunReqBytes);
         }
     }
 
@@ -1048,7 +1039,7 @@ internal class MultiplexedRtpChannel
     ///     as the current nominated, connected pair.
     /// </summary>
     /// <param name="candidatePair">The pair to send the connectivity check on.</param>
-    private void SendCheckOnConnectedPair(ChecklistEntry candidatePair)
+    private async Task SendCheckOnConnectedPairAsync(ChecklistEntry candidatePair)
     {
         if (candidatePair == null)
         {
@@ -1065,8 +1056,6 @@ internal class MultiplexedRtpChannel
 
                 IceConnectionState = RTCIceConnectionState.failed;
                 OnIceConnectionStateChange?.Invoke(IceConnectionState);
-
-                _connectivityChecksTimer?.Dispose();
             }
             else
             {
@@ -1099,7 +1088,7 @@ internal class MultiplexedRtpChannel
                                                      Crypto.GetRandomString(STUNHeader.TRANSACTION_ID_LENGTH);
                 candidatePair.LastCheckSentAt = DateTime.Now;
 
-                SendSTUNBindingRequest(candidatePair, false);
+                await SendSTUNBindingRequestAsync(candidatePair, false);
             }
         }
     }
@@ -1120,7 +1109,7 @@ internal class MultiplexedRtpChannel
     /// </remarks>
     /// <param name="stunMessage">The STUN message received.</param>
     /// <param name="remoteEndPoint">The remote end point the STUN packet was received from.</param>
-    private void ProcessStunMessage(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
+    private async Task ProcessStunMessageAsync(STUNMessage stunMessage, IPEndPoint remoteEndPoint, bool wasRelayed)
     {
         if (_closed)
         {
@@ -1136,7 +1125,7 @@ internal class MultiplexedRtpChannel
         // be created.
         if (stunMessage.Header.MessageType == STUNMessageTypesEnum.BindingRequest)
         {
-            GotStunBindingRequest(stunMessage, remoteEndPoint, wasRelayed);
+            await GotStunBindingRequestAsync(stunMessage, remoteEndPoint, wasRelayed);
         }
         else if (stunMessage.Header.MessageClass == STUNClassTypesEnum.ErrorResponse ||
                  stunMessage.Header.MessageClass == STUNClassTypesEnum.SuccessResponse)
@@ -1173,7 +1162,7 @@ internal class MultiplexedRtpChannel
                     {
                         logger.LogDebug(
                             $"ICE RTP channel binding response state {matchingChecklistEntry.State} as Controller for {matchingChecklistEntry.RemoteCandidate.ToShortString()}");
-                        ProcessNominateLogicAsController(matchingChecklistEntry);
+                        await ProcessNominateLogicAsControllerAsync(matchingChecklistEntry);
                     }
                 }
             }
@@ -1189,7 +1178,7 @@ internal class MultiplexedRtpChannel
     ///     Handles Nominate logic when Agent is the controller
     /// </summary>
     /// <param name="possibleMatchingCheckEntry">Optional initial ChecklistEntry.</param>
-    private void ProcessNominateLogicAsController(ChecklistEntry possibleMatchingCheckEntry)
+    private async Task ProcessNominateLogicAsControllerAsync(ChecklistEntry possibleMatchingCheckEntry)
     {
         if (IsController && (NominatedEntry == null || !NominatedEntry.Nominated ||
                              NominatedEntry.State != ChecklistEntryState.Succeeded))
@@ -1252,27 +1241,9 @@ internal class MultiplexedRtpChannel
             if (possibleMatchingCheckEntry != null && possibleMatchingCheckEntry.State == ChecklistEntryState.Succeeded)
             {
                 possibleMatchingCheckEntry.Nominated = true;
-                SendConnectivityCheck(possibleMatchingCheckEntry, true);
+                await SendConnectivityCheckAsync(possibleMatchingCheckEntry, true);
             }
         }
-
-        /*if (IsController && !_checklist.Any(x => x.Nominated))
-        {
-            // If we are the controlling ICE agent it's up to us to decide when to nominate a candidate pair to use for the connection.
-            // For the lack of a more sophisticated approach use whichever pair gets the first successful STUN exchange. If needs be
-            // the selection algorithm can improve over time.
-
-            //Find high priority succeded event
-            _checklist.Sort();
-            var matchingCheckEntry = _checklist.Find(x => x.State == ChecklistEntryState.Succeeded);
-
-            //We can nominate this entry (if exists)
-            if (matchingCheckEntry != null)
-            {
-                matchingCheckEntry.Nominated = true;
-                SendConnectivityCheck(matchingCheckEntry, true);
-            }
-        }*/
     }
 
     /// <summary>
@@ -1284,7 +1255,7 @@ internal class MultiplexedRtpChannel
     ///     True of the request was relayed via the TURN server in use
     ///     by this ICE channel (i.e. the ICE server that this channel is acting as the client with).
     /// </param>
-    private void GotStunBindingRequest(STUNMessage bindingRequest, IPEndPoint remoteEndPoint, bool wasRelayed)
+    private async Task GotStunBindingRequestAsync(STUNMessage bindingRequest, IPEndPoint remoteEndPoint, bool wasRelayed)
     {
         if (_closed)
         {
@@ -1298,7 +1269,7 @@ internal class MultiplexedRtpChannel
 
             var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
             stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-            Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+            await SendAsync(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
         }
         else
         {
@@ -1311,7 +1282,7 @@ internal class MultiplexedRtpChannel
                     $"ICE RTP channel STUN binding request from {remoteEndPoint} failed an integrity check, rejecting.");
                 var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                 stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                await SendAsync(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
             }
             else
             {
@@ -1366,7 +1337,7 @@ internal class MultiplexedRtpChannel
                         "ICE RTP channel STUN request matched a remote candidate but NOT a checklist entry.");
                     var stunErrResponse = new STUNMessage(STUNMessageTypesEnum.BindingErrorResponse);
                     stunErrResponse.Header.TransactionId = bindingRequest.Header.TransactionId;
-                    Send(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
+                    await SendAsync(remoteEndPoint, stunErrResponse.ToByteBuffer(null, false));
                 }
                 else
                 {
@@ -1405,7 +1376,7 @@ internal class MultiplexedRtpChannel
                     }
                     else
                     {
-                        Send(remoteEndPoint, stunRespBytes);
+                        await SendAsync(remoteEndPoint, stunRespBytes);
                     }
                 }
             }
@@ -1434,75 +1405,54 @@ internal class MultiplexedRtpChannel
     ///     Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
     ///     and extract STUN messages to deal with ICE connectivity checks and TURN relays.
     /// </summary>
-    /// <param name="receiver">The UDP receiver the packet was received on.</param>
+    /// <param name="socketer">The UDP socket the packet was received on.</param>
     /// <param name="localPort">The local port it was received on.</param>
     /// <param name="remoteEndPoint">The remote end point of the sender.</param>
     /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-    private void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private async Task OnRTPPacketReceived(UdpReceiveResult packet)
     {
-        if (packet?.Length > 0)
+        var packetBuffer = packet.Buffer;
+        var remoteEndPoint = packet.RemoteEndPoint;
+        if (packetBuffer.Length > 0)
         {
             var wasRelayed = false;
 
-            if (packet[0] == 0x00 && packet[1] == 0x17)
+            if (packetBuffer[0] == 0x00 && packetBuffer[1] == 0x17)
             {
                 wasRelayed = true;
 
                 // TURN data indication. Extract the data payload and adjust the end point.
-                var dataIndication = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                var dataAttribute = dataIndication.Attributes.Where(x => x.AttributeType == STUNAttributeTypesEnum.Data)
-                    .FirstOrDefault();
-                packet = dataAttribute?.Value;
+                var dataIndication = STUNMessage.ParseSTUNMessage(packetBuffer, packetBuffer.Length);
+                var dataAttribute = dataIndication
+                    .Attributes
+                    .FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.Data);
 
-                var peerAddrAttribute = dataIndication.Attributes
-                    .Where(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress).FirstOrDefault();
+                packetBuffer = dataAttribute?.Value;
+
+                var peerAddrAttribute = dataIndication
+                    .Attributes
+                    .FirstOrDefault(x => x.AttributeType == STUNAttributeTypesEnum.XORPeerAddress);
                 remoteEndPoint = (peerAddrAttribute as STUNXORAddressAttribute)?.GetIPEndPoint();
             }
 
 
-            if (packet[0] == 0x00 || packet[0] == 0x01)
+            if (packetBuffer[0] == 0x00 || packetBuffer[0] == 0x01)
             {
                 // STUN packet.
-                var stunMessage = STUNMessage.ParseSTUNMessage(packet, packet.Length);
-                ProcessStunMessage(stunMessage, remoteEndPoint, wasRelayed);
+                var stunMessage = STUNMessage.ParseSTUNMessage(packetBuffer, packetBuffer.Length);
+                await ProcessStunMessageAsync(stunMessage, remoteEndPoint, wasRelayed);
             }
             else
             {
-                OnRTPDataReceived?.Invoke(localPort, remoteEndPoint, packet);
+                OnRTPDataReceived?.Invoke(_rtpLocalEndPoint.Port, remoteEndPoint, packetBuffer);
             }
-        }
-    }
-
-    /// <summary>
-    ///     Starts listening on the RTP and control ports.
-    /// </summary>
-    public void Start()
-    {
-        StartRtpReceiver();
-    }
-
-    /// <summary>
-    ///     Starts the UDP receiver that listens for RTP packets.
-    /// </summary>
-    private void StartRtpReceiver()
-    {
-        if (!_rtpReceiverStarted)
-        {
-            _rtpReceiverStarted = true;
-
-            logger.LogDebug($"RTPChannel for {_rtpSocket.LocalEndPoint} started.");
-
-            _rtpReceiver = new UdpReceiver(_rtpSocket);
-            _rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
-            _rtpReceiver.OnClosed += Close;
-            _rtpReceiver.BeginReceiveFrom();
         }
     }
 
     /// <summary>
     ///     Closes the session's RTP and control ports.
     /// </summary>
-    public void Close(string reason)
+    public async Task CloseAsync(string reason)
     {
         if (!_isClosed)
         {
@@ -1510,11 +1460,12 @@ internal class MultiplexedRtpChannel
             {
                 var closeReason = reason ?? "normal";
 
-                logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
+                logger.LogDebug($"RTPChannel closing, RTP socket on port {RTPPort}. Reason: {closeReason}.");
+
+
+                await _udpSocket.StopAsync();;
 
                 _isClosed = true;
-                _rtpReceiver?.Close(null);
-
                 OnClosed?.Invoke(closeReason);
             }
             catch (Exception excp)
@@ -1522,139 +1473,5 @@ internal class MultiplexedRtpChannel
                 logger.LogError("Exception RTPChannel.Close. " + excp);
             }
         }
-    }
-
-    /// <summary>
-    ///     The send method for the RTP channel.
-    /// </summary>
-    /// <param name="sendOn">The socket to send on. Can be the RTP or Control socket.</param>
-    /// <param name="dstEndPoint">The destination end point to send to.</param>
-    /// <param name="buffer">The data to send.</param>
-    /// <returns>
-    ///     The result of initiating the send. This result does not reflect anything about
-    ///     whether the remote party received the packet or not.
-    /// </returns>
-    public SocketError Send(IPEndPoint dstEndPoint, byte[] buffer)
-    {
-        if (_isClosed)
-        {
-            return SocketError.Disconnecting;
-        }
-
-        if (dstEndPoint == null)
-        {
-            throw new ArgumentException("dstEndPoint", "An empty destination was specified to Send in RTPChannel.");
-        }
-
-        if (buffer == null || buffer.Length == 0)
-        {
-            throw new ArgumentException("buffer", "The buffer must be set and non empty for Send in RTPChannel.");
-        }
-
-        if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-        {
-            logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-            return SocketError.DestinationAddressRequired;
-        }
-
-        try
-        {
-            var sendSocket = _rtpSocket;
-
-            //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
-            if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork &&
-                sendSocket.AddressFamily != dstEndPoint.AddressFamily)
-            {
-                dstEndPoint = new IPEndPoint(dstEndPoint.Address.MapToIPv6(), dstEndPoint.Port);
-            }
-
-            //Fix ReceiveFrom logic if any previous exception happens
-            if (!_rtpReceiver.IsRunningReceive && !_rtpReceiver.IsClosed)
-            {
-                _rtpReceiver.BeginReceiveFrom();
-            }
-
-            sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
-
-            return SocketError.Success;
-        }
-        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-        {
-            return SocketError.Disconnecting;
-        }
-        catch (SocketException sockExcp)
-        {
-            return sockExcp.SocketErrorCode;
-        }
-        catch (Exception excp)
-        {
-            logger.LogError($"Exception RTPChannel.Send. {excp}");
-            return SocketError.Fault;
-        }
-    }
-
-#nullable enable
-    public async ValueTask SendAsync(IPEndPoint dstEndPoint, ReadOnlyMemory<byte> buffer)
-    {
-        if (_isClosed)
-        {
-            return;
-        }
-
-        if (buffer.Length == 0)
-        {
-            return;
-        }
-
-        if (IPAddress.Any.Equals(dstEndPoint.Address) || IPAddress.IPv6Any.Equals(dstEndPoint.Address))
-        {
-            logger.LogWarning($"The destination address for Send in RTPChannel cannot be {dstEndPoint.Address}.");
-            return;
-        }
-
-        try
-        {
-            await _rtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
-        }
-        catch (Exception exception)
-        {
-            logger.LogError(exception, "Exception RTPChannel.Send.");
-        }
-    }
-#nullable restore
-
-    /// <summary>
-    ///     Ends an async send on one of the channel's sockets.
-    /// </summary>
-    /// <param name="ar">The async result to complete the send with.</param>
-    private void EndSendTo(IAsyncResult ar)
-    {
-        try
-        {
-            var sendSocket = (Socket)ar.AsyncState;
-            sendSocket.EndSendTo(ar);
-        }
-        catch (SocketException sockExcp)
-        {
-            // Socket errors do not trigger a close. The reason being that there are genuine situations that can cause them during
-            // normal RTP operation. For example:
-            // - the RTP connection may start sending before the remote socket starts listening,
-            // - an on hold, transfer, etc. operation can change the RTP end point which could result in socket errors from the old
-            //   or new socket during the transition.
-            logger.LogWarning(sockExcp,
-                $"SocketException RTPChannel EndSendTo ({sockExcp.ErrorCode}). {sockExcp.Message}");
-        }
-        catch (ObjectDisposedException) // Thrown when socket is closed. Can be safely ignored.
-        {
-        }
-        catch (Exception excp)
-        {
-            logger.LogError($"Exception RTPChannel EndSendTo. {excp.Message}");
-        }
-    }
-
-    public void Dispose()
-    {
-        Close(null);
     }
 }

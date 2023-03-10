@@ -1,5 +1,6 @@
 ﻿using System.Net;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
-internal delegate void PacketReceivedDelegate(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet);
+internal delegate void PacketReceivedDelegate(UdpSocket socket, int localPort, IPEndPoint remoteEndPoint, byte[] packet);

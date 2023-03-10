@@ -90,7 +90,6 @@ internal class RtcPeerConnection : IDisposable
     private readonly RTCDtlsFingerprint _dtlsCertificateFingerprint;
 
     private readonly AsymmetricKeyParameter _dtlsPrivateKey;
-    private readonly Task _iceGatheringTask;
 
     private readonly string _localSdpSessionId;
 
@@ -132,7 +131,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
-    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack)
+    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack, UdpSocket udpSocket)
     {
         _dataChannels = new RTCDataChannelCollection(() => DtlsHandle.IsClient);
 
@@ -144,7 +143,7 @@ internal class RtcPeerConnection : IDisposable
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        _rtpIceChannel = new MultiplexedRtpChannel();
+        _rtpIceChannel = new MultiplexedRtpChannel(udpSocket);
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
 
@@ -157,12 +156,6 @@ internal class RtcPeerConnection : IDisposable
         _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
         _rtpIceChannel.Start();
-
-        // This is the point the ICE session potentially starts contacting STUN and TURN servers.
-        // This job was moved to a background thread as it was observed that interacting with the OS network
-        // calls and/or initialising DNS was taking up to 600ms, see
-        // https://github.com/sipsorcery-org/sipsorcery/issues/456.
-        _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
     }
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -465,7 +458,7 @@ internal class RtcPeerConnection : IDisposable
         {
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-            _rtpIceChannel?.Close();
+            _rtpIceChannel?.CloseAsync();
             DtlsHandle?.Close();
 
             if (_sctp != null && _sctp.state == RTCSctpTransportState.Connected)
@@ -484,7 +477,7 @@ internal class RtcPeerConnection : IDisposable
                 var rtpChannel = _videoStream.RTPChannel;
                 rtpChannel.OnRTPDataReceived -= OnReceive;
                 rtpChannel.OnClosed -= OnRTPChannelClosed;
-                rtpChannel.Close(reason);
+                rtpChannel.CloseAsync(reason);
 
                 OnRtpClosed?.Invoke(reason);
             }
@@ -521,15 +514,7 @@ internal class RtcPeerConnection : IDisposable
                 mediaStream.LocalTrack.StreamStatus = mediaStream.LocalTrack.DefaultStreamStatus;
             }
         }
-
-        // Make sure the ICE gathering of local IP addresses is complete.
-        // This task should complete very quickly (<1s) but it is deemed very useful to wait
-        // for it to complete as it allows local ICE candidates to be included in the SDP.
-        // In theory it would be better to an async/await but that would result in a breaking
-        // change to the API and for a one off (once per class instance not once per method call)
-        // delay of a few hundred milliseconds it was decided not to break the API.
-        _iceGatheringTask.Wait();
-
+        
         var offerSdp = new SDP(IPAddress.Loopback)
         {
             SessionId = _localSdpSessionId
@@ -985,7 +970,8 @@ internal class RtcPeerConnection : IDisposable
         dtlsHandle.OnDataReady += buf =>
         {
             //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-            rtpChannel.Send(_videoStream.DestinationEndPoint, buf);
+            // TODO: Bld FIX IT
+            rtpChannel.SendAsync(_videoStream.DestinationEndPoint, buf);
         };
 
         var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);

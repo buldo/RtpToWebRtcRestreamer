@@ -21,20 +21,7 @@ public static class NetServices
     /// </summary>
     private const int MAXIMUM_UDP_PORT_BIND_ATTEMPTS = 25;
 
-    /// <summary>
-    /// Port to use when doing a Udp.Connect to determine local IP
-    /// address (port 0 does not work on MacOS).
-    /// </summary>
-    private const int NETWORK_TEST_PORT = 5060;
-
-    /// <summary>
-    /// The amount of time to leave the result of a local IP address
-    /// determination in the cache.
-    /// </summary>
-    private const int LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS = 300;
-
     private static readonly ILogger logger = Log.Logger;
-
 
     /// <summary>
     /// A lookup collection to cache the local IP address for a destination address. The collection will cache results of
@@ -200,15 +187,13 @@ public static class NetServices
     /// The RTP and control sockets created are IPv4 and IPv6 dual mode sockets which means they can send and receive
     /// either IPv4 or IPv6 packets.
     /// </summary>
-    public static void CreateRtpSocket(
-        IPEndPoint ipEndPoint,
-        out Socket? rtpSocket)
+    public static Socket? CreateRtpSocket(IPEndPoint ipEndPoint)
     {
         CheckBindAddressAndThrow(ipEndPoint.Address);
 
         logger.LogDebug($"CreateRtpSocket attempting to create and bind RTP socket(s) on {ipEndPoint}.");
 
-        rtpSocket = null;
+        Socket? rtpSocket = null;
         var bindAttempts = 0;
 
         while (bindAttempts < MAXIMUM_UDP_PORT_BIND_ATTEMPTS)
@@ -253,72 +238,8 @@ public static class NetServices
         {
             throw new ApplicationException($"Failed to create and bind RTP socket using bind address {ipEndPoint}.");
         }
-    }
 
-    /// <summary>
-    /// This method utilises the OS routing table to determine the local IP address to connect to a destination end point.
-    /// It selects the correct local IP address, on a potentially multi-honed host, to communicate with a destination IP address.
-    /// See https://github.com/sipsorcery/sipsorcery/issues/97 for elaboration.
-    /// </summary>
-    /// <param name="destination">The remote destination to find a local IP address for.</param>
-    /// <returns>The local IP address to use to connect to the remote end point.</returns>
-    private static IPAddress? GetLocalAddressForRemote(IPAddress destination)
-    {
-        if (IPAddress.Any.Equals(destination) || IPAddress.IPv6Any.Equals(destination))
-        {
-            return null;
-        }
-
-        if (LocalAddressTable.TryGetValue(destination, out var cachedAddress))
-        {
-            if (DateTime.Now.Subtract(cachedAddress.Item2).TotalSeconds >= LOCAL_ADDRESS_CACHE_LIFETIME_SECONDS)
-            {
-                LocalAddressTable.TryRemove(destination, out _);
-            }
-
-            return cachedAddress.Item1;
-        }
-
-        IPAddress? localAddress = null;
-
-        if (destination.AddressFamily == AddressFamily.InterNetwork || destination.IsIPv4MappedToIPv6)
-        {
-            using (var udpClient = new UdpClient())
-            {
-                try
-                {
-                    udpClient.Connect(destination.MapToIPv4(), NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                }
-                catch (SocketException)
-                {
-                    // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                }
-            }
-        }
-        else
-        {
-            using (var udpClient = new UdpClient(AddressFamily.InterNetworkV6))
-            {
-                try
-                {
-                    udpClient.Connect(destination, NETWORK_TEST_PORT);
-                    localAddress = (udpClient.Client.LocalEndPoint as IPEndPoint)?.Address;
-                }
-                catch (SocketException)
-                {
-                    // Socket exception is thrown if the OS cannot find a suitable entry in the routing table.
-                }
-            }
-
-        }
-
-        if (localAddress != null)
-        {
-            LocalAddressTable.TryAdd(destination, new Tuple<IPAddress, DateTime>(localAddress, DateTime.Now));
-        }
-
-        return localAddress;
+        return rtpSocket;
     }
 
     /// <summary>

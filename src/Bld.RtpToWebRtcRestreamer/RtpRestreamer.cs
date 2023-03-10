@@ -1,5 +1,8 @@
 ﻿using System.Net;
+using System.Net.Sockets;
+
 using Bld.RtpToWebRtcRestreamer.Restreamer;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
@@ -62,7 +65,8 @@ internal class RtpRestreamer
         var videoTrack = new MediaStreamTrack(
             new VideoFormat(VideoCodecsEnum.H264, 96),
             MediaStreamStatusEnum.SendOnly);
-        var peerConnection = new RtcPeerConnection(videoTrack);
+        var socket = new UdpSocket(new UdpClient(new IPEndPoint(IPAddress.Any, 0)), _loggerFactory.CreateLogger<UdpSocket>());
+        var peerConnection = new RtcPeerConnection(videoTrack, socket);
         _streamMultiplexer.RegisterPeer(peerConnection);
 
         peerConnection.onconnectionstatechange += (state) =>
