@@ -33,7 +33,10 @@ internal class RtcPeerConnection : IDisposable
     private const string RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
     private const string RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE = "UDP/DTLS/SCTP";
     private const string SDP_DATA_CHANNEL_FORMAT_ID = "webrtc-datachannel";
-    private const string RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
+
+    private const string
+        RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
+
     private const string BUNDLE_ATTRIBUTE = "BUNDLE";
     private const string ICE_OPTIONS = "ice2,trickle"; // Supported ICE options.
     private const ushort SCTP_DEFAULT_PORT = 5000;
@@ -96,6 +99,12 @@ internal class RtcPeerConnection : IDisposable
     private readonly Task _iceGatheringTask;
 
     private readonly string _localSdpSessionId;
+
+    /// <summary>
+    ///     The primary stream for this session - can be an AudioStream or a VideoStream
+    /// </summary>
+    private readonly MediaStream _primaryStream;
+
     private readonly object _renegotiationLock = new();
 
     private readonly RtpIceChannel _rtpIceChannel;
@@ -114,9 +123,9 @@ internal class RtcPeerConnection : IDisposable
     private DtlsSrtpTransport _dtlsHandle;
 
     /// <summary>
-    ///     The primary stream for this session - can be an AudioStream or a VideoStream
+    ///     The ICE role the peer is acting in.
     /// </summary>
-    private readonly MediaStream _primaryStream;
+    private IceRolesEnum _iceRole = IceRolesEnum.actpass;
 
     private RTCSessionDescription _remoteDescription;
 
@@ -184,12 +193,8 @@ internal class RtcPeerConnection : IDisposable
         _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
     }
 
-    /// <summary>
-    ///     The ICE role the peer is acting in.
-    /// </summary>
-    private IceRolesEnum _iceRole = IceRolesEnum.actpass;
-
-    private RTCIceConnectionState IceConnectionState => _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
+    private RTCIceConnectionState IceConnectionState =>
+        _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -711,7 +716,7 @@ internal class RtcPeerConnection : IDisposable
 
                 if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
                 {
-                    announcement.AddExtra($"a={SIPSorcery.Net.SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
+                    announcement.AddExtra($"a={SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
                 }
             }
         }
@@ -748,7 +753,7 @@ internal class RtcPeerConnection : IDisposable
 
             mediaIndex++;
 
-            if (mindex == SIPSorcery.Net.SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
             {
                 Logger.LogWarning(
                     $"Media announcement for {mediaStream1.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
@@ -757,7 +762,7 @@ internal class RtcPeerConnection : IDisposable
             {
                 var announcement = new SDPMediaAnnouncement(
                     mediaStream1.LocalTrack.Kind,
-                    SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    SDP.IGNORE_RTP_PORT_NUMBER,
                     mediaStream1.LocalTrack.Capabilities);
 
                 announcement.Transport = RTP_MEDIA_NON_FEEDBACK_PROFILE;
@@ -809,7 +814,7 @@ internal class RtcPeerConnection : IDisposable
                 (mindex, midTag) = _remoteSdp.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
             }
 
-            if (mindex == SIPSorcery.Net.SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
             {
                 Logger.LogWarning(
                     "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
@@ -818,7 +823,7 @@ internal class RtcPeerConnection : IDisposable
             {
                 var dataChannelAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.application,
-                    SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    SDP.IGNORE_RTP_PORT_NUMBER,
                     new List<SDPApplicationMediaFormat> { new(SDP_DATA_CHANNEL_FORMAT_ID) });
                 dataChannelAnnouncement.Transport = RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE;
                 dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
@@ -1364,7 +1369,7 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
     /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
-    private SetDescriptionResultEnum SetRemoteDescription(SIPSorcery.Net.SDP.SDP sessionDescription)
+    private SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
     {
         if (sessionDescription == null)
         {
@@ -1452,7 +1457,7 @@ internal class RtcPeerConnection : IDisposable
                             // if a special port number is used (defined as "9") which indicates that the media announcement is not
                             // responsible for setting the remote end point for the audio stream. Instead it's most likely being set
                             // using ICE.
-                            if (remoteRtpEp.Port != SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER)
+                            if (remoteRtpEp.Port != SDP.IGNORE_RTP_PORT_NUMBER)
                             {
                                 currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
                             }
@@ -1483,7 +1488,7 @@ internal class RtcPeerConnection : IDisposable
 
                 if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
-                    if (capabilities?.Where(x => x.Name().ToLower() != SIPSorcery.Net.SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                    if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                     {
                         return SetDescriptionResultEnum.AudioIncompatible;
                     }
@@ -1550,7 +1555,7 @@ internal class RtcPeerConnection : IDisposable
 
                 // Set the remote port number to "9" which means ignore and wait for it be set some other way
                 // such as when a remote RTP packet or arrives or ICE negotiation completes.
-                rtpEndPoint = new IPEndPoint(remoteAddr, SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER);
+                rtpEndPoint = new IPEndPoint(remoteAddr, SDP.IGNORE_RTP_PORT_NUMBER);
             }
             else
             {
