@@ -63,8 +63,6 @@ internal class SrtpPolicy
 
     public int SaltKeyLength { get; }
 
-    public bool IsAesGcm { get; }
-
     /**
          * Construct a SRTPPolicy object based on given parameters.
          * This class acts as a storage class, so all the parameters are passed in
@@ -82,8 +80,7 @@ internal class SrtpPolicy
         int authType,
         int authKeyLength,
         int authTagLength,
-        int saltKeyLength,
-        bool isAesGcm)
+        int saltKeyLength)
     {
         EncType = encType;
         EncKeyLength = encKeyLength;
@@ -91,6 +88,5 @@ internal class SrtpPolicy
         AuthKeyLength = authKeyLength;
         AuthTagLength = authTagLength;
         SaltKeyLength = saltKeyLength;
-        IsAesGcm = isAesGcm;
     }
 }

@@ -1002,7 +1002,6 @@ internal class RtcPeerConnection : IDisposable
 
         SetGlobalSecurityContext(
             dtlsHandle,
-            dtlsHandle.ProtectRtcp,
             dtlsHandle.UnprotectRtcp);
 
         return true;
@@ -1269,10 +1268,9 @@ internal class RtcPeerConnection : IDisposable
 
     private void SetGlobalSecurityContext(
         DtlsSrtpTransport rtpTransport,
-        ProtectRtpPacket protectRtcp,
         ProtectRtpPacket unprotectRtcp)
     {
-        _videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
+        _videoStream.SetSecurityContext(rtpTransport, unprotectRtcp);
     }
 
     /// <summary>

@@ -6,14 +6,11 @@ internal class SecureContext
 {
     public DtlsSrtpTransport RtpTransport { get; }
 
-    public ProtectRtpPacket ProtectRtcpPacket { get; }
-
     public ProtectRtpPacket UnprotectRtcpPacket { get; }
 
-    public SecureContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket protectRtcpPacket, ProtectRtpPacket unprotectRtcpPacket)
+    public SecureContext(DtlsSrtpTransport rtpTransport, ProtectRtpPacket unprotectRtcpPacket)
     {
         RtpTransport = rtpTransport;
-        ProtectRtcpPacket = protectRtcpPacket;
         UnprotectRtcpPacket = unprotectRtcpPacket;
     }
 }
