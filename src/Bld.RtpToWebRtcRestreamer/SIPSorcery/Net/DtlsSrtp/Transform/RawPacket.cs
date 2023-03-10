@@ -144,7 +144,7 @@ internal class RawPacket
          */
     public int GetLength()
     {
-        return (int)_data.Length;
+        return _data.Length;
     }
 
     /**

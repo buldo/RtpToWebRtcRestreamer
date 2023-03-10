@@ -124,7 +124,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 
     public override int[] GetCipherSuites()
     {
-        return new int[]
+        return new []
         {
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

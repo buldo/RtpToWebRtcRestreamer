@@ -233,10 +233,9 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         {
             foreach (var sigAlgUncasted in sigAlgs)
             {
-                var sigAlg = sigAlgUncasted as SignatureAndHashAlgorithm;
-                if (sigAlg != null && sigAlg.Signature == SignatureAlgorithm.rsa)
+                if (sigAlgUncasted != null && sigAlgUncasted.Signature == SignatureAlgorithm.rsa)
                 {
-                    signatureAndHashAlgorithm = sigAlg;
+                    signatureAndHashAlgorithm = sigAlgUncasted;
                     break;
                 }
             }
@@ -255,7 +254,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 
     public override int[] GetCipherSuites()
     {
-        return new int[]
+        return new []
         {
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,

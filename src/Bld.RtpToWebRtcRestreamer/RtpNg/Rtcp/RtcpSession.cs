@@ -100,11 +100,6 @@ internal class RtcpSession
     private uint LastRtpTimestampSent { get; set; }
 
     /// <summary>
-    /// Number of RTP packets received from the remote party.
-    /// </summary>
-    public uint PacketsReceivedCount { get; private set; }
-
-    /// <summary>
     /// Unique common name field for use in SDES packets.
     /// </summary>
     public string Cname { get; private set; }

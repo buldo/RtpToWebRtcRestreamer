@@ -1,9 +1,12 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// The different types of Feedback Message Types. (RFC4585)
 /// https://tools.ietf.org/html/rfc4585#page-35
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal enum RtcpFeedbackTypesEnum
 {
     unassigned = 0,     // Unassigned

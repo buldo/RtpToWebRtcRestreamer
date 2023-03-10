@@ -572,8 +572,7 @@ internal class SDPSecurityDescription
                 if (p.StartsWith(KDR_PREFIX))
                 {
                     var sKdr = p.Substring(KDR_PREFIX.Length);
-                    uint kdr = 0;
-                    if (uint.TryParse(sKdr, out kdr))
+                    if (uint.TryParse(sKdr, out var kdr))
                     {
                         return new SessionParameter(SrtpSessionParams.kdr) { Kdr = kdr };
                     }

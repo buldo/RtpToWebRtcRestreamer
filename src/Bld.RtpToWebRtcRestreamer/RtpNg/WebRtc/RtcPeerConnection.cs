@@ -209,7 +209,7 @@ internal class RtcPeerConnection : IDisposable
                     // Already connected and this event is due to change in the nominated remote candidate.
                     var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
-                    SetGlobalDestination(connectedEP, connectedEP);
+                    SetGlobalDestination(connectedEP);
                     Logger.LogInformation($"ICE changing connected remote end point to {connectedEP}.");
                 }
 
@@ -228,7 +228,7 @@ internal class RtcPeerConnection : IDisposable
 
                 var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
-                SetGlobalDestination(connectedEP, connectedEP);
+                SetGlobalDestination(connectedEP);
                 Logger.LogInformation($"ICE connected to remote end point {connectedEP}.");
 
                 if (_iceRole == IceRolesEnum.active)
@@ -458,7 +458,7 @@ internal class RtcPeerConnection : IDisposable
         {
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-            _rtpIceChannel?.CloseAsync();
+            _rtpIceChannel.CloseAsync();
             DtlsHandle?.Close();
 
             if (_sctp != null && _sctp.state == RTCSctpTransportState.Connected)
@@ -514,7 +514,7 @@ internal class RtcPeerConnection : IDisposable
                 mediaStream.LocalTrack.StreamStatus = mediaStream.LocalTrack.DefaultStreamStatus;
             }
         }
-        
+
         var offerSdp = new SDP(IPAddress.Loopback)
         {
             SessionId = _localSdpSessionId
@@ -602,7 +602,7 @@ internal class RtcPeerConnection : IDisposable
                 announcement.IceRole = _iceRole;
                 announcement.DtlsFingerprint = dtlsFingerprint;
 
-                if (iceCandidatesAdded == false && !false)
+                if (iceCandidatesAdded == false)
                 {
                     AddIceCandidates(announcement);
                     iceCandidatesAdded = true;
@@ -661,10 +661,9 @@ internal class RtcPeerConnection : IDisposable
                 dataChannelAnnouncement.IceRole = _iceRole;
                 dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
 
-                if (iceCandidatesAdded == false && !false)
+                if (iceCandidatesAdded == false)
                 {
                     AddIceCandidates(dataChannelAnnouncement);
-                    iceCandidatesAdded = true;
                 }
 
                 offerSdp.Media.Add(dataChannelAnnouncement);
@@ -719,7 +718,7 @@ internal class RtcPeerConnection : IDisposable
         {
             try
             {
-                if (buffer?.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
+                if (buffer.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                 {
                     // RTP/RTCP packet.
                     OnReceive(localPort, remoteEndPoint, buffer);
@@ -1263,9 +1262,9 @@ internal class RtcPeerConnection : IDisposable
         return rtpEndPoint;
     }
 
-    private void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+    private void SetGlobalDestination(IPEndPoint rtpEndPoint)
     {
-        _videoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
+        _videoStream.SetDestination(rtpEndPoint);
     }
 
     private void SetGlobalSecurityContext(
@@ -1274,22 +1273,6 @@ internal class RtcPeerConnection : IDisposable
         ProtectRtpPacket unprotectRtcp)
     {
         _videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
-    }
-
-    private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
-    {
-        // Get primary AudioStream
-        if (mediaStream != null)
-        {
-            var secureContext = _videoStream.SecurityContext;
-            if (secureContext != null)
-            {
-                mediaStream.SetSecurityContext(secureContext.RtpTransport, secureContext.ProtectRtcpPacket,
-                    secureContext.UnprotectRtcpPacket);
-            }
-
-            mediaStream.SetDestination(_videoStream.DestinationEndPoint, _videoStream.ControlDestinationEndPoint);
-        }
     }
 
     /// <summary>
@@ -1401,12 +1384,6 @@ internal class RtcPeerConnection : IDisposable
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
-            else if (_videoStream.RtcpSession?.PacketsReceivedCount > 0)
-            {
-                // Only give this warning if we've received at least one RTP packet.
-                //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
-                //logger.LogTrace(rtcpPkt.GetDebugSummary());
-            }
         }
     }
 
@@ -1432,11 +1409,10 @@ internal class RtcPeerConnection : IDisposable
             return null;
         }
 
-        var found = false;
         int index;
 
         // Loop au videoRemoteSDPSsrcAttributes
-        found = false;
+        var found = false;
         for (index = 0; index < _videoRemoteSdpSsrcAttributes.Count; index++)
         {
             foreach (var ssrcAttributes in _videoRemoteSdpSsrcAttributes[index])

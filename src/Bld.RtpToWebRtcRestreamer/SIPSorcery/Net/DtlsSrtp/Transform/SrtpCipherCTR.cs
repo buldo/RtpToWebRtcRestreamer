@@ -54,7 +54,7 @@ internal class SrtpCipherCtr
         var tmpCipherBlock = tmpCipherBlockArray.AsSpan(0, BLOCK_LENGTH);
         try
         {
-            iv[0..14].CopyTo(cipherInBlock[0..14]);
+            iv[..14].CopyTo(cipherInBlock[..14]);
 
             int ctr;
             for (ctr = 0; ctr < length / BLOCK_LENGTH; ctr++)
@@ -71,7 +71,7 @@ internal class SrtpCipherCtr
             cipherInBlock[15] = (byte)((ctr & 0x00FF));
 
             aesCipher.ProcessBlock(cipherInBlock, tmpCipherBlock);
-            tmpCipherBlock[0..(length % BLOCK_LENGTH)].CopyTo(output.Slice(ctr * BLOCK_LENGTH, length % BLOCK_LENGTH));
+            tmpCipherBlock[..(length % BLOCK_LENGTH)].CopyTo(output.Slice(ctr * BLOCK_LENGTH, length % BLOCK_LENGTH));
         }
         finally
         {

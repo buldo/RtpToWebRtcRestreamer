@@ -28,11 +28,8 @@ internal class RTCIceCandidate
     private const string TCP_TYPE_KEY = "tcpType";
     private const string REMOTE_ADDRESS_KEY = "raddr";
     private const string REMOTE_PORT_KEY = "rport";
-    private const string CANDIDATE_PREFIX = "candidate";
 
-    private string sdpMid { get; set; }
-
-    public ushort sdpMLineIndex { get; set; }
+    public ushort sdpMLineIndex { get; }
 
     /// <summary>
     /// Composed of 1 to 32 chars. It is an
@@ -92,8 +89,6 @@ internal class RTCIceCandidate
 
     private ushort relatedPort { get; set; }
 
-    private string usernameFragment { get; }
-
     /// <summary>
     /// This is the end point to use for a remote candidate. The address supplied for an ICE
     /// candidate could be a hostname or IP address. This field will be set before the candidate
@@ -106,11 +101,9 @@ internal class RTCIceCandidate
 
     public RTCIceCandidate(RTCIceCandidateInit init)
     {
-        sdpMid = init.sdpMid;
         sdpMLineIndex = init.sdpMLineIndex;
-        usernameFragment = init.usernameFragment;
 
-        if (!String.IsNullOrEmpty(init.candidate))
+        if (!string.IsNullOrEmpty(init.candidate))
         {
             var iceCandidate = Parse(init.candidate);
             foundation = iceCandidate.foundation;

@@ -1,5 +1,8 @@
-﻿namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public enum SDPMediaTypesEnum
 {
     invalid = 0,

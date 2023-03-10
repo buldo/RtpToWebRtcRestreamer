@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 
 /// <summary>
 /// The different types of RTCP packets as defined in RFC3550.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 internal enum RtcpReportTypes : byte
 {
     SR = 200,     // Send Report.

@@ -49,7 +49,6 @@ internal class UdpSocket
             }
             catch (Exception exception)
             {
-                continue;
             }
         }
     }

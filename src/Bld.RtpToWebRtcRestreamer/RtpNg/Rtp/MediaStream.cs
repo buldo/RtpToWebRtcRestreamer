@@ -63,11 +63,6 @@ internal abstract class MediaStream
     /// </summary>
     public IPEndPoint DestinationEndPoint { get; private set; }
 
-    /// <summary>
-    /// The remote RTP control end point this stream is sending to RTCP reports for the media stream to.
-    /// </summary>
-    public IPEndPoint ControlDestinationEndPoint { get; private set; }
-
     [NotNull]
     public MultiplexedRtpChannel RTPChannel { get; }
 
@@ -106,11 +101,9 @@ internal abstract class MediaStream
     /// Sets the remote end points for a media type supported by this RTP session.
     /// </summary>
     /// <param name="rtpEndPoint">The remote end point for RTP packets corresponding to the media type.</param>
-    /// <param name="rtcpEndPoint">The remote end point for RTCP packets corresponding to the media type.</param>
-    public void SetDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
+    public void SetDestination(IPEndPoint rtpEndPoint)
     {
         DestinationEndPoint = rtpEndPoint;
-        ControlDestinationEndPoint = rtcpEndPoint;
     }
 
     public async Task SendRtpRawFromPacketAsync(RtpPacket originalPacket)

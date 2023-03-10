@@ -69,7 +69,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
@@ -292,10 +291,7 @@ internal class MultiplexedRtpChannel
     public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
     public event Action<string> OnClosed;
 
-    public event Action<RTCIceCandidate> OnIceCandidate;
     public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
-    public event Action<RTCIceGatheringState> OnIceGatheringStateChange;
-    public event Action<RTCIceCandidate, string> OnIceCandidateError;
 
 #nullable enable
 
@@ -323,7 +319,6 @@ internal class MultiplexedRtpChannel
             _startedGatheringAt = DateTime.Now;
 
             IceGatheringState = RTCIceGatheringState.gathering;
-            OnIceGatheringStateChange?.Invoke(IceGatheringState);
 
             if (_policy == RTCIceTransportPolicy.all)
             {
@@ -336,10 +331,8 @@ internal class MultiplexedRtpChannel
 
             logger.LogDebug($"RTP ICE Channel discovered {_candidates.Count} local candidates.");
 
-
             // If there are no ICE servers then gathering has finished.
             IceGatheringState = RTCIceGatheringState.complete;
-            OnIceGatheringStateChange?.Invoke(IceGatheringState);
 
             _connectivityChecksTask = Task.Run(async () => await DoConnectivityCheckAsync());
         }
@@ -411,42 +404,38 @@ internal class MultiplexedRtpChannel
         {
             // Note that the way ICE signals the end of the gathering stage is to send
             // an empty candidate or "end-of-candidates" SDP attribute.
-            OnIceCandidateError?.Invoke(candidate, "Remote ICE candidate was empty.");
+            logger.LogWarning( "Remote ICE candidate was empty.");
         }
         else if (candidate.component != Component)
         {
             // This occurs if the remote party made an offer and assumed we couldn't multiplex the audio and video streams.
             // It will offer the same ICE candidates separately for the audio and video announcements.
-            OnIceCandidateError?.Invoke(candidate, "Remote ICE candidate has unsupported component.");
+            logger.LogWarning("Remote ICE candidate has unsupported component.");
         }
         else if (candidate.sdpMLineIndex != 0)
         {
             // This implementation currently only supports audio and video multiplexed on a single channel.
-            OnIceCandidateError?.Invoke(candidate,
-                $"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
+            logger.LogWarning($"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
         }
         else if (candidate.protocol != RTCIceProtocol.udp)
         {
             // This implementation currently only supports UDP for RTP communications.
-            OnIceCandidateError?.Invoke(candidate,
-                $"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
+            logger.LogWarning($"Remote ICE candidate has an unsupported transport protocol {candidate.protocol}.");
         }
         else if (candidate.address.Trim().ToLower().EndsWith(MDNS_TLD))
         {
             // Supporting MDNS lookups means an additional nuget dependency. Hopefully
             // support is coming to .Net Core soon (AC 12 Jun 2020).
-            OnIceCandidateError?.Invoke(candidate,
-                $"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
+            logger.LogWarning($"Remote ICE candidate has an unsupported MDNS hostname {candidate.address}.");
         }
         else if (IPAddress.TryParse(candidate.address, out var addr) &&
                  (IPAddress.Any.Equals(addr) || IPAddress.IPv6Any.Equals(addr)))
         {
-            OnIceCandidateError?.Invoke(candidate,
-                $"Remote ICE candidate had a wildcard IP address {candidate.address}.");
+            logger.LogWarning($"Remote ICE candidate had a wildcard IP address {candidate.address}.");
         }
         else if (candidate.port <= 0)
         {
-            OnIceCandidateError?.Invoke(candidate, $"Remote ICE candidate had an invalid port {candidate.port}.");
+            logger.LogWarning($"Remote ICE candidate had an invalid port {candidate.port}.");
         }
         else
         {
@@ -543,8 +532,6 @@ internal class MultiplexedRtpChannel
             if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == SDP_MLINE_INDEX)
             {
                 hostCandidates.Add(hostCandidate);
-
-                OnIceCandidate?.Invoke(hostCandidate);
             }
         }
 
@@ -1286,7 +1273,7 @@ internal class MultiplexedRtpChannel
             }
             else
             {
-                ChecklistEntry matchingChecklistEntry = null;
+                ChecklistEntry matchingChecklistEntry;
 
                 // Find the checklist entry for this remote candidate and update its status.
                 lock (_checklist)
@@ -1391,7 +1378,7 @@ internal class MultiplexedRtpChannel
     private ChecklistEntry GetChecklistEntryForStunResponse(byte[] transactionID)
     {
         var txID = Encoding.ASCII.GetString(transactionID);
-        ChecklistEntry matchingChecklistEntry = null;
+        ChecklistEntry matchingChecklistEntry;
 
         lock (_checklist)
         {

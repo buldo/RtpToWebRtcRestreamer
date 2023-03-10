@@ -45,7 +45,7 @@ public static class TypeExtensions
             rv += Hexmap[val >> 4];
             rv += Hexmap[val & 15];
 
-            if (separator != null && i != length - 1)
+            if (i != length - 1)
             {
                 rv += separator;
             }
