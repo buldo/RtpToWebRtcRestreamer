@@ -176,59 +176,6 @@ internal class SrtcpCryptoContext
     }
 
     /**
-         * Transform a RTP packet into a SRTP packet.
-         * This method is called when a normal RTP packet ready to be sent.
-         *
-         * Operations done by the transformation may include: encryption, using
-         * either Counter Mode encryption, or F8 Mode encryption, adding
-         * authentication tag, currently HMC SHA1 method.
-         *
-         * Both encryption and authentication functionality can be turned off
-         * as long as the SRTPPolicy used in this SRTPCryptoContext is requires no
-         * encryption and no authentication. Then the packet will be sent out
-         * untouched. However this is not encouraged. If no SRTP feature is enabled,
-         * then we shall not use SRTP TransformConnector. We should use the original
-         * method (RTPManager managed transportation) instead.
-         *
-         * @param pkt the RTP packet that is going to be sent out
-         */
-    public void TransformPacket(RawPacket pkt)
-    {
-        var encrypt = false;
-        // Encrypt the packet using Counter Mode encryption
-        if (_policy.EncType == SrtpPolicy.AescmEncryption || _policy.EncType == SrtpPolicy.TwofishEncryption)
-        {
-            ProcessPacketAescm(pkt, _sentIndex);
-            encrypt = true;
-        }
-
-        // Encrypt the packet using F8 Mode encryption
-        else if (_policy.EncType == SrtpPolicy.Aesf8Encryption || _policy.EncType == SrtpPolicy.Twofishf8Encryption)
-        {
-            ProcessPacketAesf8(pkt, _sentIndex);
-            encrypt = true;
-        }
-
-        var index = 0;
-        if (encrypt)
-        {
-            index = (int)(_sentIndex | 0x80000000);
-        }
-
-        // Authenticate the packet
-        // The authenticate method gets the index via parameter and stores
-        // it in network order in rbStore variable.
-        if (_policy.AuthType != SrtpPolicy.NullAuthentication)
-        {
-            AuthenticatePacket(pkt, index);
-            pkt.Append(_rbStore, 4);
-            pkt.Append(_tagStore, _policy.AuthTagLength);
-        }
-        _sentIndex++;
-        _sentIndex &= (int)(~0x80000000);       // clear possible overflow
-    }
-
-    /**
          * Transform a SRTCP packet into a RTCP packet.
          * This method is called when a SRTCP packet was received.
          *
