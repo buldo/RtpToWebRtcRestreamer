@@ -100,8 +100,6 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly string _localSdpSessionId;
 
-    private readonly object _renegotiationLock = new();
-
     private readonly RtpIceChannel _rtpIceChannel;
 
     private readonly RTCSctpTransport _sctp;
@@ -111,8 +109,6 @@ internal class RtcPeerConnection : IDisposable
     ///     List of all Video Streams for this session
     /// </summary>
     [NotNull] private readonly VideoStream _videoStream;
-
-    private CancellationTokenSource _cancellationSource = new();
 
     private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
     private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
@@ -164,20 +160,12 @@ internal class RtcPeerConnection : IDisposable
             _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
         }
 
-        _rtpIceChannel.OnIceCandidate += candidate => _onIceCandidate?.Invoke(candidate);
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
-        _rtpIceChannel.OnIceGatheringStateChange += state => onicegatheringstatechange?.Invoke(state);
-        _rtpIceChannel.OnIceCandidateError += (candidate, error) => onicecandidateerror?.Invoke(candidate, error);
 
         OnRtpClosed += Close;
         OnRtcpBye += Close;
 
-        //Cancel Negotiation Task Event to Prevent Duplicated Calls
-        onnegotiationneeded += CancelOnNegotiationNeededTask;
-
         _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
-
-        onnegotiationneeded?.Invoke();
 
         // This is the point the ICE session potentially starts contacting STUN and TURN servers.
         // This job was moved to a background thread as it was observed that interacting with the OS network
@@ -238,55 +226,6 @@ internal class RtcPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     Informs the application that session negotiation needs to be done (i.e. a CreateOffer call
-    ///     followed by setLocalDescription).
-    /// </summary>
-    public event Action onnegotiationneeded;
-
-    private event Action<RTCIceCandidate> _onIceCandidate;
-
-    /// <summary>
-    ///     A new ICE candidate is available for the Peer Connection.
-    /// </summary>
-    public event Action<RTCIceCandidate> onicecandidate
-    {
-        add
-        {
-            var notifyIce = _onIceCandidate == null && value != null;
-            _onIceCandidate += value;
-            if (notifyIce)
-            {
-                foreach (var ice in _rtpIceChannel.Candidates)
-                {
-                    _onIceCandidate?.Invoke(ice);
-                }
-            }
-        }
-        remove => _onIceCandidate -= value;
-    }
-
-    /// <summary>
-    ///     A failure occurred when gathering ICE candidates.
-    /// </summary>
-    public event Action<RTCIceCandidate, string> onicecandidateerror;
-
-    /// <summary>
-    ///     The signaling state has changed. This state change is the result of either setLocalDescription or
-    ///     SetRemoteDescription being invoked.
-    /// </summary>
-    public event Action onsignalingstatechange;
-
-    /// <summary>
-    ///     This Peer Connection's ICE connection state has changed.
-    /// </summary>
-    public event Action<RTCIceConnectionState> oniceconnectionstatechange;
-
-    /// <summary>
-    ///     This Peer Connection's ICE gathering state has changed.
-    /// </summary>
-    public event Action<RTCIceGatheringState> onicegatheringstatechange;
-
-    /// <summary>
     ///     The state of the peer connection. A state of connected means the ICE checks have
     ///     succeeded and the DTLS handshake has completed. Once in the connected state it's
     ///     suitable for media packets can be exchanged.
@@ -298,8 +237,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     private async void IceConnectionStateChange(RTCIceConnectionState iceState)
     {
-        oniceconnectionstatechange?.Invoke(IceConnectionState);
-
         if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
         {
             if (DtlsHandle != null)
@@ -538,20 +475,10 @@ internal class RtcPeerConnection : IDisposable
             if (init.type == RTCSdpType.offer)
             {
                 _signalingState = RTCSignalingState.have_remote_offer;
-                onsignalingstatechange?.Invoke();
             }
             else
             {
                 _signalingState = RTCSignalingState.stable;
-                onsignalingstatechange?.Invoke();
-            }
-
-            // Trigger the ICE candidate events for any non-host candidates, host candidates are always included in the
-            // SDP offer/answer. The reason for the trigger is that ICE candidates cannot be sent to the remote peer
-            // until it is ready to receive them which is indicated by the remote offer being received.
-            foreach (var nonHostCand in _rtpIceChannel.Candidates.Where(x => x.type != RTCIceCandidateType.host))
-            {
-                _onIceCandidate?.Invoke(nonHostCand);
             }
         }
 
@@ -925,25 +852,6 @@ internal class RtcPeerConnection : IDisposable
         if (destinationPort != SCTP_DEFAULT_PORT)
         {
             _sctp.UpdateDestinationPort(destinationPort);
-        }
-    }
-
-    /// <summary>
-    ///     Cancel current Negotiation Event Call to prevent running thread to call OnNegotiationNeeded
-    /// </summary>
-    private void CancelOnNegotiationNeededTask()
-    {
-        lock (_renegotiationLock)
-        {
-            if (_cancellationSource != null)
-            {
-                if (!_cancellationSource.IsCancellationRequested)
-                {
-                    _cancellationSource.Cancel();
-                }
-
-                _cancellationSource = null;
-            }
         }
     }
 
