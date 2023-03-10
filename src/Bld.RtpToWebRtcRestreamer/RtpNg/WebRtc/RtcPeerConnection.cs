@@ -2,18 +2,20 @@
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
 using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+namespace Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 
 /// <summary>
 ///     Represents a WebRTC RTCPeerConnection.
@@ -70,7 +72,7 @@ internal class RtcPeerConnection : IDisposable
     private const uint RTCP_RR_NO_STREAM_SSRC = 4195875351U;
 
     private static readonly ILogger Logger = Log.Logger;
-    private static readonly string RtcpAttribute = $"a=rtcp:{SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
+    private static readonly string RtcpAttribute = $"a=rtcp:{SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
     private readonly List<List<SDPSsrcAttribute>> _audioRemoteSdpSsrcAttributes = new();
 
@@ -129,7 +131,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     The SDP offered by the remote call party for this session.
     /// </summary>
-    private SDP.SDP _remoteSdp;
+    private SIPSorcery.Net.SDP.SDP _remoteSdp;
 
     // The stream used for the underlying RTP session to create a single RTP channel that will
     // be used to multiplex all required media streams. (see addSingleTrack())
@@ -457,7 +459,7 @@ internal class RtcPeerConnection : IDisposable
     public SetDescriptionResultEnum SetRemoteDescription(RTCSessionDescriptionInit init)
     {
         _remoteDescription = new RTCSessionDescription
-            { type = init.type, sdp = SDP.SDP.ParseSDPDescription(init.sdp) };
+            { type = init.type, sdp = SIPSorcery.Net.SDP.SDP.ParseSDPDescription(init.sdp) };
 
         var remoteSdp = _remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
 
@@ -716,7 +718,7 @@ internal class RtcPeerConnection : IDisposable
         // delay of a few hundred milliseconds it was decided not to break the API.
         _iceGatheringTask.Wait();
 
-        var offerSdp = new SDP.SDP(IPAddress.Loopback);
+        var offerSdp = new SIPSorcery.Net.SDP.SDP(IPAddress.Loopback);
         offerSdp.SessionId = _localSdpSessionId;
 
         var dtlsFingerprint = _dtlsCertificateFingerprint.ToString();
@@ -738,7 +740,7 @@ internal class RtcPeerConnection : IDisposable
 
                 if (_rtpIceChannel.IceGatheringState == RTCIceGatheringState.complete)
                 {
-                    announcement.AddExtra($"a={SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
+                    announcement.AddExtra($"a={SIPSorcery.Net.SDP.SDP.END_ICE_CANDIDATES_ATTRIBUTE}");
                 }
             }
         }
@@ -775,7 +777,7 @@ internal class RtcPeerConnection : IDisposable
 
             mediaIndex++;
 
-            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            if (mindex == SIPSorcery.Net.SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
             {
                 Logger.LogWarning(
                     $"Media announcement for {mediaStream1.LocalTrack.Kind} omitted due to no reciprocal remote announcement.");
@@ -784,7 +786,7 @@ internal class RtcPeerConnection : IDisposable
             {
                 var announcement = new SDPMediaAnnouncement(
                     mediaStream1.LocalTrack.Kind,
-                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                     mediaStream1.LocalTrack.Capabilities);
 
                 announcement.Transport = RTP_MEDIA_NON_FEEDBACK_PROFILE;
@@ -836,7 +838,7 @@ internal class RtcPeerConnection : IDisposable
                 (mindex, midTag) = _remoteSdp.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
             }
 
-            if (mindex == SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
+            if (mindex == SIPSorcery.Net.SDP.SDP.MEDIA_INDEX_NOT_PRESENT)
             {
                 Logger.LogWarning(
                     "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
@@ -845,7 +847,7 @@ internal class RtcPeerConnection : IDisposable
             {
                 var dataChannelAnnouncement = new SDPMediaAnnouncement(
                     SDPMediaTypesEnum.application,
-                    SDP.SDP.IGNORE_RTP_PORT_NUMBER,
+                    SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER,
                     new List<SDPApplicationMediaFormat> { new(SDP_DATA_CHANNEL_FORMAT_ID) });
                 dataChannelAnnouncement.Transport = RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE;
                 dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
@@ -1389,7 +1391,7 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     /// <param name="sessionDescription">The SDP that will be set as the remote description.</param>
     /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
-    private SetDescriptionResultEnum SetRemoteDescription(SDP.SDP sessionDescription)
+    private SetDescriptionResultEnum SetRemoteDescription(SIPSorcery.Net.SDP.SDP sessionDescription)
     {
         if (sessionDescription == null)
         {
@@ -1477,7 +1479,7 @@ internal class RtcPeerConnection : IDisposable
                             // if a special port number is used (defined as "9") which indicates that the media announcement is not
                             // responsible for setting the remote end point for the audio stream. Instead it's most likely being set
                             // using ICE.
-                            if (remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER)
+                            if (remoteRtpEp.Port != SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER)
                             {
                                 currentMediaStream.LocalTrack.StreamStatus = MediaStreamStatusEnum.Inactive;
                             }
@@ -1508,7 +1510,7 @@ internal class RtcPeerConnection : IDisposable
 
                 if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
-                    if (capabilities?.Where(x => x.Name().ToLower() != SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                    if (capabilities?.Where(x => x.Name().ToLower() != SIPSorcery.Net.SDP.SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
                     {
                         return SetDescriptionResultEnum.AudioIncompatible;
                     }
@@ -1575,7 +1577,7 @@ internal class RtcPeerConnection : IDisposable
 
                 // Set the remote port number to "9" which means ignore and wait for it be set some other way
                 // such as when a remote RTP packet or arrives or ICE negotiation completes.
-                rtpEndPoint = new IPEndPoint(remoteAddr, SDP.SDP.IGNORE_RTP_PORT_NUMBER);
+                rtpEndPoint = new IPEndPoint(remoteAddr, SIPSorcery.Net.SDP.SDP.IGNORE_RTP_PORT_NUMBER);
             }
             else
             {
