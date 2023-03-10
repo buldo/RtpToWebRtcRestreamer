@@ -100,6 +100,7 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly string _localSdpSessionId;
 
+    [NotNull]
     private readonly RtpIceChannel _rtpIceChannel;
 
     private readonly RTCSctpTransport _sctp;
@@ -108,7 +109,8 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     List of all Video Streams for this session
     /// </summary>
-    [NotNull] private readonly VideoStream _videoStream;
+    [NotNull]
+    private readonly VideoStream _videoStream;
 
     private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
     private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
@@ -173,9 +175,6 @@ internal class RtcPeerConnection : IDisposable
         // https://github.com/sipsorcery-org/sipsorcery/issues/456.
         _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
     }
-
-    private RTCIceConnectionState IceConnectionState =>
-        _rtpIceChannel?.IceConnectionState ?? RTCIceConnectionState.@new;
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -313,14 +312,14 @@ internal class RtcPeerConnection : IDisposable
             }
         }
 
-        if (IceConnectionState == RTCIceConnectionState.checking)
+        if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.checking)
         {
             // Not sure about this correspondence between the ICE and peer connection states.
             // TODO: Double check spec.
             //connectionState = RTCPeerConnectionState.connecting;
             //onconnectionstatechange?.Invoke(connectionState);
         }
-        else if (IceConnectionState == RTCIceConnectionState.disconnected)
+        else if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.disconnected)
         {
             if (_connectionState == RTCPeerConnectionState.connected)
             {
@@ -333,7 +332,7 @@ internal class RtcPeerConnection : IDisposable
                 onconnectionstatechange?.Invoke(_connectionState);
             }
         }
-        else if (IceConnectionState == RTCIceConnectionState.failed)
+        else if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.failed)
         {
             _connectionState = RTCPeerConnectionState.failed;
             onconnectionstatechange?.Invoke(_connectionState);
