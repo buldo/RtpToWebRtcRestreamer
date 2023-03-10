@@ -155,10 +155,13 @@ internal class RtcPeerConnection : IDisposable
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        // Request the underlying RTP session to create a single RTP channel that will
-        // be used to multiplex all required media streams.
-        _primaryStream = GetNextVideoStreamByLocalTrack();
-        InitMediaStream(_primaryStream);
+        var newVideoStream = new VideoStream(0);
+        _videoStreamList.Add(newVideoStream);
+
+        _primaryStream = newVideoStream;
+        var rtpChannel = CreateRtpChannel();
+        _primaryStream.RTPChannel = rtpChannel;
+        CreateRtcpSession(_primaryStream);
 
         _rtpIceChannel = _primaryStream.RTPChannel as RtpIceChannel;
 
