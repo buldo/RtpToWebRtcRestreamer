@@ -65,7 +65,7 @@ internal class RtcpSession
     /// <summary>
     /// The SSRC number of the RTP packets we are sending.
     /// </summary>
-    public uint Ssrc { get; internal set; }
+    public uint Ssrc { get; private set; }
 
     /// <summary>
     /// Timestamp that the RTCP session was created at.

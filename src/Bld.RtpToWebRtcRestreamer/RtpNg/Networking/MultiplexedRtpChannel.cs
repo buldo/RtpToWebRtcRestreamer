@@ -144,7 +144,6 @@ internal class MultiplexedRtpChannel
     /// </summary>
     private static readonly int FAILED_TIMEOUT_PERIOD = 16;
 
-    private readonly IPAddress _bindAddress;
     private readonly ulong _iceTiebreaker;
 
     /// <summary>
@@ -194,8 +193,8 @@ internal class MultiplexedRtpChannel
 
     private DateTime _startedGatheringAt = DateTime.MinValue;
 
-    private UdpReceiver m_rtpReceiver;
-    private bool m_rtpReceiverStarted;
+    private UdpReceiver _rtpReceiver;
+    private bool _rtpReceiverStarted;
 
     /// <summary>
     ///     Creates a new instance of an RTP ICE channel to provide RTP channel functions
@@ -204,12 +203,11 @@ internal class MultiplexedRtpChannel
     public MultiplexedRtpChannel(RTCIceTransportPolicy policy = RTCIceTransportPolicy.all)
     {
         NetServices.CreateRtpSocket(new IPEndPoint(IPAddress.Any, 0), out var rtpSocket);
-        RtpSocket = rtpSocket ??
+        _rtpSocket = rtpSocket ??
                     throw new ApplicationException("The RTP channel was not able to create an RTP socket.");
-        RTPLocalEndPoint = RtpSocket.LocalEndPoint as IPEndPoint;
-        RTPPort = RTPLocalEndPoint.Port;
+        _rtpLocalEndPoint = _rtpSocket.LocalEndPoint as IPEndPoint;
+        RTPPort = _rtpLocalEndPoint.Port;
 
-        _bindAddress = IPAddress.Any;
         Component = RTCIceComponent.rtp;
         _policy = policy;
         _iceTiebreaker = Crypto.GetRandomULong();
@@ -226,14 +224,14 @@ internal class MultiplexedRtpChannel
 
         _localChecklistCandidate.SetAddressProperties(
             RTCIceProtocol.udp,
-            RTPLocalEndPoint.Address,
-            (ushort)RTPLocalEndPoint.Port,
+            _rtpLocalEndPoint.Address,
+            (ushort)_rtpLocalEndPoint.Port,
             RTCIceCandidateType.host,
             null,
             0);
     }
 
-    protected Socket RtpSocket { get; }
+    private readonly Socket _rtpSocket;
 
     /// <summary>
     ///     The local port we are listening for RTP (and whatever else is multiplexed) packets on.
@@ -243,19 +241,19 @@ internal class MultiplexedRtpChannel
     /// <summary>
     ///     The local end point the RTP socket is listening on.
     /// </summary>
-    protected IPEndPoint RTPLocalEndPoint { get; }
+    private readonly IPEndPoint _rtpLocalEndPoint;
 
     /// <summary>
     ///     Returns true if the RTP socket supports dual mode IPv4 and IPv6. If the control
     ///     socket exists it will be the same.
     /// </summary>
-    protected bool IsDualMode
+    private bool IsDualMode
     {
         get
         {
-            if (RtpSocket != null && RtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
+            if (_rtpSocket != null && _rtpSocket.AddressFamily == AddressFamily.InterNetworkV6)
             {
-                return RtpSocket.DualMode;
+                return _rtpSocket.DualMode;
             }
 
             return false;
@@ -397,7 +395,7 @@ internal class MultiplexedRtpChannel
     {
         if (!_closed)
         {
-            logger.LogDebug($"RtpIceChannel for {RTPLocalEndPoint} closed.");
+            logger.LogDebug($"RtpIceChannel for {_rtpLocalEndPoint} closed.");
             _closed = true;
             _connectivityChecksTimer?.Dispose();
         }
@@ -518,13 +516,13 @@ internal class MultiplexedRtpChannel
         //    signallingDstAddress = null;
         //}
 
-        var rtpBindAddress = RTPLocalEndPoint.Address;
+        var rtpBindAddress = _rtpLocalEndPoint.Address;
 
         // We get a list of local addresses that can be used with the address the RTP socket is bound on.
         List<IPAddress> localAddresses;
         if (IPAddress.IPv6Any.Equals(rtpBindAddress))
         {
-            if (RtpSocket.DualMode)
+            if (_rtpSocket.DualMode)
             {
                 // IPv6 dual mode listening on [::] means we can use all valid local addresses.
                 localAddresses = NetServices.GetLocalAddressesOnInterface()
@@ -631,8 +629,8 @@ internal class MultiplexedRtpChannel
             }
             else
             {
-                supportsIPv4 = RtpSocket.AddressFamily == AddressFamily.InterNetwork || IsDualMode;
-                supportsIPv6 = RtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || IsDualMode;
+                supportsIPv4 = _rtpSocket.AddressFamily == AddressFamily.InterNetwork || IsDualMode;
+                supportsIPv6 = _rtpSocket.AddressFamily == AddressFamily.InterNetworkV6 || IsDualMode;
             }
 
             lock (_checklist)
@@ -983,13 +981,13 @@ internal class MultiplexedRtpChannel
             if (candidatePair.LocalCandidate.type == RTCIceCandidateType.relay)
             {
                 logger.LogDebug(
-                    $"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to relay at TODO (use candidate {setUseCandidate}).");
+                    $"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {_rtpLocalEndPoint} to relay at TODO (use candidate {setUseCandidate}).");
             }
             else
             {
                 var remoteEndPoint = candidatePair.RemoteCandidate.DestinationEndPoint;
                 logger.LogDebug(
-                    $"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {RTPLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
+                    $"ICE RTP channel sending connectivity check for {candidatePair.LocalCandidate.ToShortString()}->{candidatePair.RemoteCandidate.ToShortString()} from {_rtpLocalEndPoint} to {remoteEndPoint} (use candidate {setUseCandidate}).");
             }
 
             SendSTUNBindingRequest(candidatePair, setUseCandidate);
@@ -1440,7 +1438,7 @@ internal class MultiplexedRtpChannel
     /// <param name="localPort">The local port it was received on.</param>
     /// <param name="remoteEndPoint">The remote end point of the sender.</param>
     /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
-    protected void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
+    private void OnRTPPacketReceived(UdpReceiver receiver, int localPort, IPEndPoint remoteEndPoint, byte[] packet)
     {
         if (packet?.Length > 0)
         {
@@ -1488,16 +1486,16 @@ internal class MultiplexedRtpChannel
     /// </summary>
     private void StartRtpReceiver()
     {
-        if (!m_rtpReceiverStarted)
+        if (!_rtpReceiverStarted)
         {
-            m_rtpReceiverStarted = true;
+            _rtpReceiverStarted = true;
 
-            logger.LogDebug($"RTPChannel for {RtpSocket.LocalEndPoint} started.");
+            logger.LogDebug($"RTPChannel for {_rtpSocket.LocalEndPoint} started.");
 
-            m_rtpReceiver = new UdpReceiver(RtpSocket);
-            m_rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
-            m_rtpReceiver.OnClosed += Close;
-            m_rtpReceiver.BeginReceiveFrom();
+            _rtpReceiver = new UdpReceiver(_rtpSocket);
+            _rtpReceiver.OnPacketReceived += OnRTPPacketReceived;
+            _rtpReceiver.OnClosed += Close;
+            _rtpReceiver.BeginReceiveFrom();
         }
     }
 
@@ -1515,7 +1513,7 @@ internal class MultiplexedRtpChannel
                 logger.LogDebug($"RTPChannel closing, RTP receiver on port {RTPPort}. Reason: {closeReason}.");
 
                 _isClosed = true;
-                m_rtpReceiver?.Close(null);
+                _rtpReceiver?.Close(null);
 
                 OnClosed?.Invoke(closeReason);
             }
@@ -1561,7 +1559,7 @@ internal class MultiplexedRtpChannel
 
         try
         {
-            var sendSocket = RtpSocket;
+            var sendSocket = _rtpSocket;
 
             //Prevent Send to IPV4 while socket is IPV6 (Mono Error)
             if (dstEndPoint.AddressFamily == AddressFamily.InterNetwork &&
@@ -1571,9 +1569,9 @@ internal class MultiplexedRtpChannel
             }
 
             //Fix ReceiveFrom logic if any previous exception happens
-            if (!m_rtpReceiver.IsRunningReceive && !m_rtpReceiver.IsClosed)
+            if (!_rtpReceiver.IsRunningReceive && !_rtpReceiver.IsClosed)
             {
-                m_rtpReceiver.BeginReceiveFrom();
+                _rtpReceiver.BeginReceiveFrom();
             }
 
             sendSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, dstEndPoint, EndSendTo, sendSocket);
@@ -1616,7 +1614,7 @@ internal class MultiplexedRtpChannel
 
         try
         {
-            await RtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
+            await _rtpSocket.SendToAsync(buffer, SocketFlags.None, dstEndPoint);
         }
         catch (Exception exception)
         {

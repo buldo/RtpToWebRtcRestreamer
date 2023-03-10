@@ -4,10 +4,8 @@ using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -23,13 +21,14 @@ internal abstract class MediaStream
         new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
 
     private SecureContext _secureContext;
-    private MediaStreamTrack _localTrack;
 
     private readonly int _index;
 
-    protected MediaStream(int index)
+    protected MediaStream(int index, MediaStreamTrack mediaStreamTrack)
     {
         _index = index;
+        RtcpSession = new RtcpSession(mediaStreamTrack.Ssrc);
+        LocalTrack = mediaStreamTrack;
     }
 
     /// <summary>
@@ -51,25 +50,7 @@ internal abstract class MediaStream
     /// <summary>
     /// The local track. Will be null if we are not sending this media.
     /// </summary>
-    public MediaStreamTrack LocalTrack
-    {
-        get
-        {
-            return _localTrack;
-        }
-        set
-        {
-            _localTrack = value;
-            if (_localTrack != null)
-            {
-                // Need to create a sending SSRC and set it on the RTCP session.
-                if (RtcpSession != null)
-                {
-                    RtcpSession.Ssrc = _localTrack.Ssrc;
-                }
-            }
-        }
-    }
+    public MediaStreamTrack LocalTrack { get; }
 
     /// <summary>
     /// The reporting session for this media stream.
@@ -113,21 +94,6 @@ internal abstract class MediaStream
     public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RtcpCompoundPacket rtcpPCompoundPacket)
     {
         OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, rtcpPCompoundPacket);
-    }
-
-    /// <summary>
-    /// Creates a new RTCP session for a media track belonging to this RTP session.
-    /// </summary>
-    /// <returns>A new RTCPSession object. The RTCPSession must have its Start method called
-    /// in order to commence sending RTCP reports.</returns>
-    public bool CreateRtcpSession()
-    {
-        if (RtcpSession == null)
-        {
-            RtcpSession = new RtcpSession(0);
-            return true;
-        }
-        return false;
     }
 
     public void CloseRtcpSession(string reason)

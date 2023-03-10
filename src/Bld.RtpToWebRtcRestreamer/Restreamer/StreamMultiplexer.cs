@@ -2,7 +2,6 @@
 using System.Collections.Immutable;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.Restreamer;

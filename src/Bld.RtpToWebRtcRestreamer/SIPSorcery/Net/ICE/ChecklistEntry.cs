@@ -32,7 +32,7 @@ internal class ChecklistEntry : IComparable
     private static readonly ILogger Logger = Log.Logger;
 
     //Previous RequestIds
-    private readonly List<string> _cachedRequestTransactionIDs = new List<string>();
+    private readonly List<string> _cachedRequestTransactionIDs = new();
 
     public readonly RTCIceCandidate LocalCandidate;
     public readonly RTCIceCandidate RemoteCandidate;

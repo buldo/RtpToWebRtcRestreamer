@@ -144,18 +144,13 @@ internal class RtcPeerConnection : IDisposable
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        _videoStream = new VideoStream(0);
+        _videoStream = new VideoStream(0, videoTrack);
 
         _rtpIceChannel = new MultiplexedRtpChannel();
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
         _rtpIceChannel.Start();
         _videoStream.RTPChannel = _rtpIceChannel;
-
-        if (_videoStream.CreateRtcpSession())
-        {
-            _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-        }
-
+        _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
 
         OnRtpClosed += Close;
@@ -168,9 +163,6 @@ internal class RtcPeerConnection : IDisposable
         // calls and/or initialising DNS was taking up to 600ms, see
         // https://github.com/sipsorcery-org/sipsorcery/issues/456.
         _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
-
-        //---------------Video-----------------
-        _videoStream.LocalTrack = videoTrack;
     }
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -186,7 +178,7 @@ internal class RtcPeerConnection : IDisposable
     ///     socket to start receiving,
     /// </summary>
     public bool IsStarted { get; set; }
-    
+
     /// <summary>
     ///     Indicates whether this session is using video.
     /// </summary>
@@ -518,7 +510,7 @@ internal class RtcPeerConnection : IDisposable
     public RTCSessionDescriptionInit CreateOffer()
     {
         var mediaStreamList = new List<MediaStream>();
-        
+
         if (_videoStream.LocalTrack != null)
         {
             mediaStreamList.Add(_videoStream);
@@ -1142,7 +1134,7 @@ internal class RtcPeerConnection : IDisposable
             if (sessionDescription.Media?.Count == 1)
             {
                 var remoteMediaType = sessionDescription.Media.First().Media;
-                
+
                 if (remoteMediaType == SDPMediaTypesEnum.video && _videoStream.LocalTrack == null)
                 {
                     return SetDescriptionResultEnum.NoMatchingMediaType;
@@ -1235,7 +1227,7 @@ internal class RtcPeerConnection : IDisposable
             }
 
             //Close old RTCPSessions opened
-            
+
             if (_videoStream.RtcpSession != null && _videoStream.LocalTrack == null)
             {
                 _videoStream.RtcpSession.Close(null);
@@ -1316,7 +1308,7 @@ internal class RtcPeerConnection : IDisposable
             mediaStream.SetDestination(_videoStream.DestinationEndPoint, _videoStream.ControlDestinationEndPoint);
         }
     }
-    
+
     /// <summary>
     ///     Starts the RTCP session(s) that monitor this RTP session.
     /// </summary>
