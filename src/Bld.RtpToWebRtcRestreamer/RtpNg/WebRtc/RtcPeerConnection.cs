@@ -481,13 +481,10 @@ internal class RtcPeerConnection : IDisposable
                 _videoStream.IsClosed = true;
                 CloseRtcpSession(_videoStream, reason);
 
-                if (_videoStream.HasRtpChannel())
-                {
-                    var rtpChannel = _videoStream.RTPChannel;
-                    rtpChannel.OnRTPDataReceived -= OnReceive;
-                    rtpChannel.OnClosed -= OnRTPChannelClosed;
-                    rtpChannel.Close(reason);
-                }
+                var rtpChannel = _videoStream.RTPChannel;
+                rtpChannel.OnRTPDataReceived -= OnReceive;
+                rtpChannel.OnClosed -= OnRTPChannelClosed;
+                rtpChannel.Close(reason);
 
                 OnRtpClosed?.Invoke(reason);
             }

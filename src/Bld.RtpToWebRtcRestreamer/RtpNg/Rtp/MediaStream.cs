@@ -7,6 +7,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 
@@ -67,6 +68,7 @@ internal abstract class MediaStream
     /// </summary>
     public IPEndPoint ControlDestinationEndPoint { get; private set; }
 
+    [NotNull]
     public MultiplexedRtpChannel RTPChannel { get; }
 
     public SecureContext SecurityContext => _secureContext;
@@ -84,11 +86,6 @@ internal abstract class MediaStream
     public bool IsSecurityContextReady()
     {
         return _secureContext != null;
-    }
-
-    public bool HasRtpChannel()
-    {
-        return RTPChannel != null;
     }
 
     public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RtcpCompoundPacket rtcpPCompoundPacket)
