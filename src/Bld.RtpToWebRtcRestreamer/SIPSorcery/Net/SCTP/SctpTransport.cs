@@ -172,7 +172,7 @@ internal abstract class SctpTransport
         using (var hmac = new HMACSHA256(_hmacKey))
         {
             var result = hmac.ComputeHash(jsonBuffer);
-            cookie.HMAC = result.HexStr();
+            cookie.HMAC = result.AsSpan().HexStr();
         }
 
         var jsonBufferWithHMAC = JsonSerializer.SerializeToUtf8Bytes(cookie);
@@ -254,7 +254,7 @@ internal abstract class SctpTransport
         using (var hmac = new HMACSHA256(_hmacKey))
         {
             var result = hmac.ComputeHash(cookiePreImage);
-            hmacCalculated = result.HexStr();
+            hmacCalculated = result.AsSpan().HexStr();
         }
 
         return hmacCalculated;

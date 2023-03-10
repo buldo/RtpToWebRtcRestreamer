@@ -92,7 +92,7 @@ internal class STUNMessage
                 //logger.LogDebug($"STUNMessage supplied fingerprint attribute: {fingerprintAttribute.Value.HexStr()}.");
                 //logger.LogDebug($"STUNMessage calculated fingerprint attribute: {fingerPrint.HexStr()}.");
 
-                if (fingerprintAttribute.Value.HexStr() == fingerPrint.HexStr())
+                if (fingerprintAttribute.Value.AsSpan().HexStr() == fingerPrint.AsSpan().HexStr())
                 {
                     stunMessage.isFingerprintValid = true;
                 }
@@ -106,7 +106,7 @@ internal class STUNMessage
 
     public byte[] ToByteBufferStringKey(string messageIntegrityKey, bool addFingerprint)
     {
-        return ToByteBuffer(messageIntegrityKey.NotNullOrBlank() ? Encoding.UTF8.GetBytes(messageIntegrityKey) : null, addFingerprint);
+        return ToByteBuffer(!string.IsNullOrWhiteSpace(messageIntegrityKey) ? Encoding.UTF8.GetBytes(messageIntegrityKey) : null, addFingerprint);
     }
 
     public byte[] ToByteBuffer(byte[] messageIntegrityKey, bool addFingerprint)
@@ -225,7 +225,7 @@ internal class STUNMessage
                 //logger.LogDebug($"Received Message integrity HMAC  : {messageIntegrityAttribute.Value.HexStr()}.");
                 //logger.LogDebug($"Calculated Message integrity HMAC: {calculatedHmac.HexStr()}.");
 
-                isHmacValid = messageIntegrityAttribute.Value.HexStr() == calculatedHmac.HexStr();
+                isHmacValid = messageIntegrityAttribute.Value.AsSpan().HexStr() == calculatedHmac.AsSpan().HexStr();
             }
         }
 

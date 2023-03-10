@@ -13,7 +13,7 @@
 // 22 jun 2005	Aaron Clauson   Created, Dublin, Ireland.
 // rj2: need some more helper methods
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ public static class IPSocket
 {
     public static IPEndPoint Parse(string endpointstring, int defaultport = -1)
     {
-        if (endpointstring.IsNullOrBlank())
+        if (string.IsNullOrWhiteSpace(endpointstring))
         {
             throw new ArgumentException("Endpoint descriptor must not be empty.");
         }

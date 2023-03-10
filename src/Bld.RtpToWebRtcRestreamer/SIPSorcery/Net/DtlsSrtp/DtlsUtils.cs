@@ -80,7 +80,7 @@ internal static class DtlsUtils
         return new RTCDtlsFingerprint
         {
             algorithm = digestAlgorithm.AlgorithmName.ToLower(),
-            value = hash.HexStr(':')
+            value = hash.AsSpan().HexStr(':')
         };
     }
 
@@ -99,7 +99,7 @@ internal static class DtlsUtils
         return new RTCDtlsFingerprint
         {
             algorithm = sha256.AlgorithmName.ToLower(),
-            value = sha256Hash.HexStr(':')
+            value = sha256Hash.AsSpan().HexStr(':')
         };
     }
 
