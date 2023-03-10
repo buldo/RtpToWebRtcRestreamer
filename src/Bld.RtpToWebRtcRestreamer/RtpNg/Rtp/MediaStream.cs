@@ -17,16 +17,16 @@ internal abstract class MediaStream
     private static readonly ILogger Logger = Log.Logger;
 
     private readonly ArrayPool<byte> _sendBuffersPool = ArrayPool<byte>.Shared;
-    private readonly ObjectPool<RtpPacket> _packetsPool =
-        new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
+    private readonly ObjectPool<RtpPacket> _packetsPool = new DefaultObjectPool<RtpPacket>(new DefaultPooledObjectPolicy<RtpPacket>(), 5);
 
     private SecureContext _secureContext;
 
     private readonly int _index;
 
-    protected MediaStream(int index, MediaStreamTrack mediaStreamTrack)
+    protected MediaStream(int index, MediaStreamTrack mediaStreamTrack, MultiplexedRtpChannel rtpChannel)
     {
         _index = index;
+        RTPChannel = rtpChannel;
         RtcpSession = new RtcpSession(mediaStreamTrack.Ssrc);
         LocalTrack = mediaStreamTrack;
     }
@@ -67,7 +67,7 @@ internal abstract class MediaStream
     /// </summary>
     public IPEndPoint ControlDestinationEndPoint { get; private set; }
 
-    public MultiplexedRtpChannel RTPChannel { get; set; }
+    public MultiplexedRtpChannel RTPChannel { get; }
 
     public SecureContext SecurityContext => _secureContext;
 

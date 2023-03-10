@@ -1,11 +1,13 @@
-﻿using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
+﻿using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 
 namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
 internal class VideoStream : MediaStream
 {
-    public VideoStream(int index, MediaStreamTrack track) : base(index, track)
+    public VideoStream(int index, MediaStreamTrack track, MultiplexedRtpChannel rtpChannel)
+        : base(index, track, rtpChannel)
     {
     }
 

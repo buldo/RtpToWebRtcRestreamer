@@ -144,19 +144,19 @@ internal class RtcPeerConnection : IDisposable
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        _videoStream = new VideoStream(0, videoTrack);
-
         _rtpIceChannel = new MultiplexedRtpChannel();
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
-        _rtpIceChannel.Start();
-        _videoStream.RTPChannel = _rtpIceChannel;
-        _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
+
+        _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
+        _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
 
         OnRtpClosed += Close;
         OnRtcpBye += Close;
 
         _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
+
+        _rtpIceChannel.Start();
 
         // This is the point the ICE session potentially starts contacting STUN and TURN servers.
         // This job was moved to a background thread as it was observed that interacting with the OS network
