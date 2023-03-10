@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Net;
+using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery;
@@ -94,7 +95,7 @@ internal class RtcPeerConnection : IDisposable
     private readonly string _localSdpSessionId;
 
     [NotNull]
-    private readonly RtpIceChannel _rtpIceChannel;
+    private readonly MultiplexedRtpChannel _rtpIceChannel;
 
     private readonly RTCSctpTransport _sctp;
     private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
@@ -145,7 +146,7 @@ internal class RtcPeerConnection : IDisposable
 
         _videoStream = new VideoStream(0);
 
-        _rtpIceChannel = new RtpIceChannel();
+        _rtpIceChannel = new MultiplexedRtpChannel();
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
         _rtpIceChannel.Start();
         _videoStream.RTPChannel = _rtpIceChannel;
