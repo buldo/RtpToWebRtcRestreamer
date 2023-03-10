@@ -10,6 +10,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Tls;
@@ -114,7 +115,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     List of all Video Streams for this session
     /// </summary>
-    private readonly List<VideoStream> _videoStreamList = new();
+    [NotNull] private readonly VideoStream _videoStream;
 
     private CancellationTokenSource _cancellationSource = new();
 
@@ -156,9 +157,8 @@ internal class RtcPeerConnection : IDisposable
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        var newVideoStream = new VideoStream(0);
-        _videoStreamList.Add(newVideoStream);
-        _primaryStream = newVideoStream;
+        _videoStream = new VideoStream(0);
+        _primaryStream = _videoStream;
 
         _rtpIceChannel = new RtpIceChannel();
         _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
@@ -214,22 +214,6 @@ internal class RtcPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     The primary Video Stream for this session
-    /// </summary>
-    private VideoStream VideoStream
-    {
-        get
-        {
-            if (_videoStreamList.Count > 0)
-            {
-                return _videoStreamList[0];
-            }
-
-            return null;
-        }
-    }
-
-    /// <summary>
     ///     Indicates whether the session has been closed. Once a session is closed it cannot
     ///     be restarted.
     /// </summary>
@@ -249,7 +233,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Indicates whether this session is using video.
     /// </summary>
-    private bool HasVideo => VideoStream?.HasVideo == true;
+    private bool HasVideo => _videoStream.HasVideo;
 
     /// <summary>
     ///     Close the session if the instance is out of scope.
@@ -619,20 +603,17 @@ internal class RtcPeerConnection : IDisposable
                     }
                 }
 
-                foreach (var videoStream in _videoStreamList)
+                if (_videoStream != null)
                 {
-                    if (videoStream != null)
-                    {
-                        videoStream.IsClosed = true;
-                        CloseRtcpSession(videoStream, reason);
+                    _videoStream.IsClosed = true;
+                    CloseRtcpSession(_videoStream, reason);
 
-                        if (videoStream.HasRtpChannel())
-                        {
-                            var rtpChannel = videoStream.RTPChannel;
-                            rtpChannel.OnRTPDataReceived -= OnReceive;
-                            rtpChannel.OnClosed -= OnRTPChannelClosed;
-                            rtpChannel.Close(reason);
-                        }
+                    if (_videoStream.HasRtpChannel())
+                    {
+                        var rtpChannel = _videoStream.RTPChannel;
+                        rtpChannel.OnRTPDataReceived -= OnReceive;
+                        rtpChannel.OnClosed -= OnRTPChannelClosed;
+                        rtpChannel.Close(reason);
                     }
                 }
 
@@ -666,12 +647,9 @@ internal class RtcPeerConnection : IDisposable
             }
         }
 
-        foreach (var videoStream in _videoStreamList)
+        if (_videoStream.LocalTrack != null)
         {
-            if (videoStream.LocalTrack != null)
-            {
-                mediaStreamList.Add(videoStream);
-            }
+            mediaStreamList.Add(_videoStream);
         }
 
         //Revert to DefaultStreamStatus
@@ -1236,7 +1214,7 @@ internal class RtcPeerConnection : IDisposable
             return false;
         }
 
-        if (HasVideo && !VideoStream.IsSecurityContextReady())
+        if (HasVideo && !_videoStream.IsSecurityContextReady())
         {
             return false;
         }
@@ -1347,17 +1325,10 @@ internal class RtcPeerConnection : IDisposable
 
     private VideoStream GetOrCreateVideoStream(int index)
     {
-        if (index < _videoStreamList.Count)
+        if (index <= 1)
         {
             // We ask too fast a new AudioStram ...
-            return _videoStreamList[index];
-        }
-
-        if (index == _videoStreamList.Count)
-        {
-            var videoStream = new VideoStream(index);
-            _videoStreamList.Add(videoStream);
-            return videoStream;
+            return _videoStream;
         }
 
         return null;
@@ -1392,8 +1363,7 @@ internal class RtcPeerConnection : IDisposable
                     return SetDescriptionResultEnum.NoMatchingMediaType;
                 }
 
-                if (remoteMediaType == SDPMediaTypesEnum.video &&
-                    (VideoStream == null || VideoStream.LocalTrack == null))
+                if (remoteMediaType == SDPMediaTypesEnum.video && _videoStream.LocalTrack == null)
                 {
                     return SetDescriptionResultEnum.NoMatchingMediaType;
                 }
@@ -1509,13 +1479,9 @@ internal class RtcPeerConnection : IDisposable
                 }
             }
 
-            //Close old RTCPSessions opened
-            foreach (var videoStream in _videoStreamList)
+            if (_videoStream.RtcpSession != null && _videoStream.LocalTrack == null)
             {
-                if (videoStream.RtcpSession != null && videoStream.LocalTrack == null)
-                {
-                    videoStream.RtcpSession.Close(null);
-                }
+                _videoStream.RtcpSession.Close(null);
             }
 
             // If we get to here then the remote description was compatible with the local media tracks.
@@ -1581,9 +1547,9 @@ internal class RtcPeerConnection : IDisposable
         }
         else if (track.Kind == SDPMediaTypesEnum.video)
         {
-            if (_videoStreamList[0].LocalTrack == null)
+            if (_videoStream.LocalTrack == null)
             {
-                currentMediaStream = _videoStreamList[0];
+                currentMediaStream = _videoStream;
             }
             else
             {
@@ -1624,10 +1590,7 @@ internal class RtcPeerConnection : IDisposable
             audioStream.SetDestination(rtpEndPoint, rtcpEndPoint);
         }
 
-        foreach (var videoStream in _videoStreamList)
-        {
-            videoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
-        }
+        _videoStream.SetDestination(rtpEndPoint, rtcpEndPoint);
     }
 
     private void SetGlobalSecurityContext(
@@ -1640,10 +1603,7 @@ internal class RtcPeerConnection : IDisposable
             audioStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
         }
 
-        foreach (var videoStream in _videoStreamList)
-        {
-            videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
-        }
+        _videoStream.SetSecurityContext(rtpTransport, protectRtcp, unprotectRtcp);
     }
 
     private void InitIPEndPointAndSecurityContext(MediaStream mediaStream)
@@ -1708,14 +1668,12 @@ internal class RtcPeerConnection : IDisposable
                 }
             }
 
-            foreach (var videoStream in _videoStreamList)
             {
-                if (videoStream.HasVideo && videoStream.RtcpSession != null &&
-                    videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
+                if (_videoStream.HasVideo &&
+                    _videoStream.RtcpSession != null &&
+                    _videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
                 {
-                    // The local video track may have been disabled if there were no matching capabilities with
-                    // the remote party.
-                    videoStream.RtcpSession.Start();
+                    _videoStream.RtcpSession.Start();
                 }
             }
         }
@@ -1723,11 +1681,7 @@ internal class RtcPeerConnection : IDisposable
 
     public async Task SendVideoAsync(RtpPacket packet)
     {
-        var vs = VideoStream;
-        if (vs != null)
-        {
-            await vs.SendRtpRawFromPacketAsync(packet);
-        }
+        await _videoStream.SendRtpRawFromPacketAsync(packet);
     }
 
     private void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
@@ -1818,7 +1772,7 @@ internal class RtcPeerConnection : IDisposable
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
             else if (AudioStream?.RtcpSession?.PacketsReceivedCount > 0 ||
-                     VideoStream?.RtcpSession?.PacketsReceivedCount > 0)
+                     _videoStream.RtcpSession?.PacketsReceivedCount > 0)
             {
                 // Only give this warning if we've received at least one RTP packet.
                 //logger.LogWarning("Could not match an RTCP packet against any SSRC's in the session.");
@@ -1840,7 +1794,7 @@ internal class RtcPeerConnection : IDisposable
         {
             if (HasVideo)
             {
-                return VideoStream;
+                return _videoStream;
             }
         }
 
@@ -1852,12 +1806,9 @@ internal class RtcPeerConnection : IDisposable
             }
         }
 
-        foreach (var videoStream in _videoStreamList)
+        if (_videoStream.LocalTrack?.IsSsrcMatch(ssrc) == true)
         {
-            if (videoStream?.LocalTrack?.IsSsrcMatch(ssrc) == true)
-            {
-                return videoStream;
-            }
+            return _videoStream;
         }
 
         return GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
@@ -1922,14 +1873,9 @@ internal class RtcPeerConnection : IDisposable
         }
 
         // Get related VideoStreamList if found
-        if (found && _videoStreamList.Count > index)
+        if (found && 1 >= index)
         {
-            var videoStream = _videoStreamList[index];
-            //if (videoStream?.RemoteTrack != null)
-            //{
-            //    videoStream.RemoteTrack.Ssrc = ssrc;
-            //}
-            return videoStream;
+            return _videoStream;
         }
 
         return null;
