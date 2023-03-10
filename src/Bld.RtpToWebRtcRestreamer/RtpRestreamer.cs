@@ -59,13 +59,11 @@ internal class RtpRestreamer
 
     public async Task<(Guid PeerId, string Sdp)> AppendClient()
     {
-        var peerConnection = new RtcPeerConnection();
-        _streamMultiplexer.RegisterPeer(peerConnection);
-
         var videoTrack = new MediaStreamTrack(
             new VideoFormat(VideoCodecsEnum.H264, 96),
             MediaStreamStatusEnum.SendOnly);
-        peerConnection.AddTrack(videoTrack);
+        var peerConnection = new RtcPeerConnection(videoTrack, null);
+        _streamMultiplexer.RegisterPeer(peerConnection);
 
         peerConnection.onconnectionstatechange += (state) =>
         {

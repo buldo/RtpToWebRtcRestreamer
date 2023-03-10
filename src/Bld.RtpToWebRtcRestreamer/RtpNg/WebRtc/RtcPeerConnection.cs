@@ -138,7 +138,7 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
-    public RtcPeerConnection()
+    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack, [CanBeNull] MediaStreamTrack audioTrack)
     {
         _dataChannels = new RTCDataChannelCollection(() => DtlsHandle.IsClient);
 
@@ -174,6 +174,23 @@ internal class RtcPeerConnection : IDisposable
         // calls and/or initialising DNS was taking up to 600ms, see
         // https://github.com/sipsorcery-org/sipsorcery/issues/456.
         _iceGatheringTask = Task.Run(_rtpIceChannel.StartGathering);
+
+        //---------------Video-----------------
+        _videoStream.LocalTrack = videoTrack;
+
+        //---------------Audio-----------------
+        if (audioTrack != null)
+        {
+            var currentMediaStream = GetNextAudioStreamByLocalTrack();
+
+            currentMediaStream.RTPChannel = _rtpIceChannel;
+            if (currentMediaStream.CreateRtcpSession())
+            {
+                currentMediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
+            }
+
+            currentMediaStream.LocalTrack = audioTrack;
+        }
     }
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -1220,12 +1237,6 @@ internal class RtcPeerConnection : IDisposable
     /// <returns>If successful an OK enum result. If not an enum result indicating the failure cause.</returns>
     private SetDescriptionResultEnum SetRemoteDescription(SDP sessionDescription)
     {
-        if (sessionDescription == null)
-        {
-            throw new ArgumentNullException(nameof(sessionDescription),
-                "The session description cannot be null for SetRemoteDescription.");
-        }
-
         try
         {
             if (sessionDescription.Media?.Count == 0)
@@ -1404,58 +1415,6 @@ internal class RtcPeerConnection : IDisposable
 
         return rtpEndPoint;
     }
-
-#nullable enable
-    /// <summary>
-    ///     Adds a media track to this session. A media track represents an audio or video
-    ///     stream and can be a local (which means we're sending) or remote (which means
-    ///     we're receiving).
-    /// </summary>
-    /// <param name="track">The media track to add to the session.</param>
-    public void AddTrack(MediaStreamTrack track)
-    {
-        MediaStream currentMediaStream;
-        if (track.Kind == SDPMediaTypesEnum.audio)
-        {
-            currentMediaStream = GetNextAudioStreamByLocalTrack();
-        }
-        else if (track.Kind == SDPMediaTypesEnum.video)
-        {
-            if (_videoStream.LocalTrack == null)
-            {
-                currentMediaStream = _videoStream;
-            }
-            else
-            {
-                throw new Exception("Ololo nonono");
-            }
-        }
-        else
-        {
-            return;
-        }
-
-        if (track.StreamStatus == MediaStreamStatusEnum.Inactive)
-        {
-            // Inactive tracks don't use/require any local resources. Instead they are place holders
-            // so that the session description offers/answers can be balanced with the remote party.
-            // For example if the remote party offers audio and video but we only support audio we
-            // can reject the call or we can accept the audio and answer with an inactive video
-            // announcement.
-            currentMediaStream.LocalTrack = track;
-        }
-        else
-        {
-            currentMediaStream.RTPChannel = _rtpIceChannel;
-            if (currentMediaStream.CreateRtcpSession())
-            {
-                currentMediaStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-            }
-
-            currentMediaStream.LocalTrack = track;
-        }
-    }
-#nullable restore
 
     private void SetGlobalDestination(IPEndPoint rtpEndPoint, IPEndPoint rtcpEndPoint)
     {
