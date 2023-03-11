@@ -1,6 +1,6 @@
-﻿namespace Bld.RtpToWebRtcRestreamer;
+﻿namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
-internal class RtpRestreamerControl :IRtpRestreamerControl
+internal class RtpRestreamerControl : IRtpRestreamerControl
 {
     private readonly WebRtcHostedService _service;
 

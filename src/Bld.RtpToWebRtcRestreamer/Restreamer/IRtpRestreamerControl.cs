@@ -1,4 +1,4 @@
-﻿namespace Bld.RtpToWebRtcRestreamer;
+﻿namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 public interface IRtpRestreamerControl
 {

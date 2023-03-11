@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-
-using Bld.RtpToWebRtcRestreamer.Restreamer;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
@@ -11,7 +9,7 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Microsoft.Extensions.Logging;
 using SIPSorceryMedia.Abstractions;
 
-namespace Bld.RtpToWebRtcRestreamer;
+namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 internal class RtpRestreamer
 {
