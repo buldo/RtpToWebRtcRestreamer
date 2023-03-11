@@ -125,6 +125,8 @@ internal class MediaStreamTrack
     /// </summary>
     public MediaStreamStatusEnum StreamStatus { get; internal set; }
 
+    public string Cname { get;} = Guid.NewGuid().ToString();
+
     /// <summary>
     /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
     /// sent using this media stream.

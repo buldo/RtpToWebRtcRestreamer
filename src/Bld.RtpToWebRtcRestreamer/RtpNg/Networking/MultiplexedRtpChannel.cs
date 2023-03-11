@@ -64,7 +64,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -1313,6 +1312,10 @@ internal class MultiplexedRtpChannel
                 logger.LogDebug($"RTPChannel closing, RTP socket on port {RTPPort}. Reason: {closeReason}.");
                 await _udpSocket.StopAsync();
                 _isClosed = true;
+                if (_connectivityChecksTask != null)
+                {
+                    await _connectivityChecksTask;
+                }
             }
             catch (Exception excp)
             {

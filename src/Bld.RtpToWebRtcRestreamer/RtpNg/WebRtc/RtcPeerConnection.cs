@@ -95,7 +95,6 @@ internal class RtcPeerConnection
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
 
         _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
-        _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
 
         _rtpIceChannel.Start();
     }
@@ -178,11 +177,6 @@ internal class RtcPeerConnection
                     var handshakeResult = await Task.Run(async () => await DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
                     await SetConnectionStateAsync(handshakeResult ? RTCPeerConnectionState.connected : RTCPeerConnectionState.failed);
-
-                    if (_connectionState == RTCPeerConnectionState.connected)
-                    {
-                        Start();
-                    }
                 }
                 catch (Exception excp)
                 {
@@ -371,7 +365,6 @@ internal class RtcPeerConnection
             await _rtpIceChannel.CloseAsync("reason");
             IsClosed = true;
             _videoStream.IsClosed = true;
-            CloseRtcpSession(_videoStream, reason);
 
             await SetConnectionStateAsync(RTCPeerConnectionState.closed);
         }
@@ -500,7 +493,7 @@ internal class RtcPeerConnection
 
                 if (mediaStream1.LocalTrack.Ssrc != 0)
                 {
-                    var trackCname = mediaStream1.RtcpSession?.Cname;
+                    var trackCname = mediaStream1.LocalTrack.Cname;
 
                     if (trackCname != null)
                     {
@@ -683,11 +676,6 @@ internal class RtcPeerConnection
         return true;
     }
 
-    /// <summary>
-    ///     Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
-    /// </summary>
-    public event Action<IPEndPoint, RtcpCompoundPacket> OnReceiveReport;
-
     private void LogRemoteSDPSsrcAttributes()
     {
         var str = "Video: [ ";
@@ -704,23 +692,6 @@ internal class RtcPeerConnection
 
         str += " ]";
         Logger.LogDebug($"LogRemoteSDPSsrcAttributes: {str}");
-    }
-
-    private void CloseRtcpSession(MediaStream mediaStream, string reason)
-    {
-        if (mediaStream.RtcpSession != null)
-        {
-            mediaStream.OnReceiveReportByIndex -= RaisedOnOnReceiveReport;
-            mediaStream.CloseRtcpSession(reason);
-        }
-    }
-
-    private void RaisedOnOnReceiveReport(int index, IPEndPoint ipEndPoint, RtcpCompoundPacket report)
-    {
-        if (index == 0)
-        {
-            OnReceiveReport?.Invoke(ipEndPoint, report);
-        }
     }
 
     /// <summary>
@@ -869,23 +840,6 @@ internal class RtcPeerConnection
         _videoStream.SetSecurityContext(rtpTransport, unprotectRtcp);
     }
 
-    /// <summary>
-    ///     Starts the RTCP session(s) that monitor this RTP session.
-    /// </summary>
-    private void Start()
-    {
-        if (!IsStarted)
-        {
-            IsStarted = true;
-            if (_videoStream.HasVideo &&
-                _videoStream.RtcpSession != null &&
-                _videoStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
-            {
-                _videoStream.RtcpSession.Start();
-            }
-        }
-    }
-
     public async Task SendVideoAsync(RtpPacket packet)
     {
         await _videoStream.SendRtpRawFromPacketAsync(packet);
@@ -919,14 +873,14 @@ internal class RtcPeerConnection
                         buffer[1] == (byte)RtcpReportTypes.PSFB ||
                         buffer[1] == (byte)RtcpReportTypes.RTPFB)
                     {
-                        await OnReceiveRTCPPacket(remoteEndPoint, buffer);
+                        await OnReceiveRTCPPacket(buffer);
                     }
                 }
             }
         }
     }
 
-    private async Task OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
+    private async Task OnReceiveRTCPPacket(byte[] buffer)
     {
         var secureContext = _videoStream.SecurityContext;
         if (secureContext != null)
@@ -952,18 +906,6 @@ internal class RtcPeerConnection
             if (_videoStream.LocalTrack == null)
             {
                 await CloseAsync(rtcpPkt.Bye.Reason);
-            }
-        }
-        else if (!IsClosed)
-        {
-            if (_videoStream.RtcpSession != null)
-            {
-                _videoStream.RtcpSession.ReportReceived();
-                _videoStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
-            }
-            else if (rtcpPkt.ReceiverReport?.Ssrc == RtcPeerConnectionConstants.RTCP_RR_NO_STREAM_SSRC)
-            {
-                // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
         }
     }

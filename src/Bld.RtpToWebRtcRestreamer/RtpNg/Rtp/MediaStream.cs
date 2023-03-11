@@ -28,14 +28,8 @@ internal abstract class MediaStream
     {
         _index = index;
         RTPChannel = rtpChannel;
-        RtcpSession = new RtcpSession(mediaStreamTrack.Ssrc);
         LocalTrack = mediaStreamTrack;
     }
-
-    /// <summary>
-    /// Gets fired when an RTCP report is received. This event is for diagnostics only.
-    /// </summary>
-    public event Action<int, IPEndPoint, RtcpCompoundPacket> OnReceiveReportByIndex;
 
     /// <summary>
     /// Indicates whether the session has been closed. Once a session is closed it cannot
@@ -52,11 +46,6 @@ internal abstract class MediaStream
     /// The local track. Will be null if we are not sending this media.
     /// </summary>
     public MediaStreamTrack LocalTrack { get; }
-
-    /// <summary>
-    /// The reporting session for this media stream.
-    /// </summary>
-    public RtcpSession RtcpSession { get; private set; }
 
     /// <summary>
     /// The remote RTP end point this stream is sending media to.
@@ -81,20 +70,6 @@ internal abstract class MediaStream
     public bool IsSecurityContextReady()
     {
         return _secureContext != null;
-    }
-
-    public void RaiseOnReceiveReportByIndex(IPEndPoint ipEndPoint, RtcpCompoundPacket rtcpPCompoundPacket)
-    {
-        OnReceiveReportByIndex?.Invoke(_index, ipEndPoint, rtcpPCompoundPacket);
-    }
-
-    public void CloseRtcpSession(string reason)
-    {
-        if (RtcpSession != null)
-        {
-            RtcpSession.Close(reason);
-            RtcpSession = null;
-        }
     }
 
     /// <summary>
@@ -137,8 +112,6 @@ internal abstract class MediaStream
                 {
                     await RTPChannel.SendAsync(DestinationEndPoint, encoded);
                 }
-
-                RtcpSession?.RecordRtpPacketSend(packetToSent);
             }
             finally
             {
