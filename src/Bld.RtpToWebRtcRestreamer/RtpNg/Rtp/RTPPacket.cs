@@ -18,7 +18,7 @@ internal class RtpPacket
                 throw new Exception("RtpPacket has no data");
             }
 
-            return _header!;
+            return _header;
         }
     }
 

@@ -21,9 +21,9 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 internal static class IPAddressHelper
 {
     // Prefixes used for categorizing IPv6 addresses.
-    static readonly byte[] k6To4Prefix = { 0x20, 0x02, 0 };
-    static readonly byte[] kV4CompatibilityPrefix = { 0 };
-    static readonly byte[] k6BonePrefix = { 0x3f, 0xfe, 0 };
+    private static readonly byte[] k6To4Prefix = { 0x20, 0x02, 0 };
+    private static readonly byte[] kV4CompatibilityPrefix = { 0 };
+    private static readonly byte[] k6BonePrefix = { 0x3f, 0xfe, 0 };
 
     public static uint IPAddressPrecedence(IPAddress ip)
     {
@@ -110,14 +110,14 @@ internal static class IPAddressHelper
         return IPIsHelper(ip, k6To4Prefix, 16);
     }
 
-    static bool IPIsHelper(IPAddress ip, byte[] tomatch, int lengthInBits)
+    private static bool IPIsHelper(IPAddress ip, byte[] tomatch, int lengthInBits)
     {
         try
         {
             // Helper method for checking IP prefix matches (but only on whole byte
             // lengths). Length is in bits.
             var addr = ip.GetAddressBytes();
-            var bytesToCompare = (lengthInBits >> 3);
+            var bytesToCompare = lengthInBits >> 3;
 
             if (addr.Length < bytesToCompare || tomatch == null || tomatch.Length < bytesToCompare)
                 return false;

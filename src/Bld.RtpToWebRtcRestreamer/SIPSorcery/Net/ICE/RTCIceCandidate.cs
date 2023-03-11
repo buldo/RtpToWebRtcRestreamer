@@ -28,11 +28,8 @@ internal class RTCIceCandidate
     private const string TCP_TYPE_KEY = "tcpType";
     private const string REMOTE_ADDRESS_KEY = "raddr";
     private const string REMOTE_PORT_KEY = "rport";
-    private const string CANDIDATE_PREFIX = "candidate";
 
-    private string sdpMid { get; set; }
-
-    public ushort sdpMLineIndex { get; set; }
+    public ushort SDPMLineIndex { get; }
 
     /// <summary>
     /// Composed of 1 to 32 chars. It is an
@@ -92,8 +89,6 @@ internal class RTCIceCandidate
 
     private ushort relatedPort { get; set; }
 
-    private string usernameFragment { get; }
-
     /// <summary>
     /// This is the end point to use for a remote candidate. The address supplied for an ICE
     /// candidate could be a hostname or IP address. This field will be set before the candidate
@@ -106,11 +101,9 @@ internal class RTCIceCandidate
 
     public RTCIceCandidate(RTCIceCandidateInit init)
     {
-        sdpMid = init.sdpMid;
-        sdpMLineIndex = init.sdpMLineIndex;
-        usernameFragment = init.usernameFragment;
+        SDPMLineIndex = init.sdpMLineIndex;
 
-        if (!String.IsNullOrEmpty(init.candidate))
+        if (!string.IsNullOrEmpty(init.candidate))
         {
             var iceCandidate = Parse(init.candidate);
             foundation = iceCandidate.foundation;
@@ -148,7 +141,7 @@ internal class RTCIceCandidate
     {
         if (string.IsNullOrEmpty(candidateLine))
         {
-            throw new ArgumentNullException("Cant parse ICE candidate from empty string.", candidateLine);
+            throw new ArgumentNullException(nameof(candidateLine),"Cant parse ICE candidate from empty string.");
         }
 
         candidateLine = candidateLine.Replace("candidate:", "");
@@ -333,9 +326,9 @@ internal class RTCIceCandidate
     /// <param name="epProtocol">The protocol to check equivalence for.</param>
     /// <param name="ep">The IP end point to check equivalence for.</param>
     /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
-    public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
+    public bool IsEquivalentEndPoint(RTCIceProtocol epProtocol, IPEndPoint ep)
     {
-        if (protocol == epPotocol && DestinationEndPoint != null &&
+        if (protocol == epProtocol && DestinationEndPoint != null &&
             ep.Address.Equals(DestinationEndPoint.Address) && DestinationEndPoint.Port == ep.Port)
         {
             return true;
@@ -361,7 +354,7 @@ internal class RTCIceCandidate
     }
 
     //CRC32 implementation from C++ to calculate foundation
-    const uint kCrc32Polynomial = 0xEDB88320;
+    private const uint kCrc32Polynomial = 0xEDB88320;
     private static uint[] LoadCrc32Table()
     {
         var kCrc32Table = new uint[256];

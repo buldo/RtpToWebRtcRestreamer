@@ -33,23 +33,20 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private const int MaxIpOverhead = MinIpOverhead + 64;
     private const int UdpOverhead = 8;
     private const int DefaultTimeoutMilliseconds = 20000;
-    public const int DtlsRetransmissionCode = -1;
+    private const int DtlsRetransmissionCode = -1;
     private const int DtlsReceiveErrorCode = -2;
 
     private static readonly ILogger Logger = Log.Logger;
 
-    private static readonly Random Random = new Random();
+    private static readonly Random Random = new();
 
     private SrtpTransformer _srtpEncoder;
-    private SrtpTransformer _srtpDecoder;
-    private SrtcpTransformer _srtcpEncoder;
     private SrtcpTransformer _srtcpDecoder;
-    readonly IDtlsSrtpPeer _connection;
+    private readonly IDtlsSrtpPeer _connection;
+    private readonly Func<ReadOnlyMemory<byte>, Task> _sendHandler;
 
     /// <summary>The collection of chunks to be written.</summary>
-    private readonly BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
-
-    public DtlsTransport Transport { get; private set; }
+    private readonly BlockingCollection<byte[]> _chunks = new(new ConcurrentQueue<byte[]>());
 
     /// <summary>
     /// Sets the period in milliseconds that the handshake attempt will timeout
@@ -61,8 +58,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     /// Sets the period in milliseconds that receive will wait before try retransmission
     /// </summary>
     private readonly int _retransmissionMilliseconds = DefaultRetransmissionWaitMillis;
-
-    public Action<byte[]> OnDataReady;
 
     /// <summary>
     /// Parameters:
@@ -83,12 +78,15 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private volatile bool _handshakeComplete;
     private volatile bool _handshaking;
 
-    public DtlsSrtpTransport(IDtlsSrtpPeer connection, int mtu = DefaultMtu)
+    public DtlsSrtpTransport(
+        IDtlsSrtpPeer connection,
+        Func<ReadOnlyMemory<byte>, Task> sendHandler)
     {
         // Network properties
-        _receiveLimit = Math.Max(0, mtu - MinIpOverhead - UdpOverhead);
-        _sendLimit = Math.Max(0, mtu - MaxIpOverhead - UdpOverhead);
+        _receiveLimit = Math.Max(0, DefaultMtu - MinIpOverhead - UdpOverhead);
+        _sendLimit = Math.Max(0, DefaultMtu - MaxIpOverhead - UdpOverhead);
         _connection = connection;
+        _sendHandler = sendHandler;
 
         connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
     }
@@ -100,17 +98,12 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     public bool DoHandshake(out string handshakeError)
     {
-        if (_connection.IsClient())
+        if (_connection.IsClient)
         {
             return DoHandshakeAsClient(out handshakeError);
         }
 
         return DoHandshakeAsServer(out handshakeError);
-    }
-
-    public bool IsClient
-    {
-        get { return _connection.IsClient(); }
     }
 
     private bool DoHandshakeAsClient(out string handshakeError)
@@ -129,17 +122,15 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
             {
                 var client = (DtlsSrtpClient)_connection;
                 // Perform the handshake in a non-blocking fashion
-                Transport = clientProtocol.Connect(client, this);
+                clientProtocol.Connect(client, this);
 
                 // Prepare the shared key to be used in RTP streaming
                 //client.PrepareSrtpSharedSecret();
                 // Generate encoders for DTLS traffic
-                if (client.GetSrtpPolicy() != null)
+                if (client.SrtpPolicy != null)
                 {
-                    _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
-                    _srtcpEncoder = GenerateRtcpEncoder();
                 }
                 // Declare handshake as complete
                 _handshakeComplete = true;
@@ -159,9 +150,9 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 else
                 {
                     handshakeError = "unknown";
-                    if (excp is TlsFatalAlert)
+                    if (excp is TlsFatalAlert alert)
                     {
-                        handshakeError = (excp as TlsFatalAlert).Message;
+                        handshakeError = alert.Message;
                     }
 
                     Logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
@@ -188,7 +179,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
             _waitMillis = _retransmissionMilliseconds;
             _startTime = DateTime.Now;
             _handshaking = true;
-            var serverProtocol = new DtlsServerProtocol()
+            var serverProtocol = new DtlsServerProtocol
             {
                 VerifyRequests = false
             };
@@ -197,16 +188,14 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 var server = (DtlsSrtpServer)_connection;
 
                 // Perform the handshake in a non-blocking fashion
-                Transport = serverProtocol.Accept(server, this);
+                serverProtocol.Accept(server, this);
                 // Prepare the shared key to be used in RTP streaming
                 //server.PrepareSrtpSharedSecret();
                 // Generate encoders for DTLS traffic
-                if (server.GetSrtpPolicy() != null)
+                if (server.SrtpPolicy != null)
                 {
-                    _srtpDecoder = GenerateRtpDecoder();
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
-                    _srtcpEncoder = GenerateRtcpEncoder();
                 }
                 // Declare handshake as complete
                 _handshakeComplete = true;
@@ -225,9 +214,9 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 else
                 {
                     handshakeError = "unknown";
-                    if (excp is TlsFatalAlert)
+                    if (excp is TlsFatalAlert alert)
                     {
-                        handshakeError = (excp as TlsFatalAlert).Message;
+                        handshakeError = alert.Message;
                     }
 
                     Logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");
@@ -243,60 +232,17 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return false;
     }
 
-    public Certificate GetRemoteCertificate()
-    {
-        return _connection.GetRemoteCertificate();
-    }
-
-    private byte[] GetMasterServerKey()
-    {
-        return _connection.GetSrtpMasterServerKey();
-    }
-
-    private byte[] GetMasterServerSalt()
-    {
-        return _connection.GetSrtpMasterServerSalt();
-    }
-
-    private byte[] GetMasterClientKey()
-    {
-        return _connection.GetSrtpMasterClientKey();
-    }
-
-    private byte[] GetMasterClientSalt()
-    {
-        return _connection.GetSrtpMasterClientSalt();
-    }
-
-    private SrtpPolicy GetSrtpPolicy()
-    {
-        return _connection.GetSrtpPolicy();
-    }
-
-    private SrtpPolicy GetSrtcpPolicy()
-    {
-        return _connection.GetSrtcpPolicy();
-    }
+    public Certificate RemoteCertificate => _connection.RemoteCertificate;
 
     private SrtpTransformer GenerateRtpEncoder()
     {
-        return GenerateRtpTransformer(_connection.IsClient());
-    }
-
-    private SrtpTransformer GenerateRtpDecoder()
-    {
-        return GenerateRtpTransformer(!_connection.IsClient());
-    }
-
-    private SrtcpTransformer GenerateRtcpEncoder()
-    {
-        return GenerateRtcpTransformer(_connection.IsClient());
+        return GenerateRtpTransformer(_connection.IsClient);
     }
 
     private SrtcpTransformer GenerateRtcpDecoder()
     {
         //Generate the reverse result of "GenerateRctpEncoder"
-        return GenerateRtcpTransformer(!_connection.IsClient());
+        return GenerateRtcpTransformer(!_connection.IsClient);
     }
 
     private SrtpTransformer GenerateRtpTransformer(bool isClient)
@@ -304,11 +250,11 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         SrtpTransformEngine engine;
         if (!isClient)
         {
-            engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterServerKey, _connection.SrtpMasterServerSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
         else
         {
-            engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterClientKey, _connection.SrtpMasterClientSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
 
         return engine.GetRTPTransformer();
@@ -320,11 +266,11 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         SrtpTransformEngine engine;
         if (!isClient)
         {
-            engine = new SrtpTransformEngine(GetMasterServerKey(), GetMasterServerSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterServerKey, _connection.SrtpMasterServerSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
         else
         {
-            engine = new SrtpTransformEngine(GetMasterClientKey(), GetMasterClientSalt(), GetSrtpPolicy(), GetSrtcpPolicy());
+            engine = new SrtpTransformEngine(_connection.SrtpMasterClientKey, _connection.SrtpMasterClientSalt, _connection.SrtpPolicy, _connection.SrtcpPolicy);
         }
 
         return engine.GetRtcpTransformer();
@@ -352,29 +298,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     public int UnprotectRtcp(byte[] payload, int length, out int outLength)
     {
         var result = UnprotectRtcp(payload, length);
-        if (result == null)
-        {
-            outLength = 0;
-            return -1;
-        }
-
-        Buffer.BlockCopy(result, 0, payload, 0, result.Length);
-        outLength = result.Length;
-
-        return 0; //No Errors
-    }
-
-    private byte[] ProtectRtcp(byte[] packet, int length)
-    {
-        lock (_srtcpEncoder)
-        {
-            return _srtcpEncoder.Transform(packet, length);
-        }
-    }
-
-    public int ProtectRtcp(byte[] payload, int length, out int outLength)
-    {
-        var result = ProtectRtcp(payload, length);
         if (result == null)
         {
             outLength = 0;
@@ -456,7 +379,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
             if (millisecondsRemaining <= 0)
             {
-                Logger.LogWarning($"DTLS transport timed out after {_timeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient() ? "server" : "client")}.");
+                Logger.LogWarning($"DTLS transport timed out after {_timeoutMilliseconds}ms waiting for handshake from remote {(_connection.IsClient ? "server" : "client")}.");
                 throw new TimeoutException();
             }
 
@@ -494,12 +417,27 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     public void Send(byte[] buf, int off, int len)
     {
-        Send(buf.AsSpan(off, len));
+        if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
+        {
+            _sendHandler(buf.AsMemory(off, len)).GetAwaiter().GetResult();
+        }
+        else
+        {
+            Task.Run(() => _sendHandler(buf.AsMemory(off, len))).GetAwaiter().GetResult();
+        }
     }
 
     public void Send(ReadOnlySpan<byte> buffer)
     {
-        OnDataReady?.Invoke(buffer.ToArray());
+        var bufArray = buffer.ToArray();
+        if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
+        {
+            _sendHandler(bufArray).GetAwaiter().GetResult();
+        }
+        else
+        {
+            Task.Run(() => _sendHandler(bufArray)).GetAwaiter().GetResult();
+        }
     }
 
     public void Close()

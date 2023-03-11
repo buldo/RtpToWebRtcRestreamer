@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿#nullable enable
+using System.Buffers;
 using System.Net.Sockets;
 using System.Net;
 
@@ -24,13 +25,13 @@ internal class PooledUdpSource
         ILogger<PooledUdpSource> logger)
     {
         _logger = logger;
-        _client = new(listenEndPoint);
+        _client = new UdpClient(listenEndPoint);
     }
 
     public void Start(Func<RtpPacket, Task> receiveHandler)
     {
         _receiveHandler = receiveHandler;
-        _cts = new();
+        _cts = new CancellationTokenSource();
         _receiveTask = Task.Run(async () => await ReceiveRoutine(_cts.Token), _cts.Token);
     }
 

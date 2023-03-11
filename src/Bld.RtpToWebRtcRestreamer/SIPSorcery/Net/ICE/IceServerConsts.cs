@@ -7,11 +7,11 @@
 internal static class IceServerConsts
 {
     /// <summary>
-    /// The maximum number of requests to send to an ICE server without getting 
+    /// The maximum number of requests to send to an ICE server without getting
     /// a response.
     /// </summary>
     internal const int MAX_REQUESTS = 25;
-        
+
     /// <summary>
     /// The STUN error code response indicating an authenticated request is required.
     /// </summary>

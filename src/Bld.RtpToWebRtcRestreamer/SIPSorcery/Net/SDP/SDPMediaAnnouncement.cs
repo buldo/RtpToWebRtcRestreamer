@@ -55,7 +55,7 @@ internal class SDPMediaAnnouncement
 
     private static readonly ILogger logger = Log.Logger;
 
-    public SDPConnectionInformation Connection;
+    public SDPConnectionInformation Connection { get; set; }
 
     // Media Announcement fields.
     public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
@@ -72,73 +72,73 @@ internal class SDPMediaAnnouncement
     /// If being used in a bundle this the ID for the announcement.
     /// Example: a=mid:audio or a=mid:video.
     /// </summary>
-    public string MediaID;
+    public string MediaID { get; set; }
 
     /// <summary>
     /// The "ssrc" attributes group ID as specified in RFC5576.
     /// </summary>
-    public string SsrcGroupID;
+    public string SsrcGroupID { get; set; }
 
     /// <summary>
     /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public string SctpMap;
+    public string SctpMap { get; set; }
 
     /// <summary>
     /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public ushort? SctpPort = null;
+    public ushort? SctpPort { get; set; } = null;
 
     /// <summary>
     /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public long MaxMessageSize = 0;
+    public long MaxMessageSize;
 
     /// <summary>
     /// If the RFC5576 is being used this is the list of "ssrc" attributes
     /// supplied.
     /// </summary>
-    public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
+    public List<SDPSsrcAttribute> SsrcAttributes { get; }= new();
 
     /// <summary>
     /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
     /// </summary>
-    public uint TIASBandwidth = 0;
+    public uint TIASBandwidth { get; set; } = 0;
 
-    public List<string> BandwidthAttributes = new List<string>();
+    public List<string> BandwidthAttributes { get; } = new();
 
     /// <summary>
     /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
     /// </summary>
-    public string MediaDescription;
+    public string MediaDescription { get; set; }
 
     /// <summary>
     ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
     /// </summary>
-    public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+    public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats { get; }= new();
 
     /// <summary>
     ///  a=extmap - Mapping for RTP header extensions
     /// </summary>
-    public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
+    public Dictionary<int, RTPHeaderExtension> HeaderExtensions { get; } = new();
 
     /// <summary>
     ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
     /// </summary>
-    public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
+    public SDPMessageMediaFormat MessageMediaFormat { get; } = new();
 
     /// <summary>
     /// List of media formats for "application media announcements. Application media announcements have different
     /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
     /// </summary>
-    public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
+    public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats { get; }= new();
 
-    private List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
-    private List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
-    public List<string> IceCandidates;
+    private readonly List<string> _extraMediaAttributes = new();          // Attributes that were not recognised.
+    private readonly List<SDPSecurityDescription> _securityDescriptions = new(); //2018-12-21 rj2: add a=crypto parsing etc.
+    public List<string> IceCandidates { get; } = new();
 
     /// <summary>
     /// The stream status of this media announcement.
@@ -166,26 +166,9 @@ internal class SDPMediaAnnouncement
         }
     }
 
-    public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPApplicationMediaFormat> appMediaFormats)
-    {
-        Media = mediaType;
-        Port = port;
-
-        if (appMediaFormats != null)
-        {
-            foreach (var fmt in appMediaFormats)
-            {
-                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
-                {
-                    ApplicationMediaFormats.Add(fmt.ID, fmt);
-                }
-            }
-        }
-    }
-
     public void ParseMediaFormats(string formatList)
     {
-        if (!String.IsNullOrWhiteSpace(formatList))
+        if (!string.IsNullOrWhiteSpace(formatList))
         {
             var formatIDs = Regex.Split(formatList, @"\s");
             foreach (var formatID in formatIDs)
@@ -200,7 +183,7 @@ internal class SDPMediaAnnouncement
                 }
                 else
                 {
-                    if (Int32.TryParse(formatID, out var id)
+                    if (int.TryParse(formatID, out var id)
                         && !MediaFormats.ContainsKey(id)
                         && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                     {
@@ -225,7 +208,7 @@ internal class SDPMediaAnnouncement
 
         announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
 
-        announcement += (Connection == null) ? null : Connection.ToString();
+        announcement += Connection == null ? null : Connection.ToString();
 
         if (TIASBandwidth > 0)
         {
@@ -242,7 +225,7 @@ internal class SDPMediaAnnouncement
         announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
         announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null;
 
-        if (IceCandidates?.Count() > 0)
+        if (IceCandidates?.Count > 0)
         {
             foreach (var candidate in IceCandidates)
             {
@@ -260,12 +243,12 @@ internal class SDPMediaAnnouncement
         announcement += GetFormatListAttributesToString();
 
         announcement += string.Join("", HeaderExtensions.Select(x => $"{MEDIA_EXTENSION_MAP_ATTRIBUE_PREFIX}{x.Value.Id} {x.Value.Uri}{m_CRLF}"));
-        foreach (var extra in ExtraMediaAttributes)
+        foreach (var extra in _extraMediaAttributes)
         {
             announcement += string.IsNullOrWhiteSpace(extra) ? null : extra + m_CRLF;
         }
 
-        foreach (var desc in SecurityDescriptions)
+        foreach (var desc in _securityDescriptions)
         {
             announcement += desc + m_CRLF;
         }
@@ -348,7 +331,7 @@ internal class SDPMediaAnnouncement
             mediaFormatList += mediaFormat.Key + " ";
         }
 
-        return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+        return mediaFormatList != null ? mediaFormatList.Trim() : null;
     }
 
     private string GetFormatListAttributesToString()
@@ -433,12 +416,12 @@ internal class SDPMediaAnnouncement
     {
         if (!string.IsNullOrWhiteSpace(attribute))
         {
-            ExtraMediaAttributes.Add(attribute);
+            _extraMediaAttributes.Add(attribute);
         }
     }
 
     public void AddCryptoLine(string crypto)
     {
-        SecurityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
+        _securityDescriptions.Add(SDPSecurityDescription.Parse(crypto));
     }
 }

@@ -11,7 +11,7 @@
 // History:
 // 30 Mar 2021 Jacek Dzija,Mateusz Greczek Added MSRP
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -22,7 +22,4 @@ internal class SDPMessageMediaFormat
     public List<string> AcceptTypes;
 
     public string Endpoint;
-    public string IP;
-
-    public string Port;
 }

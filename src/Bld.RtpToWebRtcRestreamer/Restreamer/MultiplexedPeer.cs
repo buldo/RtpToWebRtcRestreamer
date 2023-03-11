@@ -1,17 +1,18 @@
 ﻿using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
+using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 
 namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
 internal class MultiplexedPeer
 {
-    private readonly RTCPeerConnection _peer;
     private bool _isStarted;
 
-    public MultiplexedPeer(RTCPeerConnection peer)
+    public MultiplexedPeer(RtcPeerConnection peer)
     {
-        _peer = peer;
+        Peer = peer;
     }
+
+    public RtcPeerConnection Peer { get;}
 
     public async Task SendVideoAsync(RtpPacket packet)
     {
@@ -20,16 +21,27 @@ internal class MultiplexedPeer
             return;
         }
 
-        await _peer.SendVideoAsync(packet);
+        await Peer.SendVideoAsync(packet);
     }
 
     public void Start()
     {
+        if (_isStarted)
+        {
+            return;
+        }
+
         _isStarted = true;
     }
 
-    public void Stop()
+    public async Task ClosePeerAsync()
     {
+        if (!_isStarted)
+        {
+            return;
+        }
         _isStarted = false;
+
+        await Peer.CloseAsync("");
     }
 }

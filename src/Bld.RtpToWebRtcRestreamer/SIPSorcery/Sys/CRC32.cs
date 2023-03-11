@@ -4,28 +4,28 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
 public static class Crc32
 {
-    private const UInt32 DefaultPolynomial = 0xedb88320;
-    private const UInt32 DefaultSeed = 0xffffffff;
+    private const uint DefaultPolynomial = 0xedb88320;
+    private const uint DefaultSeed = 0xffffffff;
 
-    private static UInt32[] _defaultTable;
+    private static uint[] _defaultTable;
 
 
-    public static UInt32 Compute(byte[] buffer)
+    public static uint Compute(byte[] buffer)
     {
         return ~CalculateHash(InitializeTable(DefaultPolynomial), DefaultSeed, buffer, 0, buffer.Length);
     }
 
-    private static UInt32[] InitializeTable(UInt32 polynomial)
+    private static uint[] InitializeTable(uint polynomial)
     {
         if (polynomial == DefaultPolynomial && _defaultTable != null)
         {
             return _defaultTable;
         }
 
-        var createTable = new UInt32[256];
+        var createTable = new uint[256];
         for (var i = 0; i < 256; i++)
         {
-            var entry = (UInt32)i;
+            var entry = (uint)i;
             for (var j = 0; j < 8; j++)
             {
                 if ((entry & 1) == 1)
@@ -48,7 +48,7 @@ public static class Crc32
         return createTable;
     }
 
-    private static UInt32 CalculateHash(UInt32[] table, UInt32 seed, byte[] buffer, int start, int size)
+    private static uint CalculateHash(uint[] table, uint seed, byte[] buffer, int start, int size)
     {
         var crc = seed;
         for (var i = start; i < size; i++)

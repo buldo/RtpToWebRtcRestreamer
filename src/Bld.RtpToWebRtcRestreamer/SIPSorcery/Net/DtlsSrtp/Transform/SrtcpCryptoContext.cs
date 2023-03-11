@@ -20,11 +20,6 @@ internal class SrtcpCryptoContext
     private int _receivedIndex;
 
     /// <summary>
-    /// Index sent so far
-    /// </summary>
-    private int _sentIndex;
-
-    /// <summary>
     /// Bit mask for replay check
     /// </summary>
     private long _replayWindow;
@@ -173,59 +168,6 @@ internal class SrtcpCryptoContext
                 _tagStore = null;
                 break;
         }
-    }
-
-    /**
-         * Transform a RTP packet into a SRTP packet.
-         * This method is called when a normal RTP packet ready to be sent.
-         *
-         * Operations done by the transformation may include: encryption, using
-         * either Counter Mode encryption, or F8 Mode encryption, adding
-         * authentication tag, currently HMC SHA1 method.
-         *
-         * Both encryption and authentication functionality can be turned off
-         * as long as the SRTPPolicy used in this SRTPCryptoContext is requires no
-         * encryption and no authentication. Then the packet will be sent out
-         * untouched. However this is not encouraged. If no SRTP feature is enabled,
-         * then we shall not use SRTP TransformConnector. We should use the original
-         * method (RTPManager managed transportation) instead.
-         *
-         * @param pkt the RTP packet that is going to be sent out
-         */
-    public void TransformPacket(RawPacket pkt)
-    {
-        var encrypt = false;
-        // Encrypt the packet using Counter Mode encryption
-        if (_policy.EncType == SrtpPolicy.AescmEncryption || _policy.EncType == SrtpPolicy.TwofishEncryption)
-        {
-            ProcessPacketAescm(pkt, _sentIndex);
-            encrypt = true;
-        }
-
-        // Encrypt the packet using F8 Mode encryption
-        else if (_policy.EncType == SrtpPolicy.Aesf8Encryption || _policy.EncType == SrtpPolicy.Twofishf8Encryption)
-        {
-            ProcessPacketAesf8(pkt, _sentIndex);
-            encrypt = true;
-        }
-
-        var index = 0;
-        if (encrypt)
-        {
-            index = (int)(_sentIndex | 0x80000000);
-        }
-
-        // Authenticate the packet
-        // The authenticate method gets the index via parameter and stores
-        // it in network order in rbStore variable.
-        if (_policy.AuthType != SrtpPolicy.NullAuthentication)
-        {
-            AuthenticatePacket(pkt, index);
-            pkt.Append(_rbStore, 4);
-            pkt.Append(_tagStore, _policy.AuthTagLength);
-        }
-        _sentIndex++;
-        _sentIndex &= (int)(~0x80000000);       // clear possible overflow
     }
 
     /**
@@ -378,7 +320,7 @@ internal class SrtcpCryptoContext
 
         // The fixed header follows and fills the rest of the IV
         var buf = pkt.GetBuffer();
-        buf[0..8].CopyTo(_ivStore.AsMemory(8, 8));
+        buf[..8].CopyTo(_ivStore.AsMemory(8, 8));
 
         // Encrypted part excludes fixed header (8 bytes), index (4 bytes), and
         // authentication tag (variable according to policy)
@@ -387,7 +329,7 @@ internal class SrtcpCryptoContext
         SrtpCipherF8.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore, _cipherF8);
     }
 
-    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+    private readonly byte[] _tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
 
     /**
          * Authenticate a packet.
@@ -401,7 +343,7 @@ internal class SrtcpCryptoContext
         var buf = pkt.GetBuffer();
         var len = pkt.GetLength();
 
-        buf[0..len].CopyTo(_tempBuffer.AsMemory(0, len));
+        buf[..len].CopyTo(_tempBuffer.AsMemory(0, len));
 
         _mac.BlockUpdate(_tempBuffer, 0, len);
         _rbStore[0] = (byte)(index >> 24);
@@ -425,7 +367,7 @@ internal class SrtcpCryptoContext
          * @return true if this sequence number indicates the packet is not a
          * replayed one, false if not
          */
-    bool CheckReplay(int index)
+    private bool CheckReplay(int index)
     {
         // compute the index of previously received packet and its
         // delta to the new received packet
@@ -443,7 +385,7 @@ internal class SrtcpCryptoContext
             return false;
         }
 
-        if (((_replayWindow >> ((int)-delta)) & 0x1) != 0)
+        if (((_replayWindow >> (int)-delta) & 0x1) != 0)
         {
             /* Packet already received ! */
             return false;
@@ -491,7 +433,7 @@ internal class SrtcpCryptoContext
             ComputeIv(label);
             _cipherCtr.GetCipherStream(_cipher, _authKey, _policy.AuthKeyLength, _ivStore);
 
-            switch ((_policy.AuthType))
+            switch (_policy.AuthType)
             {
                 case SrtpPolicy.Hmacsha1Authentication:
                     var key = new KeyParameter(_authKey);

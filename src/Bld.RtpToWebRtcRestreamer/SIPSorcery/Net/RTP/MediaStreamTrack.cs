@@ -22,14 +22,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
 internal class MediaStreamTrack
 {
-    /// <summary>
-    /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
-    /// in RFC5576, this property will hold the values. The list can be used when
-    /// an RTP/RTCP packet is received and needs to be matched against a media type or
-    /// RTCP report.
-    /// </summary>
-    private readonly Dictionary<uint, SDPSsrcAttribute> _sdpSsrc = new();
-
     // The value used in the RTP Sequence Number header field for media packets.
     // Although valid values are all in the range of ushort, the underlying field is of type int, because Interlocked.CompareExchange is used to increment in a fast and thread-safe manner and there is no overload for ushort.
     private int _seqNum;
@@ -42,9 +34,10 @@ internal class MediaStreamTrack
     /// send and receive or only one of.</param>
     public MediaStreamTrack(
         VideoFormat format,
-        MediaStreamStatusEnum streamStatus) :
-        this(SDPMediaTypesEnum.video, new List<SDPAudioVideoMediaFormat> { new(format) }, streamStatus)
-    { }
+        MediaStreamStatusEnum streamStatus)
+        : this(SDPMediaTypesEnum.video, new List<SDPAudioVideoMediaFormat> { new(format) }, streamStatus)
+    {
+    }
 
     /// <summary>
     /// Creates a lightweight class to track a media stream track within an RTP session
@@ -60,35 +53,18 @@ internal class MediaStreamTrack
     /// to remove capabilities we don't support.</param>
     /// <param name="streamStatus">The initial stream status for the media track. Defaults to
     /// send receive.</param>
-    /// <param name="ssrcAttributes">Optional. If the track is being created from an SDP announcement this
-    /// parameter contains a list of the SSRC attributes that should then match the RTP header SSRC value
-    /// for this track.</param>
     private MediaStreamTrack(
         SDPMediaTypesEnum kind,
         List<SDPAudioVideoMediaFormat> capabilities,
-        MediaStreamStatusEnum streamStatus,
-        List<SDPSsrcAttribute> ssrcAttributes = null)
+        MediaStreamStatusEnum streamStatus)
     {
         Kind = kind;
         Capabilities = capabilities;
         StreamStatus = streamStatus;
         DefaultStreamStatus = streamStatus;
 
-        Ssrc = Convert.ToUInt32(Random.Shared.Next(0, Int32.MaxValue));
-        _seqNum = Convert.ToUInt16(Random.Shared.Next(0, UInt16.MaxValue));
-
-        // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
-        // RTP and RTCP packets received from the remote party.
-        if (ssrcAttributes?.Count > 0)
-        {
-            foreach (var ssrcAttr in ssrcAttributes)
-            {
-                if (!_sdpSsrc.ContainsKey(ssrcAttr.SSRC))
-                {
-                    _sdpSsrc.Add(ssrcAttr.SSRC, ssrcAttr);
-                }
-            }
-        }
+        Ssrc = Convert.ToUInt32(Random.Shared.Next(0, int.MaxValue));
+        _seqNum = Convert.ToUInt16(Random.Shared.Next(0, ushort.MaxValue));
     }
 
     /// <summary>
@@ -125,16 +101,7 @@ internal class MediaStreamTrack
     /// </summary>
     public MediaStreamStatusEnum StreamStatus { get; internal set; }
 
-    /// <summary>
-    /// Checks whether a SSRC value from an RTP header or RTCP report matches
-    /// a value expected for this track.
-    /// </summary>
-    /// <param name="ssrc">The SSRC value to check.</param>
-    /// <returns>True if the SSRC value is expected for this track. False if not.</returns>
-    public bool IsSsrcMatch(uint ssrc)
-    {
-        return ssrc == Ssrc || _sdpSsrc.ContainsKey(ssrc);
-    }
+    public string Cname { get;} = Guid.NewGuid().ToString();
 
     /// <summary>
     /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
@@ -153,7 +120,7 @@ internal class MediaStreamTrack
                 throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
             }
             expectedSeqNum = actualSeqNum;
-            var nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? 0 : (ushort)(actualSeqNum + 1);
+            var nextSeqNum = actualSeqNum >= ushort.MaxValue ? 0 : (ushort)(actualSeqNum + 1);
             actualSeqNum = Interlocked.CompareExchange(ref _seqNum, nextSeqNum, expectedSeqNum);
         } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
 

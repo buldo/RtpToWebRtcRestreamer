@@ -1,6 +1,6 @@
-﻿namespace Bld.RtpToWebRtcRestreamer;
+﻿namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 
-internal class RtpRestreamerControl :IRtpRestreamerControl
+internal class RtpRestreamerControl : IRtpRestreamerControl
 {
     private readonly WebRtcHostedService _service;
 
@@ -19,8 +19,8 @@ internal class RtpRestreamerControl :IRtpRestreamerControl
         await _service.ProcessClientAnswerAsync(peerId, sdpString);
     }
 
-    public void Stop()
+    public async Task StopAsync()
     {
-        _service.StopStreamer();
+        await _service.StopStreamerAsync();
     }
 }

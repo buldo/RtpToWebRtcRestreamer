@@ -1,5 +1,5 @@
 ﻿using System.Text;
-
+using Bld.RtpToWebRtcRestreamer.Restreamer;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Bld.RtpToWebRtcRestreamer.App.Controllers
@@ -16,9 +16,9 @@ namespace Bld.RtpToWebRtcRestreamer.App.Controllers
         }
 
         [HttpPost("stop")]
-        public void Stop()
+        public async Task Stop()
         {
-            _control.Stop();
+            await _control.StopAsync();
         }
 
         [HttpPost("sdp")]

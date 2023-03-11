@@ -12,5 +12,5 @@ public enum STUNClassTypesEnum
     Request = 0,
     Indication = 1,
     SuccessResponse = 2,
-    ErrorResponse = 3,
+    ErrorResponse = 3
 }

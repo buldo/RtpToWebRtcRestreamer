@@ -34,21 +34,6 @@ public static class Crypto
         return Random.Shared.Next(randomStart, randomEnd);
     }
 
-    public static uint GetRandomUInt(bool noZero = false)
-    {
-        var uint32Buffer = new byte[4];
-        Random.Shared.NextBytes(uint32Buffer);
-        var randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
-
-        if (noZero && randomUint == 0)
-        {
-            Random.Shared.NextBytes(uint32Buffer);
-            randomUint = BitConverter.ToUInt32(uint32Buffer, 0);
-        }
-
-        return randomUint;
-    }
-
     public static ulong GetRandomULong()
     {
         var uint64Buffer = new byte[8];

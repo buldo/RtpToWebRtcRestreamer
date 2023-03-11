@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using Bld.RtpToWebRtcRestreamer.Restreamer;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -30,28 +31,24 @@ internal class WebRtcHostedService : IHostedService
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        await StopStreamerAsync();
     }
 
-    public void StopStreamer()
+    public async Task StopStreamerAsync()
     {
-        _rtpRestreamer?.StopAsync();
+        if (_rtpRestreamer != null)
+        {
+            await _rtpRestreamer.StopAsync();
+        }
     }
 
     public async Task<(Guid PeerId, string Sdp)> AppendClient()
     {
         lock (_rtpRestreamerLock)
         {
-            if (_rtpRestreamer == null)
-            {
-                _rtpRestreamer = new RtpRestreamer(
-                    _configuration.RtpListenEndpoint,
-                    _loggerFactory
-                );
-                _rtpRestreamer.ConnectedClientsChanged += RtpRestreamerOnConnectedClientsChanged;
-            }
+            _rtpRestreamer ??= new RtpRestreamer(_configuration.RtpListenEndpoint, _loggerFactory);
         }
 
         if (!_rtpRestreamer.IsStarted)
@@ -64,21 +61,11 @@ internal class WebRtcHostedService : IHostedService
 
     public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)
     {
-        await _rtpRestreamer.ProcessClientAnswerAsync(peerId, sdpString);
-    }
-
-    private void RtpRestreamerOnConnectedClientsChanged(object? sender, ConnectedClientsChangedEventArgs e)
-    {
-        if (e.NewCount == 0)
+        if (_rtpRestreamer == null)
         {
-            try
-            {
-                _rtpRestreamer?.StopAsync().GetAwaiter().GetResult();
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Stop error");
-            }
+            return;
         }
+
+        await _rtpRestreamer.ProcessClientAnswerAsync(peerId, sdpString);
     }
 }

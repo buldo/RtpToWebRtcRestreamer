@@ -40,7 +40,6 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Collections;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Org.BouncyCastle.Asn1;
@@ -81,7 +80,7 @@ internal static class DtlsUtils
         return new RTCDtlsFingerprint
         {
             algorithm = digestAlgorithm.AlgorithmName.ToLower(),
-            value = hash.HexStr(':')
+            value = hash.AsSpan().HexStr(':')
         };
     }
 
@@ -100,7 +99,7 @@ internal static class DtlsUtils
         return new RTCDtlsFingerprint
         {
             algorithm = sha256.AlgorithmName.ToLower(),
-            value = sha256Hash.HexStr(':')
+            value = sha256Hash.AsSpan().HexStr(':')
         };
     }
 
@@ -146,7 +145,7 @@ internal static class DtlsUtils
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
         if (supportedSignatureAlgorithms != null)
         {
-            foreach (SignatureAndHashAlgorithm alg in supportedSignatureAlgorithms)
+            foreach (var alg in supportedSignatureAlgorithms)
             {
                 if (alg.Signature == signatureAlgorithm)
                 {
@@ -182,10 +181,10 @@ internal static class DtlsUtils
         // The Certificate Generator
         var certificateGenerator = new X509V3CertificateGenerator();
         certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new[] { new GeneralName(GeneralName.DnsName, "localhost"), new GeneralName(GeneralName.DnsName, "127.0.0.1") }));
-        certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier> { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
+        certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier> { new("1.3.6.1.5.5.7.3.1") }));
 
         // Serial Number
-        var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+        var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
         certificateGenerator.SetSerialNumber(serialNumber);
 
         // Issuer and Subject Name
@@ -233,7 +232,7 @@ internal static class DtlsUtils
         var certificate = tuple.certificate;
         var privateKey = tuple.privateKey;
         var tlsCertificate = LoadCertificateChain(protocolVersion, tlsCrypto,
-            new List<byte[]>() { certificate.GetEncoded() });
+            new List<byte[]> { certificate.GetEncoded() });
         return (tlsCertificate, privateKey);
     }
 
@@ -298,38 +297,34 @@ internal static class DtlsUtils
         }
     }
 
-    internal static Certificate LoadCertificateChain(
+    private static Certificate LoadCertificateChain(
         ProtocolVersion protocolVersion,
         TlsCrypto crypto,
         List<byte[]> resources)
     {
         if (TlsUtilities.IsTlsV13(protocolVersion))
         {
-            CertificateEntry[] certificateEntryList = new CertificateEntry[resources.Count];
-            for (int i = 0; i < resources.Count; ++i)
+            var certificateEntryList = new CertificateEntry[resources.Count];
+            for (var i = 0; i < resources.Count; ++i)
             {
-                TlsCertificate certificate = LoadCertificateResource(crypto, resources[i]);
+                var certificate = LoadCertificateResource(crypto, resources[i]);
 
                 // TODO[tls13] Add possibility of specifying e.g. CertificateStatus
-                IDictionary<int, byte[]> extensions = null;
-
-                certificateEntryList[i] = new CertificateEntry(certificate, extensions);
+                certificateEntryList[i] = new CertificateEntry(certificate, null);
             }
 
             // TODO[tls13] Support for non-empty request context
-            byte[] certificateRequestContext = TlsUtilities.EmptyBytes;
+            var certificateRequestContext = TlsUtilities.EmptyBytes;
 
             return new Certificate(certificateRequestContext, certificateEntryList);
         }
-        else
+
+        var chain = new TlsCertificate[resources.Count];
+        for (var i = 0; i < resources.Count; ++i)
         {
-            TlsCertificate[] chain = new TlsCertificate[resources.Count];
-            for (int i = 0; i < resources.Count; ++i)
-            {
-                chain[i] = LoadCertificateResource(crypto, resources[i]);
-            }
-            return new Certificate(chain);
+            chain[i] = LoadCertificateResource(crypto, resources[i]);
         }
+        return new Certificate(chain);
     }
 
     private static TlsCertificate LoadCertificateResource(TlsCrypto crypto, byte[] resource)

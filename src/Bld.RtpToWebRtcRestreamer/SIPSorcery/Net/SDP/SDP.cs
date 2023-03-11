@@ -106,7 +106,6 @@ using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Microsoft.Extensions.Logging;
 
@@ -138,10 +137,6 @@ internal class SDP
 
     private static readonly ILogger logger = Log.Logger;
 
-    private decimal Version = SDP_PROTOCOL_VERSION;
-
-    private string m_rawSdp;
-
     // Owner fields.
     private string Username = "-";       // Username of the session originator.
     public string SessionId = "-";      // Unique Id for the session.
@@ -156,7 +151,7 @@ internal class SDP
 
     public string SessionName = "sipsorcery";            // Common name of the session.
     public string Timing = DEFAULT_TIMING;
-    private List<string> BandwidthAttributes = new List<string>();
+    private List<string> BandwidthAttributes = new();
 
     // Optional fields.
     private string SessionDescription;
@@ -176,7 +171,7 @@ internal class SDP
     public SDPConnectionInformation Connection;
 
     // Media.
-    public List<SDPMediaAnnouncement> Media = new List<SDPMediaAnnouncement>();
+    public List<SDPMediaAnnouncement> Media = new();
 
     /// <summary>
     /// The stream status of this session. The default is sendrecv.
@@ -185,7 +180,7 @@ internal class SDP
     /// </summary>
     private MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; }
 
-    private List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
+    private List<string> ExtraSessionAttributes = new();  // Attributes that were not recognised.
 
     private SDP()
     { }
@@ -193,7 +188,7 @@ internal class SDP
     public SDP(IPAddress address)
     {
         AddressOrHost = address.ToString();
-        AddressType = (address.AddressFamily == AddressFamily.InterNetworkV6) ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
+        AddressType = address.AddressFamily == AddressFamily.InterNetworkV6 ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
     }
 
     public static SDP ParseSDPDescription(string sdpDescription)
@@ -203,7 +198,6 @@ internal class SDP
             if (sdpDescription != null && sdpDescription.Trim().Length > 0)
             {
                 var sdp = new SDP();
-                sdp.m_rawSdp = sdpDescription;
                 var mLineIndex = 0;
                 SDPMediaAnnouncement activeAnnouncement = null;
 
@@ -221,7 +215,7 @@ internal class SDP
                     switch (sdpLineTrimmed)
                     {
                         case var l when l.StartsWith("v="):
-                            if (!Decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
+                            if (!decimal.TryParse(sdpLineTrimmed.Substring(2), out _))
                             {
                                 logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: " + sdpLine + ".");
                             }
@@ -231,7 +225,7 @@ internal class SDP
                             var ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
                             sdp.Username = ownerFields[0];
                             sdp.SessionId = ownerFields[1];
-                            Int32.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
+                            int.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
                             sdp.NetworkType = ownerFields[3];
                             sdp.AddressType = ownerFields[4];
                             sdp.AddressOrHost = ownerFields[5];
@@ -302,7 +296,7 @@ internal class SDP
                                 var announcement = new SDPMediaAnnouncement();
                                 announcement.MLineIndex = mLineIndex;
                                 announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-                                Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+                                int.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
                                 announcement.Transport = mediaMatch.Result("${transport}");
                                 announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
                                 if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video)
@@ -391,10 +385,6 @@ internal class SDP
                         case var x when x.StartsWith($"a={ICE_CANDIDATE_ATTRIBUTE_PREFIX}"):
                             if (activeAnnouncement != null)
                             {
-                                if (activeAnnouncement.IceCandidates == null)
-                                {
-                                    activeAnnouncement.IceCandidates = new List<string>();
-                                }
                                 activeAnnouncement.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
                             }
                             else
@@ -417,7 +407,7 @@ internal class SDP
                                     if (formatAttributeMatch.Success) {
                                         var extensionId = formatAttributeMatch.Result("${id}");
                                         var uri = formatAttributeMatch.Result("${url}");
-                                        if (Int32.TryParse(extensionId, out var id)) {
+                                        if (int.TryParse(extensionId, out var id)) {
                                             activeAnnouncement.HeaderExtensions.Add(id, new RTPHeaderExtension(id, uri));
                                         }
                                         else {
@@ -440,7 +430,7 @@ internal class SDP
                                         var formatID = formatAttributeMatch.Result("${id}");
                                         var rtpmap = formatAttributeMatch.Result("${attribute}");
 
-                                        if (Int32.TryParse(formatID, out var id))
+                                        if (int.TryParse(formatID, out var id))
                                         {
                                             if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                             {
@@ -504,7 +494,7 @@ internal class SDP
                                         var avFormatID = formatAttributeMatch.Result("${id}");
                                         var fmtp = formatAttributeMatch.Result("${attribute}");
 
-                                        if (Int32.TryParse(avFormatID, out var id))
+                                        if (int.TryParse(avFormatID, out var id))
                                         {
                                             if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                             {
@@ -602,7 +592,7 @@ internal class SDP
                                 {
                                     if (uint.TryParse(fields[i], out var ssrc))
                                     {
-                                        activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null, activeAnnouncement.SsrcGroupID));
+                                        activeAnnouncement.SsrcAttributes.Add(new SDPSsrcAttribute(ssrc, null));
                                     }
                                 }
                             }
@@ -622,7 +612,7 @@ internal class SDP
                                     var ssrcAttribute = activeAnnouncement.SsrcAttributes.FirstOrDefault(x => x.SSRC == ssrc);
                                     if (ssrcAttribute == null)
                                     {
-                                        ssrcAttribute = new SDPSsrcAttribute(ssrc, null, null);
+                                        ssrcAttribute = new SDPSsrcAttribute(ssrc, null);
                                         activeAnnouncement.SsrcAttributes.Add(ssrcAttribute);
                                     }
 
@@ -657,7 +647,7 @@ internal class SDP
                             {
                                 activeAnnouncement.SctpMap = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
 
-                                (var sctpPortStr, _, var maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
+                                var (sctpPortStr, _, maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
 
                                 if (ushort.TryParse(sctpPortStr, out var sctpPort))
                                 {
@@ -732,10 +722,8 @@ internal class SDP
                             {
                                 var pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                 var pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
-                                activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
 
                                 pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
-                                activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
 
                                 pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
                                 activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;
@@ -788,7 +776,7 @@ internal class SDP
             "v=" + SDP_PROTOCOL_VERSION + CRLF +
             "o=" + Owner + CRLF +
             "s=" + SessionName + CRLF +
-            ((Connection != null) ? Connection.ToString() : null);
+            (Connection != null ? Connection.ToString() : null);
         foreach (var bandwidth in BandwidthAttributes)
         {
             sdp += "b=" + bandwidth + CRLF;
@@ -809,7 +797,7 @@ internal class SDP
         }
         sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
 
-        sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
+        sdp += Group == null ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
 
         foreach (var extra in ExtraSessionAttributes)
         {
@@ -824,7 +812,7 @@ internal class SDP
         //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         foreach (var media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         {
-            sdp += (media == null) ? null : media.ToString();
+            sdp += media?.ToString();
         }
 
         return sdp;

@@ -36,11 +36,6 @@ internal enum RTCIceConnectionState
     checking,
 
     /// <summary>
-    /// What is this state for?
-    /// </summary>
-    //completed,
-
-    /// <summary>
     /// The checks have been successful and the connection has been established.
     /// </summary>
     connected

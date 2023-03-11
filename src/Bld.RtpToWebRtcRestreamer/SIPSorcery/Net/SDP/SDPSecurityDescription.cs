@@ -63,7 +63,6 @@ internal class SDPSecurityDescription
     }
     internal class KeyParameter
     {
-        private const string COLON = ":";
         private const string PIPE = "|";
         private const string KEY_METHOD = "inline";
         private byte[] m_key;
@@ -446,9 +445,10 @@ internal class SDPSecurityDescription
         private SrtpSessionParams SrtpSessionParam
         {
             get;
-            set;
         }
-        [SuppressMessage("ReSharper", "UnusedMember.Global")]
+
+
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         private enum FecTypes
         {
             unknown,
@@ -572,8 +572,7 @@ internal class SDPSecurityDescription
                 if (p.StartsWith(KDR_PREFIX))
                 {
                     var sKdr = p.Substring(KDR_PREFIX.Length);
-                    uint kdr = 0;
-                    if (uint.TryParse(sKdr, out kdr))
+                    if (uint.TryParse(sKdr, out var kdr))
                     {
                         return new SessionParameter(SrtpSessionParams.kdr) { Kdr = kdr };
                     }
@@ -660,7 +659,6 @@ internal class SDPSecurityDescription
     private List<KeyParameter> KeyParams
     {
         get;
-        set;
     }
     private SessionParameter SessionParam
     {

@@ -14,11 +14,11 @@ internal class RtpHeader
     private int CSRCCount;                               // 4 bits
     public int MarkerBit;                               // 1 bit.
     public int PayloadType;                             // 7 bits.
-    public UInt16 SequenceNumber;                           // 16 bits.
+    public ushort SequenceNumber;                           // 16 bits.
     public uint Timestamp;                                  // 32 bits.
     public uint SyncSource;                                 // 32 bits.
-    private UInt16 ExtensionProfile;                         // 16 bits.
-    private UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
+    private ushort ExtensionProfile;                         // 16 bits.
+    private ushort ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
     private byte[] ExtensionPayload;
 
     public int PayloadSize;
@@ -26,7 +26,7 @@ internal class RtpHeader
 
     public int Length
     {
-        get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
+        get { return MIN_HEADER_LEN + CSRCCount * 4 + (HeaderExtensionFlag == 0 ? 0 : 4 + ExtensionLength * 4); }
     }
 
     /// <summary>
@@ -56,14 +56,14 @@ internal class RtpHeader
         var headerExtensionLength = 0;
         var headerAndCSRCLength = 12 + 4 * CSRCCount;
 
-        if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
+        if (HeaderExtensionFlag == 1 && packet.Length >= headerAndCSRCLength + 4)
         {
             ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet[(12 + 4 * CSRCCount)..]);
             headerExtensionLength += 2;
             ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet[(14 + 4 * CSRCCount)..]);
             headerExtensionLength += 2 + ExtensionLength * 4;
 
-            if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
+            if (ExtensionLength > 0 && packet.Length >= headerAndCSRCLength + 4 + ExtensionLength * 4)
             {
                 ExtensionPayload = new byte[ExtensionLength * 4];
                 packet[(headerAndCSRCLength + 4)..].CopyTo(ExtensionPayload[(ExtensionLength * 4)..]);

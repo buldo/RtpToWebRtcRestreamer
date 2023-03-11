@@ -33,9 +33,7 @@ internal struct SDPAudioVideoMediaFormat
 {
     public const int DYNAMIC_ID_MIN = 96;
     private const int DYNAMIC_ID_MAX = 127;
-    public const int DEFAULT_AUDIO_CHANNEL_COUNT = 1;
-
-    private static SDPAudioVideoMediaFormat Empty = new SDPAudioVideoMediaFormat { _isEmpty = true };
+    private const int DEFAULT_AUDIO_CHANNEL_COUNT = 1;
 
     /// <summary>
     /// Indicates whether the format is for audio or video.
@@ -94,19 +92,6 @@ internal struct SDPAudioVideoMediaFormat
     public string Fmtp { get; }
 
     /// <summary>
-    /// The standard name of the media format.
-    /// <code>
-    /// // Example
-    /// a=rtpmap:0 PCMU/8000                <-- "PCMU" is the media format name.
-    /// a=rtpmap:101 telephone-event/8000
-    /// a=fmtp:101 0-16
-    /// </code>
-    /// </summary>
-    //public string Name { get; set; }
-
-    private bool _isEmpty;
-
-    /// <summary>
     /// Creates a new SDP media format for a well known media type. Well known type are those that use
     /// ID's less than 96 and don't require rtpmap or fmtp attributes.
     /// </summary>
@@ -117,7 +102,6 @@ internal struct SDPAudioVideoMediaFormat
         ID = (int)knownFormat;
         Rtpmap = null;
         Fmtp = null;
-        _isEmpty = false;
 
         if (Kind == SDPMediaTypesEnum.audio)
         {
@@ -151,32 +135,6 @@ internal struct SDPAudioVideoMediaFormat
         ID = id;
         Rtpmap = rtpmap;
         Fmtp = fmtp;
-        _isEmpty = false;
-    }
-
-    /// <summary>
-    /// Creates a new SDP media format for a dynamic media type. Dynamic media types are those that use
-    /// ID's between 96 and 127 inclusive and require an rtpmap attribute and optionally an fmtp attribute.
-    /// </summary>
-    public SDPAudioVideoMediaFormat(SDPMediaTypesEnum kind, int id, string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT, string fmtp = null)
-    {
-        if (id < 0 || id > DYNAMIC_ID_MAX)
-        {
-            throw new ApplicationException($"SDP media format ID must be between 0 and {DYNAMIC_ID_MAX}.");
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentNullException("name", "The name parameter cannot be empty for a dynamic SDPMediaFormat.");
-        }
-
-        Kind = kind;
-        ID = id;
-        Rtpmap = null;
-        Fmtp = fmtp;
-        _isEmpty = false;
-
-        Rtpmap = SetRtpmap(name, clockRate, channels);
     }
 
     /// <summary>
@@ -191,7 +149,6 @@ internal struct SDPAudioVideoMediaFormat
         ID = videoFormat.FormatID;
         Rtpmap = null;
         Fmtp = videoFormat.Parameters;
-        _isEmpty = false;
 
         Rtpmap = SetRtpmap(videoFormat.FormatName, videoFormat.ClockRate);
     }
@@ -199,8 +156,7 @@ internal struct SDPAudioVideoMediaFormat
     private string SetRtpmap(string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT)
         =>
             Kind == SDPMediaTypesEnum.video ? $"{name}/{clockRate}" :
-            (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
-    public bool IsEmpty() => _isEmpty;
+            channels == DEFAULT_AUDIO_CHANNEL_COUNT ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
     public int ClockRate() => Kind == SDPMediaTypesEnum.video ? ToVideoFormat().ClockRate : ToAudioFormat().ClockRate;
 
     public string Name()
@@ -221,16 +177,16 @@ internal struct SDPAudioVideoMediaFormat
     }
 
     public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
-        new SDPAudioVideoMediaFormat(format.Kind, format.ID, rtpmap, format.Fmtp);
+        new(format.Kind, format.ID, rtpmap, format.Fmtp);
 
     public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp, SDPAudioVideoMediaFormat format) =>
-        new SDPAudioVideoMediaFormat(format.Kind, format.ID, format.Rtpmap, fmtp);
+        new(format.Kind, format.ID, format.Rtpmap, fmtp);
 
     /// <summary>
     /// Maps an audio SDP media type to a media abstraction layer audio format.
     /// </summary>
     /// <returns>An audio format value.</returns>
-    public AudioFormat ToAudioFormat()
+    private AudioFormat ToAudioFormat()
     {
         // Rtpmap takes priority over well known media type as ID's can be changed.
         if (Rtpmap != null && TryParseRtpmap(Rtpmap, out var name, out var rtpClockRate, out var channels))
@@ -262,7 +218,7 @@ internal struct SDPAudioVideoMediaFormat
     /// Maps a video SDP media type to a media abstraction layer video format.
     /// </summary>
     /// <returns>A video format value.</returns>
-    public VideoFormat ToVideoFormat()
+    private VideoFormat ToVideoFormat()
     {
         // Rtpmap taks priority over well known media type as ID's can be changed.
         // But we don't currently support any of the well known video types any way.
@@ -341,32 +297,5 @@ internal struct SDPAudioVideoMediaFormat
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// Attempts to get a common SDP media format that supports telephone events.
-    /// If compatible an RTP event format will be returned that matches the local format with the remote format.
-    /// </summary>
-    /// <param name="a">The first of supported media formats.</param>
-    /// <param name="b">The second of supported media formats.</param>
-    /// <returns>An SDP media format with a compatible RTP event format.</returns>
-    public static SDPAudioVideoMediaFormat GetCommonRtpEventFormat(List<SDPAudioVideoMediaFormat> a, List<SDPAudioVideoMediaFormat> b)
-    {
-        if (a == null || b == null || a.Count == 0 || b.Count() == 0)
-        {
-            return Empty;
-        }
-
-        // Check if RTP events are supported and if required adjust the local format ID.
-        var aEventFormat = a.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
-        var bEventFormat = b.FirstOrDefault(x => x.Name()?.ToLower() == SDP.TELEPHONE_EVENT_ATTRIBUTE);
-
-        if (!aEventFormat.IsEmpty() && !bEventFormat.IsEmpty())
-        {
-            // Both support RTP events. If using different format ID's choose the first one.
-            return aEventFormat;
-        }
-
-        return Empty;
     }
 }

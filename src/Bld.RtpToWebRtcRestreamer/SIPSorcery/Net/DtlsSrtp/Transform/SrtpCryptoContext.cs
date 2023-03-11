@@ -91,90 +91,65 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
 internal class SrtpCryptoContext
 {
-    /**
-         * The replay check windows size
-         */
-    private readonly long _replayWindowSize = 64;
-
-    /**
-         * Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
-         */
+    /// <summary>
+    /// Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
+    /// </summary>
     private int _roc;
 
-    /**
-         * Roll-Over-Counter guessed from packet
-         */
-    private int _guessedRoc;
-
-    /**
-         * RTP sequence number of the packet current processing
-         */
-    private int _seqNum;
-
-    /**
-         * Whether we have the sequence number of current packet
-         */
-    private bool _seqNumSet;
-
-    /**
-         * Key Derivation Rate, used to derive session keys from master keys
-         */
+    /// <summary>
+    /// Key Derivation Rate, used to derive session keys from master keys
+    /// </summary>
     private readonly long _keyDerivationRate;
 
-    /**
-         * Bit mask for replay check
-         */
-    private long _replayWindow;
-
-    /**
-         * Master encryption key
-         */
+    /// <summary>
+    /// Master encryption key
+    /// </summary>
     private readonly byte[] _masterKey;
 
-    /**
-         * Master salting key
-         */
+    /// <summary>
+    /// Master salting key
+    /// </summary>
     private readonly byte[] _masterSalt;
 
-    /**
-         * Derived session encryption key
-         */
+    /// <summary>
+    /// Derived session encryption key
+    /// </summary>
     private readonly byte[] _encKey;
 
-    /**
-         * Derived session authentication key
-         */
+    /// <summary>
+    /// Derived session authentication key
+    /// </summary>
     private readonly byte[] _authKey;
 
-    /**
-         * Derived session salting key
-         */
+    /// <summary>
+    /// Derived session salting key
+    /// </summary>
     private readonly byte[] _saltKey;
 
-    /**
-         * Encryption / Authentication policy for this session
-         */
+    /// <summary>
+    /// Encryption / Authentication policy for this session
+    /// </summary>
     private readonly SrtpPolicy _policy;
 
-    /**
-         * The HMAC object we used to do packet authentication
-         */
+    /// <summary>
+    /// The HMAC object we used to do packet authentication
+    /// </summary>
     private readonly IMac _mac;
 
-    /**
-         * The symmetric cipher engines we need here
-         */
+    /// <summary>
+    /// The symmetric cipher engines we need here
+    /// </summary>
     private readonly IBlockCipher _cipher;
 
-    /**
-         * Used inside F8 mode only
-         */
+    /// <summary>
+    /// Used inside F8 mode only
+    /// </summary>
     private readonly IBlockCipher _cipherF8;
 
     /**
          * implements the counter cipher mode for RTP according to RFC 3711
          */
-    private readonly SrtpCipherCtr _cipherCtr = new SrtpCipherCtr();
+    private readonly SrtpCipherCtr _cipherCtr = new();
 
     /**
          * Temp store.
@@ -191,13 +166,7 @@ internal class SrtpCryptoContext
          */
     private readonly byte[] _rbStore = new byte[4];
 
-    /**
-         * this is a working store, used by some methods to avoid new operations the
-         * methods must use this only to store results for immediate processing
-         */
-    private readonly byte[] _tempStore = new byte[100];
-
-    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+    private readonly byte[] _tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
 
     /**
          * Construct a normal SRTPCryptoContext based on the given parameters.
@@ -229,10 +198,7 @@ internal class SrtpCryptoContext
         byte[] masterS, SrtpPolicy policyIn)
     {
         _roc = rocIn;
-        _guessedRoc = 0;
-        _seqNum = 0;
         _keyDerivationRate = kdr;
-        _seqNumSet = false;
 
         _policy = policyIn;
 
@@ -345,88 +311,6 @@ internal class SrtpCryptoContext
     }
 
     /**
-         * Transform a SRTP packet into a RTP packet. This method is called when a
-         * SRTP packet is received.
-         *
-         * Operations done by the this operation include: Authentication check,
-         * Packet replay check and Decryption.
-         *
-         * Both encryption and authentication functionality can be turned off as
-         * long as the SRTPPolicy used in this SRTPCryptoContext requires no
-         * encryption and no authentication. Then the packet will be sent out
-         * untouched. However this is not encouraged. If no SRTP feature is enabled,
-         * then we shall not use SRTP TransformConnector. We should use the original
-         * method (RTPManager managed transportation) instead.
-         *
-         * @param pkt
-         *            the RTP packet that is just received
-         * @return true if the packet can be accepted false if the packet failed
-         *         authentication or failed replay check
-         */
-    public bool ReverseTransformPacket(RawPacket pkt)
-    {
-        var seqNo = pkt.GetSequenceNumber();
-
-        if (!_seqNumSet)
-        {
-            _seqNumSet = true;
-            _seqNum = seqNo;
-        }
-
-        // Guess the SRTP index (48 bit), see rFC 3711, 3.3.1
-        // Stores the guessed roc in this.guessedROC
-        var guessedIndex = GuessIndex(seqNo);
-
-        // Replay control
-        if (!CheckReplay(guessedIndex))
-        {
-            return false;
-        }
-
-        // Authenticate packet
-        if (_policy.AuthType != SrtpPolicy.NullAuthentication)
-        {
-            var tagLength = _policy.AuthTagLength;
-
-            // get original authentication and store in tempStore
-            pkt.ReadRegionToBuff(pkt.GetLength() - tagLength, tagLength, _tempStore);
-            pkt.Shrink(tagLength);
-
-            // save computed authentication in tagStore
-            AuthenticatePacketHmcsha1(pkt, _guessedRoc);
-
-            for (var i = 0; i < tagLength; i++)
-            {
-                if ((_tempStore[i] & 0xff) != (_tagStore[i] & 0xff))
-                {
-                    return false;
-                }
-            }
-        }
-
-        // Decrypt packet
-        switch (_policy.EncType)
-        {
-            case SrtpPolicy.AescmEncryption:
-            case SrtpPolicy.TwofishEncryption:
-                // using Counter Mode encryption
-                ProcessPacketAescm(pkt);
-                break;
-
-            case SrtpPolicy.Aesf8Encryption:
-            case SrtpPolicy.Twofishf8Encryption:
-                // using F8 Mode encryption
-                ProcessPacketAesf8(pkt);
-                break;
-
-            default:
-                return false;
-        }
-        Update(seqNo, guessedIndex);
-        return true;
-    }
-
-    /**
          * Perform Counter Mode AES encryption / decryption
          *
          * @param pkt
@@ -475,7 +359,7 @@ internal class SrtpCryptoContext
         // 11 bytes of the RTP header are the 11 bytes of the iv
         // the first byte of the RTP header is not used.
         var buf = pkt.GetBuffer();
-        buf[0..12].CopyTo(_ivStore);
+        buf[..12].CopyTo(_ivStore);
 
         _ivStore[0] = 0;
 
@@ -502,7 +386,7 @@ internal class SrtpCryptoContext
     private void AuthenticatePacketHmcsha1(RawPacket pkt, int rocIn)
     {
         var buf = pkt.GetBuffer();
-        var len = (int)buf.Length;
+        var len = buf.Length;
         buf.CopyTo(_tempBuffer);
         _mac.BlockUpdate(_tempBuffer, 0, len);
         _rbStore[0] = (byte)(rocIn >> 24);
@@ -513,52 +397,6 @@ internal class SrtpCryptoContext
         _mac.DoFinal(_tagStore, 0);
     }
 
-    /**
-         * Checks if a packet is a replayed on based on its sequence number.
-         *
-         * This method supports a 64 packet history relative the the given sequence
-         * number.
-         *
-         * Sequence Number is guaranteed to be real (not faked) through
-         * authentication.
-         *
-         * @param seqNo
-         *            sequence number of the packet
-         * @param guessedIndex
-         *            guessed roc
-         * @return true if this sequence number indicates the packet is not a
-         *         replayed one, false if not
-         */
-    bool CheckReplay(long guessedIndex)
-    {
-        // compute the index of previously received packet and its
-        // delta to the new received packet
-#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-        var localIndex = (((long)_roc) << 16) | _seqNum;
-#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
-        var delta = guessedIndex - localIndex;
-
-        if (delta > 0)
-        {
-            /* Packet not yet received */
-            return true;
-        }
-
-        if (-delta > _replayWindowSize)
-        {
-            /* Packet too old */
-            return false;
-        }
-
-        if (((_replayWindow >> ((int)-delta)) & 0x1) != 0)
-        {
-            /* Packet already received ! */
-            return false;
-        }
-
-        /* Packet not yet received */
-        return true;
-    }
 
     /**
          * Compute the initialization vector, used later by encryption algorithms,
@@ -580,7 +418,7 @@ internal class SrtpCryptoContext
         }
         else
         {
-            keyId = ((label << 48) | (index / _keyDerivationRate));
+            keyId = (label << 48) | (index / _keyDerivationRate);
         }
         for (var i = 0; i < 7; i++)
         {
@@ -618,7 +456,7 @@ internal class SrtpCryptoContext
             ComputeIv(label, index);
             _cipherCtr.GetCipherStream(_cipher, _authKey, _policy.AuthKeyLength, _ivStore);
 
-            switch ((_policy.AuthType))
+            switch (_policy.AuthType)
             {
                 case SrtpPolicy.Hmacsha1Authentication:
                     var key = new KeyParameter(_authKey);
@@ -642,85 +480,6 @@ internal class SrtpCryptoContext
         encryptionKey = new KeyParameter(_encKey);
         _cipher.Init(true, encryptionKey);
         Arrays.Fill(_encKey, 0);
-    }
-
-    /**
-         * Compute (guess) the new SRTP index based on the sequence number of a
-         * received RTP packet.
-         *
-         * @param seqNo
-         *            sequence number of the received RTP packet
-         * @return the new SRTP packet index
-         */
-    private long GuessIndex(int seqNo)
-    {
-        if (_seqNum < 32768)
-        {
-            if (seqNo - _seqNum > 32768)
-            {
-                _guessedRoc = _roc - 1;
-            }
-            else
-            {
-                _guessedRoc = _roc;
-            }
-        }
-        else
-        {
-            if (_seqNum - 32768 > seqNo)
-            {
-                _guessedRoc = _roc + 1;
-            }
-            else
-            {
-                _guessedRoc = _roc;
-            }
-        }
-
-#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-        return ((long)_guessedRoc) << 16 | seqNo;
-#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
-    }
-
-    /**
-         * Update the SRTP packet index.
-         *
-         * This method is called after all checks were successful. See section 3.3.1
-         * in RFC3711 for detailed description.
-         *
-         * @param seqNo
-         *            sequence number of the accepted packet
-         * @param guessedIndex
-         *            guessed roc
-         */
-    private void Update(int seqNo, long guessedIndex)
-    {
-#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-        var delta = guessedIndex - (((long)_roc) << 16 | _seqNum);
-#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
-
-        /* update the replay bit mask */
-        if (delta > 0)
-        {
-            _replayWindow = _replayWindow << (int)delta;
-            _replayWindow |= 1;
-        }
-        else
-        {
-#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
-            _replayWindow |= (1 << (int)delta);
-#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
-        }
-
-        if (seqNo > _seqNum)
-        {
-            _seqNum = seqNo & 0xffff;
-        }
-        if (_guessedRoc > _roc)
-        {
-            _roc = _guessedRoc;
-            _seqNum = seqNo & 0xffff;
-        }
     }
 
     /**

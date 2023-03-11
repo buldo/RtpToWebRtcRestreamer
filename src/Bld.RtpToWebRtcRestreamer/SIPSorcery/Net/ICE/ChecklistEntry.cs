@@ -32,7 +32,7 @@ internal class ChecklistEntry : IComparable
     private static readonly ILogger Logger = Log.Logger;
 
     //Previous RequestIds
-    private readonly List<string> _cachedRequestTransactionIDs = new List<string>();
+    private readonly List<string> _cachedRequestTransactionIDs = new();
 
     public readonly RTCIceCandidate LocalCandidate;
     public readonly RTCIceCandidate RemoteCandidate;
@@ -74,7 +74,7 @@ internal class ChecklistEntry : IComparable
         {
             ulong priority = Math.Min(LocalPriority, RemotePriority);
             priority = priority << 32;
-            priority += 2u * (ulong)Math.Max(LocalPriority, RemotePriority) + (ulong)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
+            priority += 2u * (ulong)Math.Max(LocalPriority, RemotePriority) + (ulong)(IsLocalController ? LocalPriority > RemotePriority ? 1 : 0
                 : RemotePriority > LocalPriority ? 1 : 0);
 
             return priority;
@@ -127,7 +127,7 @@ internal class ChecklistEntry : IComparable
     /// <summary>
     /// This field records the time a Create Permissions response was received.
     /// </summary>
-    public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
+    public DateTime TurnPermissionsResponseAt { get; private set; } = DateTime.MinValue;
 
     /// <summary>
     /// If a candidate has been nominated this field records the time the last
@@ -173,12 +173,12 @@ internal class ChecklistEntry : IComparable
     /// <summary>
     /// Compare method to allow the checklist to be sorted in priority order.
     /// </summary>
-    public int CompareTo(Object other)
+    public int CompareTo(object other)
     {
-        if (other is ChecklistEntry)
+        if (other is ChecklistEntry entry)
         {
             //return Priority.CompareTo((other as ChecklistEntry).Priority);
-            return (other as ChecklistEntry).Priority.CompareTo(Priority);
+            return entry.Priority.CompareTo(Priority);
         }
 
         throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");

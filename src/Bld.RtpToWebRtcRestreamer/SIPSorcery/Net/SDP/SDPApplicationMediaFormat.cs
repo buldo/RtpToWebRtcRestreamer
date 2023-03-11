@@ -11,7 +11,7 @@
 // History:
 // 17 OCt 2020	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -19,29 +19,27 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 
 internal struct SDPApplicationMediaFormat
 {
-    public string ID;
+    private readonly string _id;
 
-    public string Rtpmap;
+    public string Rtpmap { get; }
 
-    public string Fmtp;
+    public string Fmtp { get; }
 
     public SDPApplicationMediaFormat(string id)
     {
-        ID = id;
+        _id = id;
         Rtpmap = null;
         Fmtp = null;
     }
 
     public SDPApplicationMediaFormat(string id, string rtpmap, string fmtp)
     {
-        ID = id;
+        _id = id;
         Rtpmap = rtpmap;
         Fmtp = fmtp;
     }
 
-    public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) =>
-        new SDPApplicationMediaFormat(ID, rtpmap, Fmtp);
+    public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) => new(_id, rtpmap, Fmtp);
 
-    public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) =>
-        new SDPApplicationMediaFormat(ID, Rtpmap, fmtp);
+    public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) => new(_id, Rtpmap, fmtp);
 }

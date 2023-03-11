@@ -17,12 +17,12 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
 
 internal class STUNChangeRequestAttribute : STUNAttribute
 {
-    private const UInt16 CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
+    private const ushort CHANGEREQUEST_ATTRIBUTE_LENGTH = 4;
 
     private bool ChangeAddress;
     private bool ChangePort;
 
-    public override UInt16 PaddedLength
+    public override ushort PaddedLength
     {
         get { return CHANGEREQUEST_ATTRIBUTE_LENGTH; }
     }

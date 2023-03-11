@@ -28,8 +28,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
 internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 {
-    private static readonly int[] DefaultCipherSuites = new int[]
-    {
+    private static readonly int[] DefaultCipherSuites = {
         /*
          * TLS 1.3
          */
@@ -59,13 +58,13 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
         CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
         CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA
     };
 
     private static readonly ILogger Logger = Log.Logger;
 
-    readonly Certificate _mCertificateChain;
-    readonly AsymmetricKeyParameter _mPrivateKey;
+    private readonly Certificate _mCertificateChain;
+    private readonly AsymmetricKeyParameter _mPrivateKey;
 
     private UseSrtpData _serverSrtpData;
 
@@ -91,7 +90,14 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 
     public event Action<AlertLevelsEnum, AlertTypesEnum, string> OnAlert;
 
-    public bool ForceUseExtendedMasterSecret { get; set; } = true;
+    public Certificate RemoteCertificate => ClientCertificate;
+    public bool IsClient => false;
+    public SrtpPolicy SrtpPolicy => _srtpPolicy;
+    public SrtpPolicy SrtcpPolicy => _srtcpPolicy;
+    public byte[] SrtpMasterServerKey => _srtpMasterServerKey;
+    public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
+    public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
+    public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
 
     private Certificate ClientCertificate { get; set; }
 
@@ -227,10 +233,9 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         {
             foreach (var sigAlgUncasted in sigAlgs)
             {
-                var sigAlg = sigAlgUncasted as SignatureAndHashAlgorithm;
-                if (sigAlg != null && sigAlg.Signature == SignatureAlgorithm.rsa)
+                if (sigAlgUncasted != null && sigAlgUncasted.Signature == SignatureAlgorithm.rsa)
                 {
-                    signatureAndHashAlgorithm = sigAlg;
+                    signatureAndHashAlgorithm = sigAlgUncasted;
                     break;
                 }
             }
@@ -244,12 +249,12 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     }
     public override bool RequiresExtendedMasterSecret()
     {
-        return ForceUseExtendedMasterSecret;
+        return true;
     }
 
     public override int[] GetCipherSuites()
     {
-        return new int[]
+        return new []
         {
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
             //CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -268,7 +273,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA
         };
     }
 
@@ -297,7 +302,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         var alertMsg = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
-        alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
+        alertMsg += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
         if (alertDescription == AlertTypesEnum.CloseNotify.GetHashCode())
         {
@@ -327,7 +332,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         var alertMsg = $"{AlertLevel.GetText(alertLevel)}";
-        alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
+        alertMsg += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
         if (alertType == AlertTypesEnum.CloseNotify)
         {
@@ -353,41 +358,6 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         {
             Logger.LogWarning("DTLS server received a client handshake without renegotiation support.");
         }
-    }
-
-    public SrtpPolicy GetSrtpPolicy()
-    {
-        return _srtpPolicy;
-    }
-
-    public SrtpPolicy GetSrtcpPolicy()
-    {
-        return _srtcpPolicy;
-    }
-
-    public byte[] GetSrtpMasterServerKey()
-    {
-        return _srtpMasterServerKey;
-    }
-
-    public byte[] GetSrtpMasterServerSalt()
-    {
-        return _srtpMasterServerSalt;
-    }
-
-    public byte[] GetSrtpMasterClientKey()
-    {
-        return _srtpMasterClientKey;
-    }
-
-    public byte[] GetSrtpMasterClientSalt()
-    {
-        return _srtpMasterClientSalt;
-    }
-
-    public bool IsClient()
-    {
-        return false;
     }
 
     private void PrepareSrtpSharedSecret()
@@ -441,7 +411,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
-        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+        Buffer.BlockCopy(sharedSecret, 2 * keyLen + saltLen, _srtpMasterServerSalt, 0, saltLen);
     }
 
     private byte[] GetKeyingMaterial(int length)
@@ -473,7 +443,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         var seedLength = cr.Length + sr.Length;
         if (contextValue != null)
         {
-            seedLength += (2 + contextValue.Length);
+            seedLength += 2 + contextValue.Length;
         }
 
         var seed = new byte[seedLength];
@@ -497,10 +467,5 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         return TlsUtilities.Prf(m_context.SecurityParameters, sp.MasterSecret, asciiLabel, seed, length).Extract();
-    }
-
-    public Certificate GetRemoteCertificate()
-    {
-        return ClientCertificate;
     }
 }
