@@ -25,7 +25,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 ///     The Session Description offer/answer mechanisms are detailed in
 ///     https://tools.ietf.org/html/rfc8829 "JavaScript Session Establishment Protocol (JSEP)".
 /// </remarks>
-internal class RtcPeerConnection : IDisposable
+internal class RtcPeerConnection
 {
     private readonly Func<RtcPeerConnection, RTCPeerConnectionState, Task> _peerConnectionChangeHandler;
     private static readonly ILogger Logger = Log.Logger;
@@ -119,15 +119,7 @@ internal class RtcPeerConnection : IDisposable
     ///     Indicates whether this session is using video.
     /// </summary>
     private bool HasVideo => _videoStream.HasVideo;
-
-    /// <summary>
-    ///     Close the session if the instance is out of scope.
-    /// </summary>
-    public void Dispose()
-    {
-        CloseAsync("disposed");
-    }
-
+    
     /// <summary>
     ///     Event handler for ICE connection state changes.
     /// </summary>
