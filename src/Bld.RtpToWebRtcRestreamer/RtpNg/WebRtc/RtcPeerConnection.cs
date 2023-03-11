@@ -27,6 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 /// </remarks>
 internal class RtcPeerConnection : IDisposable
 {
+    private readonly Func<RtcPeerConnection, RTCPeerConnectionState, Task> _peerConnectionChangeHandler;
     private static readonly ILogger Logger = Log.Logger;
     private readonly Certificate _dtlsCertificate;
 
@@ -72,11 +73,17 @@ internal class RtcPeerConnection : IDisposable
 
     private RTCSignalingState _signalingState = RTCSignalingState.closed;
 
+    [CanBeNull] private DtlsSrtpTransport _dtlsHandle;
+
     /// <summary>
     ///     Constructor to create a new RTC peer connection instance.
     /// </summary>
-    public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack, UdpSocket udpSocket)
+    public RtcPeerConnection(
+        [NotNull] MediaStreamTrack videoTrack,
+        UdpSocket udpSocket,
+        Func<RtcPeerConnection, RTCPeerConnectionState, Task> peerConnectionChangeHandler)
     {
+        _peerConnectionChangeHandler = peerConnectionChangeHandler;
         // No certificate was provided so create a new self signed one.
         (_dtlsCertificate, _dtlsPrivateKey) =
             DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, new BcTlsCrypto());
@@ -96,8 +103,6 @@ internal class RtcPeerConnection : IDisposable
 
         _rtpIceChannel.Start();
     }
-
-    private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -127,20 +132,13 @@ internal class RtcPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     The state of the peer connection. A state of connected means the ICE checks have
-    ///     succeeded and the DTLS handshake has completed. Once in the connected state it's
-    ///     suitable for media packets can be exchanged.
-    /// </summary>
-    public event Action<RTCPeerConnectionState> onconnectionstatechange;
-
-    /// <summary>
     ///     Event handler for ICE connection state changes.
     /// </summary>
     private async void IceConnectionStateChange(RTCIceConnectionState iceState)
     {
         if (iceState == RTCIceConnectionState.connected && _rtpIceChannel.NominatedEntry != null)
         {
-            if (DtlsHandle != null)
+            if (_dtlsHandle != null)
             {
                 if (_videoStream.DestinationEndPoint?.Address.Equals(_rtpIceChannel.NominatedEntry.RemoteCandidate
                         .DestinationEndPoint.Address) == false ||
@@ -157,15 +155,12 @@ internal class RtcPeerConnection : IDisposable
                 if (_connectionState == RTCPeerConnectionState.disconnected ||
                     _connectionState == RTCPeerConnectionState.failed)
                 {
-                    // The ICE connection state change is due to a re-connection.
-                    _connectionState = RTCPeerConnectionState.connected;
-                    onconnectionstatechange?.Invoke(_connectionState);
+                    await SetConnectionStateAsync(RTCPeerConnectionState.connected);
                 }
             }
             else
             {
-                _connectionState = RTCPeerConnectionState.connecting;
-                onconnectionstatechange?.Invoke(_connectionState);
+                await SetConnectionStateAsync(RTCPeerConnectionState.connecting);
 
                 var connectedEP = _rtpIceChannel.NominatedEntry.RemoteCandidate.DestinationEndPoint;
 
@@ -174,32 +169,40 @@ internal class RtcPeerConnection : IDisposable
 
                 if (_iceRole == IceRolesEnum.active)
                 {
-                    DtlsHandle = new DtlsSrtpTransport(new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey)
-                        { ForceUseExtendedMasterSecret = true });
+                    _dtlsHandle = new DtlsSrtpTransport(
+                        new DtlsSrtpClient(_dtlsCertificate, _dtlsPrivateKey),
+                        async memory => await _rtpIceChannel.SendAsync(_videoStream.DestinationEndPoint, memory));
                 }
                 else
                 {
-                    DtlsHandle = new DtlsSrtpTransport(new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey)
-                        { ForceUseExtendedMasterSecret = true });
+                    _dtlsHandle = new DtlsSrtpTransport(
+                        new DtlsSrtpServer(_dtlsCertificate, _dtlsPrivateKey),
+                        async memory => await _rtpIceChannel.SendAsync(_videoStream.DestinationEndPoint, memory));
                 }
 
-                DtlsHandle.OnAlert += OnDtlsAlert;
+                _dtlsHandle.OnAlert += OnDtlsAlert;
 
                 Logger.LogDebug($"Starting DLS handshake with role {_iceRole}.");
 
                 try
                 {
-                    var handshakeResult = await Task.Run(() => DoDtlsHandshake(DtlsHandle)).ConfigureAwait(false);
+                    // TODO: looks like not working without task
+                    var handshakeResult = await Task.Run(async () => await DoDtlsHandshake(_dtlsHandle)).ConfigureAwait(false);
 
-                    _connectionState = handshakeResult
-                        ? RTCPeerConnectionState.connected
-                        : _connectionState = RTCPeerConnectionState.failed;
-                    onconnectionstatechange?.Invoke(_connectionState);
+                    await SetConnectionStateAsync(handshakeResult ? RTCPeerConnectionState.connected : RTCPeerConnectionState.failed);
 
                     if (_connectionState == RTCPeerConnectionState.connected)
                     {
                         Start();
-                        InitialiseSctpTransport();
+                        try
+                        {
+                            _sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
+                        }
+                        catch (Exception excp)
+                        {
+                            Logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
+                            _sctp?.Close();
+                        }
                     }
                 }
                 catch (Exception excp)
@@ -214,30 +217,20 @@ internal class RtcPeerConnection : IDisposable
             }
         }
 
-        if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.checking)
-        {
-            // Not sure about this correspondence between the ICE and peer connection states.
-            // TODO: Double check spec.
-            //connectionState = RTCPeerConnectionState.connecting;
-            //onconnectionstatechange?.Invoke(connectionState);
-        }
-        else if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.disconnected)
+        if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.disconnected)
         {
             if (_connectionState == RTCPeerConnectionState.connected)
             {
-                _connectionState = RTCPeerConnectionState.disconnected;
-                onconnectionstatechange?.Invoke(_connectionState);
+                await SetConnectionStateAsync(RTCPeerConnectionState.disconnected);
             }
             else
             {
-                _connectionState = RTCPeerConnectionState.failed;
-                onconnectionstatechange?.Invoke(_connectionState);
+                await SetConnectionStateAsync(RTCPeerConnectionState.failed);
             }
         }
         else if (_rtpIceChannel.IceConnectionState == RTCIceConnectionState.failed)
         {
-            _connectionState = RTCPeerConnectionState.failed;
-            onconnectionstatechange?.Invoke(_connectionState);
+            await SetConnectionStateAsync(RTCPeerConnectionState.failed);
         }
     }
 
@@ -400,7 +393,7 @@ internal class RtcPeerConnection : IDisposable
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
             _rtpIceChannel.CloseAsync();
-            DtlsHandle?.Close();
+            _dtlsHandle?.Close();
 
             if (_sctp != null && _sctp.State == RTCSctpTransportState.Connected)
             {
@@ -421,8 +414,7 @@ internal class RtcPeerConnection : IDisposable
                 await rtpChannel.CloseAsync(reason);
             }
 
-            _connectionState = RTCPeerConnectionState.closed;
-            onconnectionstatechange?.Invoke(RTCPeerConnectionState.closed);
+            await SetConnectionStateAsync(RTCPeerConnectionState.closed);
         }
     }
 
@@ -616,10 +608,10 @@ internal class RtcPeerConnection : IDisposable
                 }
                 else
                 {
-                    if (DtlsHandle != null)
+                    if (_dtlsHandle != null)
                     {
                         //logger.LogDebug($"DTLS transport received {buffer.Length} bytes from {AudioDestinationEndPoint}.");
-                        DtlsHandle.WriteToRecvStream(buffer);
+                        _dtlsHandle.WriteToRecvStream(buffer);
                     }
                     else
                     {
@@ -671,25 +663,6 @@ internal class RtcPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     Initialises the SCTP transport. This will result in the DTLS SCTP transport listening
-    ///     for incoming INIT packets if the remote peer attempts to create the association. The local
-    ///     peer will NOT attempt to establish the association at this point. It's up to the
-    ///     application to specify it wants a data channel to initiate the SCTP association attempt.
-    /// </summary>
-    private void InitialiseSctpTransport()
-    {
-        try
-        {
-            _sctp.Start(DtlsHandle.Transport, DtlsHandle.IsClient);
-        }
-        catch (Exception excp)
-        {
-            Logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
-            _sctp?.Close();
-        }
-    }
-
-    /// <summary>
     ///     DtlsHandshake requires DtlsSrtpTransport to work.
     ///     DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform
     ///     Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient
@@ -697,18 +670,9 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     /// <param name="dtlsHandle">The DTLS transport handle to perform the handshake with.</param>
     /// <returns>True if the DTLS handshake is successful or false if not.</returns>
-    private bool DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
+    private async Task<bool> DoDtlsHandshake(DtlsSrtpTransport dtlsHandle)
     {
         Logger.LogDebug("RTCPeerConnection DoDtlsHandshake started.");
-
-        var rtpChannel = _videoStream.RTPChannel;
-
-        dtlsHandle.OnDataReady += buf =>
-        {
-            //logger.LogDebug($"DTLS transport sending {buf.Length} bytes to {AudioDestinationEndPoint}.");
-            // TODO: Bld FIX IT
-            rtpChannel.SendAsync(_videoStream.DestinationEndPoint, buf);
-        };
 
         var handshakeResult = dtlsHandle.DoHandshake(out var handshakeError);
 
@@ -716,7 +680,7 @@ internal class RtcPeerConnection : IDisposable
         {
             handshakeError = handshakeError ?? "unknown";
             Logger.LogWarning($"RTCPeerConnection DTLS handshake failed with error {handshakeError}.");
-            CloseAsync("dtls handshake failed");
+            await CloseAsync("dtls handshake failed");
             return false;
         }
 
@@ -730,7 +694,7 @@ internal class RtcPeerConnection : IDisposable
         {
             Logger.LogWarning(
                 $"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
-            CloseAsync("dtls fingerprint mismatch");
+            await CloseAsync("dtls fingerprint mismatch");
             return false;
         }
 
@@ -1081,4 +1045,14 @@ internal class RtcPeerConnection : IDisposable
     {
         CloseAsync(reason);
     }
+
+    private async Task SetConnectionStateAsync(RTCPeerConnectionState value)
+    {
+        if (_connectionState != value)
+        {
+            _connectionState = value;
+            await _peerConnectionChangeHandler(this, _connectionState);
+        }
+    }
+
 }

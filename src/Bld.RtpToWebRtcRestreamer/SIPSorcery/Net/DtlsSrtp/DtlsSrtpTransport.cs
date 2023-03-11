@@ -43,6 +43,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private SrtpTransformer _srtpEncoder;
     private SrtcpTransformer _srtcpDecoder;
     private readonly IDtlsSrtpPeer _connection;
+    private readonly Func<ReadOnlyMemory<byte>, Task> _sendHandler;
 
     /// <summary>The collection of chunks to be written.</summary>
     private readonly BlockingCollection<byte[]> _chunks = new(new ConcurrentQueue<byte[]>());
@@ -59,8 +60,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     /// Sets the period in milliseconds that receive will wait before try retransmission
     /// </summary>
     private readonly int _retransmissionMilliseconds = DefaultRetransmissionWaitMillis;
-
-    public Action<byte[]> OnDataReady;
 
     /// <summary>
     /// Parameters:
@@ -81,12 +80,15 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private volatile bool _handshakeComplete;
     private volatile bool _handshaking;
 
-    public DtlsSrtpTransport(IDtlsSrtpPeer connection, int mtu = DefaultMtu)
+    public DtlsSrtpTransport(
+        IDtlsSrtpPeer connection,
+        Func<ReadOnlyMemory<byte>, Task> sendHandler)
     {
         // Network properties
-        _receiveLimit = Math.Max(0, mtu - MinIpOverhead - UdpOverhead);
-        _sendLimit = Math.Max(0, mtu - MaxIpOverhead - UdpOverhead);
+        _receiveLimit = Math.Max(0, DefaultMtu - MinIpOverhead - UdpOverhead);
+        _sendLimit = Math.Max(0, DefaultMtu - MaxIpOverhead - UdpOverhead);
         _connection = connection;
+        _sendHandler = sendHandler;
 
         connection.OnAlert += (level, type, description) => OnAlert?.Invoke(level, type, description);
     }
@@ -419,12 +421,27 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     public void Send(byte[] buf, int off, int len)
     {
-        Send(buf.AsSpan(off, len));
+        if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
+        {
+            _sendHandler(buf.AsMemory(off, len)).GetAwaiter().GetResult();
+        }
+        else
+        {
+            Task.Run(() => _sendHandler(buf.AsMemory(off, len))).GetAwaiter().GetResult();
+        }
     }
 
     public void Send(ReadOnlySpan<byte> buffer)
     {
-        OnDataReady?.Invoke(buffer.ToArray());
+        var bufArray = buffer.ToArray();
+        if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
+        {
+            _sendHandler(bufArray).GetAwaiter().GetResult();
+        }
+        else
+        {
+            Task.Run(() => _sendHandler(bufArray)).GetAwaiter().GetResult();
+        }
     }
 
     public void Close()

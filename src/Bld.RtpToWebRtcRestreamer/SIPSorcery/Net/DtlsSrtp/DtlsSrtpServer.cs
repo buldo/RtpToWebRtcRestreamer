@@ -98,7 +98,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
     public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
     public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
     public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
-    public bool ForceUseExtendedMasterSecret { get; init; } = true;
+    public bool ForceUseExtendedMasterSecret { get; } = true;
     private Certificate ClientCertificate { get; set; }
 
     protected override int[] GetSupportedCipherSuites()

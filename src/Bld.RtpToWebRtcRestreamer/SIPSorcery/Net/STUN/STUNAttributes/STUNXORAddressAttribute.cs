@@ -99,14 +99,4 @@ internal class STUNXORAddressAttribute : STUNAttribute
 
         return attrDescrStr;
     }
-
-    public IPEndPoint GetIPEndPoint()
-    {
-        if (Address != null)
-        {
-            return new IPEndPoint(Address, Port);
-        }
-
-        return null;
-    }
 }

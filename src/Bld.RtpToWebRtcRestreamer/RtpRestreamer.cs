@@ -66,26 +66,26 @@ internal class RtpRestreamer
             new VideoFormat(VideoCodecsEnum.H264, 96),
             MediaStreamStatusEnum.SendOnly);
         var socket = new UdpSocket(new UdpClient(new IPEndPoint(IPAddress.Any, 0)), _loggerFactory.CreateLogger<UdpSocket>());
-        var peerConnection = new RtcPeerConnection(videoTrack, socket);
+        var peerConnection = new RtcPeerConnection(videoTrack, socket, PeerConnectionChangeHandler);
         _streamMultiplexer.RegisterPeer(peerConnection);
-
-        peerConnection.onconnectionstatechange += state =>
-        {
-            _logger.LogDebug("Peer connection state change to {state}.", state);
-
-            if (state == RTCPeerConnectionState.connected)
-            {
-                _streamMultiplexer.StartPeerTransmit(peerConnection.Id);
-            }
-            else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed)
-            {
-                _streamMultiplexer.ClosePeerAsync(peerConnection.Id).GetAwaiter().GetResult();
-            }
-        };
 
         var answer = peerConnection.CreateOffer();
 
         return (peerConnection.Id, answer.sdp);
+    }
+
+    private async Task PeerConnectionChangeHandler(RtcPeerConnection peerConnection, RTCPeerConnectionState state)
+    {
+        _logger.LogDebug("Peer connection state change to {state}.", state);
+
+        if (state == RTCPeerConnectionState.connected)
+        {
+            _streamMultiplexer.StartPeerTransmit(peerConnection.Id);
+        }
+        else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.disconnected)
+        {
+            await _streamMultiplexer.ClosePeerAsync(peerConnection.Id);
+        }
     }
 
     public async Task ProcessClientAnswerAsync(Guid peerId, string sdpString)

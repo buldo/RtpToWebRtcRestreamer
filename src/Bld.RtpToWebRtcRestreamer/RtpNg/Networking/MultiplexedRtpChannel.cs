@@ -71,7 +71,6 @@ using System.Text;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
