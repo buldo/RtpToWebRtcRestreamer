@@ -166,23 +166,6 @@ internal class SDPMediaAnnouncement
         }
     }
 
-    public SDPMediaAnnouncement(SDPMediaTypesEnum mediaType, int port, List<SDPApplicationMediaFormat> appMediaFormats)
-    {
-        Media = mediaType;
-        Port = port;
-
-        if (appMediaFormats != null)
-        {
-            foreach (var fmt in appMediaFormats)
-            {
-                if (!ApplicationMediaFormats.ContainsKey(fmt.ID))
-                {
-                    ApplicationMediaFormats.Add(fmt.ID, fmt);
-                }
-            }
-        }
-    }
-
     public void ParseMediaFormats(string formatList)
     {
         if (!String.IsNullOrWhiteSpace(formatList))

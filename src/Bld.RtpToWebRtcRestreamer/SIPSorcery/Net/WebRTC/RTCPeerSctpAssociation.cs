@@ -37,17 +37,6 @@ internal class RTCPeerSctpAssociation : SctpAssociation
     private static readonly ILogger logger = Log.Logger;
 
     /// <summary>
-    /// Event notifications for the request to open a data channel being confirmed. This
-    /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
-    /// </summary>
-    public event OnRTCDataChannelOpened OnDataChannelOpened;
-
-    /// <summary>
-    /// Event notification for a new data channel open request from the remote peer.
-    /// </summary>
-    public event OnNewRTCDataChannel OnNewDataChannel;
-
-    /// <summary>
     /// Creates a new SCTP association with the remote peer.
     /// </summary>
     /// <param name="rtcSctpTransport">The DTLS transport that will be used to encapsulate the
@@ -62,60 +51,5 @@ internal class RTCPeerSctpAssociation : SctpAssociation
         : base(rtcSctpTransport, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
     {
         logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
-
-        OnData += OnDataFrameReceived;
-    }
-
-    /// <summary>
-    /// Event handler for a DATA chunk being received. The chunk can be either a DCEP message or data channel data
-    /// payload.
-    /// </summary>
-    /// <param name="dataFrame">The received data frame which could represent one or more chunks depending
-    /// on fragmentation..</param>
-    private void OnDataFrameReceived(SctpDataFrame dataFrame)
-    {
-        switch (dataFrame)
-        {
-            case var frame when frame.PPID == (uint)DataChannelPayloadProtocols.WebRTC_DCEP:
-                switch (frame.UserData[0])
-                {
-                    case (byte)DataChannelMessageTypes.ACK:
-                        OnDataChannelOpened?.Invoke(frame.StreamID);
-                        break;
-                    case (byte)DataChannelMessageTypes.OPEN:
-                        var dcepOpen = DataChannelOpenMessage.Parse(frame.UserData, 0);
-
-                        logger.LogDebug($"DCEP OPEN channel type {dcepOpen.ChannelType}, priority {dcepOpen.Priority}, " +
-                                        $"reliability {dcepOpen.Reliability}, label {dcepOpen.Label}, protocol {dcepOpen.Protocol}.");
-
-                        var channelType = DataChannelTypes.DATA_CHANNEL_RELIABLE;
-                        if(Enum.IsDefined(typeof(DataChannelTypes), dcepOpen.ChannelType))
-                        {
-                            channelType = (DataChannelTypes)dcepOpen.ChannelType;
-                        }
-                        else
-                        {
-                            logger.LogWarning($"DECP OPEN channel type of {dcepOpen.ChannelType} not recognised, defaulting to {channelType}.");
-                        }
-
-                        OnNewDataChannel?.Invoke(
-                            frame.StreamID,
-                            channelType,
-                            dcepOpen.Priority,
-                            dcepOpen.Reliability,
-                            dcepOpen.Label,
-                            dcepOpen.Protocol);
-
-                        break;
-                    default:
-                        logger.LogWarning($"DCEP message type {frame.UserData[0]} not recognised, ignoring.");
-                        break;
-                }
-                break;
-
-            default:
-                // OnDataChannelData?.Invoke(dataFrame);
-                break;
-        }
     }
 }

@@ -148,17 +148,6 @@ internal class RTCSctpTransport : SctpTransport
     }
 
     /// <summary>
-    /// Attempts to create and initialise a new SCTP association with the remote party.
-    /// </summary>
-    /// <param name="sourcePort">The source port to use for the SCTP association.</param>
-    /// <param name="destinationPort">The destination port to use for the SCTP association.</param>
-    public void Associate()
-    {
-        SetState(RTCSctpTransportState.Connecting);
-        RTCSctpAssociation.Init();
-    }
-
-    /// <summary>
     /// Closes the SCTP association and stops the receive thread.
     /// </summary>
     public void Close()
@@ -221,7 +210,6 @@ internal class RTCSctpTransport : SctpTransport
             RemoteARwnd = remoteARwnd,
             RemoteEndPoint = remoteEndPoint,
             Tag = RTCSctpAssociation.VerificationTag,
-            TSN = RTCSctpAssociation.TSN,
             ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
             CreatedAt = DateTime.Now.ToString("o"),
             Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,

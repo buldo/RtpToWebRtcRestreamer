@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 18 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ internal class SctpChunk
     }
 
     /// <summary>
-    /// This constructor is only intended to be used when parsing the specialised 
+    /// This constructor is only intended to be used when parsing the specialised
     /// chunk types. Because they are being parsed from a buffer nothing is known
     /// about them and this constructor allows starting from a blank slate.
     /// </summary>
@@ -87,7 +87,7 @@ internal class SctpChunk
 
     /// <summary>
     /// Calculates the length for the chunk. Chunks are required
-    /// to be padded out to 4 byte boundaries. This method gets overridden 
+    /// to be padded out to 4 byte boundaries. This method gets overridden
     /// by specialised SCTP chunks that have their own fields that determine the length.
     /// </summary>
     /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
@@ -139,7 +139,7 @@ internal class SctpChunk
     }
 
     /// <summary>
-    /// Serialises the chunk to a pre-allocated buffer. This method gets overridden 
+    /// Serialises the chunk to a pre-allocated buffer. This method gets overridden
     /// by specialised SCTP chunks that have their own parameters and need to be serialised
     /// differently.
     /// </summary>
@@ -164,7 +164,7 @@ internal class SctpChunk
     /// </summary>
     /// <param name="chunkParameter">The Type-Length-Value (TLV) formatted chunk that was
     ///     not recognised.</param>
-    /// <returns>True if further parameter parsing for this chunk should be stopped. 
+    /// <returns>True if further parameter parsing for this chunk should be stopped.
     /// False to continue.</returns>
     public void GotUnrecognisedParameter(SctpTlvChunkParameter chunkParameter)
     {
@@ -186,7 +186,7 @@ internal class SctpChunk
     /// <summary>
     /// Parses a simple chunk and does not attempt to process any chunk value.
     /// This method is suitable when:
-    ///  - the chunk type consists only of the 4 byte header and has 
+    ///  - the chunk type consists only of the 4 byte header and has
     ///    no fixed or variable parameters set.
     /// </summary>
     /// <param name="buffer">The buffer holding the serialised chunk.</param>
@@ -249,8 +249,6 @@ internal class SctpChunk
             {
                 case SctpChunkType.ABORT:
                     return SctpErrorChunk.ParseChunk(buffer, posn, true);
-                case SctpChunkType.DATA:
-                    return SctpDataChunk.ParseChunk(buffer, posn);
                 case SctpChunkType.ERROR:
                     return SctpErrorChunk.ParseChunk(buffer, posn, false);
                 case SctpChunkType.SACK:
@@ -292,7 +290,7 @@ internal class SctpChunk
     }
 
     /// <summary>
-    /// If this chunk is unrecognised then this field dictates how the remainder of the 
+    /// If this chunk is unrecognised then this field dictates how the remainder of the
     /// SCTP packet should be handled.
     /// </summary>
     public static SctpUnrecognisedChunkActions GetUnrecognisedChunkAction(ushort chunkType) =>

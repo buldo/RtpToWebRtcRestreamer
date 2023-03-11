@@ -8,6 +8,6 @@ public enum SctpAssociationState
     Established,
     ShutdownPending,
     ShutdownSent,
-    ShutdownReceived,
+    //ShutdownReceived,
     ShutdownAckSent
 }

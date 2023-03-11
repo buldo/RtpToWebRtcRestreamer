@@ -44,14 +44,6 @@ internal class RtcPeerConnection : IDisposable
     private const ushort SCTP_DEFAULT_PORT = 5000;
 
     /// <summary>
-    ///     The period to wait for the SCTP association to complete before giving up.
-    ///     In theory this should be very quick as the DTLS connection should already have been established
-    ///     and the SCTP logic only needs to send the small handshake messages to establish
-    ///     the association.
-    /// </summary>
-    private const int SCTP_ASSOCIATE_TIMEOUT_SECONDS = 2;
-
-    /// <summary>
     ///     From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
     ///     (authentication tag and MKI) supported by libSRTP.This value is
     ///     the maximum number of octets that will be added to an RTP packet by

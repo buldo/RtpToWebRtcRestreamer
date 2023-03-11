@@ -62,16 +62,6 @@ internal class SctpAssociation
     private int _cookieEchoRetransmits;
 
     /// <summary>
-    /// Handles logic for DATA chunk receives (fragmentation, in order delivery etc).
-    /// </summary>
-    private SctpDataReceiver _dataReceiver;
-
-    /// <summary>
-    /// Handles logic for sending DATA chunks (retransmits, windows management etc).
-    /// </summary>
-    private SctpDataSender _dataSender;
-
-    /// <summary>
     /// T1 init timer to monitor an INIT request sent to a remote peer.
     /// </summary>
     /// <remarks>
@@ -88,12 +78,6 @@ internal class SctpAssociation
     private Timer _t1Cookie;
 
     public uint VerificationTag { get; private set; }
-
-    /// <summary>
-    /// Transaction Sequence Number (TSN). A monotonically increasing number that must be
-    /// included in every DATA chunk.
-    /// </summary>
-    public uint TSN => _dataSender.TSN;
 
     /// <summary>
     /// A unique ID for this association. The ID is not part of the SCTP protocol. It
@@ -121,11 +105,6 @@ internal class SctpAssociation
     /// Event to notify application that the association state has changed.
     /// </summary>
     public event Action<SctpAssociationState> OnAssociationStateChanged;
-
-    /// <summary>
-    /// Event to notify application that user data is available.
-    /// </summary>
-    public event Action<SctpDataFrame> OnData;
 
     /// <summary>
     /// Event to notify the application that the remote party aborted this
@@ -173,9 +152,6 @@ internal class SctpAssociation
         ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
         ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
-        _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, 0);
-        _dataSender = new SctpDataSender(ID, SendChunk, defaultMTU, Crypto.GetRandomUInt(true), DEFAULT_ADVERTISED_RECEIVE_WINDOW);
-
         State = SctpAssociationState.Closed;
     }
 
@@ -192,25 +168,6 @@ internal class SctpAssociation
         else
         {
             _sctpDestinationPort = port;
-        }
-    }
-
-    /// <summary>
-    /// Attempts to initialise the association by sending an INIT chunk to the remote peer.
-    /// </summary>
-    public void Init()
-    {
-        if (_wasAborted || _wasShutdown || _initialisationFailed)
-        {
-            logger.LogWarning("SCTP association cannot be initialised after an abort or shutdown.");
-        }
-        else if (State == SctpAssociationState.Closed)
-        {
-            SendInit();
-        }
-        else
-        {
-            logger.LogWarning($"SCTP association cannot be initialised in state {State}.");
         }
     }
 
@@ -241,23 +198,12 @@ internal class SctpAssociation
             VerificationTag = cookie.Tag;
             ARwnd = cookie.ARwnd;
 
-            if (_dataReceiver == null)
-            {
-                _dataReceiver = new SctpDataReceiver(ARwnd, _defaultMTU, cookie.RemoteTSN);
-            }
-
-            if (_dataSender == null)
-            {
-                _dataSender = new SctpDataSender(ID, SendChunk, _defaultMTU, cookie.TSN, cookie.RemoteARwnd);
-            }
-
             InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
 
             var cookieAckChunk = new SctpChunk(SctpChunkType.COOKIE_ACK);
             SendChunk(cookieAckChunk);
 
             SetState(SctpAssociationState.Established);
-            _dataSender.StartSending();
             CancelTimers();
         }
     }
@@ -272,9 +218,6 @@ internal class SctpAssociation
     {
         _remoteVerificationTag = remoteVerificationTag;
         _remoteInitialTSN = remoteInitialTSN;
-
-        _dataReceiver.SetInitialTSN(remoteInitialTSN);
-        _dataSender.SetReceiverWindow(remoteARwnd);
     }
 
     /// <summary>
@@ -330,7 +273,6 @@ internal class SctpAssociation
                     case var ct when ct == SctpChunkType.COOKIE_ACK && State == SctpAssociationState.CookieEchoed:
                         SetState(SctpAssociationState.Established);
                         CancelTimers();
-                        _dataSender.StartSending();
                         break;
 
                     case SctpChunkType.COOKIE_ECHO:
@@ -339,40 +281,6 @@ internal class SctpAssociation
                         // does not need to process it.
                         // The scenarios in https://tools.ietf.org/html/rfc4960#section-5.2 describe where
                         // an association could receive a COOKIE ECHO.
-                        break;
-
-                    case SctpChunkType.DATA:
-                        var dataChunk = chunk as SctpDataChunk;
-
-                        if (dataChunk.UserData == null || dataChunk.UserData.Length == 0)
-                        {
-                            // Fatal condition:
-                            // - If an endpoint receives a DATA chunk with no user data (i.e., the
-                            //   Length field is set to 16), it MUST send an ABORT with error cause
-                            //   set to "No User Data". (RFC4960 pg. 80)
-                            Abort(new SctpErrorNoUserData { TSN = (chunk as SctpDataChunk).TSN });
-                        }
-                        else
-                        {
-                            logger.LogTrace($"SCTP data chunk received on ID {ID} with TSN {dataChunk.TSN}, payload length {dataChunk.UserData.Length}, flags {dataChunk.ChunkFlags:X2}.");
-
-                            // A received data chunk can result in multiple data frames becoming available.
-                            // For example if a stream has out of order frames already received and the next
-                            // in order frame arrives then all the in order ones will be supplied.
-                            var sortedFrames = _dataReceiver.OnDataChunk(dataChunk);
-
-                            var sack = _dataReceiver.GetSackChunk();
-                            if (sack != null)
-                            {
-                                SendChunk(sack);
-                            }
-
-                            foreach (var frame in sortedFrames)
-                            {
-                                OnData?.Invoke(frame);
-                            }
-                        }
-
                         break;
 
                     case SctpChunkType.ERROR:
@@ -452,10 +360,6 @@ internal class SctpAssociation
                         logger.LogWarning($"SCTP association received INIT_ACK chunk in wrong state of {State}, ignoring.");
                         break;
 
-                    case SctpChunkType.SACK:
-                        _dataSender.GotSack(chunk as SctpSackChunk);
-                        break;
-
                     case var ct when ct == SctpChunkType.SHUTDOWN && State == SctpAssociationState.Established:
                         // TODO: Check outstanding data chunks.
                         var shutdownAck = new SctpChunk(SctpChunkType.SHUTDOWN_ACK);
@@ -483,30 +387,6 @@ internal class SctpAssociation
                         break;
                 }
             }
-        }
-    }
-
-    /// <summary>
-    /// Sends a DATA chunk to the remote peer.
-    /// </summary>
-    /// <param name="streamID">The stream ID to sent the data on.</param>
-    /// <param name="ppid">The payload protocol ID for the data.</param>
-    /// <param name="message">The byte data to send.</param>
-    public void SendData(ushort streamID, uint ppid, byte[] data)
-    {
-        if (_wasAborted)
-        {
-            logger.LogWarning("SCTP send data is not allowed on an aborted association.");
-        }
-        else if (!(State == SctpAssociationState.Established ||
-                   State == SctpAssociationState.ShutdownPending ||
-                   State == SctpAssociationState.ShutdownReceived))
-        {
-            logger.LogWarning($"SCTP send data is not allowed for an association in state {State}.");
-        }
-        else
-        {
-            _dataSender.SendData(streamID, ppid, data);
         }
     }
 
@@ -542,7 +422,7 @@ internal class SctpAssociation
             // If no DATA chunks have been received use the initial TSN - 1 from
             // the remote party. Seems weird to use the - 1, and couldn't find anything
             // in the RFC that says to do it, but that's what usrsctp accepts.
-            uint? ackTSN = _dataReceiver.CumulativeAckTSN ?? _remoteInitialTSN - 1;
+            uint? ackTSN = _remoteInitialTSN - 1;
 
             logger.LogTrace($"SCTP sending shutdown for association {ID}, ACK TSN {ackTSN}.");
 
@@ -550,8 +430,6 @@ internal class SctpAssociation
 
             var shutdownChunk = new SctpShutdownChunk(ackTSN);
             SendChunk(shutdownChunk);
-
-            _dataSender.Close();
         }
     }
 
@@ -572,8 +450,6 @@ internal class SctpAssociation
             SendChunk(abortChunk);
 
             OnAborted?.Invoke(errorCause.CauseCode.ToString());
-
-            _dataSender.Close();
         }
     }
 
@@ -586,35 +462,6 @@ internal class SctpAssociation
         logger.LogTrace($"SCTP state for association {ID} changed to {state}.");
         State = state;
         OnAssociationStateChanged?.Invoke(state);
-    }
-
-    /// <summary>
-    /// Attempts to create an association with a remote party by sending an initialisation
-    /// control chunk.
-    /// </summary>
-    private void SendInit()
-    {
-        if (!_wasAborted)
-        {
-            // A packet containing an INIT chunk MUST have a zero Verification Tag (RFC4960 Pg 15).
-            var init = new SctpPacket(_sctpSourcePort, _sctpDestinationPort, 0);
-
-            var initChunk = new SctpInitChunk(
-                SctpChunkType.INIT,
-                VerificationTag,
-                TSN,
-                ARwnd,
-                _numberOutboundStreams,
-                _numberInboundStreams);
-            init.AddChunk(initChunk);
-
-            SetState(SctpAssociationState.CookieWait);
-
-            var buffer = init.GetBytes();
-            _sctpTransport.Send(buffer, 0, buffer.Length);
-
-            _t1Init = new Timer(T1InitTimerExpired, init, T1_INIT_TIMER_MILLISECONDS, T1_INIT_TIMER_MILLISECONDS);
-        }
     }
 
     /// <summary>
