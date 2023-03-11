@@ -1214,15 +1214,11 @@ internal class MultiplexedRtpChannel
                              .Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/ ||
                          possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
 
-                    if (waitOptionEntry != null)
-                    {
-                        possibleMatchingCheckEntry = null;
-                    }
                 }
             }
 
             //Nominate Candidate if we pass in all heuristic checks from previous algorithm
-            if (possibleMatchingCheckEntry != null && possibleMatchingCheckEntry.State == ChecklistEntryState.Succeeded)
+            if (possibleMatchingCheckEntry is { State: ChecklistEntryState.Succeeded })
             {
                 possibleMatchingCheckEntry.Nominated = true;
                 await SendConnectivityCheckAsync(possibleMatchingCheckEntry, true);

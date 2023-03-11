@@ -329,7 +329,7 @@ internal class SrtcpCryptoContext
         SrtpCipherF8.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore, _cipherF8);
     }
 
-    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+    private readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
 
     /**
          * Authenticate a packet.
@@ -367,7 +367,7 @@ internal class SrtcpCryptoContext
          * @return true if this sequence number indicates the packet is not a
          * replayed one, false if not
          */
-    bool CheckReplay(int index)
+    private bool CheckReplay(int index)
     {
         // compute the index of previously received packet and its
         // delta to the new received packet

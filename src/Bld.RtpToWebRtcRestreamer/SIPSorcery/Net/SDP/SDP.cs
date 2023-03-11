@@ -656,7 +656,7 @@ internal class SDP
                             {
                                 activeAnnouncement.SctpMap = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
 
-                                (var sctpPortStr, _, var maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
+                                var (sctpPortStr, _, maxMessageSizeStr) = activeAnnouncement.SctpMap.Split(' ');
 
                                 if (ushort.TryParse(sctpPortStr, out var sctpPort))
                                 {

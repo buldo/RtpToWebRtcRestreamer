@@ -42,7 +42,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     private SrtpTransformer _srtpEncoder;
     private SrtcpTransformer _srtcpDecoder;
-    readonly IDtlsSrtpPeer _connection;
+    private readonly IDtlsSrtpPeer _connection;
 
     /// <summary>The collection of chunks to be written.</summary>
     private readonly BlockingCollection<byte[]> _chunks = new(new ConcurrentQueue<byte[]>());
@@ -181,7 +181,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
             _waitMillis = _retransmissionMilliseconds;
             _startTime = DateTime.Now;
             _handshaking = true;
-            var serverProtocol = new DtlsServerProtocol()
+            var serverProtocol = new DtlsServerProtocol
             {
                 VerifyRequests = false
             };
@@ -239,11 +239,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private SrtpTransformer GenerateRtpEncoder()
     {
         return GenerateRtpTransformer(_connection.IsClient);
-    }
-
-    private SrtcpTransformer GenerateRtcpEncoder()
-    {
-        return GenerateRtcpTransformer(_connection.IsClient);
     }
 
     private SrtcpTransformer GenerateRtcpDecoder()

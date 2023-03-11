@@ -7,7 +7,6 @@ using Bld.RtpToWebRtcRestreamer.SIPSorcery;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.ICE;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SDP;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;

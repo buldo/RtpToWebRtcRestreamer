@@ -354,7 +354,7 @@ internal class RTCIceCandidate
     }
 
     //CRC32 implementation from C++ to calculate foundation
-    const uint kCrc32Polynomial = 0xEDB88320;
+    private const uint kCrc32Polynomial = 0xEDB88320;
     private static uint[] LoadCrc32Table()
     {
         var kCrc32Table = new uint[256];

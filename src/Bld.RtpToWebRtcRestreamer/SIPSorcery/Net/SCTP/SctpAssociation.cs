@@ -40,7 +40,7 @@ internal class SctpAssociation
 
     private static readonly ILogger logger = LogFactory.CreateLogger<SctpAssociation>();
 
-    readonly SctpTransport _sctpTransport;
+    private readonly SctpTransport _sctpTransport;
     private ushort _sctpSourcePort;
     private ushort _sctpDestinationPort;
     private bool _wasAborted;
@@ -157,7 +157,7 @@ internal class SctpAssociation
             _sctpDestinationPort = cookie.DestinationPort;
             VerificationTag = cookie.Tag;
 
-            InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
+            InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN);
 
             var cookieAckChunk = new SctpChunk(SctpChunkType.COOKIE_ACK);
             SendChunk(cookieAckChunk);
@@ -172,8 +172,7 @@ internal class SctpAssociation
     /// </summary>
     private void InitRemoteProperties(
         uint remoteVerificationTag,
-        uint remoteInitialTSN,
-        uint remoteARwnd)
+        uint remoteInitialTSN)
     {
         _remoteVerificationTag = remoteVerificationTag;
         _remoteInitialTSN = remoteInitialTSN;
@@ -285,7 +284,7 @@ internal class SctpAssociation
                         }
                         else
                         {
-                            InitRemoteProperties(initAckChunk.InitiateTag, initAckChunk.InitialTSN, initAckChunk.ARwnd);
+                            InitRemoteProperties(initAckChunk.InitiateTag, initAckChunk.InitialTSN);
 
                             var cookie = initAckChunk.StateCookie;
 

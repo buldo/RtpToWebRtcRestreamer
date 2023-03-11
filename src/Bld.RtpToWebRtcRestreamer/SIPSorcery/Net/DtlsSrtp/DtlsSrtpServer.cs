@@ -63,8 +63,8 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
 
     private static readonly ILogger Logger = Log.Logger;
 
-    readonly Certificate _mCertificateChain;
-    readonly AsymmetricKeyParameter _mPrivateKey;
+    private readonly Certificate _mCertificateChain;
+    private readonly AsymmetricKeyParameter _mPrivateKey;
 
     private UseSrtpData _serverSrtpData;
 

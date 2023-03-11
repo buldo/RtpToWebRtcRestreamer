@@ -232,7 +232,7 @@ internal static class DtlsUtils
         var certificate = tuple.certificate;
         var privateKey = tuple.privateKey;
         var tlsCertificate = LoadCertificateChain(protocolVersion, tlsCrypto,
-            new List<byte[]>() { certificate.GetEncoded() });
+            new List<byte[]> { certificate.GetEncoded() });
         return (tlsCertificate, privateKey);
     }
 

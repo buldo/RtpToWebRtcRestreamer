@@ -27,7 +27,7 @@ internal class RtpRestreamer
         _loggerFactory = loggerFactory;
         _logger = _loggerFactory.CreateLogger<RtpRestreamer>();
 
-        _receiver = new(rtpListenEndpoint, _loggerFactory.CreateLogger<PooledUdpSource>());
+        _receiver = new PooledUdpSource(rtpListenEndpoint, _loggerFactory.CreateLogger<PooledUdpSource>());
         _streamMultiplexer = new StreamMultiplexer(_loggerFactory.CreateLogger<StreamMultiplexer>());
     }
 
@@ -69,7 +69,7 @@ internal class RtpRestreamer
         var peerConnection = new RtcPeerConnection(videoTrack, socket);
         _streamMultiplexer.RegisterPeer(peerConnection);
 
-        peerConnection.onconnectionstatechange += (state) =>
+        peerConnection.onconnectionstatechange += state =>
         {
             _logger.LogDebug("Peer connection state change to {state}.", state);
 

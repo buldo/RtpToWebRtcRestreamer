@@ -166,7 +166,7 @@ internal class SrtpCryptoContext
          */
     private readonly byte[] _rbStore = new byte[4];
 
-    readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+    private readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
 
     /**
          * Construct a normal SRTPCryptoContext based on the given parameters.
