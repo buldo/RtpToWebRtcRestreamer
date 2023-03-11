@@ -82,8 +82,7 @@ internal class RtcPeerConnection : IDisposable
 
     private readonly string _localSdpSessionId;
 
-    [NotNull]
-    private readonly MultiplexedRtpChannel _rtpIceChannel;
+    [NotNull] private readonly MultiplexedRtpChannel _rtpIceChannel;
 
     private readonly RTCSctpTransport _sctp;
     private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
@@ -91,11 +90,9 @@ internal class RtcPeerConnection : IDisposable
     /// <summary>
     ///     List of all Video Streams for this session
     /// </summary>
-    [NotNull]
-    private readonly VideoStream _videoStream;
+    [NotNull] private readonly VideoStream _videoStream;
 
     private RTCPeerConnectionState _connectionState = RTCPeerConnectionState.@new;
-    private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
 
     /// <summary>
     ///     The ICE role the peer is acting in.
@@ -141,6 +138,8 @@ internal class RtcPeerConnection : IDisposable
 
         _rtpIceChannel.Start();
     }
+
+    private DtlsSrtpTransport DtlsHandle { get; set; } // Looks like need to be property
 
     public Guid Id { get; } = Guid.NewGuid();
 
@@ -895,13 +894,10 @@ internal class RtcPeerConnection : IDisposable
                 connectionAddress = IPAddress.Parse(sessionDescription.Connection.ConnectionAddress);
             }
 
-            var currentAudioStreamCount = 0;
-
             //foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.audio || x.Media == SDPMediaTypesEnum.video))
             foreach (var announcement in sessionDescription.Media.Where(x => x.Media == SDPMediaTypesEnum.video))
             {
-                MediaStream currentMediaStream;
-                currentMediaStream = _videoStream;
+                MediaStream currentMediaStream = _videoStream;
 
                 var capabilities =
                     // As proved by Azure implementation, we need to send based on capabilities of remote track. Azure return SDP with only one possible Codec (H264 107)
@@ -939,23 +935,6 @@ internal class RtcPeerConnection : IDisposable
                         }
                     }
                 }
-
-                // IPEndPoint remoteRtcpEp = null;
-                // if (currentMediaStream.LocalTrack.StreamStatus != MediaStreamStatusEnum.Inactive)
-                // {
-                //     remoteRtcpEp = _rtpSessionConfig.IsRtcpMultiplexed
-                //         ? remoteRtpEp
-                //         : new IPEndPoint(remoteRtpEp.Address, remoteRtpEp.Port + 1);
-                // }
-
-                // currentMediaStream.DestinationEndPoint =
-                //     remoteRtpEp != null && remoteRtpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
-                //         ? remoteRtpEp
-                //         : currentMediaStream.DestinationEndPoint;
-                // currentMediaStream.ControlDestinationEndPoint =
-                //     remoteRtcpEp != null && remoteRtcpEp.Port != SDP.SDP.IGNORE_RTP_PORT_NUMBER
-                //         ? remoteRtcpEp
-                //         : currentMediaStream.ControlDestinationEndPoint;
 
                 if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
