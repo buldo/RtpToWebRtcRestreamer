@@ -79,8 +79,6 @@ internal class RtcPeerConnection : IDisposable
     private static readonly ILogger Logger = Log.Logger;
     private static readonly string RtcpAttribute = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 
-    private readonly RTCDataChannelCollection _dataChannels;
-
     private readonly Certificate _dtlsCertificate;
 
     /// <summary>
@@ -133,8 +131,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     public RtcPeerConnection([NotNull] MediaStreamTrack videoTrack, UdpSocket udpSocket)
     {
-        _dataChannels = new RTCDataChannelCollection(() => DtlsHandle.IsClient);
-
         // No certificate was provided so create a new self signed one.
         (_dtlsCertificate, _dtlsPrivateKey) =
             DtlsUtils.CreateSelfSignedTlsCert(ProtocolVersion.DTLSv12, new BcTlsCrypto());
@@ -258,7 +254,7 @@ internal class RtcPeerConnection : IDisposable
                     if (_connectionState == RTCPeerConnectionState.connected)
                     {
                         Start();
-                        await InitialiseSctpTransport().ConfigureAwait(false);
+                        InitialiseSctpTransport();
                     }
                 }
                 catch (Exception excp)
@@ -622,53 +618,6 @@ internal class RtcPeerConnection : IDisposable
             }
         }
 
-        if (_dataChannels.Count > 0 ||
-            (_remoteSdp?.Media.Any(x => x.Media == SDPMediaTypesEnum.application) ?? false))
-        {
-            int mindex;
-            string midTag;
-            if (_remoteSdp == null)
-            {
-                (mindex, midTag) = (mediaIndex, mediaIndex.ToString());
-            }
-            else
-            {
-                (mindex, midTag) = _remoteSdp.GetIndexForMediaType(SDPMediaTypesEnum.application, 0);
-            }
-
-            if (mindex == SDP.MEDIA_INDEX_NOT_PRESENT)
-            {
-                Logger.LogWarning(
-                    "Media announcement for data channel establishment omitted due to no reciprocal remote announcement.");
-            }
-            else
-            {
-                var dataChannelAnnouncement = new SDPMediaAnnouncement(
-                    SDPMediaTypesEnum.application,
-                    SDP.IGNORE_RTP_PORT_NUMBER,
-                    new List<SDPApplicationMediaFormat> { new(SDP_DATA_CHANNEL_FORMAT_ID) });
-                dataChannelAnnouncement.Transport = RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE;
-                dataChannelAnnouncement.Connection = new SDPConnectionInformation(IPAddress.Any);
-
-                dataChannelAnnouncement.SctpPort = SCTP_DEFAULT_PORT;
-                dataChannelAnnouncement.MaxMessageSize = _sctp.maxMessageSize;
-                dataChannelAnnouncement.MLineIndex = mindex;
-                dataChannelAnnouncement.MediaID = midTag;
-                dataChannelAnnouncement.IceUfrag = _rtpIceChannel.LocalIceUser;
-                dataChannelAnnouncement.IcePwd = _rtpIceChannel.LocalIcePassword;
-                dataChannelAnnouncement.IceOptions = ICE_OPTIONS;
-                dataChannelAnnouncement.IceRole = _iceRole;
-                dataChannelAnnouncement.DtlsFingerprint = dtlsFingerprint;
-
-                if (iceCandidatesAdded == false)
-                {
-                    AddIceCandidates(dataChannelAnnouncement);
-                }
-
-                offerSdp.Media.Add(dataChannelAnnouncement);
-            }
-        }
-
         // Set the Bundle attribute to indicate all media announcements are being multiplexed.
         if (offerSdp.Media?.Count > 0)
         {
@@ -784,139 +733,16 @@ internal class RtcPeerConnection : IDisposable
     ///     peer will NOT attempt to establish the association at this point. It's up to the
     ///     application to specify it wants a data channel to initiate the SCTP association attempt.
     /// </summary>
-    private async Task InitialiseSctpTransport()
+    private void InitialiseSctpTransport()
     {
         try
         {
-            _sctp.OnStateChanged += OnSctpTransportStateChanged;
             _sctp.Start(DtlsHandle.Transport, DtlsHandle.IsClient);
-
-            if (_dataChannels.Count > 0)
-            {
-                await InitialiseSctpAssociation().ConfigureAwait(false);
-            }
         }
         catch (Exception excp)
         {
             Logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
             _sctp?.Close();
-        }
-    }
-
-    /// <summary>
-    ///     Event handler for changes to the SCTP transport state.
-    /// </summary>
-    /// <param name="state">The new transport state.</param>
-    private void OnSctpTransportStateChanged(RTCSctpTransportState state)
-    {
-        if (state == RTCSctpTransportState.Connected)
-        {
-            Logger.LogDebug("SCTP transport successfully connected.");
-
-            _sctp.RTCSctpAssociation.OnDataChannelOpened += OnSctpAssociationDataChannelOpened;
-            _sctp.RTCSctpAssociation.OnNewDataChannel += OnSctpAssociationNewDataChannel;
-        }
-    }
-
-    /// <summary>
-    ///     Event handler for a new data channel being opened by the remote peer.
-    /// </summary>
-    private void OnSctpAssociationNewDataChannel(
-        ushort streamId,
-        DataChannelTypes type,
-        ushort priority,
-        uint reliability,
-        string label,
-        string protocol)
-    {
-        Logger.LogInformation($"WebRTC new data channel opened by remote peer for stream ID {streamId}, type {type}, " +
-                              $"priority {priority}, reliability {reliability}, label {label}, protocol {protocol}.");
-
-        // TODO: Set reliability, priority etc. properties on the data channel.
-        var dc = new RTCDataChannel(_sctp)
-        {
-            id = streamId,
-            label = label,
-            IsOpened = true,
-            readyState = RTCDataChannelState.open
-        };
-
-        dc.SendDcepAck();
-
-        if (_dataChannels.AddActiveChannel(dc))
-        {
-        }
-        else
-        {
-            // TODO: What's the correct behaviour here?? I guess use the newest one and remove the old one?
-            Logger.LogWarning($"WebRTC duplicate data channel requested for stream ID {streamId}.");
-        }
-    }
-
-    /// <summary>
-    ///     Event handler for the confirmation that a data channel opened by this peer has been acknowledged.
-    /// </summary>
-    /// <param name="streamID">The ID of the stream corresponding to the acknowledged data channel.</param>
-    private void OnSctpAssociationDataChannelOpened(ushort streamID)
-    {
-        _dataChannels.TryGetChannel(streamID, out var dc);
-
-        var label = dc != null ? dc.label : "<none>";
-        Logger.LogInformation($"WebRTC data channel opened label {label} and stream ID {streamID}.");
-
-        if (dc != null)
-        {
-            dc.GotAck();
-        }
-        else
-        {
-            Logger.LogWarning($"WebRTC data channel got ACK but data channel not found for stream ID {streamID}.");
-        }
-    }
-
-    /// <summary>
-    ///     When a data channel is requested an SCTP association is needed. This method attempts to
-    ///     initialise the association if it is not already available.
-    /// </summary>
-    private async Task InitialiseSctpAssociation()
-    {
-        if (_sctp.RTCSctpAssociation.State != SctpAssociationState.Established)
-        {
-            _sctp.Associate();
-        }
-
-        if (_sctp.state != RTCSctpTransportState.Connected)
-        {
-            var onSctpConnectedTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _sctp.OnStateChanged += state =>
-            {
-                Logger.LogDebug($"SCTP transport for create data channel request changed to state {state}.");
-
-                if (state == RTCSctpTransportState.Connected)
-                {
-                    onSctpConnectedTcs.TrySetResult(true);
-                }
-            };
-
-            var startTime = DateTime.Now;
-
-            var completedTask = await Task
-                .WhenAny(onSctpConnectedTcs.Task, Task.Delay(SCTP_ASSOCIATE_TIMEOUT_SECONDS * 1000))
-                .ConfigureAwait(false);
-
-            if (_sctp.state != RTCSctpTransportState.Connected)
-            {
-                var duration = DateTime.Now.Subtract(startTime).TotalMilliseconds;
-
-                if (completedTask != onSctpConnectedTcs.Task)
-                {
-                    throw new ApplicationException(
-                        $"SCTP association timed out after {duration:0.##}ms with association in state {_sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
-                }
-
-                throw new ApplicationException(
-                    $"SCTP association failed after {duration:0.##}ms with association in state {_sctp.RTCSctpAssociation.State} when attempting to create a data channel.");
-            }
         }
     }
 

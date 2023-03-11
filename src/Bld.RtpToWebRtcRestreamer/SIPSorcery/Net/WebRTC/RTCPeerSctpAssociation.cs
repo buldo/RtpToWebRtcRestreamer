@@ -37,11 +37,6 @@ internal class RTCPeerSctpAssociation : SctpAssociation
     private static readonly ILogger logger = Log.Logger;
 
     /// <summary>
-    /// Event notifications for user data on an SCTP stream representing a data channel.
-    /// </summary>
-    public event Action<SctpDataFrame> OnDataChannelData;
-
-    /// <summary>
     /// Event notifications for the request to open a data channel being confirmed. This
     /// event corresponds to the DCEP ACK message for a DCEP OPEN message by this peer.
     /// </summary>
@@ -119,7 +114,7 @@ internal class RTCPeerSctpAssociation : SctpAssociation
                 break;
 
             default:
-                OnDataChannelData?.Invoke(dataFrame);
+                // OnDataChannelData?.Invoke(dataFrame);
                 break;
         }
     }
