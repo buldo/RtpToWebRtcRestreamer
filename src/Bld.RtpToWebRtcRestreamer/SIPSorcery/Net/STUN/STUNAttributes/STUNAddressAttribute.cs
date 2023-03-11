@@ -14,7 +14,7 @@
 //-----------------------------------------------------------------------------
 
 using System.Net;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
+using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
 

@@ -37,7 +37,6 @@
 //-----------------------------------------------------------------------------
 
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;

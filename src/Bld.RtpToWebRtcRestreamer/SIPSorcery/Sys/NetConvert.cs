@@ -15,7 +15,7 @@
 
 using System.Buffers.Binary;
 
-namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
+namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
 
 public static class NetConvert
 {
