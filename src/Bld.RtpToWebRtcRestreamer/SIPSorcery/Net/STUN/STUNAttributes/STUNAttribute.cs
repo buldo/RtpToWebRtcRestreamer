@@ -51,7 +51,7 @@ internal class STUNAttribute
     public STUNAttributeTypesEnum AttributeType = STUNAttributeTypesEnum.Unknown;
     public byte[] Value;
 
-    public virtual UInt16 PaddedLength
+    public virtual ushort PaddedLength
     {
         get
         {

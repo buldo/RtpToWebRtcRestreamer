@@ -74,8 +74,8 @@ internal class MediaStreamTrack
         StreamStatus = streamStatus;
         DefaultStreamStatus = streamStatus;
 
-        Ssrc = Convert.ToUInt32(Random.Shared.Next(0, Int32.MaxValue));
-        _seqNum = Convert.ToUInt16(Random.Shared.Next(0, UInt16.MaxValue));
+        Ssrc = Convert.ToUInt32(Random.Shared.Next(0, int.MaxValue));
+        _seqNum = Convert.ToUInt16(Random.Shared.Next(0, ushort.MaxValue));
 
         // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
         // RTP and RTCP packets received from the remote party.
@@ -153,7 +153,7 @@ internal class MediaStreamTrack
                 throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
             }
             expectedSeqNum = actualSeqNum;
-            var nextSeqNum = actualSeqNum >= UInt16.MaxValue ? 0 : (ushort)(actualSeqNum + 1);
+            var nextSeqNum = actualSeqNum >= ushort.MaxValue ? 0 : (ushort)(actualSeqNum + 1);
             actualSeqNum = Interlocked.CompareExchange(ref _seqNum, nextSeqNum, expectedSeqNum);
         } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
 

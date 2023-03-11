@@ -19,7 +19,7 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 
 public static class NetConvert
 {
-    public static UInt16 DoReverseEndian(UInt16 x)
+    public static ushort DoReverseEndian(ushort x)
     {
         //return Convert.ToUInt16((x << 8 & 0xff00) | (x >> 8));
         return BitConverter.ToUInt16(BitConverter.GetBytes(x).Reverse().ToArray(), 0);

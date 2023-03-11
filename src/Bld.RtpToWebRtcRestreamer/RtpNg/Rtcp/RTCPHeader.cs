@@ -34,7 +34,7 @@ internal class RtcpHeader
     private int PaddingFlag { get; } // 1 bit.
     public int ReceptionReportCount { get; } // 5 bits.
     public RtcpReportTypes PacketType { get; }       // 8 bits.
-    private UInt16 Length { get; set; }                        // 16 bits.
+    private ushort Length { get; set; }                        // 16 bits.
 
     /// <summary>
     /// The Feedback Message Type is used for RFC4585 transport layer feedback reports.

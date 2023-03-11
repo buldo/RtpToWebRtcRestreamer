@@ -99,9 +99,9 @@ internal class RawPacket
          *
          * @return the length of the extensions currently added to this packet.
          */
-    private UInt16 GetExtensionLength()
+    private ushort GetExtensionLength()
     {
-        UInt16 length = 0;
+        ushort length = 0;
         if (GetExtensionBit())
         {
             // the extension length comes after the RTP header, the CSRC list,

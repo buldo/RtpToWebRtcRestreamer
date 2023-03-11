@@ -220,7 +220,7 @@ internal class SDP
                     switch (sdpLineTrimmed)
                     {
                         case var l when l.StartsWith("v="):
-                            if (!Decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
+                            if (!decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
                             {
                                 logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: " + sdpLine + ".");
                             }
@@ -230,7 +230,7 @@ internal class SDP
                             var ownerFields = sdpLineTrimmed.Substring(2).Split(' ');
                             sdp.Username = ownerFields[0];
                             sdp.SessionId = ownerFields[1];
-                            Int32.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
+                            int.TryParse(ownerFields[2], out sdp.AnnouncementVersion);
                             sdp.NetworkType = ownerFields[3];
                             sdp.AddressType = ownerFields[4];
                             sdp.AddressOrHost = ownerFields[5];
@@ -301,7 +301,7 @@ internal class SDP
                                 var announcement = new SDPMediaAnnouncement();
                                 announcement.MLineIndex = mLineIndex;
                                 announcement.Media = SDPMediaTypes.GetSDPMediaType(mediaMatch.Result("${type}"));
-                                Int32.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
+                                int.TryParse(mediaMatch.Result("${port}"), out announcement.Port);
                                 announcement.Transport = mediaMatch.Result("${transport}");
                                 announcement.ParseMediaFormats(mediaMatch.Result("${formats}"));
                                 if (announcement.Media == SDPMediaTypesEnum.audio || announcement.Media == SDPMediaTypesEnum.video)
@@ -416,7 +416,7 @@ internal class SDP
                                     if (formatAttributeMatch.Success) {
                                         var extensionId = formatAttributeMatch.Result("${id}");
                                         var uri = formatAttributeMatch.Result("${url}");
-                                        if (Int32.TryParse(extensionId, out var id)) {
+                                        if (int.TryParse(extensionId, out var id)) {
                                             activeAnnouncement.HeaderExtensions.Add(id, new RTPHeaderExtension(id, uri));
                                         }
                                         else {
@@ -439,7 +439,7 @@ internal class SDP
                                         var formatID = formatAttributeMatch.Result("${id}");
                                         var rtpmap = formatAttributeMatch.Result("${attribute}");
 
-                                        if (Int32.TryParse(formatID, out var id))
+                                        if (int.TryParse(formatID, out var id))
                                         {
                                             if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                             {
@@ -503,7 +503,7 @@ internal class SDP
                                         var avFormatID = formatAttributeMatch.Result("${id}");
                                         var fmtp = formatAttributeMatch.Result("${attribute}");
 
-                                        if (Int32.TryParse(avFormatID, out var id))
+                                        if (int.TryParse(avFormatID, out var id))
                                         {
                                             if (activeAnnouncement.MediaFormats.ContainsKey(id))
                                             {

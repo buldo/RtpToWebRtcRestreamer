@@ -72,28 +72,28 @@ internal class RtcpCompoundPacket
             {
                 case (byte)RtcpReportTypes.SR:
                     SenderReport = new RtcpSenderReport(buffer);
-                    var srLength = SenderReport != null ? SenderReport.GetBytes().Length : Int32.MaxValue;
+                    var srLength = SenderReport != null ? SenderReport.GetBytes().Length : int.MaxValue;
                     offset += srLength;
                     break;
                 case (byte)RtcpReportTypes.RR:
                     ReceiverReport = new RtcpReceiverReport(buffer);
-                    var rrLength = ReceiverReport != null ? ReceiverReport.GetBytes().Length : Int32.MaxValue;
+                    var rrLength = ReceiverReport != null ? ReceiverReport.GetBytes().Length : int.MaxValue;
                     offset += rrLength;
                     break;
                 case (byte)RtcpReportTypes.SDES:
                     SDesReport = new RtcpSDesReport(buffer);
-                    var sdesLength = SDesReport != null ? SDesReport.GetBytes().Length : Int32.MaxValue;
+                    var sdesLength = SDesReport != null ? SDesReport.GetBytes().Length : int.MaxValue;
                     offset += sdesLength;
                     break;
                 case (byte)RtcpReportTypes.BYE:
                     Bye = new RtcpBye(buffer);
-                    var byeLength = Bye != null ? Bye.GetBytes().Length : Int32.MaxValue;
+                    var byeLength = Bye != null ? Bye.GetBytes().Length : int.MaxValue;
                     offset += byeLength;
                     break;
                 case (byte)RtcpReportTypes.RTPFB:
                     // TODO: Interpret Generic RTP feedback reports.
                     Feedback = new RtcpFeedback(buffer);
-                    var rtpfbFeedbackLength = Feedback != null ? Feedback.GetBytes().Length : Int32.MaxValue;
+                    var rtpfbFeedbackLength = Feedback != null ? Feedback.GetBytes().Length : int.MaxValue;
                     offset += rtpfbFeedbackLength;
                     //var rtpfbHeader = new RtcpHeader(buffer);
                     //offset += rtpfbHeader.Length * 4 + 4;
@@ -101,14 +101,14 @@ internal class RtcpCompoundPacket
                 case (byte)RtcpReportTypes.PSFB:
                     // TODO: Interpret Payload specific feedback reports.
                     Feedback = new RtcpFeedback(buffer);
-                    var psfbFeedbackLength = Feedback != null ? Feedback.GetBytes().Length : Int32.MaxValue;
+                    var psfbFeedbackLength = Feedback != null ? Feedback.GetBytes().Length : int.MaxValue;
                     offset += psfbFeedbackLength;
                     //var psfbHeader = new RtcpHeader(buffer);
                     //offset += psfbHeader.Length * 4 + 4;
                     break;
                 default:
                     logger.LogWarning($"RTCPCompoundPacket did not recognise packet type ID {packetTypeID}.");
-                    offset = Int32.MaxValue;
+                    offset = int.MaxValue;
                     logger.LogWarning(packet.HexStr());
                     break;
             }

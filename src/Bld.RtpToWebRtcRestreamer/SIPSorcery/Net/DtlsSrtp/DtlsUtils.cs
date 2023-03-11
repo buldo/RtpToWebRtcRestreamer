@@ -184,7 +184,7 @@ internal static class DtlsUtils
         certificateGenerator.AddExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(new List<DerObjectIdentifier> { new DerObjectIdentifier("1.3.6.1.5.5.7.3.1") }));
 
         // Serial Number
-        var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+        var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(long.MaxValue), random);
         certificateGenerator.SetSerialNumber(serialNumber);
 
         // Issuer and Subject Name

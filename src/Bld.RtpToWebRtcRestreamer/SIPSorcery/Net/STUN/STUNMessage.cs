@@ -111,7 +111,7 @@ internal class STUNMessage
 
     public byte[] ToByteBuffer(byte[] messageIntegrityKey, bool addFingerprint)
     {
-        UInt16 attributesLength = 0;
+        ushort attributesLength = 0;
         foreach (var attribute in Attributes)
         {
             attributesLength += Convert.ToUInt16(STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH + attribute.PaddedLength);
@@ -128,13 +128,13 @@ internal class STUNMessage
 
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)Header.MessageType)), 0, buffer, 0, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)Header.MessageType)), 0, buffer, 0, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(attributesLength)), 0, buffer, 2, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(STUNHeader.MAGIC_COOKIE)), 0, buffer, 4, 4);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes((UInt16)Header.MessageType), 0, buffer, 0, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)Header.MessageType), 0, buffer, 0, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(attributesLength), 0, buffer, 2, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(STUNHeader.MAGIC_COOKIE), 0, buffer, 4, 4);
         }

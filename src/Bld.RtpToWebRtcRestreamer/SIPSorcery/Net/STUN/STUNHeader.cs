@@ -80,7 +80,7 @@ internal class STUNHeader
 {
     private const byte STUN_INITIAL_BYTE_MASK = 0xc0; // Mask to check that the first two bits of the packet are 00.
     public const int STUN_HEADER_LENGTH = 20;
-    public const UInt32 MAGIC_COOKIE = 0x2112A442;
+    public const uint MAGIC_COOKIE = 0x2112A442;
     public const int TRANSACTION_ID_LENGTH = 12;
 
     public STUNMessageTypesEnum MessageType = STUNMessageTypesEnum.BindingRequest;
@@ -93,7 +93,7 @@ internal class STUNHeader
         }
     }
 
-    public UInt16 MessageLength;
+    public ushort MessageLength;
     public byte[] TransactionId = new byte[TRANSACTION_ID_LENGTH];
 
     public STUNHeader()

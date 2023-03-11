@@ -178,7 +178,7 @@ internal class RtcpSession
     /// Callback function for the RTCP report timer.
     /// </summary>
     /// <param name="stateInfo">Not used.</param>
-    private void SendReportTimerCallback(Object stateInfo)
+    private void SendReportTimerCallback(object stateInfo)
     {
         try
         {

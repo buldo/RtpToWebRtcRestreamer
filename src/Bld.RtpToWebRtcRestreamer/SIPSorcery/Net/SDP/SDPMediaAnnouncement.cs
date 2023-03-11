@@ -168,7 +168,7 @@ internal class SDPMediaAnnouncement
 
     public void ParseMediaFormats(string formatList)
     {
-        if (!String.IsNullOrWhiteSpace(formatList))
+        if (!string.IsNullOrWhiteSpace(formatList))
         {
             var formatIDs = Regex.Split(formatList, @"\s");
             foreach (var formatID in formatIDs)
@@ -183,7 +183,7 @@ internal class SDPMediaAnnouncement
                 }
                 else
                 {
-                    if (Int32.TryParse(formatID, out var id)
+                    if (int.TryParse(formatID, out var id)
                         && !MediaFormats.ContainsKey(id)
                         && id < SDPAudioVideoMediaFormat.DYNAMIC_ID_MIN)
                     {

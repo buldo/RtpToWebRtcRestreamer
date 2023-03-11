@@ -20,13 +20,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
 
 internal class STUNAddressAttribute : STUNAttribute
 {
-    private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+    private const ushort ADDRESS_ATTRIBUTE_LENGTH = 8;
 
     private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
     private int Port;
     private IPAddress Address;
 
-    public override UInt16 PaddedLength
+    public override ushort PaddedLength
     {
         get { return ADDRESS_ATTRIBUTE_LENGTH; }
     }
@@ -50,12 +50,12 @@ internal class STUNAddressAttribute : STUNAttribute
     {
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
         }
 

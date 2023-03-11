@@ -173,7 +173,7 @@ internal class ChecklistEntry : IComparable
     /// <summary>
     /// Compare method to allow the checklist to be sorted in priority order.
     /// </summary>
-    public int CompareTo(Object other)
+    public int CompareTo(object other)
     {
         if (other is ChecklistEntry)
         {

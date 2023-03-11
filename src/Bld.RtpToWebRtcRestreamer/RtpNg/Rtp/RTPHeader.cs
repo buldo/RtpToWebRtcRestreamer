@@ -14,11 +14,11 @@ internal class RtpHeader
     private int CSRCCount;                               // 4 bits
     public int MarkerBit;                               // 1 bit.
     public int PayloadType;                             // 7 bits.
-    public UInt16 SequenceNumber;                           // 16 bits.
+    public ushort SequenceNumber;                           // 16 bits.
     public uint Timestamp;                                  // 32 bits.
     public uint SyncSource;                                 // 32 bits.
-    private UInt16 ExtensionProfile;                         // 16 bits.
-    private UInt16 ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
+    private ushort ExtensionProfile;                         // 16 bits.
+    private ushort ExtensionLength;                          // 16 bits, length of the header extensions in 32 bit words.
     private byte[] ExtensionPayload;
 
     public int PayloadSize;

@@ -77,7 +77,7 @@ internal class RtcpSDesReport
     /// length is 255 bytes (note bytes not characters).</param>
     public RtcpSDesReport(uint ssrc, string cname)
     {
-        if (String.IsNullOrEmpty(cname))
+        if (string.IsNullOrEmpty(cname))
         {
             throw new ArgumentNullException("cname");
         }

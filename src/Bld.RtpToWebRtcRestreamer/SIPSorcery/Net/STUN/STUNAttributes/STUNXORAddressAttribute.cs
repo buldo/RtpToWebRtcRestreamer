@@ -24,13 +24,13 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.STUN.STUNAttributes;
 /// </summary>
 internal class STUNXORAddressAttribute : STUNAttribute
 {
-    private const UInt16 ADDRESS_ATTRIBUTE_LENGTH = 8;
+    private const ushort ADDRESS_ATTRIBUTE_LENGTH = 8;
 
     private int Family = 1;      // Ipv4 = 1, IPv6 = 2.
     private int Port;
     private IPAddress Address;
 
-    public override UInt16 PaddedLength
+    public override ushort PaddedLength
     {
         get { return ADDRESS_ATTRIBUTE_LENGTH; }
     }
@@ -40,13 +40,13 @@ internal class STUNXORAddressAttribute : STUNAttribute
     {
         if (BitConverter.IsLittleEndian)
         {
-            Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
+            Port = NetConvert.DoReverseEndian(BitConverter.ToUInt16(attributeValue, 2)) ^ (ushort)(STUNHeader.MAGIC_COOKIE >> 16);
             var address = NetConvert.DoReverseEndian(BitConverter.ToUInt32(attributeValue, 4)) ^ STUNHeader.MAGIC_COOKIE;
             Address = new IPAddress(NetConvert.DoReverseEndian(address));
         }
         else
         {
-            Port = BitConverter.ToUInt16(attributeValue, 2) ^ (UInt16)(STUNHeader.MAGIC_COOKIE >> 16);
+            Port = BitConverter.ToUInt16(attributeValue, 2) ^ (ushort)(STUNHeader.MAGIC_COOKIE >> 16);
             var address = BitConverter.ToUInt32(attributeValue, 4) ^ STUNHeader.MAGIC_COOKIE;
             Address = new IPAddress(address);
         }
@@ -63,12 +63,12 @@ internal class STUNXORAddressAttribute : STUNAttribute
     {
         if (BitConverter.IsLittleEndian)
         {
-            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((UInt16)AttributeType)), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian((ushort)AttributeType)), 0, buffer, startIndex, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(NetConvert.DoReverseEndian(ADDRESS_ATTRIBUTE_LENGTH)), 0, buffer, startIndex + 2, 2);
         }
         else
         {
-            Buffer.BlockCopy(BitConverter.GetBytes((UInt16)AttributeType), 0, buffer, startIndex, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes((ushort)AttributeType), 0, buffer, startIndex, 2);
             Buffer.BlockCopy(BitConverter.GetBytes(ADDRESS_ATTRIBUTE_LENGTH), 0, buffer, startIndex + 2, 2);
         }
 
