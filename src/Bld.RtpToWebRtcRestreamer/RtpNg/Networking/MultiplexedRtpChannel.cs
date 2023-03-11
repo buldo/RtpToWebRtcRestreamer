@@ -271,7 +271,7 @@ internal class MultiplexedRtpChannel
             {
                 return Math.Max(500,
                     Ta * Candidates.Count(x =>
-                        x.type == RTCIceCandidateType.srflx || x.type == RTCIceCandidateType.relay));
+                        x.type is RTCIceCandidateType.srflx or RTCIceCandidateType.relay));
             }
 
             return Math.Max(500,

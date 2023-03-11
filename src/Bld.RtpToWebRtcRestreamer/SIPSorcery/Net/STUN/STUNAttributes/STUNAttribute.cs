@@ -32,7 +32,7 @@
 //
 //
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -47,8 +47,8 @@ internal class STUNAttribute
 
     private static readonly ILogger logger = Log.Logger;
 
-    public STUNAttributeTypesEnum AttributeType = STUNAttributeTypesEnum.Unknown;
-    public byte[] Value;
+    public STUNAttributeTypesEnum AttributeType { get; }
+    public byte[] Value { get; set; }
 
     public virtual ushort PaddedLength
     {
@@ -129,7 +129,7 @@ internal class STUNAttribute
 
                 attributes.Add(attribute);
 
-                // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
+                // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded.
                 var padding = stunAttributeLength % 4 != 0 ? 4 - stunAttributeLength % 4 : 0;
 
                 startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;

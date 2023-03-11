@@ -242,7 +242,7 @@ internal class RtcPeerConnection
 
                 // Check for data channel announcements.
                 if (ann.Media == SDPMediaTypesEnum.application &&
-                    ann.MediaFormats.Count() == 1 &&
+                    ann.MediaFormats.Count == 1 &&
                     ann.ApplicationMediaFormats.Single().Key == RtcPeerConnectionConstants.SDP_DATA_CHANNEL_FORMAT_ID)
                 {
                     if (ann.Transport == RtcPeerConnectionConstants.RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE ||

@@ -137,8 +137,6 @@ internal class SDP
 
     private static readonly ILogger logger = Log.Logger;
 
-    private decimal Version;
-
     // Owner fields.
     private string Username = "-";       // Username of the session originator.
     public string SessionId = "-";      // Unique Id for the session.
@@ -217,7 +215,7 @@ internal class SDP
                     switch (sdpLineTrimmed)
                     {
                         case var l when l.StartsWith("v="):
-                            if (!decimal.TryParse(sdpLineTrimmed.Substring(2), out sdp.Version))
+                            if (!decimal.TryParse(sdpLineTrimmed.Substring(2), out _))
                             {
                                 logger.LogWarning("The Version value in an SDP description could not be parsed as a decimal: " + sdpLine + ".");
                             }

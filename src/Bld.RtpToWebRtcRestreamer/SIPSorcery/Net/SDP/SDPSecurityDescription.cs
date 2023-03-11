@@ -63,7 +63,6 @@ internal class SDPSecurityDescription
     }
     internal class KeyParameter
     {
-        private const string COLON = ":";
         private const string PIPE = "|";
         private const string KEY_METHOD = "inline";
         private byte[] m_key;

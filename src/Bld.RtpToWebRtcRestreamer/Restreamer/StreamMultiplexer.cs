@@ -63,11 +63,6 @@ internal class StreamMultiplexer
 
     public MultiplexedPeer? GetById(Guid id)
     {
-        if (_peers.TryGetValue(id, out var peer))
-        {
-            return peer;
-        }
-
-        return null;
+        return _peers.TryGetValue(id, out var peer) ? peer : null;
     }
 }
