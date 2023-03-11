@@ -544,10 +544,9 @@ internal class RtcPeerConnection
     ///     |       B< 2    -+--> forward to STUN
     ///     +----------------+
     /// </summary>
-    /// <param name="localPort">The local port on the RTP socket that received the packet.</param>
     /// <param name="remoteEndPoint">The remote end point the packet was received from.</param>
     /// <param name="buffer">The data received.</param>
-    private async Task OnRTPDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+    private async Task OnRTPDataReceived(IPEndPoint remoteEndPoint, byte[] buffer)
     {
         //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
@@ -563,7 +562,7 @@ internal class RtcPeerConnection
                 if (buffer.Length > RtpHeader.MIN_HEADER_LEN && buffer[0] >= 128 && buffer[0] <= 191)
                 {
                     // RTP/RTCP packet.
-                    OnReceive(localPort, remoteEndPoint, buffer);
+                    await OnReceive(remoteEndPoint, buffer);
                 }
                 else
                 {
@@ -892,7 +891,7 @@ internal class RtcPeerConnection
         await _videoStream.SendRtpRawFromPacketAsync(packet);
     }
 
-    private void OnReceive(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+    private async Task OnReceive(IPEndPoint remoteEndPoint, byte[] buffer)
     {
         if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
         {
@@ -920,7 +919,7 @@ internal class RtcPeerConnection
                         buffer[1] == (byte)RtcpReportTypes.PSFB ||
                         buffer[1] == (byte)RtcpReportTypes.RTPFB)
                     {
-                        OnReceiveRTCPPacket(remoteEndPoint, buffer);
+                        await OnReceiveRTCPPacket(remoteEndPoint, buffer);
                     }
                 }
             }

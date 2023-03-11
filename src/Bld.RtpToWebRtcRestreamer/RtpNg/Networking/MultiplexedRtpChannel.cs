@@ -185,7 +185,7 @@ internal class MultiplexedRtpChannel
     private readonly ConcurrentBag<RTCIceCandidate> _remoteCandidates = new();
 
     private readonly UdpSocket _udpSocket;
-    private readonly Func<int, IPEndPoint, byte[], Task> _onRtpDataReceivedHandler;
+    private readonly Func<IPEndPoint, byte[], Task> _onRtpDataReceivedHandler;
 
     /// <summary>
     ///     The local end point the RTP socket is listening on.
@@ -202,7 +202,7 @@ internal class MultiplexedRtpChannel
     /// </summary>
     public MultiplexedRtpChannel(
         UdpSocket udpSocket,
-        Func<int,IPEndPoint,byte[],Task> onRtpDataReceivedHandler)
+        Func<IPEndPoint,byte[],Task> onRtpDataReceivedHandler)
     {
         _udpSocket = udpSocket;
         _rtpLocalEndPoint = _udpSocket.LocalEndpoint;
@@ -1295,7 +1295,7 @@ internal class MultiplexedRtpChannel
             }
             else
             {
-                await _onRtpDataReceivedHandler(_rtpLocalEndPoint.Port, remoteEndPoint, packetBuffer);
+                await _onRtpDataReceivedHandler(remoteEndPoint, packetBuffer);
             }
         }
     }
