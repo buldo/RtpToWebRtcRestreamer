@@ -26,88 +26,89 @@ using Org.BouncyCastle.Tls;
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 
 /// <summary>
-/// Represents an SCTP transport that uses a DTLS transport.
+///     Represents an SCTP transport that uses a DTLS transport.
 /// </summary>
 /// <remarks>
-/// DTLS encapsulation of SCTP:
-/// https://tools.ietf.org/html/rfc8261
-///
-/// WebRTC API RTCSctpTransport Interface definition:
-/// https://www.w3.org/TR/webrtc/#webidl-1410933428
+///     DTLS encapsulation of SCTP:
+///     https://tools.ietf.org/html/rfc8261
+///     WebRTC API RTCSctpTransport Interface definition:
+///     https://www.w3.org/TR/webrtc/#webidl-1410933428
 /// </remarks>
 internal class RTCSctpTransport : SctpTransport
 {
     private const string THREAD_NAME_PREFIX = "rtcsctprecv-";
 
     /// <summary>
-    /// The DTLS transport has no mechanism to cancel a pending receive. The workaround is
-    /// to set a timeout on each receive call.
+    ///     The DTLS transport has no mechanism to cancel a pending receive. The workaround is
+    ///     to set a timeout on each receive call.
     /// </summary>
     private const int RECEIVE_TIMEOUT_MILLISECONDS = 1000;
 
     /// <summary>
-    /// The default maximum size of payload that can be sent on a data channel.
+    ///     The default maximum size of payload that can be sent on a data channel.
     /// </summary>
     /// <remarks>
-    /// https://www.w3.org/TR/webrtc/#sctp-transport-update-mms
+    ///     https://www.w3.org/TR/webrtc/#sctp-transport-update-mms
     /// </remarks>
     private const uint SCTP_DEFAULT_MAX_MESSAGE_SIZE = 262144;
 
     private static readonly ILogger logger = Log.Logger;
 
-    /// <summary>
-    /// The SCTP ports are redundant for a DTLS transport. There will only ever be one
-    /// SCTP association so the SCTP ports do not need to be used for end point matching.
-    /// </summary>
-    public override bool IsPortAgnostic => true;
-
-    /// <summary>
-    /// The transport over which all SCTP packets for data channels
-    /// will be sent and received.
-    /// </summary>
-    private DatagramTransport transport { get; set; }
-
-    /// <summary>
-    /// Indicates the role of this peer in the DTLS connection. This influences
-    /// the selection of stream ID's for SCTP messages.
-    /// </summary>
-    public bool IsDtlsClient { get; private set; }
-
-    /// <summary>
-    /// The current state of the SCTP transport.
-    /// </summary>
-    public RTCSctpTransportState state { get; private set; }
-
     private readonly RTCPeerSctpAssociation _rtcSctpAssociation;
+    private bool _isClosed;
 
     private bool _isStarted;
-    private bool _isClosed;
     private Thread _receiveThread;
 
     /// <summary>
-    /// Creates a new SCTP transport that runs on top of an established DTLS connection.
+    ///     The transport over which all SCTP packets for data channels
+    ///     will be sent and received.
+    /// </summary>
+    private DatagramTransport _transport;
+
+    /// <summary>
+    ///     Creates a new SCTP transport that runs on top of an established DTLS connection.
     /// </summary>
     /// <param name="sourcePort">The SCTP source port.</param>
     /// <param name="destinationPort">The SCTP destination port.</param>
-    /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
-    /// will be set on the SCTP association to aid in diagnostics.</param>
+    /// <param name="dtlsPort">
+    ///     Optional. The local UDP port being used for the DTLS connection. This
+    ///     will be set on the SCTP association to aid in diagnostics.
+    /// </param>
     public RTCSctpTransport(ushort sourcePort, ushort destinationPort, int dtlsPort)
     {
-        SetState(RTCSctpTransportState.Closed);
+        State = RTCSctpTransportState.Closed;
 
         _rtcSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort, dtlsPort);
         _rtcSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
     }
 
     /// <summary>
-    /// Attempts to update the SCTP destination port the association managed by this transport will use.
+    ///     The SCTP ports are redundant for a DTLS transport. There will only ever be one
+    ///     SCTP association so the SCTP ports do not need to be used for end point matching.
+    /// </summary>
+    public override bool IsPortAgnostic => true;
+
+    /// <summary>
+    ///     Indicates the role of this peer in the DTLS connection. This influences
+    ///     the selection of stream ID's for SCTP messages.
+    /// </summary>
+    public bool IsDtlsClient { get; private set; }
+
+    /// <summary>
+    ///     The current state of the SCTP transport.
+    /// </summary>
+    public RTCSctpTransportState State { get; private set; }
+
+    /// <summary>
+    ///     Attempts to update the SCTP destination port the association managed by this transport will use.
     /// </summary>
     /// <param name="port">The updated destination port.</param>
     public void UpdateDestinationPort(ushort port)
     {
-        if (state != RTCSctpTransportState.Closed)
+        if (State != RTCSctpTransportState.Closed)
         {
-            logger.LogWarning($"SCTP destination port cannot be updated when the transport is in state {state}.");
+            logger.LogWarning($"SCTP destination port cannot be updated when the transport is in state {State}.");
         }
         else
         {
@@ -116,7 +117,7 @@ internal class RTCSctpTransport : SctpTransport
     }
 
     /// <summary>
-    /// Starts the SCTP transport receive thread.
+    ///     Starts the SCTP transport receive thread.
     /// </summary>
     public void Start(DatagramTransport dtlsTransport, bool isDtlsClient)
     {
@@ -124,7 +125,7 @@ internal class RTCSctpTransport : SctpTransport
         {
             _isStarted = true;
 
-            transport = dtlsTransport;
+            _transport = dtlsTransport;
             IsDtlsClient = isDtlsClient;
 
             _receiveThread = new Thread(DoReceive);
@@ -135,48 +136,40 @@ internal class RTCSctpTransport : SctpTransport
     }
 
     /// <summary>
-    /// Closes the SCTP association and stops the receive thread.
+    ///     Closes the SCTP association and stops the receive thread.
     /// </summary>
     public void Close()
     {
-        if (state == RTCSctpTransportState.Connected)
+        if (State == RTCSctpTransportState.Connected)
         {
             _rtcSctpAssociation?.Shutdown();
         }
+
         _isClosed = true;
     }
 
     /// <summary>
-    /// Event handler to coordinate changes to the SCTP association state with the overall
-    /// SCTP transport state.
+    ///     Event handler to coordinate changes to the SCTP association state with the overall
+    ///     SCTP transport state.
     /// </summary>
     /// <param name="associationState">The state of the SCTP association.</param>
     private void OnAssociationStateChanged(SctpAssociationState associationState)
     {
         if (associationState == SctpAssociationState.Established)
         {
-            SetState(RTCSctpTransportState.Connected);
+            State = RTCSctpTransportState.Connected;
         }
         else if (associationState == SctpAssociationState.Closed)
         {
-            SetState(RTCSctpTransportState.Closed);
+            State = RTCSctpTransportState.Closed;
         }
     }
 
     /// <summary>
-    /// Sets the state for the SCTP transport.
-    /// </summary>
-    /// <param name="newState">The new state to set.</param>
-    private void SetState(RTCSctpTransportState newState)
-    {
-        state = newState;
-    }
-
-    /// <summary>
-    /// Gets a cookie to send in an INIT ACK chunk. This SCTP
-    /// transport for a WebRTC peer connection needs to use the same
-    /// local tag and TSN in every chunk as only a single association
-    /// is ever maintained.
+    ///     Gets a cookie to send in an INIT ACK chunk. This SCTP
+    ///     transport for a WebRTC peer connection needs to use the same
+    ///     local tag and TSN in every chunk as only a single association
+    ///     is ever maintained.
     /// </summary>
     protected override SctpTransportCookie GetInitAckCookie(
         ushort sourcePort,
@@ -206,8 +199,8 @@ internal class RTCSctpTransport : SctpTransport
     }
 
     /// <summary>
-    /// This method runs on a dedicated thread to listen for incoming SCTP
-    /// packets on the DTLS transport.
+    ///     This method runs on a dedicated thread to listen for incoming SCTP
+    ///     packets on the DTLS transport.
     /// </summary>
     private void DoReceive(object state)
     {
@@ -217,7 +210,7 @@ internal class RTCSctpTransport : SctpTransport
         {
             try
             {
-                var bytesRead = transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
+                var bytesRead = _transport.Receive(recvBuffer, 0, recvBuffer.Length, RECEIVE_TIMEOUT_MILLISECONDS);
 
                 if (bytesRead == DtlsSrtpTransport.DtlsRetransmissionCode)
                 {
@@ -239,7 +232,8 @@ internal class RTCSctpTransport : SctpTransport
                         if (pkt.Chunks.Any(x => x.KnownType == SctpChunkType.INIT))
                         {
                             var initChunk = pkt.Chunks.First(x => x.KnownType == SctpChunkType.INIT) as SctpInitChunk;
-                            logger.LogDebug($"SCTP INIT packet received, initial tag {initChunk.InitiateTag}, initial TSN {initChunk.InitialTSN}.");
+                            logger.LogDebug(
+                                $"SCTP INIT packet received, initial tag {initChunk.InitiateTag}, initial TSN {initChunk.InitialTSN}.");
 
                             GotInit(pkt, null);
                         }
@@ -282,7 +276,7 @@ internal class RTCSctpTransport : SctpTransport
                 // Treat application exceptions as recoverable, things like SCTP packet parse failures.
                 logger.LogWarning($"SCTP error processing RTCSctpTransport receive. {appExcp.Message}");
             }
-            catch(TlsFatalAlert alert)  when (alert.InnerException is SocketException)
+            catch (TlsFatalAlert alert) when (alert.InnerException is SocketException)
             {
                 var sockExcp = alert.InnerException as SocketException;
                 logger.LogWarning($"SCTP RTCSctpTransport receive socket failure {sockExcp.SocketErrorCode}.");
@@ -300,14 +294,13 @@ internal class RTCSctpTransport : SctpTransport
             logger.LogWarning($"SCTP association {_rtcSctpAssociation.ID} receive thread stopped.");
         }
 
-        SetState(RTCSctpTransportState.Closed);
+        State = RTCSctpTransportState.Closed;
     }
 
     /// <summary>
-    /// This method is called by the SCTP association when it wants to send an SCTP packet
-    /// to the remote party.
+    ///     This method is called by the SCTP association when it wants to send an SCTP packet
+    ///     to the remote party.
     /// </summary>
-    /// <param name="associationID">Not used for the DTLS transport.</param>
     /// <param name="buffer">The buffer containing the data to send.</param>
     /// <param name="offset">The position in the buffer to send from.</param>
     /// <param name="length">The number of bytes to send.</param>
@@ -321,9 +314,9 @@ internal class RTCSctpTransport : SctpTransport
 
         if (!_isClosed)
         {
-            lock (transport)
+            lock (_transport)
             {
-                transport.Send(buffer, offset, length);
+                _transport.Send(buffer, offset, length);
             }
         }
     }

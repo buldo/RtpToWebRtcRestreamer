@@ -445,7 +445,7 @@ internal class RtcPeerConnection : IDisposable
             _rtpIceChannel.CloseAsync();
             DtlsHandle?.Close();
 
-            if (_sctp != null && _sctp.state == RTCSctpTransportState.Connected)
+            if (_sctp != null && _sctp.State == RTCSctpTransportState.Connected)
             {
                 _sctp?.Close();
             }
