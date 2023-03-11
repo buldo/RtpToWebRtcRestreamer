@@ -127,7 +127,7 @@ internal class ChecklistEntry : IComparable
     /// <summary>
     /// This field records the time a Create Permissions response was received.
     /// </summary>
-    public DateTime TurnPermissionsResponseAt { get; set; } = DateTime.MinValue;
+    public DateTime TurnPermissionsResponseAt { get; private set; } = DateTime.MinValue;
 
     /// <summary>
     /// If a candidate has been nominated this field records the time the last

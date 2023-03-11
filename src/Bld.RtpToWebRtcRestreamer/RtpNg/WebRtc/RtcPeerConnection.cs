@@ -406,7 +406,7 @@ internal class RtcPeerConnection
         {
             if (_rtpIceChannel.Candidates?.Count > 0)
             {
-                announcement.IceCandidates = new List<string>();
+                //announcement.IceCandidates = new List<string>();
 
                 // Add ICE candidates.
                 foreach (var iceCandidate in _rtpIceChannel.Candidates)

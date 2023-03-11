@@ -29,7 +29,7 @@ internal class RTCIceCandidate
     private const string REMOTE_ADDRESS_KEY = "raddr";
     private const string REMOTE_PORT_KEY = "rport";
 
-    public ushort sdpMLineIndex { get; }
+    public ushort SDPMLineIndex { get; }
 
     /// <summary>
     /// Composed of 1 to 32 chars. It is an
@@ -101,7 +101,7 @@ internal class RTCIceCandidate
 
     public RTCIceCandidate(RTCIceCandidateInit init)
     {
-        sdpMLineIndex = init.sdpMLineIndex;
+        SDPMLineIndex = init.sdpMLineIndex;
 
         if (!string.IsNullOrEmpty(init.candidate))
         {

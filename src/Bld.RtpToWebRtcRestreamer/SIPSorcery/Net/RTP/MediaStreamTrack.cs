@@ -22,14 +22,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
 
 internal class MediaStreamTrack
 {
-    /// <summary>
-    /// If the SDP remote the remote party provides "a=ssrc" attributes, as specified
-    /// in RFC5576, this property will hold the values. The list can be used when
-    /// an RTP/RTCP packet is received and needs to be matched against a media type or
-    /// RTCP report.
-    /// </summary>
-    private readonly Dictionary<uint, SDPSsrcAttribute> _sdpSsrc = new();
-
     // The value used in the RTP Sequence Number header field for media packets.
     // Although valid values are all in the range of ushort, the underlying field is of type int, because Interlocked.CompareExchange is used to increment in a fast and thread-safe manner and there is no overload for ushort.
     private int _seqNum;
@@ -42,9 +34,10 @@ internal class MediaStreamTrack
     /// send and receive or only one of.</param>
     public MediaStreamTrack(
         VideoFormat format,
-        MediaStreamStatusEnum streamStatus) :
-        this(SDPMediaTypesEnum.video, new List<SDPAudioVideoMediaFormat> { new(format) }, streamStatus)
-    { }
+        MediaStreamStatusEnum streamStatus)
+        : this(SDPMediaTypesEnum.video, new List<SDPAudioVideoMediaFormat> { new(format) }, streamStatus)
+    {
+    }
 
     /// <summary>
     /// Creates a lightweight class to track a media stream track within an RTP session
@@ -60,14 +53,10 @@ internal class MediaStreamTrack
     /// to remove capabilities we don't support.</param>
     /// <param name="streamStatus">The initial stream status for the media track. Defaults to
     /// send receive.</param>
-    /// <param name="ssrcAttributes">Optional. If the track is being created from an SDP announcement this
-    /// parameter contains a list of the SSRC attributes that should then match the RTP header SSRC value
-    /// for this track.</param>
     private MediaStreamTrack(
         SDPMediaTypesEnum kind,
         List<SDPAudioVideoMediaFormat> capabilities,
-        MediaStreamStatusEnum streamStatus,
-        List<SDPSsrcAttribute> ssrcAttributes = null)
+        MediaStreamStatusEnum streamStatus)
     {
         Kind = kind;
         Capabilities = capabilities;
@@ -76,19 +65,6 @@ internal class MediaStreamTrack
 
         Ssrc = Convert.ToUInt32(Random.Shared.Next(0, int.MaxValue));
         _seqNum = Convert.ToUInt16(Random.Shared.Next(0, ushort.MaxValue));
-
-        // Add the source attributes from the remote SDP to help match RTP SSRC and RTCP CNAME values against
-        // RTP and RTCP packets received from the remote party.
-        if (ssrcAttributes?.Count > 0)
-        {
-            foreach (var ssrcAttr in ssrcAttributes)
-            {
-                if (!_sdpSsrc.ContainsKey(ssrcAttr.SSRC))
-                {
-                    _sdpSsrc.Add(ssrcAttr.SSRC, ssrcAttr);
-                }
-            }
-        }
     }
 
     /// <summary>

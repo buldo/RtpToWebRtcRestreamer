@@ -357,10 +357,10 @@ internal class MultiplexedRtpChannel
             // It will offer the same ICE candidates separately for the audio and video announcements.
             logger.LogWarning("Remote ICE candidate has unsupported component.");
         }
-        else if (candidate.sdpMLineIndex != 0)
+        else if (candidate.SDPMLineIndex != 0)
         {
             // This implementation currently only supports audio and video multiplexed on a single channel.
-            logger.LogWarning($"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.sdpMLineIndex}.");
+            logger.LogWarning($"Remote ICE candidate only supports multiplexed media, excluding remote candidate with non-zero sdpMLineIndex of {candidate.SDPMLineIndex}.");
         }
         else if (candidate.protocol != RTCIceProtocol.udp)
         {
@@ -474,7 +474,7 @@ internal class MultiplexedRtpChannel
                 RTCIceCandidateType.host, null, 0);
 
             // We currently only support a single multiplexed connection for all data streams and RTCP.
-            if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.sdpMLineIndex == SDP_MLINE_INDEX)
+            if (hostCandidate.component == RTCIceComponent.rtp && hostCandidate.SDPMLineIndex == SDP_MLINE_INDEX)
             {
                 hostCandidates.Add(hostCandidate);
             }

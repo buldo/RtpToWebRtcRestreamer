@@ -385,10 +385,6 @@ internal class SDP
                         case var x when x.StartsWith($"a={ICE_CANDIDATE_ATTRIBUTE_PREFIX}"):
                             if (activeAnnouncement != null)
                             {
-                                if (activeAnnouncement.IceCandidates == null)
-                                {
-                                    activeAnnouncement.IceCandidates = new List<string>();
-                                }
                                 activeAnnouncement.IceCandidates.Add(sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1));
                             }
                             else
