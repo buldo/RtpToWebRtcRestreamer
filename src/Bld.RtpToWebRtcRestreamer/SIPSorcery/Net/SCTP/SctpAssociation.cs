@@ -72,13 +72,6 @@ internal class SctpAssociation
     /// </summary>
     public readonly string ID;
 
-    /// <summary>
-    /// Advertised Receiver Window Credit. This value represents the dedicated
-    /// buffer space, in number of bytes, that will be used for the receive buffer
-    /// for this association.
-    /// </summary>
-    private uint ARwnd { get; set; }
-
     private uint _remoteVerificationTag;
     private uint _remoteInitialTSN;
 
@@ -91,18 +84,6 @@ internal class SctpAssociation
     /// Event to notify application that the association state has changed.
     /// </summary>
     public event Action<SctpAssociationState> OnAssociationStateChanged;
-
-    /// <summary>
-    /// Event to notify the application that the remote party aborted this
-    /// association.
-    /// </summary>
-    public event Action<string> OnAbortReceived;
-
-    /// <summary>
-    /// Event to notify the application that an error occurred that caused
-    /// the association to be aborted locally.
-    /// </summary>
-    public event Action<string> OnAborted;
 
     /// <summary>
     /// Create a new SCTP association instance where the INIT will be generated
@@ -130,7 +111,6 @@ internal class SctpAssociation
         VerificationTag = Crypto.GetRandomUInt(true);
 
         ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
-        ARwnd = DEFAULT_ADVERTISED_RECEIVE_WINDOW;
 
         State = SctpAssociationState.Closed;
     }
@@ -176,7 +156,6 @@ internal class SctpAssociation
             _sctpSourcePort = cookie.SourcePort;
             _sctpDestinationPort = cookie.DestinationPort;
             VerificationTag = cookie.Tag;
-            ARwnd = cookie.ARwnd;
 
             InitRemoteProperties(cookie.RemoteTag, cookie.RemoteTSN, cookie.RemoteARwnd);
 
@@ -241,7 +220,6 @@ internal class SctpAssociation
                         var abortReason = (chunk as SctpAbortChunk).GetAbortReason();
                         logger.LogWarning($"SCTP packet ABORT chunk received from remote party, reason {abortReason}.");
                         _wasAborted = true;
-                        OnAbortReceived?.Invoke(abortReason);
                         break;
 
                     case var ct when ct == SctpChunkType.COOKIE_ACK && State != SctpAssociationState.CookieEchoed:
@@ -428,8 +406,6 @@ internal class SctpAssociation
             abortChunk.AddErrorCause(errorCause);
 
             SendChunk(abortChunk);
-
-            OnAborted?.Invoke(errorCause.CauseCode.ToString());
         }
     }
 

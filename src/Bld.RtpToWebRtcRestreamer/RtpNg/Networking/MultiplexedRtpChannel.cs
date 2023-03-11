@@ -119,7 +119,6 @@ internal class MultiplexedRtpChannel
     private const int
         CONNECTED_CHECK_PERIOD = 3; // The period in seconds to send STUN connectivity checks once connected.
 
-    private const string SDP_MID = "0";
     private const int SDP_MLINE_INDEX = 0;
 
 
@@ -220,9 +219,7 @@ internal class MultiplexedRtpChannel
 
         _localChecklistCandidate = new RTCIceCandidate(new RTCIceCandidateInit
         {
-            sdpMid = SDP_MID,
-            sdpMLineIndex = SDP_MLINE_INDEX,
-            usernameFragment = LocalIceUser
+            sdpMLineIndex = SDP_MLINE_INDEX
         });
 
         _localChecklistCandidate.SetAddressProperties(
@@ -489,7 +486,7 @@ internal class MultiplexedRtpChannel
     private List<RTCIceCandidate> GetHostCandidates()
     {
         var hostCandidates = new List<RTCIceCandidate>();
-        var init = new RTCIceCandidateInit { usernameFragment = LocalIceUser };
+        var init = new RTCIceCandidateInit();
 
         // RFC8445 states that loopback addresses should not be included in
         // host candidates. If the provided bind address is a loopback

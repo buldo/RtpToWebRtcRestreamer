@@ -8,8 +8,6 @@
 /// </remarks>
 internal class RTCIceCandidateInit
 {
-    public string candidate { get; set; }
-    public string sdpMid { get; set; }
-    public ushort sdpMLineIndex { get; set; }
-    public string usernameFragment { get; set; }
+    public string candidate { get; init; }
+    public ushort sdpMLineIndex { get; init; }
 }

@@ -78,20 +78,7 @@ internal class RTCSctpTransport : SctpTransport
     /// </summary>
     public RTCSctpTransportState state { get; private set; }
 
-    /// <summary>
-    /// The maximum size of data that can be passed to RTCDataChannel's send() method.
-    /// </summary>
-    /// <remarks>
-    /// See https://www.w3.org/TR/webrtc/#sctp-transport-update-mms.
-    /// </remarks>
-    public uint maxMessageSize => SCTP_DEFAULT_MAX_MESSAGE_SIZE;
-
-    public RTCPeerSctpAssociation RTCSctpAssociation { get; private set; }
-
-    /// <summary>
-    /// Event for notifications about changes to the SCTP transport state.
-    /// </summary>
-    public event Action<RTCSctpTransportState> OnStateChanged;
+    private readonly RTCPeerSctpAssociation _rtcSctpAssociation;
 
     private bool _isStarted;
     private bool _isClosed;
@@ -108,8 +95,8 @@ internal class RTCSctpTransport : SctpTransport
     {
         SetState(RTCSctpTransportState.Closed);
 
-        RTCSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort, dtlsPort);
-        RTCSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
+        _rtcSctpAssociation = new RTCPeerSctpAssociation(this, sourcePort, destinationPort, dtlsPort);
+        _rtcSctpAssociation.OnAssociationStateChanged += OnAssociationStateChanged;
     }
 
     /// <summary>
@@ -124,7 +111,7 @@ internal class RTCSctpTransport : SctpTransport
         }
         else
         {
-            RTCSctpAssociation.UpdateDestinationPort(port);
+            _rtcSctpAssociation.UpdateDestinationPort(port);
         }
     }
 
@@ -141,7 +128,7 @@ internal class RTCSctpTransport : SctpTransport
             IsDtlsClient = isDtlsClient;
 
             _receiveThread = new Thread(DoReceive);
-            _receiveThread.Name = $"{THREAD_NAME_PREFIX}{RTCSctpAssociation.ID}";
+            _receiveThread.Name = $"{THREAD_NAME_PREFIX}{_rtcSctpAssociation.ID}";
             _receiveThread.IsBackground = true;
             _receiveThread.Start();
         }
@@ -154,7 +141,7 @@ internal class RTCSctpTransport : SctpTransport
     {
         if (state == RTCSctpTransportState.Connected)
         {
-            RTCSctpAssociation?.Shutdown();
+            _rtcSctpAssociation?.Shutdown();
         }
         _isClosed = true;
     }
@@ -183,7 +170,6 @@ internal class RTCSctpTransport : SctpTransport
     private void SetState(RTCSctpTransportState newState)
     {
         state = newState;
-        OnStateChanged?.Invoke(state);
     }
 
     /// <summary>
@@ -209,7 +195,7 @@ internal class RTCSctpTransport : SctpTransport
             RemoteTSN = remoteTSN,
             RemoteARwnd = remoteARwnd,
             RemoteEndPoint = remoteEndPoint,
-            Tag = RTCSctpAssociation.VerificationTag,
+            Tag = _rtcSctpAssociation.VerificationTag,
             ARwnd = SctpAssociation.DEFAULT_ADVERTISED_RECEIVE_WINDOW,
             CreatedAt = DateTime.Now.ToString("o"),
             Lifetime = DEFAULT_COOKIE_LIFETIME_SECONDS + lifeTimeExtension,
@@ -269,18 +255,18 @@ internal class RTCSctpTransport : SctpTransport
                             }
                             else
                             {
-                                RTCSctpAssociation.GotCookie(cookie);
+                                _rtcSctpAssociation.GotCookie(cookie);
 
                                 if (pkt.Chunks.Count() > 1)
                                 {
                                     // There could be DATA chunks after the COOKIE ECHO chunk.
-                                    RTCSctpAssociation.OnPacketReceived(pkt);
+                                    _rtcSctpAssociation.OnPacketReceived(pkt);
                                 }
                             }
                         }
                         else
                         {
-                            RTCSctpAssociation.OnPacketReceived(pkt);
+                            _rtcSctpAssociation.OnPacketReceived(pkt);
                         }
                     }
                 }
@@ -311,7 +297,7 @@ internal class RTCSctpTransport : SctpTransport
 
         if (!_isClosed)
         {
-            logger.LogWarning($"SCTP association {RTCSctpAssociation.ID} receive thread stopped.");
+            logger.LogWarning($"SCTP association {_rtcSctpAssociation.ID} receive thread stopped.");
         }
 
         SetState(RTCSctpTransportState.Closed);
@@ -327,10 +313,10 @@ internal class RTCSctpTransport : SctpTransport
     /// <param name="length">The number of bytes to send.</param>
     public override void Send(byte[] buffer, int offset, int length)
     {
-        if (length > maxMessageSize)
+        if (length > SCTP_DEFAULT_MAX_MESSAGE_SIZE)
         {
             throw new ApplicationException($"RTCSctpTransport was requested to send data of length {length} " +
-                                           $" that exceeded the maximum allowed message size of {maxMessageSize}.");
+                                           $" that exceeded the maximum allowed message size of {SCTP_DEFAULT_MAX_MESSAGE_SIZE}.");
         }
 
         if (!_isClosed)
