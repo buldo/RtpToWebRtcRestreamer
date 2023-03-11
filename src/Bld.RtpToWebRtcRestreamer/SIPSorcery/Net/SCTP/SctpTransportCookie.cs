@@ -6,7 +6,7 @@
 /// </summary>
 internal struct SctpTransportCookie
 {
-    public static SctpTransportCookie Empty = new SctpTransportCookie { _isEmpty = true };
+    public static SctpTransportCookie Empty = new() { _isEmpty = true };
 
     public ushort SourcePort { get; set; }
     public ushort DestinationPort { get; set; }

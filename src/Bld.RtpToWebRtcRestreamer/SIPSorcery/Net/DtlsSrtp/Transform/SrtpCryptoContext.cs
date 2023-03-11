@@ -149,7 +149,7 @@ internal class SrtpCryptoContext
     /**
          * implements the counter cipher mode for RTP according to RFC 3711
          */
-    private readonly SrtpCipherCtr _cipherCtr = new SrtpCipherCtr();
+    private readonly SrtpCipherCtr _cipherCtr = new();
 
     /**
          * Temp store.

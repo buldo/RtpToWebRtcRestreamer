@@ -39,8 +39,8 @@ internal class STUNMessage
     /// </summary>
     private byte[] _receivedBuffer;
 
-    public STUNHeader Header = new STUNHeader();
-    public List<STUNAttribute> Attributes = new List<STUNAttribute>();
+    public STUNHeader Header = new();
+    public List<STUNAttribute> Attributes = new();
     private STUNMessage()
     { }
 

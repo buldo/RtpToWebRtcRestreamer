@@ -59,23 +59,23 @@ internal class RtcpSession
 
     private static readonly ILogger logger = Log.Logger;
 
-    private static readonly DateTime UtcEpoch2036 = new DateTime(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
-    private static readonly DateTime UtcEpoch1900 = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime UtcEpoch2036 = new(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
+    private static readonly DateTime UtcEpoch1900 = new(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
     /// The SSRC number of the RTP packets we are sending.
     /// </summary>
-    public uint Ssrc { get; private set; }
+    private readonly uint _ssrc;
 
     /// <summary>
     /// Timestamp that the RTCP session was created at.
     /// </summary>
-    private DateTime CreatedAt { get; set; }
+    private DateTime CreatedAt { get; }
 
     /// <summary>
     /// Timestamp that the last RTP or RTCP packet for was received at.
     /// </summary>
-    public DateTime LastActivityAt { get; private set; } = DateTime.MinValue;
+    private DateTime _lastActivityAt = DateTime.MinValue;
 
     /// <summary>
     /// Indicates whether the session is currently in a timed out state. This
@@ -102,7 +102,7 @@ internal class RtcpSession
     /// <summary>
     /// Unique common name field for use in SDES packets.
     /// </summary>
-    public string Cname { get; private set; }
+    public string Cname { get; }
 
     /// <summary>
     /// Indicates whether the RTCP session has been closed.
@@ -123,7 +123,7 @@ internal class RtcpSession
     /// <param name="ssrc">The SSRC of the RTP stream being sent.</param>
     public RtcpSession(uint ssrc)
     {
-        Ssrc = ssrc;
+        _ssrc = ssrc;
         CreatedAt = DateTime.Now;
         Cname = Guid.NewGuid().ToString();
     }
@@ -143,7 +143,7 @@ internal class RtcpSession
             m_rtcpReportTimer?.Dispose();
 
             var byeReport = GetRtcpReport();
-            byeReport.Bye = new RtcpBye(Ssrc, reason);
+            byeReport.Bye = new RtcpBye(_ssrc, reason);
         }
     }
 
@@ -165,7 +165,7 @@ internal class RtcpSession
     {
         try
         {
-            LastActivityAt = DateTime.Now;
+            _lastActivityAt = DateTime.Now;
             IsTimedOut = false;
         }
         catch (Exception exception)
@@ -186,12 +186,12 @@ internal class RtcpSession
             {
                 lock (m_rtcpReportTimer)
                 {
-                    if ((LastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(LastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
-                        (LastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS))
+                    if ((_lastActivityAt != DateTime.MinValue && DateTime.Now.Subtract(_lastActivityAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS) ||
+                        (_lastActivityAt == DateTime.MinValue && DateTime.Now.Subtract(CreatedAt).TotalMilliseconds > NO_ACTIVITY_TIMEOUT_MILLISECONDS))
                     {
                         if (!IsTimedOut)
                         {
-                            logger.LogWarning($"RTCP session for local ssrc {Ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
+                            logger.LogWarning($"RTCP session for local ssrc {_ssrc} has not had any activity for over {NO_ACTIVITY_TIMEOUT_MILLISECONDS / 1000} seconds.");
                             IsTimedOut = true;
                         }
                     }
@@ -231,17 +231,17 @@ internal class RtcpSession
     private RtcpCompoundPacket GetRtcpReport()
     {
         var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-        var sdesReport = new RtcpSDesReport(Ssrc, Cname);
+        var sdesReport = new RtcpSDesReport(_ssrc, Cname);
 
         if (PacketsSentCount > m_previousPacketsSentCount)
         {
             // If we have sent a packet since the last report then we send an RTCP Sender Report.
             // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-            var senderReport = new RtcpSenderReport(Ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
+            var senderReport = new RtcpSenderReport(_ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
             return new RtcpCompoundPacket(senderReport, sdesReport);
         }
 
-        var receiverReport = new RtcpReceiverReport(Ssrc, null);
+        var receiverReport = new RtcpReceiverReport(_ssrc, null);
         return new RtcpCompoundPacket(receiverReport, sdesReport);
     }
 

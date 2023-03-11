@@ -36,14 +36,14 @@ internal struct SctpCauseOnlyError : ISctpErrorCause
     private const ushort ERROR_CAUSE_LENGTH = 4;
 
     private static readonly List<SctpErrorCauseCode> SupportedErrorCauses =
-        new List<SctpErrorCauseCode>
+        new()
         {
             SctpErrorCauseCode.OutOfResource,
             SctpErrorCauseCode.InvalidMandatoryParameter,
             SctpErrorCauseCode.CookieReceivedWhileShuttingDown
         };
 
-    public SctpErrorCauseCode CauseCode { get; private set; }
+    public SctpErrorCauseCode CauseCode { get; }
 
     public SctpCauseOnlyError(SctpErrorCauseCode causeCode)
     {

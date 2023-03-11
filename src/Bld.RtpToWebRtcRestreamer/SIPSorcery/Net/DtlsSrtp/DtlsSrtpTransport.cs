@@ -38,14 +38,14 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     private static readonly ILogger Logger = Log.Logger;
 
-    private static readonly Random Random = new Random();
+    private static readonly Random Random = new();
 
     private SrtpTransformer _srtpEncoder;
     private SrtcpTransformer _srtcpDecoder;
     readonly IDtlsSrtpPeer _connection;
 
     /// <summary>The collection of chunks to be written.</summary>
-    private readonly BlockingCollection<byte[]> _chunks = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
+    private readonly BlockingCollection<byte[]> _chunks = new(new ConcurrentQueue<byte[]>());
 
     public DtlsTransport Transport { get; private set; }
 

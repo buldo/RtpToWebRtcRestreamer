@@ -188,10 +188,10 @@ internal struct SDPAudioVideoMediaFormat
     }
 
     public SDPAudioVideoMediaFormat WithUpdatedRtpmap(string rtpmap, SDPAudioVideoMediaFormat format) =>
-        new SDPAudioVideoMediaFormat(format.Kind, format.ID, rtpmap, format.Fmtp);
+        new(format.Kind, format.ID, rtpmap, format.Fmtp);
 
     public SDPAudioVideoMediaFormat WithUpdatedFmtp(string fmtp, SDPAudioVideoMediaFormat format) =>
-        new SDPAudioVideoMediaFormat(format.Kind, format.ID, format.Rtpmap, fmtp);
+        new(format.Kind, format.ID, format.Rtpmap, fmtp);
 
     /// <summary>
     /// Maps an audio SDP media type to a media abstraction layer audio format.

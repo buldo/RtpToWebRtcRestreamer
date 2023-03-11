@@ -69,7 +69,7 @@ internal class SctpChunk
     /// Records any unrecognised parameters received from the remote peer and are classified
     /// as needing to be reported. These can be sent back to the remote peer if needed.
     /// </summary>
-    public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new List<SctpTlvChunkParameter>();
+    public List<SctpTlvChunkParameter> UnrecognizedPeerParameters = new();
 
     public SctpChunk(SctpChunkType chunkType, byte chunkFlags = 0x00)
     {

@@ -76,7 +76,7 @@ internal class SctpInitChunk : SctpChunk
     /// <summary>
     /// Optional list of IP address parameters that can be included in INIT chunks.
     /// </summary>
-    private List<IPAddress> Addresses = new List<IPAddress>();
+    private List<IPAddress> Addresses = new();
 
     /// <summary>
     /// The sender of the INIT shall use this parameter to suggest to the
@@ -96,7 +96,7 @@ internal class SctpInitChunk : SctpChunk
     /// The sender of INIT uses this parameter to list all the address types
     /// it can support. Options are IPv4 (5), IPv6 (6) and Hostname (11).
     /// </summary>
-    private List<SctpInitChunkParameterType> SupportedAddressTypes = new List<SctpInitChunkParameterType>();
+    private List<SctpInitChunkParameterType> SupportedAddressTypes = new();
 
     /// <summary>
     /// INIT ACK only. Mandatory. This parameter value MUST contain all the necessary state and

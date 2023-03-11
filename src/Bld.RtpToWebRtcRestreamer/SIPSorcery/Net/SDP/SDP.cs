@@ -155,7 +155,7 @@ internal class SDP
 
     public string SessionName = "sipsorcery";            // Common name of the session.
     public string Timing = DEFAULT_TIMING;
-    private List<string> BandwidthAttributes = new List<string>();
+    private List<string> BandwidthAttributes = new();
 
     // Optional fields.
     private string SessionDescription;
@@ -175,7 +175,7 @@ internal class SDP
     public SDPConnectionInformation Connection;
 
     // Media.
-    public List<SDPMediaAnnouncement> Media = new List<SDPMediaAnnouncement>();
+    public List<SDPMediaAnnouncement> Media = new();
 
     /// <summary>
     /// The stream status of this session. The default is sendrecv.
@@ -184,7 +184,7 @@ internal class SDP
     /// </summary>
     private MediaStreamStatusEnum? SessionMediaStreamStatus { get; set; }
 
-    private List<string> ExtraSessionAttributes = new List<string>();  // Attributes that were not recognised.
+    private List<string> ExtraSessionAttributes = new();  // Attributes that were not recognised.
 
     private SDP()
     { }

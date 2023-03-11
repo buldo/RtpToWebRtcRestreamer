@@ -446,7 +446,6 @@ internal class SDPSecurityDescription
         private SrtpSessionParams SrtpSessionParam
         {
             get;
-            set;
         }
 
 
@@ -661,7 +660,6 @@ internal class SDPSecurityDescription
     private List<KeyParameter> KeyParams
     {
         get;
-        set;
     }
     private SessionParameter SessionParam
     {

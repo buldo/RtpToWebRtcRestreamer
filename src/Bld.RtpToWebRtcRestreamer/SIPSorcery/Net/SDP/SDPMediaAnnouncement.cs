@@ -101,14 +101,14 @@ internal class SDPMediaAnnouncement
     /// If the RFC5576 is being used this is the list of "ssrc" attributes
     /// supplied.
     /// </summary>
-    public List<SDPSsrcAttribute> SsrcAttributes = new List<SDPSsrcAttribute>();
+    public List<SDPSsrcAttribute> SsrcAttributes = new();
 
     /// <summary>
     /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
     /// </summary>
     public uint TIASBandwidth = 0;
 
-    public List<string> BandwidthAttributes = new List<string>();
+    public List<string> BandwidthAttributes = new();
 
     /// <summary>
     /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
@@ -118,26 +118,26 @@ internal class SDPMediaAnnouncement
     /// <summary>
     ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
     /// </summary>
-    public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new Dictionary<int, SDPAudioVideoMediaFormat>();
+    public Dictionary<int, SDPAudioVideoMediaFormat> MediaFormats = new();
 
     /// <summary>
     ///  a=extmap - Mapping for RTP header extensions
     /// </summary>
-    public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new Dictionary<int, RTPHeaderExtension>();
+    public Dictionary<int, RTPHeaderExtension> HeaderExtensions = new();
 
     /// <summary>
     ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.
     /// </summary>
-    public SDPMessageMediaFormat MessageMediaFormat = new SDPMessageMediaFormat();
+    public SDPMessageMediaFormat MessageMediaFormat = new();
 
     /// <summary>
     /// List of media formats for "application media announcements. Application media announcements have different
     /// semantics to audio/video announcements. They can also use aribtrary strings as the format ID.
     /// </summary>
-    public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new Dictionary<string, SDPApplicationMediaFormat>();
+    public Dictionary<string, SDPApplicationMediaFormat> ApplicationMediaFormats = new();
 
-    private List<string> ExtraMediaAttributes = new List<string>();          // Attributes that were not recognised.
-    private List<SDPSecurityDescription> SecurityDescriptions = new List<SDPSecurityDescription>(); //2018-12-21 rj2: add a=crypto parsing etc.
+    private List<string> ExtraMediaAttributes = new();          // Attributes that were not recognised.
+    private List<SDPSecurityDescription> SecurityDescriptions = new(); //2018-12-21 rj2: add a=crypto parsing etc.
     public List<string> IceCandidates;
 
     /// <summary>

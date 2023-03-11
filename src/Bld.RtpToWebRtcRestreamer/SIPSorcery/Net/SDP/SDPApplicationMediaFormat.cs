@@ -39,9 +39,7 @@ internal struct SDPApplicationMediaFormat
         Fmtp = fmtp;
     }
 
-    public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) =>
-        new SDPApplicationMediaFormat(ID, rtpmap, Fmtp);
+    public SDPApplicationMediaFormat WithUpdatedRtpmap(string rtpmap) => new(ID, rtpmap, Fmtp);
 
-    public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) =>
-        new SDPApplicationMediaFormat(ID, Rtpmap, fmtp);
+    public SDPApplicationMediaFormat WithUpdatedFmtp(string fmtp) => new(ID, Rtpmap, fmtp);
 }

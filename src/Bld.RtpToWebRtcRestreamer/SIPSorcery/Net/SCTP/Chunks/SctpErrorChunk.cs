@@ -33,7 +33,7 @@ internal class SctpErrorChunk : SctpChunk
 {
     private const byte ABORT_CHUNK_TBIT_FLAG = 0x01;
 
-    public List<ISctpErrorCause> ErrorCauses { get; private set; } = new List<ISctpErrorCause>();
+    public List<ISctpErrorCause> ErrorCauses { get; } = new();
 
     /// <summary>
     /// This constructor is for the ABORT chunk type which is identical to the
