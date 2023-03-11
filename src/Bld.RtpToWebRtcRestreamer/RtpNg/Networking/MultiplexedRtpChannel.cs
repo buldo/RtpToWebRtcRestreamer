@@ -650,12 +650,12 @@ internal class MultiplexedRtpChannel
 
         var entryRemoteEP = entry.RemoteCandidate.DestinationEndPoint;
 
-        var existingEntry = _checklist.Where(x =>
+        var existingEntry = _checklist.SingleOrDefault(x =>
             x.LocalCandidate.type == entry.LocalCandidate.type
             && x.RemoteCandidate.DestinationEndPoint != null
             && x.RemoteCandidate.DestinationEndPoint.Address.Equals(entryRemoteEP.Address)
             && x.RemoteCandidate.DestinationEndPoint.Port == entryRemoteEP.Port
-            && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol).SingleOrDefault();
+            && x.RemoteCandidate.protocol == entry.RemoteCandidate.protocol);
 
         if (existingEntry != null)
         {
@@ -786,8 +786,7 @@ internal class MultiplexedRtpChannel
                             }
 
                             // Move on to checking for  checklist entries that need an initial check sent.
-                            var nextEntry = _checklist.Where(x => x.State == ChecklistEntryState.Waiting)
-                                .FirstOrDefault();
+                            var nextEntry = _checklist.FirstOrDefault(x => x.State == ChecklistEntryState.Waiting);
 
                             if (nextEntry != null)
                             {
@@ -797,9 +796,9 @@ internal class MultiplexedRtpChannel
 
                             var rto = RTO;
                             // No waiting entries so check for ones requiring a retransmit.
-                            var retransmitEntry = _checklist.Where(x => x.State == ChecklistEntryState.InProgress
+                            var retransmitEntry = _checklist.FirstOrDefault(x => x.State == ChecklistEntryState.InProgress
                                                                         && DateTime.Now.Subtract(x.LastCheckSentAt)
-                                                                            .TotalMilliseconds > rto).FirstOrDefault();
+                                                                            .TotalMilliseconds > rto);
 
                             if (retransmitEntry != null)
                             {
@@ -1260,10 +1259,10 @@ internal class MultiplexedRtpChannel
                     // - The entry that has a remote candidate with an end point that matches the endpoint this STUN request came from,
                     // - And if the STUN request was relayed through a TURN server then only match is the checklist local candidate is
                     //   also a relay type. It is possible for the same remote end point to send STUN requests directly and via a TURN server.
-                    matchingChecklistEntry = _checklist.Where(x =>
+                    matchingChecklistEntry = _checklist.FirstOrDefault(x =>
                         x.RemoteCandidate.IsEquivalentEndPoint(RTCIceProtocol.udp, remoteEndPoint) &&
                         (!wasRelayed || x.LocalCandidate.type == RTCIceCandidateType.relay)
-                    ).FirstOrDefault();
+                    );
                 }
 
                 if (matchingChecklistEntry == null &&
@@ -1360,7 +1359,7 @@ internal class MultiplexedRtpChannel
 
         lock (_checklist)
         {
-            matchingChecklistEntry = _checklist.Where(x => x.IsTransactionIdMatch(txID)).FirstOrDefault();
+            matchingChecklistEntry = _checklist.FirstOrDefault(x => x.IsTransactionIdMatch(txID));
         }
 
         return matchingChecklistEntry;
@@ -1424,8 +1423,7 @@ internal class MultiplexedRtpChannel
 
                 logger.LogDebug($"RTPChannel closing, RTP socket on port {RTPPort}. Reason: {closeReason}.");
 
-
-                await _udpSocket.StopAsync();;
+                await _udpSocket.StopAsync();
 
                 _isClosed = true;
                 OnClosed?.Invoke(closeReason);
