@@ -20,11 +20,6 @@ internal class SrtcpCryptoContext
     private int _receivedIndex;
 
     /// <summary>
-    /// Index sent so far
-    /// </summary>
-    private int _sentIndex;
-
-    /// <summary>
     /// Bit mask for replay check
     /// </summary>
     private long _replayWindow;

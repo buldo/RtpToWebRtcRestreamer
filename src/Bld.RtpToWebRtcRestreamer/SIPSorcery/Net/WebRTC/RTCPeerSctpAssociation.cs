@@ -31,9 +31,6 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.WebRTC;
 
 internal class RTCPeerSctpAssociation : SctpAssociation
 {
-    // TODO: Add MTU path discovery.
-    private const ushort DEFAULT_DTLS_MTU = 1200;
-
     private static readonly ILogger logger = Log.Logger;
 
     /// <summary>
@@ -48,7 +45,7 @@ internal class RTCPeerSctpAssociation : SctpAssociation
     /// <param name="dtlsPort">Optional. The local UDP port being used for the DTLS connection. This
     /// will be set on the SCTP association to aid in diagnostics.</param>
     public RTCPeerSctpAssociation(RTCSctpTransport rtcSctpTransport, ushort srcPort, ushort dstPort, int dtlsPort)
-        : base(rtcSctpTransport, srcPort, dstPort, DEFAULT_DTLS_MTU, dtlsPort)
+        : base(rtcSctpTransport, srcPort, dstPort, dtlsPort)
     {
         logger.LogDebug($"SCTP creating DTLS based association, is DTLS client {rtcSctpTransport.IsDtlsClient}, ID {ID}.");
     }

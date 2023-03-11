@@ -13,10 +13,8 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
-using System.Net;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.SCTP.Chunks;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys;
-using Bld.RtpToWebRtcRestreamer.SIPSorcery.Sys.Net;
 using Microsoft.Extensions.Logging;
 using SIPSorcery;
 
@@ -33,8 +31,6 @@ internal class SctpAssociation
     public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
     private const byte SHUTDOWN_CHUNK_TBIT_FLAG = 0x01;
 
-    private const int MAX_INIT_RETRANSMITS = 3;
-
     /// <summary>
     /// Length of time to wait for the COOKIE ACK response after sending a COOKIE ECHO.
     /// </summary>
@@ -47,13 +43,8 @@ internal class SctpAssociation
     readonly SctpTransport _sctpTransport;
     private ushort _sctpSourcePort;
     private ushort _sctpDestinationPort;
-    private readonly ushort _defaultMTU;
-    private readonly ushort _numberOutboundStreams;
-    private readonly ushort _numberInboundStreams;
     private bool _wasAborted;
     private bool _wasShutdown;
-    private bool _initialisationFailed;
-    private int _initRetransmits;
     private int _cookieEchoRetransmits;
 
     /// <summary>
@@ -131,17 +122,11 @@ internal class SctpAssociation
         SctpTransport sctpTransport,
         ushort sctpSourcePort,
         ushort sctpDestinationPort,
-        ushort defaultMTU,
-        int localTransportPort,
-        ushort numberOutboundStreams = DEFAULT_NUMBER_OUTBOUND_STREAMS,
-        ushort numberInboundStreams = DEFAULT_NUMBER_INBOUND_STREAMS)
+        int localTransportPort)
     {
         _sctpTransport = sctpTransport;
         _sctpSourcePort = sctpSourcePort;
         _sctpDestinationPort = sctpDestinationPort;
-        _defaultMTU = defaultMTU;
-        _numberOutboundStreams = numberOutboundStreams;
-        _numberInboundStreams = numberInboundStreams;
         VerificationTag = Crypto.GetRandomUInt(true);
 
         ID = $"{sctpSourcePort}:{sctpDestinationPort}:{localTransportPort}";
@@ -514,7 +499,6 @@ internal class SctpAssociation
         {
             _t1Cookie.Dispose();
             _t1Cookie = null;
-            _initialisationFailed = true;
 
             logger.LogWarning("SCTP timed out waiting for COOKIE ACK chunk from remote peer.");
 
