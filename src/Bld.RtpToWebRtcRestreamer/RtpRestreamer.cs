@@ -83,12 +83,6 @@ internal class RtpRestreamer
             }
         };
 
-        // Diagnostics.
-        peerConnection.OnReceiveReport += (re, rr) =>
-        {
-            _logger.LogDebug($"RTCP Receive for from {re}\n{rr.GetDebugSummary()}");
-        };
-
         var answer = peerConnection.CreateOffer();
 
         return (peerConnection.Id, answer.sdp);

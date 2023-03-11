@@ -68,17 +68,10 @@ internal class RtcpSenderReport
     private readonly RtcpHeader _header;
     private readonly ulong _ntpTimestamp;
     private readonly uint _rtpTimestamp;
-
-    public RtcpSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
-    {
-        _header = new RtcpHeader(RtcpReportTypes.SR, receptionReports != null ? receptionReports.Count : 0);
-        Ssrc = ssrc;
-        _ntpTimestamp = ntpTimestamp;
-        _rtpTimestamp = rtpTimestamp;
-        PacketCount = packetCount;
-        OctetCount = octetCount;
-        ReceptionReports = receptionReports;
-    }
+    private readonly uint _ssrc;
+    private readonly uint _packetCount;
+    private readonly uint _octetCount;
+    private readonly List<ReceptionReportSample> _receptionReports;
 
     /// <summary>
     /// Create a new RTCP Sender Report from a serialised byte array.
@@ -92,33 +85,25 @@ internal class RtcpSenderReport
         }
 
         _header = new RtcpHeader(packet);
-        ReceptionReports = new List<ReceptionReportSample>();
+        _receptionReports = new List<ReceptionReportSample>();
 
-        Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet[4..]);
+        _ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet[4..]);
         _ntpTimestamp = BinaryPrimitives.ReadUInt64BigEndian(packet[8..]);
         _rtpTimestamp = BinaryPrimitives.ReadUInt32BigEndian(packet[16..]);
-        PacketCount = BinaryPrimitives.ReadUInt32BigEndian(packet[20..]);
-        OctetCount = BinaryPrimitives.ReadUInt32BigEndian(packet[24..]);
+        _packetCount = BinaryPrimitives.ReadUInt32BigEndian(packet[20..]);
+        _octetCount = BinaryPrimitives.ReadUInt32BigEndian(packet[24..]);
 
         var rrIndex = 28;
         for (var i = 0; i < _header.ReceptionReportCount; i++)
         {
             var rr = new ReceptionReportSample(packet[(rrIndex + i * ReceptionReportSample.PAYLOAD_SIZE)..]);
-            ReceptionReports.Add(rr);
+            _receptionReports.Add(rr);
         }
     }
 
-    public uint Ssrc { get; }
-
-    public uint PacketCount { get; }
-
-    public uint OctetCount { get; }
-
-    public List<ReceptionReportSample> ReceptionReports { get; }
-
     public byte[] GetBytes()
     {
-        var rrCount = ReceptionReports != null ? ReceptionReports.Count : 0;
+        var rrCount = _receptionReports != null ? _receptionReports.Count : 0;
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
         _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
@@ -126,16 +111,16 @@ internal class RtcpSenderReport
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
         var payloadSpan = buffer.AsSpan(payloadIndex);
-        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(0, 4), Ssrc);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(0, 4), _ssrc);
         BinaryPrimitives.WriteUInt64BigEndian(payloadSpan.Slice(4, 8), _ntpTimestamp);
         BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(12, 4), _rtpTimestamp);
-        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(16, 4), PacketCount);
-        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(20, 4), OctetCount);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(16, 4), _packetCount);
+        BinaryPrimitives.WriteUInt32BigEndian(payloadSpan.Slice(20, 4), _octetCount);
 
         var bufferIndex = payloadIndex + 24;
         for (var i = 0; i < rrCount; i++)
         {
-            var receptionReportBytes = ReceptionReports[i].GetBytes();
+            var receptionReportBytes = _receptionReports[i].GetBytes();
             Buffer.BlockCopy(receptionReportBytes, 0, buffer, bufferIndex, ReceptionReportSample.PAYLOAD_SIZE);
             bufferIndex += ReceptionReportSample.PAYLOAD_SIZE;
         }

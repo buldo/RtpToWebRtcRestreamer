@@ -122,12 +122,12 @@ internal abstract class MediaStream
 
                 packetToSent.ApplyHeaderChanges();
 
-                var requestedLen = originalPacket.Header.Length + originalPacket.Payload.Length + RtcPeerConnection.SRTP_MAX_PREFIX_LENGTH;
+                var requestedLen = originalPacket.Header.Length + originalPacket.Payload.Length + RtcPeerConnectionConstants.SRTP_MAX_PREFIX_LENGTH;
 
                 var encoded = _secureContext.RtpTransport.ProtectRTP(
                     packetToSent.Header.SyncSource,
                     localBuffer,
-                    requestedLen - RtcPeerConnection.SRTP_MAX_PREFIX_LENGTH);
+                    requestedLen - RtcPeerConnectionConstants.SRTP_MAX_PREFIX_LENGTH);
 
                 if (encoded.Length == 0)
                 {

@@ -62,36 +62,12 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 internal class RtcpSDesReport
 {
     private const int PACKET_SIZE_WITHOUT_CNAME = 6; // 4 byte SSRC, 1 byte CNAME ID, 1 byte CNAME length.
-    private const int MAX_CNAME_BYTES = 255;
     private const byte CNAME_ID = 0x01;
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + PACKET_SIZE_WITHOUT_CNAME;
 
     private readonly RtcpHeader _header;
-
-    /// <summary>
-    /// Creates a new RTCP SDES payload that can be included in an RTCP packet.
-    /// </summary>
-    /// <param name="ssrc">The synchronisation source of the SDES.</param>
-    /// <param name="cname">Canonical End-Point Identifier SDES item. This should be a
-    /// unique string common to all RTP streams in use by the application. Maximum
-    /// length is 255 bytes (note bytes not characters).</param>
-    public RtcpSDesReport(uint ssrc, string cname)
-    {
-        if (string.IsNullOrEmpty(cname))
-        {
-            throw new ArgumentNullException("cname");
-        }
-
-        _header = new RtcpHeader(RtcpReportTypes.SDES, 1);
-        Ssrc = ssrc;
-        Cname = cname.Length > MAX_CNAME_BYTES ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
-
-        // Need to take account of multi-byte characters.
-        while (Encoding.UTF8.GetBytes(Cname).Length > MAX_CNAME_BYTES)
-        {
-            Cname = Cname.Substring(0, Cname.Length - 1);
-        }
-    }
+    private readonly uint _ssrc;
+    private readonly string _cname;
 
     /// <summary>
     /// Create a new RTCP SDES item from a serialised byte array.
@@ -111,15 +87,11 @@ internal class RtcpSDesReport
 
         _header = new RtcpHeader(packet);
 
-        Ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
+        _ssrc = BinaryPrimitives.ReadUInt32BigEndian(packet.Slice(4));
 
         int cnameLength = packet[9];
-        Cname = Encoding.UTF8.GetString(packet.Slice(10, cnameLength));
+        _cname = Encoding.UTF8.GetString(packet.Slice(10, cnameLength));
     }
-
-    public uint Ssrc { get; }
-
-    public string Cname { get; }
 
     /// <summary>
     /// Gets the raw bytes for the SDES item. This packet is ready to be included
@@ -128,14 +100,14 @@ internal class RtcpSDesReport
     /// <returns>A byte array containing the serialised SDES item.</returns>
     public byte[] GetBytes()
     {
-        var cnameBytes = Encoding.UTF8.GetBytes(Cname);
+        var cnameBytes = Encoding.UTF8.GetBytes(_cname);
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + GetPaddedLength(cnameBytes.Length)]; // Array automatically initialised with 0x00 values.
         _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
         Buffer.BlockCopy(_header.GetBytes(), 0, buffer, 0, RtcpHeader.HEADER_BYTES_LENGTH);
         var payloadIndex = RtcpHeader.HEADER_BYTES_LENGTH;
 
-        BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex, 4), Ssrc);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer.AsSpan(payloadIndex, 4), _ssrc);
 
         buffer[payloadIndex + 4] = CNAME_ID;
         buffer[payloadIndex + 5] = (byte)cnameBytes.Length;

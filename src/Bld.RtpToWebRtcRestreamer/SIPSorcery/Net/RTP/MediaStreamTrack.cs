@@ -126,17 +126,6 @@ internal class MediaStreamTrack
     public MediaStreamStatusEnum StreamStatus { get; internal set; }
 
     /// <summary>
-    /// Checks whether a SSRC value from an RTP header or RTCP report matches
-    /// a value expected for this track.
-    /// </summary>
-    /// <param name="ssrc">The SSRC value to check.</param>
-    /// <returns>True if the SSRC value is expected for this track. False if not.</returns>
-    public bool IsSsrcMatch(uint ssrc)
-    {
-        return ssrc == Ssrc || _sdpSsrc.ContainsKey(ssrc);
-    }
-
-    /// <summary>
     /// Returns the next SeqNum to be used in the RTP Sequence Number header field for media packets
     /// sent using this media stream.
     /// </summary>

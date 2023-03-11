@@ -1,5 +1,4 @@
-﻿using System.Buffers.Binary;
-using System.Net;
+﻿using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
@@ -28,48 +27,7 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 /// </remarks>
 internal class RtcPeerConnection : IDisposable
 {
-    // SDP constants.
-    //private new const string RTP_MEDIA_PROFILE = "RTP/SAVP";
-    private const string RTP_MEDIA_NON_FEEDBACK_PROFILE = "UDP/TLS/RTP/SAVP";
-    private const string RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE = "DTLS/SCTP"; // Legacy.
-    private const string RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE = "UDP/DTLS/SCTP";
-    private const string SDP_DATA_CHANNEL_FORMAT_ID = "webrtc-datachannel";
-
-    private const string
-        RTCP_MUX_ATTRIBUTE = "a=rtcp-mux"; // Indicates the media announcement is using multiplexed RTCP.
-
-    private const string BUNDLE_ATTRIBUTE = "BUNDLE";
-    private const string ICE_OPTIONS = "ice2,trickle"; // Supported ICE options.
-    private const ushort SCTP_DEFAULT_PORT = 5000;
-
-    /// <summary>
-    ///     From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer
-    ///     (authentication tag and MKI) supported by libSRTP.This value is
-    ///     the maximum number of octets that will be added to an RTP packet by
-    ///     srtp_protect().
-    ///     srtp_protect():
-    ///     @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN
-    ///     into the location in memory immediately following the RTP packet.
-    ///     Callers MUST ensure that this much writeable memory is available in
-    ///     the buffer that holds the RTP packet.
-    ///     srtp_protect_rtcp():
-    ///     @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4
-    ///     to the location in memory immediately following the RTCP packet.
-    ///     Callers MUST ensure that this much writeable memory is available in
-    ///     the buffer that holds the RTCP packet.
-    /// </summary>
-    public const int SRTP_MAX_PREFIX_LENGTH = 148;
-
-    /// <summary>
-    ///     When there are no RTP packets being sent for an audio or video stream webrtc.lib
-    ///     still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
-    ///     in an RFC somewhere but I wasn't able to find it from a quick search.
-    /// </summary>
-    private const uint RTCP_RR_NO_STREAM_SSRC = 4195875351U;
-
     private static readonly ILogger Logger = Log.Logger;
-    private static readonly string RtcpAttribute = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
-
     private readonly Certificate _dtlsCertificate;
 
     /// <summary>
@@ -134,7 +92,7 @@ internal class RtcPeerConnection : IDisposable
         _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
         _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
 
-        _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
+        _sctp = new RTCSctpTransport(RtcPeerConnectionConstants.SCTP_DEFAULT_PORT, RtcPeerConnectionConstants.SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
         _rtpIceChannel.Start();
     }
@@ -326,10 +284,10 @@ internal class RtcPeerConnection : IDisposable
                 // Check for data channel announcements.
                 if (ann.Media == SDPMediaTypesEnum.application &&
                     ann.MediaFormats.Count() == 1 &&
-                    ann.ApplicationMediaFormats.Single().Key == SDP_DATA_CHANNEL_FORMAT_ID)
+                    ann.ApplicationMediaFormats.Single().Key == RtcPeerConnectionConstants.SDP_DATA_CHANNEL_FORMAT_ID)
                 {
-                    if (ann.Transport == RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE ||
-                        ann.Transport == RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE)
+                    if (ann.Transport == RtcPeerConnectionConstants.RTP_MEDIA_DATA_CHANNEL_DTLS_PROFILE ||
+                        ann.Transport == RtcPeerConnectionConstants.RTP_MEDIA_DATA_CHANNEL_UDP_DTLS_PROFILE)
                     {
                         dtlsFingerprint = dtlsFingerprint ?? ann.DtlsFingerprint;
                         remoteIceRole = remoteIceRole ?? remoteSdp.IceRole;
@@ -569,17 +527,17 @@ internal class RtcPeerConnection : IDisposable
                     SDP.IGNORE_RTP_PORT_NUMBER,
                     mediaStream1.LocalTrack.Capabilities);
 
-                announcement.Transport = RTP_MEDIA_NON_FEEDBACK_PROFILE;
+                announcement.Transport = RtcPeerConnectionConstants.RTP_MEDIA_NON_FEEDBACK_PROFILE;
                 announcement.Connection = new SDPConnectionInformation(IPAddress.Any);
-                announcement.AddExtra(RTCP_MUX_ATTRIBUTE);
-                announcement.AddExtra(RtcpAttribute);
+                announcement.AddExtra(RtcPeerConnectionConstants.RTCP_MUX_ATTRIBUTE);
+                announcement.AddExtra(RtcPeerConnectionConstants.RtcpAttribute);
                 announcement.MediaStreamStatus = mediaStream1.LocalTrack.StreamStatus;
                 announcement.MediaID = midTag;
                 announcement.MLineIndex = mindex;
 
                 announcement.IceUfrag = _rtpIceChannel.LocalIceUser;
                 announcement.IcePwd = _rtpIceChannel.LocalIcePassword;
-                announcement.IceOptions = ICE_OPTIONS;
+                announcement.IceOptions = RtcPeerConnectionConstants.ICE_OPTIONS;
                 announcement.IceRole = _iceRole;
                 announcement.DtlsFingerprint = dtlsFingerprint;
 
@@ -606,7 +564,7 @@ internal class RtcPeerConnection : IDisposable
         // Set the Bundle attribute to indicate all media announcements are being multiplexed.
         if (offerSdp.Media?.Count > 0)
         {
-            offerSdp.Group = BUNDLE_ATTRIBUTE;
+            offerSdp.Group = RtcPeerConnectionConstants.BUNDLE_ATTRIBUTE;
             foreach (var ann1 in offerSdp.Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
             {
                 offerSdp.Group += $" {ann1.MediaID}";
@@ -704,9 +662,9 @@ internal class RtcPeerConnection : IDisposable
     {
         // If a data channel was requested by the application then create the SCTP association.
         var sctpAnn = _remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-        var destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : SCTP_DEFAULT_PORT;
+        var destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : RtcPeerConnectionConstants.SCTP_DEFAULT_PORT;
 
-        if (destinationPort != SCTP_DEFAULT_PORT)
+        if (destinationPort != RtcPeerConnectionConstants.SCTP_DEFAULT_PORT)
         {
             _sctp.UpdateDestinationPort(destinationPort);
         }
@@ -938,7 +896,7 @@ internal class RtcPeerConnection : IDisposable
 
                 if (currentMediaStream.MediaType == SDPMediaTypesEnum.audio)
                 {
-                    if (capabilities?.Where(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE).Count() == 0)
+                    if (capabilities?.Count(x => x.Name().ToLower() != SDP.TELEPHONE_EVENT_ATTRIBUTE) == 0)
                     {
                         return SetDescriptionResultEnum.AudioIncompatible;
                     }
@@ -1076,33 +1034,20 @@ internal class RtcPeerConnection : IDisposable
 
     private async Task OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
     {
-        // Get the SSRC in order to be able to figure out which media type
-        // This will let us choose the apropriate unprotect methods
-        var ssrc = BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(4));
-
-        var mediaStream = GetMediaStream(ssrc);
-        if (mediaStream != null)
+        var secureContext = _videoStream.SecurityContext;
+        if (secureContext != null)
         {
-            var secureContext = mediaStream.SecurityContext;
-            if (secureContext != null)
+            var res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out var outBufLen);
+            if (res != 0)
             {
-                var res = secureContext.UnprotectRtcpPacket(buffer, buffer.Length, out var outBufLen);
-                if (res != 0)
-                {
-                    Logger.LogWarning($"SRTCP unprotect failed for {mediaStream.MediaType} track, result {res}.");
-                    return;
-                }
-
-                buffer = buffer.Take(outBufLen).ToArray();
+                Logger.LogWarning($"SRTCP unprotect failed for {_videoStream.MediaType} track, result {res}.");
+                return;
             }
-        }
-        else
-        {
-            Logger.LogWarning($"Could not find appropriate remote track for SSRC for RTCP packet - Ssrc:{ssrc}");
+
+            buffer = buffer.Take(outBufLen).ToArray();
         }
 
         var rtcpPkt = new RtcpCompoundPacket(buffer);
-        mediaStream = GetMediaStream(rtcpPkt);
         if (rtcpPkt.Bye != null)
         {
             Logger.LogDebug($"RTCP BYE received for SSRC {rtcpPkt.Bye.Ssrc}, reason {rtcpPkt.Bye.Reason}.");
@@ -1117,117 +1062,16 @@ internal class RtcPeerConnection : IDisposable
         }
         else if (!IsClosed)
         {
-            if (mediaStream?.RtcpSession != null)
+            if (_videoStream.RtcpSession != null)
             {
-                mediaStream.RtcpSession.ReportReceived();
-                mediaStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
+                _videoStream.RtcpSession.ReportReceived();
+                _videoStream.RaiseOnReceiveReportByIndex(remoteEndPoint, rtcpPkt);
             }
-            else if (rtcpPkt.ReceiverReport?.Ssrc == RTCP_RR_NO_STREAM_SSRC)
+            else if (rtcpPkt.ReceiverReport?.Ssrc == RtcPeerConnectionConstants.RTCP_RR_NO_STREAM_SSRC)
             {
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
         }
-    }
-
-    private MediaStream GetMediaStream(uint ssrc)
-    {
-        if (HasVideo)
-        {
-            return _videoStream;
-        }
-
-        if (_videoStream.LocalTrack?.IsSsrcMatch(ssrc) == true)
-        {
-            return _videoStream;
-        }
-
-        return GetMediaStreamRemoteSDPSsrcAttributes(ssrc);
-    }
-
-    private MediaStream GetMediaStreamRemoteSDPSsrcAttributes(uint ssrc)
-    {
-        if (ssrc < 200)
-        {
-            return null;
-        }
-
-        int index;
-
-        // Loop au videoRemoteSDPSsrcAttributes
-        var found = false;
-        for (index = 0; index < _videoRemoteSdpSsrcAttributes.Count; index++)
-        {
-            foreach (var ssrcAttributes in _videoRemoteSdpSsrcAttributes[index])
-            {
-                if (ssrcAttributes.SSRC == ssrc)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                break;
-            }
-        }
-
-        // Get related VideoStreamList if found
-        if (found && 1 >= index)
-        {
-            return _videoStream;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Attempts to get MediaStream that matches a received RTCP report.
-    /// </summary>
-    /// <param name="rtcpPkt">The RTCP compound packet received from the remote party.</param>
-    /// <returns>If a match could be found an SSRC the MediaStream otherwise null.</returns>
-    private MediaStream GetMediaStream(RtcpCompoundPacket rtcpPkt)
-    {
-        if (rtcpPkt.SenderReport != null)
-        {
-            return GetMediaStream(rtcpPkt.SenderReport.Ssrc);
-        }
-
-        if (rtcpPkt.ReceiverReport != null)
-        {
-            return GetMediaStream(rtcpPkt.ReceiverReport.Ssrc);
-        }
-
-        if (rtcpPkt.Feedback != null)
-        {
-            return GetMediaStream(rtcpPkt.Feedback.SenderSsrc);
-        }
-
-        // No match on SR/RR SSRC. Check the individual reception reports for a known SSRC.
-        List<ReceptionReportSample> receptionReports = null;
-
-        if (rtcpPkt.SenderReport != null)
-        {
-            receptionReports = rtcpPkt.SenderReport.ReceptionReports;
-        }
-        else if (rtcpPkt.ReceiverReport != null)
-        {
-            receptionReports = rtcpPkt.ReceiverReport.ReceptionReports;
-        }
-
-        if (receptionReports != null && receptionReports.Count > 0)
-        {
-            foreach (var recRep in receptionReports)
-            {
-                var mediaStream = GetMediaStream(recRep.Ssrc);
-                if (mediaStream != null)
-                {
-                    return mediaStream;
-                }
-            }
-        }
-
-        return null;
     }
 
     /// <summary>

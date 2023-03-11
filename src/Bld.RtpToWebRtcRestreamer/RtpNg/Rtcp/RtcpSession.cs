@@ -59,9 +59,6 @@ internal class RtcpSession
 
     private static readonly ILogger logger = Log.Logger;
 
-    private static readonly DateTime UtcEpoch2036 = new(2036, 2, 7, 6, 28, 16, DateTimeKind.Utc);
-    private static readonly DateTime UtcEpoch1900 = new(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
     /// <summary>
     /// The SSRC number of the RTP packets we are sending.
     /// </summary>
@@ -230,19 +227,13 @@ internal class RtcpSession
     /// <returns>An RTCP compound packet.</returns>
     private RtcpCompoundPacket GetRtcpReport()
     {
-        var ntcTime = DateTimeToNtpTimestamp(DateTime.Now);
-        var sdesReport = new RtcpSDesReport(_ssrc, Cname);
-
         if (PacketsSentCount > m_previousPacketsSentCount)
         {
-            // If we have sent a packet since the last report then we send an RTCP Sender Report.
-            // TODO: RTP timestamp should corresponds to the same time as the NTP timestamp
-            var senderReport = new RtcpSenderReport(_ssrc, ntcTime, LastRtpTimestampSent, PacketsSentCount, OctetsSentCount, null);
-            return new RtcpCompoundPacket(senderReport, sdesReport);
+            return new RtcpCompoundPacket();
         }
 
         var receiverReport = new RtcpReceiverReport(_ssrc, null);
-        return new RtcpCompoundPacket(receiverReport, sdesReport);
+        return new RtcpCompoundPacket(receiverReport);
     }
 
     /// <summary>
@@ -254,31 +245,5 @@ internal class RtcpSession
     {
         var maxValue = (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval);
         return Random.Shared.Next((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval), maxValue);
-    }
-
-    /// <summary>
-    /// Converts specified DateTime value to long NTP time.
-    /// </summary>
-    /// <param name="value">DateTime value to convert. This value must be in local time.</param>
-    /// <returns>Returns NTP value.</returns>
-    /// <notes>
-    /// Wallclock time (absolute date and time) is represented using the
-    /// timestamp format of the Network Time Protocol (NPT), which is in
-    /// seconds relative to 0h UTC on 1 January 1900 [4].  The full
-    /// resolution NPT timestamp is a 64-bit unsigned fixed-point number with
-    /// the integer part in the first 32 bits and the fractional part in the
-    /// last 32 bits. In some fields where a more compact representation is
-    /// appropriate, only the middle 32 bits are used; that is, the low 16
-    /// bits of the integer part and the high 16 bits of the fractional part.
-    /// The high 16 bits of the integer part must be determined independently.
-    /// </notes>
-    private static ulong DateTimeToNtpTimestamp(DateTime value)
-    {
-        var baseDate = value >= UtcEpoch2036 ? UtcEpoch2036 : UtcEpoch1900;
-
-        var elapsedTime = value > baseDate ? value.ToUniversalTime() - baseDate.ToUniversalTime() : baseDate.ToUniversalTime() - value.ToUniversalTime();
-
-        var seconds = elapsedTime.TotalSeconds;
-        return ((ulong)seconds << 32) | (ulong)((seconds - (ulong)seconds) * ((ulong)1 << 32));
     }
 }
