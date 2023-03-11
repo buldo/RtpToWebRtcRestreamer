@@ -64,6 +64,7 @@
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
+using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -184,6 +185,8 @@ internal class MultiplexedRtpChannel
     private readonly ConcurrentBag<RTCIceCandidate> _remoteCandidates = new();
 
     private readonly UdpSocket _udpSocket;
+    private readonly Func<int, IPEndPoint, byte[], Task> _onRtpDataReceivedHandler;
+
     /// <summary>
     ///     The local end point the RTP socket is listening on.
     /// </summary>
@@ -197,10 +200,13 @@ internal class MultiplexedRtpChannel
     ///     Creates a new instance of an RTP ICE channel to provide RTP channel functions
     ///     with ICE connectivity checks.
     /// </summary>
-    public MultiplexedRtpChannel(UdpSocket udpSocket)
+    public MultiplexedRtpChannel(
+        UdpSocket udpSocket,
+        Func<int,IPEndPoint,byte[],Task> onRtpDataReceivedHandler)
     {
         _udpSocket = udpSocket;
         _rtpLocalEndPoint = _udpSocket.LocalEndpoint;
+        _onRtpDataReceivedHandler = onRtpDataReceivedHandler;
 
         Component = RTCIceComponent.rtp;
         _candidates = GetHostCandidates();
@@ -278,9 +284,6 @@ internal class MultiplexedRtpChannel
     private string _remoteIceUser;
     private string _remoteIcePassword;
 
-    public event Action<int, IPEndPoint, byte[]> OnRTPDataReceived;
-    public event Action<string> OnClosed;
-
     public event Action<RTCIceConnectionState> OnIceConnectionStateChange;
 
 #nullable enable
@@ -334,18 +337,6 @@ internal class MultiplexedRtpChannel
             // commence immediately as candidates trickle in.
             IceConnectionState = RTCIceConnectionState.checking;
             OnIceConnectionStateChange?.Invoke(IceConnectionState);
-        }
-    }
-
-    /// <summary>
-    ///     Closes the RTP ICE Channel and stops any further connectivity checks.
-    /// </summary>
-    public void CloseAsync()
-    {
-        if (!_closed)
-        {
-            logger.LogDebug($"RtpIceChannel for {_rtpLocalEndPoint} closed.");
-            _closed = true;
         }
     }
 
@@ -1304,7 +1295,7 @@ internal class MultiplexedRtpChannel
             }
             else
             {
-                OnRTPDataReceived?.Invoke(_rtpLocalEndPoint.Port, remoteEndPoint, packetBuffer);
+                await _onRtpDataReceivedHandler(_rtpLocalEndPoint.Port, remoteEndPoint, packetBuffer);
             }
         }
     }
@@ -1319,13 +1310,9 @@ internal class MultiplexedRtpChannel
             try
             {
                 var closeReason = reason ?? "normal";
-
                 logger.LogDebug($"RTPChannel closing, RTP socket on port {RTPPort}. Reason: {closeReason}.");
-
                 await _udpSocket.StopAsync();
-
                 _isClosed = true;
-                OnClosed?.Invoke(closeReason);
             }
             catch (Exception excp)
             {

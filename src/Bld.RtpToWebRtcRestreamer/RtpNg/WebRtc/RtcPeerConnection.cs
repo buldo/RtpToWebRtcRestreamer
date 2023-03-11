@@ -91,8 +91,7 @@ internal class RtcPeerConnection
 
         _localSdpSessionId = Crypto.GetRandomInt(5).ToString();
 
-        _rtpIceChannel = new MultiplexedRtpChannel(udpSocket);
-        _rtpIceChannel.OnRTPDataReceived += OnRTPDataReceived;
+        _rtpIceChannel = new MultiplexedRtpChannel(udpSocket, OnRTPDataReceived);
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
 
         _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
@@ -119,7 +118,7 @@ internal class RtcPeerConnection
     ///     Indicates whether this session is using video.
     /// </summary>
     private bool HasVideo => _videoStream.HasVideo;
-    
+
     /// <summary>
     ///     Event handler for ICE connection state changes.
     /// </summary>
@@ -368,22 +367,11 @@ internal class RtcPeerConnection
         {
             Logger.LogDebug($"Peer connection closed with reason {(reason != null ? reason : "<none>")}.");
 
-            _rtpIceChannel.CloseAsync();
             _dtlsHandle?.Close();
-
-            if (!IsClosed)
-            {
-                IsClosed = true;
-
-
-                _videoStream.IsClosed = true;
-                CloseRtcpSession(_videoStream, reason);
-
-                var rtpChannel = _videoStream.RTPChannel;
-                rtpChannel.OnRTPDataReceived -= OnReceive;
-                rtpChannel.OnClosed -= OnRTPChannelClosed;
-                await rtpChannel.CloseAsync(reason);
-            }
+            await _rtpIceChannel.CloseAsync("reason");
+            IsClosed = true;
+            _videoStream.IsClosed = true;
+            CloseRtcpSession(_videoStream, reason);
 
             await SetConnectionStateAsync(RTCPeerConnectionState.closed);
         }
@@ -559,7 +547,7 @@ internal class RtcPeerConnection
     /// <param name="localPort">The local port on the RTP socket that received the packet.</param>
     /// <param name="remoteEndPoint">The remote end point the packet was received from.</param>
     /// <param name="buffer">The data received.</param>
-    private void OnRTPDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
+    private async Task OnRTPDataReceived(int localPort, IPEndPoint remoteEndPoint, byte[] buffer)
     {
         //logger.LogDebug($"RTP channel received a packet from {remoteEP}, {buffer?.Length} bytes.");
 
@@ -825,15 +813,6 @@ internal class RtcPeerConnection
                 }
             }
 
-            //Close old RTCPSessions opened
-
-            if (_videoStream.RtcpSession != null && _videoStream.LocalTrack == null)
-            {
-                _videoStream.RtcpSession.Close(null);
-            }
-
-            // If we get to here then the remote description was compatible with the local media tracks.
-            // Set the remote description and end points.
             _remoteSdp = sessionDescription;
 
             return SetDescriptionResultEnum.OK;
@@ -988,14 +967,6 @@ internal class RtcPeerConnection
                 // Ignore for the time being. Not sure what use an empty RTCP Receiver Report can provide.
             }
         }
-    }
-
-    /// <summary>
-    ///     Event handler for the RTP channel closure.
-    /// </summary>
-    private void OnRTPChannelClosed(string reason)
-    {
-        CloseAsync(reason);
     }
 
     private async Task SetConnectionStateAsync(RTCPeerConnectionState value)
