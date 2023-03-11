@@ -34,7 +34,7 @@ internal class MultiplexedPeer
         _isStarted = true;
     }
 
-    public void ClosePeer()
+    public async Task ClosePeerAsync()
     {
         if (!_isStarted)
         {
@@ -42,6 +42,6 @@ internal class MultiplexedPeer
         }
         _isStarted = false;
 
-        Peer.Close("");
+        await Peer.CloseAsync("");
     }
 }

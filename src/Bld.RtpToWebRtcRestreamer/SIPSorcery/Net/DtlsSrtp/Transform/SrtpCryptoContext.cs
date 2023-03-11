@@ -91,64 +91,59 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
 internal class SrtpCryptoContext
 {
-    /**
-         * The replay check windows size
-         */
-    private readonly long _replayWindowSize = 64;
-
-    /**
-         * Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
-         */
+    /// <summary>
+    /// Roll-Over-Counter, see RFC3711 section 3.2.1 for detailed description
+    /// </summary>
     private int _roc;
 
-    /**
-         * Key Derivation Rate, used to derive session keys from master keys
-         */
+    /// <summary>
+    /// Key Derivation Rate, used to derive session keys from master keys
+    /// </summary>
     private readonly long _keyDerivationRate;
 
-    /**
-         * Master encryption key
-         */
+    /// <summary>
+    /// Master encryption key
+    /// </summary>
     private readonly byte[] _masterKey;
 
-    /**
-         * Master salting key
-         */
+    /// <summary>
+    /// Master salting key
+    /// </summary>
     private readonly byte[] _masterSalt;
 
-    /**
-         * Derived session encryption key
-         */
+    /// <summary>
+    /// Derived session encryption key
+    /// </summary>
     private readonly byte[] _encKey;
 
-    /**
-         * Derived session authentication key
-         */
+    /// <summary>
+    /// Derived session authentication key
+    /// </summary>
     private readonly byte[] _authKey;
 
-    /**
-         * Derived session salting key
-         */
+    /// <summary>
+    /// Derived session salting key
+    /// </summary>
     private readonly byte[] _saltKey;
 
-    /**
-         * Encryption / Authentication policy for this session
-         */
+    /// <summary>
+    /// Encryption / Authentication policy for this session
+    /// </summary>
     private readonly SrtpPolicy _policy;
 
-    /**
-         * The HMAC object we used to do packet authentication
-         */
+    /// <summary>
+    /// The HMAC object we used to do packet authentication
+    /// </summary>
     private readonly IMac _mac;
 
-    /**
-         * The symmetric cipher engines we need here
-         */
+    /// <summary>
+    /// The symmetric cipher engines we need here
+    /// </summary>
     private readonly IBlockCipher _cipher;
 
-    /**
-         * Used inside F8 mode only
-         */
+    /// <summary>
+    /// Used inside F8 mode only
+    /// </summary>
     private readonly IBlockCipher _cipherF8;
 
     /**

@@ -138,9 +138,6 @@ internal class RtcPeerConnection : IDisposable
         _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
         _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
 
-        OnRtpClosed += Close;
-        OnRtcpBye += Close;
-
         _sctp = new RTCSctpTransport(SCTP_DEFAULT_PORT, SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
         _rtpIceChannel.Start();
@@ -170,7 +167,7 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     public void Dispose()
     {
-        Close("disposed");
+        CloseAsync("disposed");
     }
 
     /// <summary>
@@ -256,7 +253,7 @@ internal class RtcPeerConnection : IDisposable
                     //connectionState = RTCPeerConnectionState.failed;
                     //onconnectionstatechange?.Invoke(connectionState);
 
-                    Close("dtls handshake failed");
+                    await CloseAsync("dtls handshake failed");
                 }
             }
         }
@@ -440,7 +437,7 @@ internal class RtcPeerConnection : IDisposable
     ///     Close the session including the underlying RTP session and channels.
     /// </summary>
     /// <param name="reason">An optional descriptive reason for the closure.</param>
-    public void Close(string reason)
+    public async Task CloseAsync(string reason)
     {
         if (!IsClosed)
         {
@@ -465,9 +462,7 @@ internal class RtcPeerConnection : IDisposable
                 var rtpChannel = _videoStream.RTPChannel;
                 rtpChannel.OnRTPDataReceived -= OnReceive;
                 rtpChannel.OnClosed -= OnRTPChannelClosed;
-                rtpChannel.CloseAsync(reason);
-
-                OnRtpClosed?.Invoke(reason);
+                await rtpChannel.CloseAsync(reason);
             }
 
             _connectionState = RTCPeerConnectionState.closed;
@@ -765,7 +760,7 @@ internal class RtcPeerConnection : IDisposable
         {
             handshakeError = handshakeError ?? "unknown";
             Logger.LogWarning($"RTCPeerConnection DTLS handshake failed with error {handshakeError}.");
-            Close("dtls handshake failed");
+            CloseAsync("dtls handshake failed");
             return false;
         }
 
@@ -779,7 +774,7 @@ internal class RtcPeerConnection : IDisposable
         {
             Logger.LogWarning(
                 $"RTCPeerConnection remote certificate fingerprint mismatch, expected {expectedFp}, actual {remoteFingerprint}.");
-            Close("dtls fingerprint mismatch");
+            CloseAsync("dtls fingerprint mismatch");
             return false;
         }
 
@@ -828,21 +823,6 @@ internal class RtcPeerConnection : IDisposable
 
         return true;
     }
-
-    /// <summary>
-    ///     Gets fired when the RTP session and underlying channel are closed.
-    /// </summary>
-    public event Action<string> OnRtpClosed;
-
-    /// <summary>
-    ///     Gets fired when an RTCP BYE packet is received from the remote party.
-    ///     The string parameter contains the BYE reason. Normally a BYE
-    ///     report means the RTP session is finished. But... cases have been observed where
-    ///     an RTCP BYE is received when a remote party is put on hold and then the session
-    ///     resumes when take off hold. It's up to the application to decide what action to
-    ///     take when n RTCP BYE is received.
-    /// </summary>
-    public event Action<string> OnRtcpBye;
 
     /// <summary>
     ///     Gets fired when an RTCP report is received (the primary one). This event is for diagnostics only.
@@ -1116,7 +1096,7 @@ internal class RtcPeerConnection : IDisposable
         }
     }
 
-    private void OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
+    private async Task OnReceiveRTCPPacket(IPEndPoint remoteEndPoint, byte[] buffer)
     {
         // Get the SSRC in order to be able to figure out which media type
         // This will let us choose the apropriate unprotect methods
@@ -1154,7 +1134,7 @@ internal class RtcPeerConnection : IDisposable
             // We close peer connection only if there is no more local/remote tracks on the primary stream
             if (_videoStream.LocalTrack == null)
             {
-                OnRtcpBye?.Invoke(rtcpPkt.Bye.Reason);
+                await CloseAsync(rtcpPkt.Bye.Reason);
             }
         }
         else if (!IsClosed)
@@ -1277,6 +1257,6 @@ internal class RtcPeerConnection : IDisposable
     /// </summary>
     private void OnRTPChannelClosed(string reason)
     {
-        Close(reason);
+        CloseAsync(reason);
     }
 }

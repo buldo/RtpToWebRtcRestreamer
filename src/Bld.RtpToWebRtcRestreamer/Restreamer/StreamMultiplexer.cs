@@ -34,11 +34,11 @@ internal class StreamMultiplexer
         }
     }
 
-    public void ClosePeer(Guid peerId)
+    public async Task ClosePeerAsync(Guid peerId)
     {
         if (_peers.TryGetValue(peerId, out var multiplexedPeer))
         {
-            multiplexedPeer.ClosePeer();
+            await multiplexedPeer.ClosePeerAsync();
             _peers = _peers.Remove(peerId);
             _logger.LogDebug("Streaming for peer stopped");
         }

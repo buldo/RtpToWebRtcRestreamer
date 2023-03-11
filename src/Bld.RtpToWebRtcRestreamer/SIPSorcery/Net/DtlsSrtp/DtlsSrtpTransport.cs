@@ -41,7 +41,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private static readonly Random Random = new Random();
 
     private SrtpTransformer _srtpEncoder;
-    private SrtcpTransformer _srtcpEncoder;
     private SrtcpTransformer _srtcpDecoder;
     readonly IDtlsSrtpPeer _connection;
 
@@ -134,7 +133,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 {
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
-                    _srtcpEncoder = GenerateRtcpEncoder();
                 }
                 // Declare handshake as complete
                 _handshakeComplete = true;
@@ -200,7 +198,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 {
                     _srtpEncoder = GenerateRtpEncoder();
                     _srtcpDecoder = GenerateRtcpDecoder();
-                    _srtcpEncoder = GenerateRtcpEncoder();
                 }
                 // Declare handshake as complete
                 _handshakeComplete = true;

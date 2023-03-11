@@ -56,7 +56,7 @@ internal class RtpRestreamer
         await _receiver.StopAsync();
         foreach (var peerConnection in _streamMultiplexer.GetAllPeers())
         {
-            _streamMultiplexer.ClosePeer(peerConnection.Peer.Id);
+            await _streamMultiplexer.ClosePeerAsync(peerConnection.Peer.Id);
         }
     }
 
@@ -79,7 +79,7 @@ internal class RtpRestreamer
             }
             else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed)
             {
-                _streamMultiplexer.ClosePeer(peerConnection.Id);
+                _streamMultiplexer.ClosePeerAsync(peerConnection.Id).GetAwaiter().GetResult();
             }
         };
 
