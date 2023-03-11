@@ -1199,21 +1199,6 @@ internal class MultiplexedRtpChannel
                 if (betterOptionEntry != null)
                 {
                     possibleMatchingCheckEntry = betterOptionEntry;
-                    findBetterOptionOrWait =
-                        false; //possibleMatchingCheckEntry.RemoteCandidate.type == RTCIceCandidateType.relay;
-                }
-
-                //if we still need to find a better option, we will search for matching entries with high priority that still processing
-                if (findBetterOptionOrWait)
-                {
-                    var waitOptionEntry = _checklist.Find(x =>
-                        (x.State == ChecklistEntryState.InProgress || x.State == ChecklistEntryState.Waiting) &&
-                        (possibleMatchingCheckEntry == null ||
-                         x.Priority >
-                         possibleMatchingCheckEntry
-                             .Priority /*&& x.RemoteCandidate.type != RTCIceCandidateType.relay*/ ||
-                         possibleMatchingCheckEntry.State != ChecklistEntryState.Succeeded));
-
                 }
             }
 
@@ -1385,9 +1370,6 @@ internal class MultiplexedRtpChannel
     ///     Event handler for packets received on the RTP UDP socket. This channel will detect STUN messages
     ///     and extract STUN messages to deal with ICE connectivity checks and TURN relays.
     /// </summary>
-    /// <param name="socketer">The UDP socket the packet was received on.</param>
-    /// <param name="localPort">The local port it was received on.</param>
-    /// <param name="remoteEndPoint">The remote end point of the sender.</param>
     /// <param name="packet">The raw packet received (note this may not be RTP if other protocols are being multiplexed).</param>
     private async Task OnRTPPacketReceived(UdpReceiveResult packet)
     {

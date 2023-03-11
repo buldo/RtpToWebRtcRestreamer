@@ -297,7 +297,7 @@ internal static class DtlsUtils
         }
     }
 
-    internal static Certificate LoadCertificateChain(
+    private static Certificate LoadCertificateChain(
         ProtocolVersion protocolVersion,
         TlsCrypto crypto,
         List<byte[]> resources)
@@ -318,15 +318,13 @@ internal static class DtlsUtils
 
             return new Certificate(certificateRequestContext, certificateEntryList);
         }
-        else
+
+        var chain = new TlsCertificate[resources.Count];
+        for (var i = 0; i < resources.Count; ++i)
         {
-            var chain = new TlsCertificate[resources.Count];
-            for (var i = 0; i < resources.Count; ++i)
-            {
-                chain[i] = LoadCertificateResource(crypto, resources[i]);
-            }
-            return new Certificate(chain);
+            chain[i] = LoadCertificateResource(crypto, resources[i]);
         }
+        return new Certificate(chain);
     }
 
     private static TlsCertificate LoadCertificateResource(TlsCrypto crypto, byte[] resource)
