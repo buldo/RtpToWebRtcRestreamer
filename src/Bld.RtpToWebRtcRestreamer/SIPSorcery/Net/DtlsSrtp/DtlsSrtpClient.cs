@@ -78,7 +78,6 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
     public byte[] SrtpMasterServerSalt => _srtpMasterServerSalt;
     public byte[] SrtpMasterClientKey => _srtpMasterClientKey;
     public byte[] SrtpMasterClientSalt => _srtpMasterClientSalt;
-    public bool ForceUseExtendedMasterSecret { get; init; } = true;
 
     public override IDictionary<int, byte[]> GetClientExtensions()
     {
@@ -114,7 +113,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 
     public override bool RequiresExtendedMasterSecret()
     {
-        return ForceUseExtendedMasterSecret;
+        return true;
     }
 
     protected override ProtocolVersion[] GetSupportedVersions()

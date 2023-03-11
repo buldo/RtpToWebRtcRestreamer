@@ -329,7 +329,7 @@ internal class SrtcpCryptoContext
         SrtpCipherF8.Process(_cipher, pkt.GetBuffer(), payloadOffset, payloadLength, _ivStore, _cipherF8);
     }
 
-    private readonly byte[] _tempBuffer = new byte[RawPacket.RTPPacketMaxSize];
+    private readonly byte[] _tempBuffer = new byte[RawPacket.RTP_PACKET_MAX_SIZE];
 
     /**
          * Authenticate a packet.

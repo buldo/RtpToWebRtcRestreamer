@@ -43,66 +43,6 @@ public static class NetConvert
     }
 
     /// <summary>
-    /// Parse a UInt32 from a network buffer using network byte order.
-    /// </summary>
-    /// <param name="buffer">The buffer to parse the value from.</param>
-    /// <param name="posn">The position in the buffer to start the parse from.</param>
-    /// <returns>A UInt32 value.</returns>
-    public static uint ParseUInt32(byte[] buffer, int posn)
-    {
-        return (uint)(buffer[posn] << 24 | buffer[posn + 1] << 16 | buffer[posn + 2] << 8 | buffer[posn + 3]);
-    }
-
-    /// <summary>
-    /// Writes a UInt16 value to a network buffer using network byte order.
-    /// </summary>
-    /// <param name="val">The value to write to the buffer.</param>
-    /// <param name="buffer">The buffer to write the value to.</param>
-    /// <param name="posn">The start position in the buffer to write the value at.</param>
-    public static void ToBuffer(ushort val, byte[] buffer, int posn)
-    {
-        if(buffer.Length < posn + 2)
-        {
-            throw new ApplicationException("Buffer was too short for ushort ToBuffer.");
-        }
-
-        buffer[posn] = (byte)(val >> 8);
-        buffer[posn + 1] = (byte)val;
-    }
-
-    /// <summary>
-    /// Writes a UInt32 value to a network buffer using network byte order.
-    /// </summary>
-    /// <param name="val">The value to write to the buffer.</param>
-    /// <param name="buffer">The buffer to write the value to.</param>
-    /// <param name="posn">The start position in the buffer to write the value at.</param>
-    public static void ToBuffer(uint val, byte[] buffer, int posn)
-    {
-        if (buffer.Length < posn + 4)
-        {
-            throw new ApplicationException("Buffer was too short for uint ToBuffer.");
-        }
-
-        buffer[posn] = (byte)(val >> 24);
-        buffer[posn + 1] = (byte)(val >> 16);
-        buffer[posn + 2] = (byte)(val >> 8);
-        buffer[posn + 3] = (byte)val;
-    }
-
-    /// <summary>
-    /// Get a buffer representing the 32 bit unsigned integer in network
-    /// byte (big endian) order.
-    /// </summary>
-    /// <param name="val">The value to convert.</param>
-    /// <returns>A buffer representing the value in network order </returns>
-    public static byte[] GetBytes(uint val)
-    {
-        var buffer = new byte[4];
-        BinaryPrimitives.WriteUInt32BigEndian(buffer, val);
-        return buffer;
-    }
-
-    /// <summary>
     /// Get a buffer representing the 64 bit unsigned integer in network
     /// byte (big endian) order.
     /// </summary>
@@ -113,15 +53,5 @@ public static class NetConvert
         var buffer = new byte[8];
         BinaryPrimitives.TryWriteUInt64BigEndian(buffer, val);
         return buffer;
-    }
-
-    /// <summary>
-    /// Reverses the endianness of a UInt32.
-    /// </summary>
-    /// <param name="val">The value to flip.</param>
-    /// <returns>The same value but with the endianness flipped.</returns>
-    public static uint EndianFlip(uint val)
-    {
-        return val << 24 | val << 8 & 0xff0000 | val >> 8 & 0xff00 | val >> 24;
     }
 }

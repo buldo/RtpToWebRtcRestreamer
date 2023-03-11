@@ -33,7 +33,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
     private const int MaxIpOverhead = MinIpOverhead + 64;
     private const int UdpOverhead = 8;
     private const int DefaultTimeoutMilliseconds = 20000;
-    public const int DtlsRetransmissionCode = -1;
+    private const int DtlsRetransmissionCode = -1;
     private const int DtlsReceiveErrorCode = -2;
 
     private static readonly ILogger Logger = Log.Logger;
@@ -47,8 +47,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
 
     /// <summary>The collection of chunks to be written.</summary>
     private readonly BlockingCollection<byte[]> _chunks = new(new ConcurrentQueue<byte[]>());
-
-    public DtlsTransport Transport { get; private set; }
 
     /// <summary>
     /// Sets the period in milliseconds that the handshake attempt will timeout
@@ -124,7 +122,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
             {
                 var client = (DtlsSrtpClient)_connection;
                 // Perform the handshake in a non-blocking fashion
-                Transport = clientProtocol.Connect(client, this);
+                clientProtocol.Connect(client, this);
 
                 // Prepare the shared key to be used in RTP streaming
                 //client.PrepareSrtpSharedSecret();
@@ -190,7 +188,7 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 var server = (DtlsSrtpServer)_connection;
 
                 // Perform the handshake in a non-blocking fashion
-                Transport = serverProtocol.Accept(server, this);
+                serverProtocol.Accept(server, this);
                 // Prepare the shared key to be used in RTP streaming
                 //server.PrepareSrtpSharedSecret();
                 // Generate encoders for DTLS traffic

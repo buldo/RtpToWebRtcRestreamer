@@ -5,16 +5,16 @@ namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 internal class RawPacket
 {
 
-    public const int RTPPacketMaxSize = 8192;
+    public const int RTP_PACKET_MAX_SIZE = 8192;
     /**
          * The size of the extension header as defined by RFC 3550.
          */
-    private const int ExtHeaderSize = 4;
+    private const int EXT_HEADER_SIZE = 4;
 
     /**
          * The size of the fixed part of the RTP header as defined by RFC 3550.
          */
-    private const int FixedHeaderSize = 12;
+    private const int FIXED_HEADER_SIZE = 12;
 
     /**
          * Byte array storing the content of this Packet
@@ -28,7 +28,7 @@ internal class RawPacket
     /// </summary>
     public RawPacket()
     {
-        _buffer = new byte[RTPPacketMaxSize];
+        _buffer = new byte[RTP_PACKET_MAX_SIZE];
     }
 
     public void Wrap(byte[] buffer, int length)
@@ -106,7 +106,7 @@ internal class RawPacket
         {
             // the extension length comes after the RTP header, the CSRC list,
             // and after two bytes in the extension header called "defined by profile"
-            var extLenIndex = FixedHeaderSize + GetCsrcCount() * 4 + 2;
+            var extLenIndex = FIXED_HEADER_SIZE + GetCsrcCount() * 4 + 2;
             length = BinaryPrimitives.ReadUInt16BigEndian(_buffer.AsSpan(extLenIndex));
         }
         return length;
@@ -129,10 +129,10 @@ internal class RawPacket
          */
     public int GetHeaderLength()
     {
-        var length = FixedHeaderSize + 4 * GetCsrcCount();
+        var length = FIXED_HEADER_SIZE + 4 * GetCsrcCount();
         if (GetExtensionBit())
         {
-            length += ExtHeaderSize + GetExtensionLength();
+            length += EXT_HEADER_SIZE + GetExtensionLength();
         }
         return length;
     }
