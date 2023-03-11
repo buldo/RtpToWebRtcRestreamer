@@ -28,9 +28,8 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 internal class RtcpHeader
 {
     public const int HEADER_BYTES_LENGTH = 4;
-    private const int RTCP_VERSION = 2;
 
-    private int Version { get; } = RTCP_VERSION;         // 2 bits.
+    private int Version { get; }
     private int PaddingFlag { get; } // 1 bit.
     public int ReceptionReportCount { get; } // 5 bits.
     public RtcpReportTypes PacketType { get; }       // 8 bits.
@@ -47,12 +46,6 @@ internal class RtcpHeader
     /// When used this field gets set in place of the Reception Report Counter field.
     /// </summary>
     public PSFBFeedbackTypesEnum PayloadFeedbackMessageType { get; } = PSFBFeedbackTypesEnum.unassigned;
-
-    public RtcpHeader(RtcpReportTypes packetType, int reportCount)
-    {
-        PacketType = packetType;
-        ReceptionReportCount = reportCount;
-    }
 
     /// <summary>
     /// Identifies whether an RTCP header is for a standard RTCP packet or for an

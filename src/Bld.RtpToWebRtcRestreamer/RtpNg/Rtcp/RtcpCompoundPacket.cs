@@ -7,17 +7,7 @@ internal class RtcpCompoundPacket
 {
     private static readonly ILogger Logger = Log.Logger;
 
-    public RtcpReceiverReport ReceiverReport { get; }
-    public RtcpBye Bye { get; set; }
-
-    public RtcpCompoundPacket()
-    {
-    }
-
-    public RtcpCompoundPacket(RtcpReceiverReport receiverReport)
-    {
-        ReceiverReport = receiverReport;
-    }
+    public RtcpBye Bye { get; }
 
     /// <summary>
     /// Creates a new RTCP compound packet from a serialised buffer.
@@ -47,8 +37,8 @@ internal class RtcpCompoundPacket
                     offset += srLength;
                     break;
                 case (byte)RtcpReportTypes.RR:
-                    ReceiverReport = new RtcpReceiverReport(buffer);
-                    var rrLength = ReceiverReport != null ? ReceiverReport.GetBytes().Length : int.MaxValue;
+                    var receiverReport = new RtcpReceiverReport(buffer);
+                    var rrLength = receiverReport.GetBytes().Length;
                     offset += rrLength;
                     break;
                 case (byte)RtcpReportTypes.SDES:

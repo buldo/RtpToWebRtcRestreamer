@@ -141,7 +141,7 @@ internal class RTCIceCandidate
     {
         if (string.IsNullOrEmpty(candidateLine))
         {
-            throw new ArgumentNullException("Cant parse ICE candidate from empty string.", candidateLine);
+            throw new ArgumentNullException(nameof(candidateLine),"Cant parse ICE candidate from empty string.");
         }
 
         candidateLine = candidateLine.Replace("candidate:", "");
@@ -326,9 +326,9 @@ internal class RTCIceCandidate
     /// <param name="epProtocol">The protocol to check equivalence for.</param>
     /// <param name="ep">The IP end point to check equivalence for.</param>
     /// <returns>True if the candidate is deemed equivalent or false if not.</returns>
-    public bool IsEquivalentEndPoint(RTCIceProtocol epPotocol, IPEndPoint ep)
+    public bool IsEquivalentEndPoint(RTCIceProtocol epProtocol, IPEndPoint ep)
     {
-        if (protocol == epPotocol && DestinationEndPoint != null &&
+        if (protocol == epProtocol && DestinationEndPoint != null &&
             ep.Address.Equals(DestinationEndPoint.Address) && DestinationEndPoint.Port == ep.Port)
         {
             return true;

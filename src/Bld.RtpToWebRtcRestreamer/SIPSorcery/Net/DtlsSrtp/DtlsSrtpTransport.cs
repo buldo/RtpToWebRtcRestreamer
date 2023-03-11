@@ -150,9 +150,9 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 else
                 {
                     handshakeError = "unknown";
-                    if (excp is TlsFatalAlert)
+                    if (excp is TlsFatalAlert alert)
                     {
-                        handshakeError = (excp as TlsFatalAlert).Message;
+                        handshakeError = alert.Message;
                     }
 
                     Logger.LogWarning(excp, $"DTLS handshake as client failed. {excp.Message}");
@@ -214,9 +214,9 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
                 else
                 {
                     handshakeError = "unknown";
-                    if (excp is TlsFatalAlert)
+                    if (excp is TlsFatalAlert alert)
                     {
-                        handshakeError = (excp as TlsFatalAlert).Message;
+                        handshakeError = alert.Message;
                     }
 
                     Logger.LogWarning(excp, $"DTLS handshake as server failed. {excp.Message}");

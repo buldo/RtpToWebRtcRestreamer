@@ -94,7 +94,7 @@ internal class RtcPeerConnection
         _rtpIceChannel = new MultiplexedRtpChannel(udpSocket, OnRTPDataReceived);
         _rtpIceChannel.OnIceConnectionStateChange += IceConnectionStateChange;
 
-        _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
+        _videoStream = new VideoStream(videoTrack, _rtpIceChannel);
 
         _rtpIceChannel.Start();
     }
@@ -106,12 +106,6 @@ internal class RtcPeerConnection
     ///     be restarted.
     /// </summary>
     public bool IsClosed { get; private set; }
-
-    /// <summary>
-    ///     Indicates whether the session has been started. Starting a session tells the RTP
-    ///     socket to start receiving,
-    /// </summary>
-    public bool IsStarted { get; set; }
 
     /// <summary>
     ///     Indicates whether this session is using video.

@@ -175,10 +175,10 @@ internal class ChecklistEntry : IComparable
     /// </summary>
     public int CompareTo(object other)
     {
-        if (other is ChecklistEntry)
+        if (other is ChecklistEntry entry)
         {
             //return Priority.CompareTo((other as ChecklistEntry).Priority);
-            return (other as ChecklistEntry).Priority.CompareTo(Priority);
+            return entry.Priority.CompareTo(Priority);
         }
 
         throw new ApplicationException("CompareTo is not implemented for ChecklistEntry and arbitrary types.");

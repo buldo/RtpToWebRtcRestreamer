@@ -137,9 +137,7 @@ internal class SDP
 
     private static readonly ILogger logger = Log.Logger;
 
-    private decimal Version = SDP_PROTOCOL_VERSION;
-
-    private string m_rawSdp;
+    private decimal Version;
 
     // Owner fields.
     private string Username = "-";       // Username of the session originator.
@@ -202,7 +200,6 @@ internal class SDP
             if (sdpDescription != null && sdpDescription.Trim().Length > 0)
             {
                 var sdp = new SDP();
-                sdp.m_rawSdp = sdpDescription;
                 var mLineIndex = 0;
                 SDPMediaAnnouncement activeAnnouncement = null;
 
@@ -731,10 +728,8 @@ internal class SDP
                             {
                                 var pathStr = sdpLineTrimmed.Substring(sdpLineTrimmed.IndexOf(':') + 1);
                                 var pathTrimmedStr = pathStr.Substring(pathStr.IndexOf(':') + 3);
-                                activeAnnouncement.MessageMediaFormat.IP = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf(':'));
 
                                 pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf(':') + 1);
-                                activeAnnouncement.MessageMediaFormat.Port = pathTrimmedStr.Substring(0, pathTrimmedStr.IndexOf('/'));
 
                                 pathTrimmedStr = pathTrimmedStr.Substring(pathTrimmedStr.IndexOf('/') + 1);
                                 activeAnnouncement.MessageMediaFormat.Endpoint = pathTrimmedStr;

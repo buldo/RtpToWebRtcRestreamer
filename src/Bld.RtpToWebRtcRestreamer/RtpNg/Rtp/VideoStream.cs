@@ -6,8 +6,8 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtp;
 
 internal class VideoStream : MediaStream
 {
-    public VideoStream(int index, MediaStreamTrack track, MultiplexedRtpChannel rtpChannel)
-        : base(index, track, rtpChannel)
+    public VideoStream(MediaStreamTrack track, MultiplexedRtpChannel rtpChannel)
+        : base(track, rtpChannel)
     {
     }
 

@@ -21,7 +21,7 @@ using Org.BouncyCastle.Tls;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 
-internal struct SrtpParameters
+internal class SrtpParameters
 {
     // DTLS derived key and salt lengths for SRTP
     // http://tools.ietf.org/html/rfc5764#section-4.1.2

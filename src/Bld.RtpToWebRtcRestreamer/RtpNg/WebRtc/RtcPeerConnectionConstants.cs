@@ -35,12 +35,5 @@ internal static class RtcPeerConnectionConstants
     /// </summary>
     public const int SRTP_MAX_PREFIX_LENGTH = 148;
 
-    /// <summary>
-    ///     When there are no RTP packets being sent for an audio or video stream webrtc.lib
-    ///     still sends RTCP Receiver Reports with this hard coded SSRC. No doubt it's defined
-    ///     in an RFC somewhere but I wasn't able to find it from a quick search.
-    /// </summary>
-    public const uint RTCP_RR_NO_STREAM_SSRC = 4195875351U;
-
     public static readonly string RtcpAttribute = $"a=rtcp:{SDP.IGNORE_RTP_PORT_NUMBER} IN IP4 0.0.0.0";
 }

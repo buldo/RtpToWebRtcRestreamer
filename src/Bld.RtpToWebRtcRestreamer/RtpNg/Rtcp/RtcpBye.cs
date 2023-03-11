@@ -9,36 +9,12 @@ namespace Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 /// </summary>
 internal class RtcpBye
 {
-    private const int MAX_REASON_BYTES = 255;
     private const int SSRC_SIZE = 4;       // 4 bytes for the SSRC.
     private const int MIN_PACKET_SIZE = RtcpHeader.HEADER_BYTES_LENGTH + SSRC_SIZE;
 
     private readonly RtcpHeader _header;
     public uint Ssrc { get; }
     public string Reason { get; }
-
-    /// <summary>
-    /// Creates a new RTCP Bye payload.
-    /// </summary>
-    /// <param name="ssrc">The synchronisation source of the RTP stream being closed.</param>
-    /// <param name="reason">Optional reason for closing. Maximum length is 255 bytes
-    /// (note bytes not characters).</param>
-    public RtcpBye(uint ssrc, string reason)
-    {
-        _header = new RtcpHeader(RtcpReportTypes.BYE, 1);
-        Ssrc = ssrc;
-
-        if (reason != null)
-        {
-            Reason = reason.Length > MAX_REASON_BYTES ? reason.Substring(0, MAX_REASON_BYTES) : reason;
-
-            // Need to take account of multi-byte characters.
-            while (Encoding.UTF8.GetBytes(Reason).Length > MAX_REASON_BYTES)
-            {
-                Reason = Reason.Substring(0, Reason.Length - 1);
-            }
-        }
-    }
 
     /// <summary>
     /// Create a new RTCP Goodbye packet from a serialised byte array.

@@ -1,7 +1,6 @@
 ﻿using System.Buffers;
 using System.Net;
 using Bld.RtpToWebRtcRestreamer.RtpNg.Networking;
-using Bld.RtpToWebRtcRestreamer.RtpNg.Rtcp;
 using Bld.RtpToWebRtcRestreamer.RtpNg.WebRtc;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp;
 using Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.RTP;
@@ -22,11 +21,8 @@ internal abstract class MediaStream
 
     private SecureContext _secureContext;
 
-    private readonly int _index;
-
-    protected MediaStream(int index, MediaStreamTrack mediaStreamTrack, MultiplexedRtpChannel rtpChannel)
+    protected MediaStream( MediaStreamTrack mediaStreamTrack, MultiplexedRtpChannel rtpChannel)
     {
-        _index = index;
         RTPChannel = rtpChannel;
         LocalTrack = mediaStreamTrack;
     }

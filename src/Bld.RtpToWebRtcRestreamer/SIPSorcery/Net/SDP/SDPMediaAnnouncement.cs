@@ -225,7 +225,7 @@ internal class SDPMediaAnnouncement
         announcement += !string.IsNullOrWhiteSpace(DtlsFingerprint) ? "a=" + SDP.DTLS_FINGERPRINT_ATTRIBUTE_PREFIX + ":" + DtlsFingerprint + m_CRLF : null;
         announcement += IceRole != null ? $"a={SDP.ICE_SETUP_ATTRIBUTE_PREFIX}:{IceRole}{m_CRLF}" : null;
 
-        if (IceCandidates?.Count() > 0)
+        if (IceCandidates?.Count > 0)
         {
             foreach (var candidate in IceCandidates)
             {

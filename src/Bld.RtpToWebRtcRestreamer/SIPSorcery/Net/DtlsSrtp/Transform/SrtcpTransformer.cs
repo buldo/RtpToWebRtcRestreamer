@@ -1,33 +1,7 @@
-﻿//-----------------------------------------------------------------------------
-// Filename: SrtcpTransformer.cs
-//
-// Description: Encapsulates the encryption/decryption logic for SRTCP packets.
-//
-// Derived From:
-// https://github.com/RestComm/media-core/blob/master/rtp/src/main/java/org/restcomm/media/core/rtp/crypto/SRTCPTransformer.java
-//
-// Author(s):
-// Rafael Soares (raf.csoares@kyubinteractive.com)
-//
-// History:
-// 01 Jul 2020	Rafael Soares   Created.
-//
-// License:
-// BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
-// Original Source: AGPL-3.0 License
-//-----------------------------------------------------------------------------
-
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace Bld.RtpToWebRtcRestreamer.SIPSorcery.Net.DtlsSrtp.Transform;
 
-/// <summary>
-/// SRTCPTransformer implements PacketTransformer.
-/// It encapsulate the encryption / decryption logic for SRTCP packets
-///
-/// @author Bing SU (nova.su @gmail.com)
-/// @author Werner Dittmann<Werner.Dittmann@t-online.de>
-/// </summary>
 internal class SrtcpTransformer
 {
     private int _isLocked;
