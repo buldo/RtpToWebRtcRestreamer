@@ -32,5 +32,5 @@ public enum STUNMessageTypesEnum : ushort
     // New methods defined in TURN (RFC6062).
     Connect = 0x000a,
     ConnectionBind = 0x000b,
-    ConnectionAttempt = 0x000c,
+    ConnectionAttempt = 0x000c
 }

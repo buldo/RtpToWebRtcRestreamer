@@ -25,7 +25,7 @@ internal enum SctpChunkType : byte
     COOKIE_ACK = 11,
     ECNE = 12,          // Not used (specified in the RFC for future use).
     CWR = 13,           // Not used (specified in the RFC for future use).
-    SHUTDOWN_COMPLETE = 14,
+    SHUTDOWN_COMPLETE = 14
 
     // Not defined in RFC4960.
     //AUTH = 15,

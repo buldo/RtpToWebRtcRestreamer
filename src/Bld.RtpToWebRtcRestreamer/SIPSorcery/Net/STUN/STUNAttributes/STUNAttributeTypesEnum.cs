@@ -42,5 +42,5 @@ public enum STUNAttributeTypesEnum : ushort
     DontFragment = 0x001A,
     ReservationToken = 0x0022,
 
-    ConnectionId = 0x002a,          // Added in RFC6062.
+    ConnectionId = 0x002a // Added in RFC6062.
 }

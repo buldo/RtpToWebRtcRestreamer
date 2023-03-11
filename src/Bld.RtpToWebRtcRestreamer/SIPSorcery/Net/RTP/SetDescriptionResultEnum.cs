@@ -54,5 +54,5 @@ internal enum SetDescriptionResultEnum
     /// <summary>
     /// An SDP offer was received when the local agent had already entered have local offer state.
     /// </summary>
-    WrongSdpTypeOfferAfterOffer,
+    WrongSdpTypeOfferAfterOffer
 }

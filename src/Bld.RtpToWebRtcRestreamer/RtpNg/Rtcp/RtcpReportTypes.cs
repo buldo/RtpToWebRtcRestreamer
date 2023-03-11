@@ -20,5 +20,5 @@ internal enum RtcpReportTypes : byte
 
     RTPFB = 205,    // Generic RTP feedback
     PSFB = 206,     // Payload-specific feedback
-    XR = 207,       // RTCP Extension
+    XR = 207 // RTCP Extension
 }

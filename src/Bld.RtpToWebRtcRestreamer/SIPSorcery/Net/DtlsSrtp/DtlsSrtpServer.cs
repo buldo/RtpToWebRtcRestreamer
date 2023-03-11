@@ -58,7 +58,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
         CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
         CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA
     };
 
     private static readonly ILogger Logger = Log.Logger;
@@ -273,7 +273,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
             CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA,
-            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
+            CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA
         };
     }
 
