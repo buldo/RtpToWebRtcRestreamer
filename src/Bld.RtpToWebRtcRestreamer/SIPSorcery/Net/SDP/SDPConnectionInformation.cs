@@ -28,12 +28,12 @@ internal class SDPConnectionInformation
     /// <summary>
     /// Type of network, IN = Internet.
     /// </summary>
-    public string ConnectionNetworkType = "IN";
+    private string _connectionNetworkType = "IN";
 
     /// <summary>
     /// Session level address family.
     /// </summary>
-    public string ConnectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
+    private string _connectionAddressType = CONNECTION_ADDRESS_TYPE_IPV4;
 
     /// <summary>
     /// IP or multicast address for the media connection.
@@ -46,21 +46,21 @@ internal class SDPConnectionInformation
     public SDPConnectionInformation(IPAddress connectionAddress)
     {
         ConnectionAddress = connectionAddress.ToString();
-        ConnectionAddressType = connectionAddress.AddressFamily == AddressFamily.InterNetworkV6 ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
+        _connectionAddressType = connectionAddress.AddressFamily == AddressFamily.InterNetworkV6 ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
     }
 
     public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)
     {
         var connectionInfo = new SDPConnectionInformation();
         var connectionFields = connectionLine.Substring(2).Trim().Split(' ');
-        connectionInfo.ConnectionNetworkType = connectionFields[0].Trim();
-        connectionInfo.ConnectionAddressType = connectionFields[1].Trim();
+        connectionInfo._connectionNetworkType = connectionFields[0].Trim();
+        connectionInfo._connectionAddressType = connectionFields[1].Trim();
         connectionInfo.ConnectionAddress = connectionFields[2].Trim();
         return connectionInfo;
     }
 
     public override string ToString()
     {
-        return "c=" + ConnectionNetworkType + " " + ConnectionAddressType + " " + ConnectionAddress + m_CRLF;
+        return "c=" + _connectionNetworkType + " " + _connectionAddressType + " " + ConnectionAddress + m_CRLF;
     }
 }

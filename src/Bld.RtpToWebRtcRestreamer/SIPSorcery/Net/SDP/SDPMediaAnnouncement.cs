@@ -55,7 +55,7 @@ internal class SDPMediaAnnouncement
 
     private static readonly ILogger logger = Log.Logger;
 
-    public SDPConnectionInformation Connection;
+    public SDPConnectionInformation Connection { get; set; }
 
     // Media Announcement fields.
     public SDPMediaTypesEnum Media = SDPMediaTypesEnum.audio;   // Media type for the stream.
@@ -72,30 +72,30 @@ internal class SDPMediaAnnouncement
     /// If being used in a bundle this the ID for the announcement.
     /// Example: a=mid:audio or a=mid:video.
     /// </summary>
-    public string MediaID;
+    public string MediaID { get; set; }
 
     /// <summary>
     /// The "ssrc" attributes group ID as specified in RFC5576.
     /// </summary>
-    public string SsrcGroupID;
+    public string SsrcGroupID { get; set; }
 
     /// <summary>
     /// The "sctpmap" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public string SctpMap;
+    public string SctpMap { get; set; }
 
     /// <summary>
     /// The "sctp-port" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public ushort? SctpPort = null;
+    public ushort? SctpPort { get; set; } = null;
 
     /// <summary>
     /// The "max-message-size" attribute defined in https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26 for
     /// use in WebRTC data channels.
     /// </summary>
-    public long MaxMessageSize = 0;
+    public long MaxMessageSize;
 
     /// <summary>
     /// If the RFC5576 is being used this is the list of "ssrc" attributes
@@ -106,14 +106,14 @@ internal class SDPMediaAnnouncement
     /// <summary>
     /// Optional Transport Independent Application Specific Maximum (TIAS) bandwidth.
     /// </summary>
-    public uint TIASBandwidth = 0;
+    public uint TIASBandwidth { get; set; } = 0;
 
     public List<string> BandwidthAttributes { get; } = new();
 
     /// <summary>
     /// In media definitions, "i=" fields are primarily intended for labelling media streams https://tools.ietf.org/html/rfc4566#page-12
     /// </summary>
-    public string MediaDescription;
+    public string MediaDescription { get; set; }
 
     /// <summary>
     ///  For AVP these will normally be a media payload type as defined in the RTP Audio/Video Profile.

@@ -9,7 +9,7 @@ internal class SDPSsrcAttribute
 {
     public const string MEDIA_CNAME_ATTRIBUE_PREFIX = "cname";
 
-    public uint SSRC { get; set; }
+    public uint SSRC { get; }
 
     public string Cname { get; set; }
 

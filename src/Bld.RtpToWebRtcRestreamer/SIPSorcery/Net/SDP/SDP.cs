@@ -812,7 +812,7 @@ internal class SDP
         //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         foreach (var media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         {
-            sdp += media == null ? null : media.ToString();
+            sdp += media?.ToString();
         }
 
         return sdp;

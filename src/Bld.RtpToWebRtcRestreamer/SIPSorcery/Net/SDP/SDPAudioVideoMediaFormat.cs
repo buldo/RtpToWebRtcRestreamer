@@ -92,17 +92,6 @@ internal struct SDPAudioVideoMediaFormat
     public string Fmtp { get; }
 
     /// <summary>
-    /// The standard name of the media format.
-    /// <code>
-    /// // Example
-    /// a=rtpmap:0 PCMU/8000                <-- "PCMU" is the media format name.
-    /// a=rtpmap:101 telephone-event/8000
-    /// a=fmtp:101 0-16
-    /// </code>
-    /// </summary>
-    //public string Name { get; set; }
-
-    /// <summary>
     /// Creates a new SDP media format for a well known media type. Well known type are those that use
     /// ID's less than 96 and don't require rtpmap or fmtp attributes.
     /// </summary>
