@@ -74,7 +74,7 @@ internal class ChecklistEntry : IComparable
         {
             ulong priority = Math.Min(LocalPriority, RemotePriority);
             priority = priority << 32;
-            priority += 2u * (ulong)Math.Max(LocalPriority, RemotePriority) + (ulong)((IsLocalController) ? LocalPriority > RemotePriority ? 1 : 0
+            priority += 2u * (ulong)Math.Max(LocalPriority, RemotePriority) + (ulong)(IsLocalController ? LocalPriority > RemotePriority ? 1 : 0
                 : RemotePriority > LocalPriority ? 1 : 0);
 
             return priority;

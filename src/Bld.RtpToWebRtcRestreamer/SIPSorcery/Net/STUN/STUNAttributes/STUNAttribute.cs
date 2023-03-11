@@ -57,7 +57,7 @@ internal class STUNAttribute
         {
             if (Value != null)
             {
-                return Convert.ToUInt16((Value.Length % 4 == 0) ? Value.Length : Value.Length + (4 - (Value.Length % 4)));
+                return Convert.ToUInt16(Value.Length % 4 == 0 ? Value.Length : Value.Length + (4 - Value.Length % 4));
             }
 
             return 0;
@@ -131,7 +131,7 @@ internal class STUNAttribute
                 attributes.Add(attribute);
 
                 // Attributes start on 32 bit word boundaries so where an attribute length is not a multiple of 4 it gets padded. 
-                var padding = (stunAttributeLength % 4 != 0) ? 4 - (stunAttributeLength % 4) : 0;
+                var padding = stunAttributeLength % 4 != 0 ? 4 - stunAttributeLength % 4 : 0;
 
                 startAttIndex = startAttIndex + 4 + stunAttributeLength + padding;
             }

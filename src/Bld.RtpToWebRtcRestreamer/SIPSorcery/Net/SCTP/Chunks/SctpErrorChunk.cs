@@ -77,7 +77,7 @@ internal class SctpErrorChunk : SctpChunk
                 len += cause.GetErrorCauseLength(padded);
             }
         }
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ internal class SctpErrorChunk : SctpChunk
     /// <param name="posn">The position to start parsing at.</param>
     public static SctpErrorChunk ParseChunk(byte[] buffer, int posn, bool isAbort)
     {
-        var errorChunk = (isAbort) ? new SctpAbortChunk(false) : new SctpErrorChunk();
+        var errorChunk = isAbort ? new SctpAbortChunk(false) : new SctpErrorChunk();
         var chunkLen = errorChunk.ParseFirstWord(buffer, posn);
 
         var paramPosn = posn + SCTP_CHUNK_HEADER_LENGTH;
@@ -123,7 +123,7 @@ internal class SctpErrorChunk : SctpChunk
                 switch (varParam.ParameterType)
                 {
                     case (ushort)SctpErrorCauseCode.InvalidStreamIdentifier:
-                        var streamID = (ushort)((varParam.ParameterValue != null) ?
+                        var streamID = (ushort)(varParam.ParameterValue != null ?
                             NetConvert.ParseUInt16(varParam.ParameterValue, 0) : 0);
                         var invalidStreamID = new SctpErrorInvalidStreamIdentifier { StreamID = streamID };
                         errorChunk.AddErrorCause(invalidStreamID);
@@ -141,7 +141,7 @@ internal class SctpErrorChunk : SctpChunk
                         errorChunk.AddErrorCause(missingMandatory);
                         break;
                     case (ushort)SctpErrorCauseCode.StaleCookieError:
-                        var staleness = (varParam.ParameterValue != null) ?
+                        var staleness = varParam.ParameterValue != null ?
                             NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                         var staleCookie = new SctpErrorStaleCookieError { MeasureOfStaleness = staleness };
                         errorChunk.AddErrorCause(staleCookie);
@@ -165,7 +165,7 @@ internal class SctpErrorChunk : SctpChunk
                         errorChunk.AddErrorCause(unrecognisedParams);
                         break;
                     case (ushort)SctpErrorCauseCode.NoUserData:
-                        var tsn = (varParam.ParameterValue != null) ?
+                        var tsn = varParam.ParameterValue != null ?
                             NetConvert.ParseUInt32(varParam.ParameterValue, 0) : 0;
                         var noData = new SctpErrorNoUserData { TSN = tsn };
                         errorChunk.AddErrorCause(noData);
@@ -179,13 +179,13 @@ internal class SctpErrorChunk : SctpChunk
                         errorChunk.AddErrorCause(restartAddress);
                         break;
                     case (ushort)SctpErrorCauseCode.UserInitiatedAbort:
-                        var reason = (varParam.ParameterValue != null) ?
+                        var reason = varParam.ParameterValue != null ?
                             Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                         var userAbort = new SctpErrorUserInitiatedAbort { AbortReason = reason };
                         errorChunk.AddErrorCause(userAbort);
                         break;
                     case (ushort)SctpErrorCauseCode.ProtocolViolation:
-                        var info = (varParam.ParameterValue != null) ?
+                        var info = varParam.ParameterValue != null ?
                             Encoding.UTF8.GetString(varParam.ParameterValue) : null;
                         var protocolViolation = new SctpErrorProtocolViolation { AdditionalInformation = info };
                         errorChunk.AddErrorCause(protocolViolation);

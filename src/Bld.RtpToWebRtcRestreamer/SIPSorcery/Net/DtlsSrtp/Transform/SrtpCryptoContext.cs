@@ -418,7 +418,7 @@ internal class SrtpCryptoContext
         }
         else
         {
-            keyId = ((label << 48) | (index / _keyDerivationRate));
+            keyId = (label << 48) | (index / _keyDerivationRate);
         }
         for (var i = 0; i < 7; i++)
         {
@@ -456,7 +456,7 @@ internal class SrtpCryptoContext
             ComputeIv(label, index);
             _cipherCtr.GetCipherStream(_cipher, _authKey, _policy.AuthKeyLength, _ivStore);
 
-            switch ((_policy.AuthType))
+            switch (_policy.AuthType)
             {
                 case SrtpPolicy.Hmacsha1Authentication:
                     var key = new KeyParameter(_authKey);

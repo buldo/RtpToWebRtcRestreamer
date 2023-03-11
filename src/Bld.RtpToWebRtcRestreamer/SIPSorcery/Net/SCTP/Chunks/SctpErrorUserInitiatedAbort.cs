@@ -21,7 +21,7 @@ internal struct SctpErrorUserInitiatedAbort : ISctpErrorCause
 
     public ushort GetErrorCauseLength(bool padded)
     {
-        var len = (ushort)(4 + ((!string.IsNullOrEmpty(AbortReason)) ? Encoding.UTF8.GetByteCount(AbortReason) : 0));
+        var len = (ushort)(4 + (!string.IsNullOrEmpty(AbortReason) ? Encoding.UTF8.GetByteCount(AbortReason) : 0));
         return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 

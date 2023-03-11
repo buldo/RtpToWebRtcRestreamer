@@ -201,7 +201,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         var seedLength = cr.Length + sr.Length;
         if (contextValue != null)
         {
-            seedLength += (2 + contextValue.Length);
+            seedLength += 2 + contextValue.Length;
         }
 
         var seed = new byte[seedLength];
@@ -279,7 +279,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
         Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
-        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+        Buffer.BlockCopy(sharedSecret, 2 * keyLen + saltLen, _srtpMasterServerSalt, 0, saltLen);
     }
 
 }

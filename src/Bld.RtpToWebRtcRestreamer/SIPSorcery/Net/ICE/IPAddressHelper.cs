@@ -117,7 +117,7 @@ internal static class IPAddressHelper
             // Helper method for checking IP prefix matches (but only on whole byte
             // lengths). Length is in bits.
             var addr = ip.GetAddressBytes();
-            var bytesToCompare = (lengthInBits >> 3);
+            var bytesToCompare = lengthInBits >> 3;
 
             if (addr.Length < bytesToCompare || tomatch == null || tomatch.Length < bytesToCompare)
                 return false;

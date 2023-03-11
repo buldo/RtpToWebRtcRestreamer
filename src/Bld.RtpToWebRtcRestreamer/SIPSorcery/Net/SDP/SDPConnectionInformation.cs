@@ -46,7 +46,7 @@ internal class SDPConnectionInformation
     public SDPConnectionInformation(IPAddress connectionAddress)
     {
         ConnectionAddress = connectionAddress.ToString();
-        ConnectionAddressType = (connectionAddress.AddressFamily == AddressFamily.InterNetworkV6) ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
+        ConnectionAddressType = connectionAddress.AddressFamily == AddressFamily.InterNetworkV6 ? CONNECTION_ADDRESS_TYPE_IPV6 : CONNECTION_ADDRESS_TYPE_IPV4;
     }
 
     public static SDPConnectionInformation ParseConnectionInformation(string connectionLine)

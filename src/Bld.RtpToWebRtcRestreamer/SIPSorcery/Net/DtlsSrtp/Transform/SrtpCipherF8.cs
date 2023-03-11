@@ -132,7 +132,7 @@ internal static class SrtpCipherF8
         f8Ctx.S[12] ^= (byte)(f8Ctx.J >> 24);
         f8Ctx.S[13] ^= (byte)(f8Ctx.J >> 16);
         f8Ctx.S[14] ^= (byte)(f8Ctx.J >> 8);
-        f8Ctx.S[15] ^= (byte)(f8Ctx.J);
+        f8Ctx.S[15] ^= (byte)f8Ctx.J;
         f8Ctx.J++;
 
         /*

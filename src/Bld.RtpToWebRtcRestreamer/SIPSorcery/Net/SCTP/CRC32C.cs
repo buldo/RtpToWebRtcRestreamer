@@ -14,7 +14,7 @@ public static class CRC32C
             var res = i;
             for (var k = 0; k < 8; k++)
             {
-                res = (res & 1) == 1 ? poly ^ (res >> 1) : (res >> 1);
+                res = (res & 1) == 1 ? poly ^ (res >> 1) : res >> 1;
             }
             _table[i] = res;
         }

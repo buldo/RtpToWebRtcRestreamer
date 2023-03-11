@@ -71,7 +71,7 @@ internal class RtcpSenderReport
 
     public RtcpSenderReport(uint ssrc, ulong ntpTimestamp, uint rtpTimestamp, uint packetCount, uint octetCount, List<ReceptionReportSample> receptionReports)
     {
-        _header = new RtcpHeader(RtcpReportTypes.SR, (receptionReports != null) ? receptionReports.Count : 0);
+        _header = new RtcpHeader(RtcpReportTypes.SR, receptionReports != null ? receptionReports.Count : 0);
         Ssrc = ssrc;
         _ntpTimestamp = ntpTimestamp;
         _rtpTimestamp = rtpTimestamp;
@@ -118,7 +118,7 @@ internal class RtcpSenderReport
 
     public byte[] GetBytes()
     {
-        var rrCount = (ReceptionReports != null) ? ReceptionReports.Count : 0;
+        var rrCount = ReceptionReports != null ? ReceptionReports.Count : 0;
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + 4 + SENDER_PAYLOAD_SIZE + rrCount * ReceptionReportSample.PAYLOAD_SIZE];
         _header.SetLength((ushort)(buffer.Length / 4 - 1));
 

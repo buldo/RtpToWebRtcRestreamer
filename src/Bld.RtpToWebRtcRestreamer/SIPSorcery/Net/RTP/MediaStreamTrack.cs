@@ -153,7 +153,7 @@ internal class MediaStreamTrack
                 throw new ApplicationException("GetNextSeqNum did not return an the next SeqNum due to concurrent updates from other threads within 10 attempts.");
             }
             expectedSeqNum = actualSeqNum;
-            var nextSeqNum = (actualSeqNum >= UInt16.MaxValue) ? 0 : (ushort)(actualSeqNum + 1);
+            var nextSeqNum = actualSeqNum >= UInt16.MaxValue ? 0 : (ushort)(actualSeqNum + 1);
             actualSeqNum = Interlocked.CompareExchange(ref _seqNum, nextSeqNum, expectedSeqNum);
         } while (expectedSeqNum != actualSeqNum); // Try as long as compare-exchange was not successful; in most cases, only one iteration should be needed
 

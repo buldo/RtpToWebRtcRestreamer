@@ -84,7 +84,7 @@ internal class RtcpSDesReport
 
         _header = new RtcpHeader(RtcpReportTypes.SDES, 1);
         Ssrc = ssrc;
-        Cname = (cname.Length > MAX_CNAME_BYTES) ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
+        Cname = cname.Length > MAX_CNAME_BYTES ? cname.Substring(0, MAX_CNAME_BYTES) : cname;
 
         // Need to take account of multi-byte characters.
         while (Encoding.UTF8.GetBytes(Cname).Length > MAX_CNAME_BYTES)
@@ -161,6 +161,6 @@ internal class RtcpSDesReport
             return nonPaddedSize;
         }
 
-        return nonPaddedSize + 4 - (nonPaddedSize % 4);
+        return nonPaddedSize + 4 - nonPaddedSize % 4;
     }
 }

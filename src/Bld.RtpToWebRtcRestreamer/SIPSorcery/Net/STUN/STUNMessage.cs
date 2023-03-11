@@ -87,7 +87,7 @@ internal class STUNMessage
                 var input = buffer.Take(buffer.Length - STUNAttribute.STUNATTRIBUTE_HEADER_LENGTH - FINGERPRINT_ATTRIBUTE_CRC32_LENGTH).ToArray();
 
                 var crc = Crc32.Compute(input) ^ FINGERPRINT_XOR;
-                var fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+                var fingerPrint = BitConverter.IsLittleEndian ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
 
                 //logger.LogDebug($"STUNMessage supplied fingerprint attribute: {fingerprintAttribute.Value.HexStr()}.");
                 //logger.LogDebug($"STUNMessage calculated fingerprint attribute: {fingerPrint.HexStr()}.");
@@ -177,7 +177,7 @@ internal class STUNMessage
 
             var fingerprintAttribute = new STUNAttribute(STUNAttributeTypesEnum.FingerPrint, new byte[FINGERPRINT_ATTRIBUTE_CRC32_LENGTH]);
             var crc = Crc32.Compute(buffer) ^ FINGERPRINT_XOR;
-            var fingerPrint = (BitConverter.IsLittleEndian) ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
+            var fingerPrint = BitConverter.IsLittleEndian ? BitConverter.GetBytes(NetConvert.DoReverseEndian(crc)) : BitConverter.GetBytes(crc);
             fingerprintAttribute.Value = fingerPrint;
 
             Array.Resize(ref buffer, messageLength);

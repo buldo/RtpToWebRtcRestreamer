@@ -26,7 +26,7 @@ internal class RtpHeader
 
     public int Length
     {
-        get { return MIN_HEADER_LEN + (CSRCCount * 4) + ((HeaderExtensionFlag == 0) ? 0 : 4 + (ExtensionLength * 4)); }
+        get { return MIN_HEADER_LEN + CSRCCount * 4 + (HeaderExtensionFlag == 0 ? 0 : 4 + ExtensionLength * 4); }
     }
 
     /// <summary>
@@ -56,14 +56,14 @@ internal class RtpHeader
         var headerExtensionLength = 0;
         var headerAndCSRCLength = 12 + 4 * CSRCCount;
 
-        if (HeaderExtensionFlag == 1 && (packet.Length >= (headerAndCSRCLength + 4)))
+        if (HeaderExtensionFlag == 1 && packet.Length >= headerAndCSRCLength + 4)
         {
             ExtensionProfile = BinaryPrimitives.ReadUInt16BigEndian(packet[(12 + 4 * CSRCCount)..]);
             headerExtensionLength += 2;
             ExtensionLength = BinaryPrimitives.ReadUInt16BigEndian(packet[(14 + 4 * CSRCCount)..]);
             headerExtensionLength += 2 + ExtensionLength * 4;
 
-            if (ExtensionLength > 0 && packet.Length >= (headerAndCSRCLength + 4 + ExtensionLength * 4))
+            if (ExtensionLength > 0 && packet.Length >= headerAndCSRCLength + 4 + ExtensionLength * 4)
             {
                 ExtensionPayload = new byte[ExtensionLength * 4];
                 packet[(headerAndCSRCLength + 4)..].CopyTo(ExtensionPayload[(ExtensionLength * 4)..]);

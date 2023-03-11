@@ -119,7 +119,7 @@ internal class RawPacket
          */
     private int GetCsrcCount()
     {
-        return (_data.Span[0] & 0x0f);
+        return _data.Span[0] & 0x0f;
     }
 
     /**

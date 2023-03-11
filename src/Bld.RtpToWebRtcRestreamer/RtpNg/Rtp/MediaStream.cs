@@ -163,7 +163,7 @@ internal abstract class MediaStream
             return false;
         }
 
-        if ((LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly) || (LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive))
+        if (LocalTrack.StreamStatus == MediaStreamStatusEnum.RecvOnly || LocalTrack.StreamStatus == MediaStreamStatusEnum.Inactive)
         {
             Logger.LogWarning($"SendRtpRaw was called for an {MediaType} packet on an RTP session with a Stream Status set to {LocalTrack.StreamStatus}");
             return false;

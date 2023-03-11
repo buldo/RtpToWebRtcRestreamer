@@ -302,7 +302,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         var alertMsg = $"{AlertLevel.GetText(alertLevel)}, {AlertDescription.GetText(alertDescription)}";
-        alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
+        alertMsg += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
         if (alertDescription == AlertTypesEnum.CloseNotify.GetHashCode())
         {
@@ -332,7 +332,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         }
 
         var alertMsg = $"{AlertLevel.GetText(alertLevel)}";
-        alertMsg += (!string.IsNullOrEmpty(description)) ? $", {description}." : ".";
+        alertMsg += !string.IsNullOrEmpty(description) ? $", {description}." : ".";
 
         if (alertType == AlertTypesEnum.CloseNotify)
         {
@@ -411,7 +411,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         Buffer.BlockCopy(sharedSecret, 0, _srtpMasterClientKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, keyLen, _srtpMasterServerKey, 0, keyLen);
         Buffer.BlockCopy(sharedSecret, 2 * keyLen, _srtpMasterClientSalt, 0, saltLen);
-        Buffer.BlockCopy(sharedSecret, (2 * keyLen + saltLen), _srtpMasterServerSalt, 0, saltLen);
+        Buffer.BlockCopy(sharedSecret, 2 * keyLen + saltLen, _srtpMasterServerSalt, 0, saltLen);
     }
 
     private byte[] GetKeyingMaterial(int length)
@@ -443,7 +443,7 @@ internal sealed class DtlsSrtpServer : DefaultTlsServer, IDtlsSrtpPeer
         var seedLength = cr.Length + sr.Length;
         if (contextValue != null)
         {
-            seedLength += (2 + contextValue.Length);
+            seedLength += 2 + contextValue.Length;
         }
 
         var seed = new byte[seedLength];

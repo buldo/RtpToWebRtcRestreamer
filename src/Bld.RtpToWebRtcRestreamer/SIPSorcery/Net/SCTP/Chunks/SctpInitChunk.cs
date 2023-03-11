@@ -172,7 +172,7 @@ internal class SctpInitChunk : SctpChunk
                    unrecognised.GetParameterLength(true);
         }
 
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : (ushort)len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : (ushort)len;
     }
 
     /// <summary>
@@ -248,7 +248,7 @@ internal class SctpInitChunk : SctpChunk
                            FIXED_PARAMETERS_LENGTH +
                            GetVariableParametersLength(false));
 
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 
     /// <summary>

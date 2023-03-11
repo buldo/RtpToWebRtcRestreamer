@@ -61,14 +61,14 @@ internal class SrtpCipherCtr
             {
                 // compute the cipher stream
                 cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-                cipherInBlock[15] = (byte)((ctr & 0x00FF));
+                cipherInBlock[15] = (byte)(ctr & 0x00FF);
 
                 aesCipher.ProcessBlock(cipherInBlock, output[(ctr * BLOCK_LENGTH)..]);
             }
 
             // Treat the last bytes:
             cipherInBlock[14] = (byte)((ctr & 0xFF00) >> 8);
-            cipherInBlock[15] = (byte)((ctr & 0x00FF));
+            cipherInBlock[15] = (byte)(ctr & 0x00FF);
 
             aesCipher.ProcessBlock(cipherInBlock, tmpCipherBlock);
             tmpCipherBlock[..(length % BLOCK_LENGTH)].CopyTo(output.Slice(ctr * BLOCK_LENGTH, length % BLOCK_LENGTH));

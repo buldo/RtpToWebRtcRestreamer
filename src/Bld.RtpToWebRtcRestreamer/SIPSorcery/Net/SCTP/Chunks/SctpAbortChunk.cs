@@ -50,15 +50,15 @@ internal class SctpAbortChunk : SctpErrorChunk
     {
         if (ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort))
         {
-            var userAbort = (SctpErrorUserInitiatedAbort)(ErrorCauses
-                .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort));
+            var userAbort = (SctpErrorUserInitiatedAbort)ErrorCauses
+                .First(x => x.CauseCode == SctpErrorCauseCode.UserInitiatedAbort);
             return userAbort.AbortReason;
         }
 
         if(ErrorCauses.Any(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation))
         {
-            var protoViolation = (SctpErrorProtocolViolation)(ErrorCauses
-                .First(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation));
+            var protoViolation = (SctpErrorProtocolViolation)ErrorCauses
+                .First(x => x.CauseCode == SctpErrorCauseCode.ProtocolViolation);
             return protoViolation.AdditionalInformation;
         }
 

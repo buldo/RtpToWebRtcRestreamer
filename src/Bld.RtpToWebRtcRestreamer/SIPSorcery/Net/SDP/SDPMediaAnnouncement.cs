@@ -208,7 +208,7 @@ internal class SDPMediaAnnouncement
 
         announcement += !string.IsNullOrWhiteSpace(MediaDescription) ? "i=" + MediaDescription + m_CRLF : null;
 
-        announcement += (Connection == null) ? null : Connection.ToString();
+        announcement += Connection == null ? null : Connection.ToString();
 
         if (TIASBandwidth > 0)
         {
@@ -331,7 +331,7 @@ internal class SDPMediaAnnouncement
             mediaFormatList += mediaFormat.Key + " ";
         }
 
-        return (mediaFormatList != null) ? mediaFormatList.Trim() : null;
+        return mediaFormatList != null ? mediaFormatList.Trim() : null;
     }
 
     private string GetFormatListAttributesToString()

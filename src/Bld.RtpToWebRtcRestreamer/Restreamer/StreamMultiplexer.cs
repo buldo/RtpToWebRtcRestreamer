@@ -9,7 +9,7 @@ namespace Bld.RtpToWebRtcRestreamer.Restreamer;
 internal class StreamMultiplexer
 {
     private readonly ILogger<StreamMultiplexer> _logger;
-    private ImmutableDictionary<Guid, MultiplexedPeer> _peers = (new Dictionary<Guid, MultiplexedPeer>()).ToImmutableDictionary();
+    private ImmutableDictionary<Guid, MultiplexedPeer> _peers = new Dictionary<Guid, MultiplexedPeer>().ToImmutableDictionary();
 
     public StreamMultiplexer(ILogger<StreamMultiplexer> logger)
     {

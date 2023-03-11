@@ -110,7 +110,7 @@ internal class SctpTlvChunkParameter
         var len = (ushort)(SCTP_PARAMETER_HEADER_LENGTH
                            + (ParameterValue == null ? 0 : ParameterValue.Length));
 
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 
     /// <summary>

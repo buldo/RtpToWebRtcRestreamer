@@ -167,7 +167,7 @@ internal struct SDPAudioVideoMediaFormat
     private string SetRtpmap(string name, int clockRate, int channels = DEFAULT_AUDIO_CHANNEL_COUNT)
         =>
             Kind == SDPMediaTypesEnum.video ? $"{name}/{clockRate}" :
-            (channels == DEFAULT_AUDIO_CHANNEL_COUNT) ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
+            channels == DEFAULT_AUDIO_CHANNEL_COUNT ? $"{name}/{clockRate}" : $"{name}/{clockRate}/{channels}";
     public int ClockRate() => Kind == SDPMediaTypesEnum.video ? ToVideoFormat().ClockRate : ToAudioFormat().ClockRate;
 
     public string Name()

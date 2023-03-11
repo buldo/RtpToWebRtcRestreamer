@@ -26,7 +26,7 @@ internal struct SctpErrorUnrecognizedParameters : ISctpErrorCause
 
     public ushort GetErrorCauseLength(bool padded)
     {
-        var len = (ushort)(4 + ((UnrecognizedParameters != null) ? UnrecognizedParameters.Length : 0));
+        var len = (ushort)(4 + (UnrecognizedParameters != null ? UnrecognizedParameters.Length : 0));
         return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 

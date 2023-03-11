@@ -23,7 +23,7 @@ internal struct SctpErrorUnresolvableAddress : ISctpErrorCause
 
     public ushort GetErrorCauseLength(bool padded)
     {
-        var len = (ushort)(4 + ((UnresolvableAddress != null) ? UnresolvableAddress.Length : 0));
+        var len = (ushort)(4 + (UnresolvableAddress != null ? UnresolvableAddress.Length : 0));
         return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 

@@ -385,7 +385,7 @@ internal class SrtcpCryptoContext
             return false;
         }
 
-        if (((_replayWindow >> ((int)-delta)) & 0x1) != 0)
+        if (((_replayWindow >> (int)-delta) & 0x1) != 0)
         {
             /* Packet already received ! */
             return false;
@@ -433,7 +433,7 @@ internal class SrtcpCryptoContext
             ComputeIv(label);
             _cipherCtr.GetCipherStream(_cipher, _authKey, _policy.AuthKeyLength, _ivStore);
 
-            switch ((_policy.AuthType))
+            switch (_policy.AuthType)
             {
                 case SrtpPolicy.Hmacsha1Authentication:
                     var key = new KeyParameter(_authKey);

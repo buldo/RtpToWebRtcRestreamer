@@ -192,7 +192,7 @@ internal class SDP
     public SDP(IPAddress address)
     {
         AddressOrHost = address.ToString();
-        AddressType = (address.AddressFamily == AddressFamily.InterNetworkV6) ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
+        AddressType = address.AddressFamily == AddressFamily.InterNetworkV6 ? ADDRESS_TYPE_IPV6 : ADDRESS_TYPE_IPV4;
     }
 
     public static SDP ParseSDPDescription(string sdpDescription)
@@ -787,7 +787,7 @@ internal class SDP
             "v=" + SDP_PROTOCOL_VERSION + CRLF +
             "o=" + Owner + CRLF +
             "s=" + SessionName + CRLF +
-            ((Connection != null) ? Connection.ToString() : null);
+            (Connection != null ? Connection.ToString() : null);
         foreach (var bandwidth in BandwidthAttributes)
         {
             sdp += "b=" + bandwidth + CRLF;
@@ -808,7 +808,7 @@ internal class SDP
         }
         sdp += string.IsNullOrWhiteSpace(SessionDescription) ? null : "i=" + SessionDescription + CRLF;
 
-        sdp += (Group == null) ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
+        sdp += Group == null ? null : $"a={GROUP_ATRIBUTE_PREFIX}:{Group}" + CRLF;
 
         foreach (var extra in ExtraSessionAttributes)
         {
@@ -823,7 +823,7 @@ internal class SDP
         //foreach (SDPMediaAnnouncement media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         foreach (var media in Media.OrderBy(x => x.MLineIndex).ThenBy(x => x.MediaID))
         {
-            sdp += (media == null) ? null : media.ToString();
+            sdp += media == null ? null : media.ToString();
         }
 
         return sdp;

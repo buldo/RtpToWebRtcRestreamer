@@ -97,7 +97,7 @@ internal class SctpChunk
         var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH
                            + (ChunkValue == null ? 0 : ChunkValue.Length));
 
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 
     /// <summary>
@@ -286,7 +286,7 @@ internal class SctpChunk
     public static uint GetChunkLengthFromHeader(byte[] buffer, int posn, bool padded)
     {
         var len = NetConvert.ParseUInt16(buffer, posn + 2);
-        return (padded) ? SctpPadding.PadTo4ByteBoundary(len) : len;
+        return padded ? SctpPadding.PadTo4ByteBoundary(len) : len;
     }
 
     /// <summary>

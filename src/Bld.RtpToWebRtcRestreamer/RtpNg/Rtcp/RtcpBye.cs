@@ -30,7 +30,7 @@ internal class RtcpBye
 
         if (reason != null)
         {
-            Reason = (reason.Length > MAX_REASON_BYTES) ? reason.Substring(0, MAX_REASON_BYTES) : reason;
+            Reason = reason.Length > MAX_REASON_BYTES ? reason.Substring(0, MAX_REASON_BYTES) : reason;
 
             // Need to take account of multi-byte characters.
             while (Encoding.UTF8.GetBytes(Reason).Length > MAX_REASON_BYTES)
@@ -72,8 +72,8 @@ internal class RtcpBye
     /// <returns>A byte array.</returns>
     public byte[] GetBytes()
     {
-        var reasonBytes = (Reason != null) ? Encoding.UTF8.GetBytes(Reason) : null;
-        var reasonLength = (reasonBytes != null) ? reasonBytes.Length : 0;
+        var reasonBytes = Reason != null ? Encoding.UTF8.GetBytes(Reason) : null;
+        var reasonLength = reasonBytes != null ? reasonBytes.Length : 0;
         var buffer = new byte[RtcpHeader.HEADER_BYTES_LENGTH + GetPaddedLength(reasonLength)];
         _header.SetLength((ushort)(buffer.Length / 4 - 1));
 
@@ -113,6 +113,6 @@ internal class RtcpBye
             return nonPaddedSize;
         }
 
-        return nonPaddedSize + 4 - (nonPaddedSize % 4);
+        return nonPaddedSize + 4 - nonPaddedSize % 4;
     }
 }
