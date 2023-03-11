@@ -246,7 +246,7 @@ internal class DtlsSrtpClient : DefaultTlsClient, IDtlsSrtpPeer
 
         // 2* (key + salt length) / 8. From http://tools.ietf.org/html/rfc5764#section-4-2
         // No need to divide by 8 here since lengths are already in bits
-        int length = 2 * (keyLen + saltLen);
+        var length = 2 * (keyLen + saltLen);
         var sharedSecret = GetKeyingMaterial(ExporterLabel.dtls_srtp, null, length);
 
         /*

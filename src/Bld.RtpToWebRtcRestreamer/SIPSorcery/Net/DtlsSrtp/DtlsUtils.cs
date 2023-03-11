@@ -145,7 +145,7 @@ internal static class DtlsUtils
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
         if (supportedSignatureAlgorithms != null)
         {
-            foreach (SignatureAndHashAlgorithm alg in supportedSignatureAlgorithms)
+            foreach (var alg in supportedSignatureAlgorithms)
             {
                 if (alg.Signature == signatureAlgorithm)
                 {
@@ -304,24 +304,24 @@ internal static class DtlsUtils
     {
         if (TlsUtilities.IsTlsV13(protocolVersion))
         {
-            CertificateEntry[] certificateEntryList = new CertificateEntry[resources.Count];
-            for (int i = 0; i < resources.Count; ++i)
+            var certificateEntryList = new CertificateEntry[resources.Count];
+            for (var i = 0; i < resources.Count; ++i)
             {
-                TlsCertificate certificate = LoadCertificateResource(crypto, resources[i]);
+                var certificate = LoadCertificateResource(crypto, resources[i]);
 
                 // TODO[tls13] Add possibility of specifying e.g. CertificateStatus
                 certificateEntryList[i] = new CertificateEntry(certificate, null);
             }
 
             // TODO[tls13] Support for non-empty request context
-            byte[] certificateRequestContext = TlsUtilities.EmptyBytes;
+            var certificateRequestContext = TlsUtilities.EmptyBytes;
 
             return new Certificate(certificateRequestContext, certificateEntryList);
         }
         else
         {
-            TlsCertificate[] chain = new TlsCertificate[resources.Count];
-            for (int i = 0; i < resources.Count; ++i)
+            var chain = new TlsCertificate[resources.Count];
+            for (var i = 0; i < resources.Count; ++i)
             {
                 chain[i] = LoadCertificateResource(crypto, resources[i]);
             }

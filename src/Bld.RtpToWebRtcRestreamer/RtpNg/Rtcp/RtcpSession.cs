@@ -252,7 +252,7 @@ internal class RtcpSession
     /// <returns>A value in milliseconds to use for the next RTCP report interval.</returns>
     private int GetNextRtcpInterval(int baseInterval)
     {
-        int maxValue = (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval);
+        var maxValue = (int)(RTCP_INTERVAL_HIGH_RANDOMISATION_FACTOR * baseInterval);
         return Random.Shared.Next((int)(RTCP_INTERVAL_LOW_RANDOMISATION_FACTOR * baseInterval), maxValue);
     }
 
