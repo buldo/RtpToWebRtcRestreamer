@@ -43,7 +43,6 @@ internal class RtcPeerConnection : IDisposable
 
     [NotNull] private readonly MultiplexedRtpChannel _rtpIceChannel;
 
-    private readonly RTCSctpTransport _sctp;
     private readonly List<List<SDPSsrcAttribute>> _videoRemoteSdpSsrcAttributes = new();
 
     /// <summary>
@@ -98,8 +97,6 @@ internal class RtcPeerConnection : IDisposable
 
         _videoStream = new VideoStream(0, videoTrack, _rtpIceChannel);
         _videoStream.OnReceiveReportByIndex += RaisedOnOnReceiveReport;
-
-        _sctp = new RTCSctpTransport(RtcPeerConnectionConstants.SCTP_DEFAULT_PORT, RtcPeerConnectionConstants.SCTP_DEFAULT_PORT, _rtpIceChannel.RTPPort);
 
         _rtpIceChannel.Start();
     }
@@ -194,15 +191,6 @@ internal class RtcPeerConnection : IDisposable
                     if (_connectionState == RTCPeerConnectionState.connected)
                     {
                         Start();
-                        try
-                        {
-                            _sctp.Start(_dtlsHandle.Transport, _dtlsHandle.IsClient);
-                        }
-                        catch (Exception excp)
-                        {
-                            Logger.LogError($"SCTP exception establishing association, data channels will not be available. {excp}");
-                            _sctp?.Close();
-                        }
                     }
                 }
                 catch (Exception excp)
@@ -240,10 +228,9 @@ internal class RtcPeerConnection : IDisposable
     /// <param name="init">The answer/offer SDP from the remote party.</param>
     public SetDescriptionResultEnum SetRemoteDescription(RTCSessionDescriptionInit init)
     {
-        _remoteDescription = new RTCSessionDescription
-            { type = init.type, sdp = SDP.ParseSDPDescription(init.sdp) };
+        _remoteDescription = new RTCSessionDescription { sdp = SDP.ParseSDPDescription(init.sdp) };
 
-        var remoteSdp = _remoteDescription.sdp; // SDP.ParseSDPDescription(init.sdp);
+        var remoteSdp = _remoteDescription.sdp;
 
         var sdpType = init.type == RTCSdpType.offer ? SdpType.offer : SdpType.answer;
 
@@ -366,9 +353,6 @@ internal class RtcPeerConnection : IDisposable
             Logger.LogDebug($"SDP:[{remoteSdp}]");
             LogRemoteSDPSsrcAttributes();
 
-
-            UpdatedSctpDestinationPort();
-
             if (init.type == RTCSdpType.offer)
             {
                 _signalingState = RTCSignalingState.have_remote_offer;
@@ -394,11 +378,6 @@ internal class RtcPeerConnection : IDisposable
 
             _rtpIceChannel.CloseAsync();
             _dtlsHandle?.Close();
-
-            if (_sctp != null && _sctp.State == RTCSctpTransportState.Connected)
-            {
-                _sctp?.Close();
-            }
 
             if (!IsClosed)
             {
@@ -647,22 +626,6 @@ internal class RtcPeerConnection : IDisposable
     }
 
     /// <summary>
-    ///     Once the SDP exchange has been made the SCTP transport ports are known. If the destination
-    ///     port is not using the default value attempt to update it on teh SCTP transprot.
-    /// </summary>
-    private void UpdatedSctpDestinationPort()
-    {
-        // If a data channel was requested by the application then create the SCTP association.
-        var sctpAnn = _remoteSdp.Media.Where(x => x.Media == SDPMediaTypesEnum.application).FirstOrDefault();
-        var destinationPort = sctpAnn?.SctpPort != null ? sctpAnn.SctpPort.Value : RtcPeerConnectionConstants.SCTP_DEFAULT_PORT;
-
-        if (destinationPort != RtcPeerConnectionConstants.SCTP_DEFAULT_PORT)
-        {
-            _sctp.UpdateDestinationPort(destinationPort);
-        }
-    }
-
-    /// <summary>
     ///     DtlsHandshake requires DtlsSrtpTransport to work.
     ///     DtlsSrtpTransport is similar to C++ DTLS class combined with Srtp class and can perform
     ///     Handshake as Server or Client in same call. The constructor of transport require a DtlsStrpClient
@@ -719,9 +682,6 @@ internal class RtcPeerConnection : IDisposable
         if (alertType == AlertTypesEnum.CloseNotify)
         {
             Logger.LogDebug("SCTP closing transport as a result of DTLS close notification.");
-
-            // No point keeping the SCTP association open if there is no DTLS transport available.
-            _sctp?.Close();
         }
         else
         {

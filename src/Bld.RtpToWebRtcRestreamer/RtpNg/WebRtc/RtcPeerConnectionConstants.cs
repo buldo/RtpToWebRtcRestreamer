@@ -16,7 +16,6 @@ internal static class RtcPeerConnectionConstants
 
     public const string BUNDLE_ATTRIBUTE = "BUNDLE";
     public const string ICE_OPTIONS = "ice2,trickle"; // Supported ICE options.
-    public const ushort SCTP_DEFAULT_PORT = 5000;
 
     /// <summary>
     ///     From libsrtp: SRTP_MAX_TRAILER_LEN is the maximum length of the SRTP trailer

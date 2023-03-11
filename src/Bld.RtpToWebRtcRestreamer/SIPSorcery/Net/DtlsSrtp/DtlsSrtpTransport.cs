@@ -108,8 +108,6 @@ internal class DtlsSrtpTransport : DatagramTransport, IDisposable
         return DoHandshakeAsServer(out handshakeError);
     }
 
-    public bool IsClient => _connection.IsClient;
-
     private bool DoHandshakeAsClient(out string handshakeError)
     {
         handshakeError = null;
