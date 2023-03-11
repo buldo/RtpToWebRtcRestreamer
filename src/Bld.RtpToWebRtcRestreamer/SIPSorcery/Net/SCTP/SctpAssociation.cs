@@ -33,11 +33,6 @@ internal class SctpAssociation
     public const int DEFAULT_NUMBER_INBOUND_STREAMS = 65535;
     private const byte SHUTDOWN_CHUNK_TBIT_FLAG = 0x01;
 
-    /// <summary>
-    /// Length of time to wait for the INIT ACK response after sending an INIT.
-    /// </summary>
-    private const int T1_INIT_TIMER_MILLISECONDS = 1000;
-
     private const int MAX_INIT_RETRANSMITS = 3;
 
     /// <summary>
@@ -510,26 +505,6 @@ internal class SctpAssociation
         {
             _t1Cookie.Dispose();
             _t1Cookie = null;
-        }
-    }
-
-    private void T1InitTimerExpired(object state)
-    {
-        if (_initRetransmits >= MAX_INIT_RETRANSMITS)
-        {
-            _t1Init.Dispose();
-            _t1Init = null;
-            _initialisationFailed = true;
-
-            logger.LogWarning("SCTP timed out waiting for INIT ACK chunk from remote peer.");
-
-            SetState(SctpAssociationState.Closed);
-        }
-        else
-        {
-            var init = state as SctpPacket;
-            SendPacket(init);
-            _initRetransmits++;
         }
     }
 

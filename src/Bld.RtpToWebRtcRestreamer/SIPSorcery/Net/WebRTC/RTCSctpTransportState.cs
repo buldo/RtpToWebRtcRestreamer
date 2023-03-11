@@ -2,7 +2,7 @@
 
 public enum RTCSctpTransportState
 {
-    Connecting,
+    //Connecting,
     Connected,
     Closed
 }

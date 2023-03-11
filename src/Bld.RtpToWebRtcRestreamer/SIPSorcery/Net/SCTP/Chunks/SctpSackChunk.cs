@@ -9,11 +9,11 @@
 //
 // Author(s):
 // Aaron Clauson (aaron@sipsorcery.com)
-// 
+//
 // History:
 // 20 Mar 2021	Aaron Clauson	Created, Dublin, Ireland.
 //
-// License: 
+// License:
 // BSD 3-Clause "New" or "Revised" License, see included LICENSE.md file.
 //-----------------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ internal class SctpSackChunk : SctpChunk
     public uint CumulativeTsnAck;
 
     /// <summary>
-    /// Advertised Receiver Window Credit. This field indicates the updated 
+    /// Advertised Receiver Window Credit. This field indicates the updated
     /// receive buffer space in bytes of the sender of this SACK
     /// </summary>
     public uint ARwnd;
@@ -61,24 +61,13 @@ internal class SctpSackChunk : SctpChunk
     { }
 
     /// <summary>
-    /// Creates a new SACK chunk.
-    /// </summary>
-    /// <param name="cumulativeTsnAck">The last TSN that was received from the remote party.</param>
-    /// <param name="arwnd">The current Advertised Receiver Window Credit.</param>
-    public SctpSackChunk(uint cumulativeTsnAck, uint arwnd) : base(SctpChunkType.SACK)
-    {
-        CumulativeTsnAck = cumulativeTsnAck;
-        ARwnd = arwnd;
-    }
-
-    /// <summary>
     /// Calculates the padded length for the chunk.
     /// </summary>
     /// <param name="padded">If true the length field will be padded to a 4 byte boundary.</param>
     /// <returns>The length of the chunk.</returns>
     public override ushort GetChunkLength(bool padded)
     {
-        var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH + 
+        var len = (ushort)(SCTP_CHUNK_HEADER_LENGTH +
                            FIXED_PARAMETERS_LENGTH +
                            GapAckBlocks.Count * GAP_REPORT_LENGTH +
                            DuplicateTSN.Count * DUPLICATE_TSN_LENGTH);
