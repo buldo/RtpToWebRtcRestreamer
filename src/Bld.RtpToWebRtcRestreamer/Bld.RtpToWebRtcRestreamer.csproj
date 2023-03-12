@@ -4,6 +4,16 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageId>Bld.RtpToWebRtcRestreamer</PackageId>
+    <Title>RtpToWebRtcRestreamer</Title>
+    <Authors>Roman Buldygin</Authors>
+    <Company>Bld</Company>
+    <Description>Base code for restreaming RTP video stream to WebRTC</Description>
+    <PackageProjectUrl>https://github.com/buldo/RtpToWebRtcRestreamer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/buldo/RtpToWebRtcRestreamer</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>rtp;webrtc</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
